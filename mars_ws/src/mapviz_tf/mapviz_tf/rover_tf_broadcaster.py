@@ -54,6 +54,7 @@ class RoverTransformBroadcaster(Node):
 
     def lla_callback(self, msg):
         # Convert latitude and longitude to x, y positions
+        #TODO: XY in what frames?
         self.rover_position = self.latlonconv.convert_to_meters(msg.latitude, msg.longitude)
 
 def main(args=None):
