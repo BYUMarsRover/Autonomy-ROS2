@@ -1,0 +1,25 @@
+# Created by Nelson Durrant, Oct 2024
+
+services:
+  autonomy_ros2:
+    build:
+      context: .
+      dockerfile: Dockerfile 
+    image: autonomy_ros2
+    container_name: autonomy_ros2
+    user: marsrover
+    network_mode: host
+    environment:
+      DISPLAY: :0 # Required for GUI applications
+      MPLBACKEND: Qt5Agg # Required for GUI applications
+    privileged: true
+    volumes:
+      - ../mars_ws:/home/marsrover/mars_ws
+      - /etc/localtime:/etc/localtime:ro # Syncs the container's time with the host
+      - /run/udev:/run/udev:ro
+      - /dev:/dev:rw
+      - /tmp/.X11-unix:/tmp/.X11-unix # Required for GUI applications
+    command: /bin/bash
+    stdin_open: true  # Equivalent to -it in docker run
+    tty: true  # Equivalent to -it in docker run
+    restart: always  # Optional: Keeps the container running after exit unless you want it to be removed like with --rm
