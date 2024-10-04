@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'test_pkg'
+package_name = 'example'
 
 setup(
     name=package_name,
@@ -15,7 +15,7 @@ setup(
     zip_safe=True,
     maintainer='snelsondurrant',
     maintainer_email='snelsondurrant@gmail.com',
-    description='Package for testing Autonomy ROS2 nodes',
+    description='Example package for Autonomy ROS2 nodes',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
