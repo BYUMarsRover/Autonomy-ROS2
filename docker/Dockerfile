@@ -61,7 +61,8 @@ USER marsrover
 # Install general dependencies
 USER root
 RUN apt update && apt install -y \
-    vim
+    vim \
+    docker.io
 USER marsrover
 
 # Quick permissions fix (might be too heavy-handed)

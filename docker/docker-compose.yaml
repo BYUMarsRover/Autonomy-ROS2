@@ -19,6 +19,7 @@ services:
       - /run/udev:/run/udev:ro
       - /dev:/dev:rw
       - /tmp/.X11-unix:/tmp/.X11-unix # Required for GUI applications
+      - /var/run/docker.sock:/var/run/docker.sock # Required for docker in docker
     command: /bin/bash
     stdin_open: true  # Equivalent to -it in docker run
     tty: true  # Equivalent to -it in docker run
