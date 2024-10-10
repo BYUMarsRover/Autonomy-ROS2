@@ -14,11 +14,11 @@ class FiducialDataNode(Node):
         super().__init__('fiducial_data_node')
 
         # Subscribing to fiducial detection topics from ZED and Logi cameras
-        self.sub_ar_detection_zed = self.create_subscription(
-            FiducialTransformArray,
-            '/aruco_detect_zed/fiducial_transforms',
-            self.arTagCallback,
-            10)
+        # self.sub_ar_detection_zed = self.create_subscription(
+        #     FiducialTransformArray,
+        #     '/aruco_detect_zed/fiducial_transforms',
+        #     self.arTagCallback,
+        #     10)
         
         self.sub_ar_detection_logi = self.create_subscription(
             FiducialTransformArray,

@@ -15,8 +15,8 @@ setup(
     zip_safe=True,
     maintainer='marsrover',
     maintainer_email='marsrover@todo.todo',
-    description='TODO: Package description',
-    license='Apache-2.0',
+    description='The autonomous state machine package',
+    license='BYU YOU CANT HAVE IT"',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
