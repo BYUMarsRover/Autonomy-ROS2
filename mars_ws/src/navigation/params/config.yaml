@@ -1,0 +1,11 @@
+/lidar_ns:
+  lidar_node_name:
+    ros__parameters:
+      lidar_name: foo
+      id: 10
+obstacle_detect_node:
+  ros__parameters:
+    ports: [2438, 2439, 2440]
+/**:
+  ros__parameters:
+    debug: true
