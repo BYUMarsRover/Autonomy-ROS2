@@ -27,10 +27,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef RVIZ_IMU_PLUGIN_IMU_ACC_VISUAL_H
-#define RVIZ_IMU_PLUGIN_IMU_ACC_VISUAL_H
+#ifndef RVIZ_IMU_PLUGIN_MAG_VISUAL_H
+#define RVIZ_IMU_PLUGIN_MAG_VISUAL_H
 
-#include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/magnetic_field.hpp>
 #include <rviz_common/display.hpp>
 #include <QColor>
 
@@ -40,19 +40,18 @@ class Arrow;
 
 namespace rviz_imu_plugin {
 
-class ImuAccVisual
+class MagVisual
 {
   public:
     // Constructor.  Creates the visual stuff and puts it into the
     // scene, but in an unconfigured state.
-    ImuAccVisual(Ogre::SceneManager* scene_manager,
-                 Ogre::SceneNode* parent_node);
+    MagVisual(Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node);
 
     // Destructor.  Removes the visual stuff from the scene.
-    virtual ~ImuAccVisual();
+    virtual ~MagVisual();
 
     // Configure the visual to show the data in the message.
-    void setMessage(const sensor_msgs::msg::Imu::ConstSharedPtr msg);
+    void setMessage(sensor_msgs::msg::MagneticField::ConstSharedPtr msg);
 
     // Set the pose of the coordinate frame the message refers to.
     // These could be done inside setMessage(), but that would require
@@ -67,7 +66,10 @@ class ImuAccVisual
     void setScale(float scale);
     void setColor(const QColor& color);
     void setAlpha(float alpha);
-    void setDerotated(bool derotated);
+    void set2d(bool twod)
+    {
+        is_2d_ = twod;
+    }
 
     float getScale()
     {
@@ -81,18 +83,16 @@ class ImuAccVisual
     {
         return alpha_;
     }
-    bool getDerotated()
+    bool get2d()
     {
-        return derotated_;
+        return is_2d_;
     }
 
     void show();
     void hide();
 
   private:
-    void create();
-
-    rviz_rendering::Arrow* acc_vector_;
+    rviz_rendering::Arrow* heading_vector_;
 
     Ogre::Vector3 direction_;  // computed from IMU message
 
@@ -104,8 +104,7 @@ class ImuAccVisual
     float scale_;
     float alpha_;
     QColor color_;
-
-    bool derotated_;
+    bool is_2d_;
 
     // A SceneNode whose pose is set to match the coordinate frame of
     // the Imu message header.
@@ -118,4 +117,4 @@ class ImuAccVisual
 
 }  // namespace rviz_imu_plugin
 
-#endif  // RVIZ_IMU_PLUGIN_IMU_ORIENTATATION_VISUAL_H
+#endif  // RVIZ_IMU_PLUGIN_MAG_VISUAL_H

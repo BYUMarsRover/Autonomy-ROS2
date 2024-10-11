@@ -25,21 +25,21 @@
 #ifndef IMU_FILTER_MADWICK_STATELESS_ORIENTATION_H
 #define IMU_FILTER_MADWICK_STATELESS_ORIENTATION_H
 
-#include <geometry_msgs/Vector3.h>
-#include <geometry_msgs/Quaternion.h>
+#include <geometry_msgs/msg/vector3.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
 #include <imu_filter_madgwick/world_frame.h>
 
 class StatelessOrientation
 {
   public:
     static bool computeOrientation(WorldFrame::WorldFrame frame,
-                                   geometry_msgs::Vector3 acceleration,
-                                   geometry_msgs::Vector3 magneticField,
-                                   geometry_msgs::Quaternion& orientation);
+                                   geometry_msgs::msg::Vector3 acceleration,
+                                   geometry_msgs::msg::Vector3 magneticField,
+                                   geometry_msgs::msg::Quaternion& orientation);
 
     static bool computeOrientation(WorldFrame::WorldFrame frame,
-                                   geometry_msgs::Vector3 acceleration,
-                                   geometry_msgs::Quaternion& orientation);
+                                   geometry_msgs::msg::Vector3 acceleration,
+                                   geometry_msgs::msg::Quaternion& orientation);
 };
 
 #endif  // IMU_FILTER_MADWICK_STATELESS_ORIENTATION_H

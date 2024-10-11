@@ -2,47 +2,60 @@
 Changelog for package imu_filter_madgwick
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1.2.6 (2024-01-12)
+2.1.5 (2024-10-01)
 ------------------
-* Merge pull request `#192 <https://github.com/CCNYRoboticsLab/imu_tools/issues/192>`_ from enwaytech/av/remove_launchers
-  Increase max stddev, add pose visualization, fix error messages
-* add timeout to lookupTransform
-  Otherwise there are a lot of warnings of `lookup would require extrapolation into the future`
-* publish orientation as Pose to vis on rviz
-* show correct topics even if remapped
-* increase max covariance
-* Contributors: Adi Vardi, Martin Günther
 
-1.2.5 (2022-08-19)
+2.1.4 (2024-04-26)
 ------------------
-* Added ability to reset IMU filters when ROS time jumps back. (`#165 <https://github.com/CCNYRoboticsLab/imu_tools/issues/165>`_)
-* Contributors: Martin Pecka
+* Show remapped topic names (`#196 <https://github.com/CCNYRoboticsLab/imu_tools/issues/196>`_)
+* Set read-only parameters as read_only (`#185 <https://github.com/CCNYRoboticsLab/imu_tools/issues/185>`_)
+* Contributors: Christoph Fröhlich, Tamaki Nishino
 
-1.2.4 (2022-04-12)
+2.1.3 (2022-12-07)
 ------------------
+* Update CMakeLists to use targets
+* Remove node\_ prefix. (`#163 <https://github.com/CCNYRoboticsLab/imu_tools/issues/163>`_)
+* Contributors: Martin Günther, Max Polzin
+
+2.1.2 (2022-07-14)
+------------------
+* Enable on Windows (`#162 <https://github.com/CCNYRoboticsLab/imu_tools/issues/162>`_)
+* Contributors: Lou Amadio
+
+2.1.1 (2022-05-24)
+------------------
+
+2.1.0 (2022-05-02)
+------------------
+* Switch to non-deprecated hpp header
+  The .h header became deprecated after galactic.
+* Add missing test dependency
+* Contributors: Martin Günther
+
+2.0.0 (2022-04-12)
+------------------
+* Initial release into ROS2 foxy, galactic and rolling
+* Fix gcc warnings + clang-tidy suggestions
+* Fix CMakeLists
+* Reformat python code using black
+* Manually reformat licenses + defines
 * Reformat everything using clang-format
-* Fix package dependencies
-* Fix trailing whitespace
-* Fix typo
-* Add declination and yaw offset. (`#121 <https://github.com/CCNYRoboticsLab/imu_tools/issues/121>`_)
-  Fixes `#120 <https://github.com/CCNYRoboticsLab/imu_tools/issues/120>`_.
 * Add license files
   The "COPYING" file incorrectly had the text of the LGPL, but the
   original Madgwick filter [1], [2] is GPL licensed. The source code
   headers correctly have the GPLv3 license text.
   [1]: https://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
   [2]: https://github.com/xioTechnologies/Fusion
-* Contributors: Martin Günther, tgreier
-
-1.2.3 (2021-04-09)
-------------------
-* Fix "non standard content" warning in imu_tools metapackage
-  Fixes `#135 <https://github.com/ccny-ros-pkg/imu_tools/issues/135>`_.
-* Add example launch file for imu_filter_madgwick (`#132 <https://github.com/ccny-ros-pkg/imu_tools/issues/132>`_)
+* Change to allow the usage of imu_filter_madgwick as a library (`#129 <https://github.com/CCNYRoboticsLab/imu_tools/issues/129>`_)
+* imu_filter_madgwick: Install headers
+* Remove double configuration steps. (`#122 <https://github.com/CCNYRoboticsLab/imu_tools/issues/122>`_)
+  Fixes `#118 <https://github.com/CCNYRoboticsLab/imu_tools/issues/118>`_.
+* Add declination and yaw offset. (`#121 <https://github.com/CCNYRoboticsLab/imu_tools/issues/121>`_)
+  Fixes `#120 <https://github.com/CCNYRoboticsLab/imu_tools/issues/120>`_.
+* Madgwick for eloquent (`#110 <https://github.com/CCNYRoboticsLab/imu_tools/issues/110>`_)
 * Update maintainers in package.xml
 * Fix warnings: reordering and unused vars
-* Set cmake_policy CMP0048 to fix warning
-* Contributors: Martin Günther, pietrocolombo
+* Contributors: Martin Günther, boiscljo, tgreier
 
 1.2.2 (2020-05-25)
 ------------------

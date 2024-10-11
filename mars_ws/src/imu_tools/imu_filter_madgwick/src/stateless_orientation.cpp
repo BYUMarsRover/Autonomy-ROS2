@@ -25,7 +25,7 @@
 #include "imu_filter_madgwick/stateless_orientation.h"
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/convert.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 template <typename T>
 static inline void crossProduct(T ax, T ay, T az, T bx, T by, T bz, T& rx,
@@ -48,8 +48,8 @@ static inline T normalizeVector(T& vx, T& vy, T& vz)
 }
 
 bool StatelessOrientation::computeOrientation(
-    WorldFrame::WorldFrame frame, geometry_msgs::Vector3 A,
-    geometry_msgs::Vector3 E, geometry_msgs::Quaternion& orientation)
+    WorldFrame::WorldFrame frame, geometry_msgs::msg::Vector3 A,
+    geometry_msgs::msg::Vector3 E, geometry_msgs::msg::Quaternion& orientation)
 {
     float Hx, Hy, Hz;
     float Mx, My, Mz;
@@ -163,14 +163,14 @@ bool StatelessOrientation::computeOrientation(
 }
 
 bool StatelessOrientation::computeOrientation(
-    WorldFrame::WorldFrame frame, geometry_msgs::Vector3 A,
-    geometry_msgs::Quaternion& orientation)
+    WorldFrame::WorldFrame frame, geometry_msgs::msg::Vector3 A,
+    geometry_msgs::msg::Quaternion& orientation)
 {
     // This implementation could be optimized regarding speed.
 
     // magnetic Field E must not be parallel to A,
     // choose an arbitrary orthogonal vector
-    geometry_msgs::Vector3 E;
+    geometry_msgs::msg::Vector3 E;
     if (fabs(A.x) > 0.1 || fabs(A.y) > 0.1)
     {
         E.x = A.y;

@@ -30,14 +30,15 @@
 #ifndef RVIZ_IMU_PLUGIN_IMU_ORIENTATATION_VISUAL_H
 #define RVIZ_IMU_PLUGIN_IMU_ORIENTATATION_VISUAL_H
 
-#include <sensor_msgs/Imu.h>
-#include <OGRE/OgreSceneNode.h>
-#include <OGRE/OgreSceneManager.h>
-#include <rviz/ogre_helpers/shape.h>
-#include <rviz/helpers/color.h>
+#include <sensor_msgs/msg/imu.hpp>
+#include <rviz_common/display.hpp>
 #include <QColor>
 
-namespace rviz {
+namespace rviz_rendering {
+class Shape;
+}
+
+namespace rviz_imu_plugin {
 
 class ImuOrientationVisual
 {
@@ -51,7 +52,7 @@ class ImuOrientationVisual
     virtual ~ImuOrientationVisual();
 
     // Configure the visual to show the data in the message.
-    void setMessage(const sensor_msgs::Imu::ConstPtr& msg);
+    void setMessage(sensor_msgs::msg::Imu::ConstSharedPtr msg);
 
     // Set the pose of the coordinate frame the message refers to.
     // These could be done inside setMessage(), but that would require
@@ -94,8 +95,8 @@ class ImuOrientationVisual
     void hide();
 
   private:
-    void create();
-    inline bool checkQuaternionValidity(const sensor_msgs::Imu::ConstPtr& msg);
+    inline bool checkQuaternionValidity(
+        sensor_msgs::msg::Imu::ConstSharedPtr msg);
 
     Ogre::Quaternion orientation_;
 
@@ -104,7 +105,7 @@ class ImuOrientationVisual
     float alpha_;
     bool quat_valid_;
 
-    Shape* orientation_box_;
+    rviz_rendering::Shape* orientation_box_;
 
     // A SceneNode whose pose is set to match the coordinate frame of
     // the Imu message header.
@@ -115,6 +116,6 @@ class ImuOrientationVisual
     Ogre::SceneManager* scene_manager_;
 };
 
-}  // end namespace rviz
+}  // namespace rviz_imu_plugin
 
 #endif  // RVIZ_IMU_PLUGIN_IMU_ORIENTATATION_VISUAL_H

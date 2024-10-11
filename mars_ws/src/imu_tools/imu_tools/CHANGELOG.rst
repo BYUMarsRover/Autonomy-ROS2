@@ -2,22 +2,28 @@
 Changelog for package imu_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1.2.6 (2024-01-12)
+2.1.5 (2024-10-01)
 ------------------
 
-1.2.5 (2022-08-19)
+2.1.4 (2024-04-26)
 ------------------
 
-1.2.4 (2022-04-12)
+2.1.3 (2022-12-07)
 ------------------
 
-1.2.3 (2021-04-09)
+2.1.2 (2022-07-14)
 ------------------
-* Fix "non standard content" warning in imu_tools metapackage
-  Fixes `#135 <https://github.com/ccny-ros-pkg/imu_tools/issues/135>`_.
-* Update maintainers in package.xml
-* Set cmake_policy CMP0048 to fix warning
-* Contributors: Martin Günther
+
+2.1.1 (2022-05-24)
+------------------
+
+2.1.0 (2022-05-02)
+------------------
+
+2.0.0 (2022-04-12)
+------------------
+* Initial release into ROS2 foxy, galactic and rolling
+* Contributors: Martin Günther, tgreier
 
 1.2.2 (2020-05-25)
 ------------------

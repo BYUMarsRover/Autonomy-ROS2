@@ -2,38 +2,50 @@
 Changelog for package imu_complementary_filter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1.2.6 (2024-01-12)
+2.1.5 (2024-10-01)
 ------------------
-* complementary filter launch: Remove outdated phidgets_imu nodelet
-  The phidgets_imu package was renamed to phidgets_spatial. To avoid
-  adding a dependency on phidgets_spatial, this commit removes the include
-  of that nodelet altogether.
-  If launching the phidgets driver is desired, it should be done like in
-  this launch file:
-  https://github.com/ros-drivers/phidgets_drivers/blob/20512def27a74666aeb2eb2d31ff2faf45062c35/phidgets_spatial/launch/spatial.launch
-  Fixes `#186 <https://github.com/CCNYRoboticsLab/imu_tools/issues/186>`_.
-* add complementary_filter_nodelet (`#181 <https://github.com/CCNYRoboticsLab/imu_tools/issues/181>`_)
-* Contributors: Borong Yuan, Martin Günther
+* Add QoS overriding options (`#207 <https://github.com/CCNYRoboticsLab/imu_tools/issues/207>`_)
+* Contributors: Aleksander Szymański
 
-1.2.5 (2022-08-19)
+2.1.4 (2024-04-26)
 ------------------
-* Added ability to reset IMU filters when ROS time jumps back. (`#165 <https://github.com/CCNYRoboticsLab/imu_tools/issues/165>`_)
-* Contributors: Martin Pecka
+* Set read-only parameters as read_only (`#185 <https://github.com/CCNYRoboticsLab/imu_tools/issues/185>`_)
+* Contributors: Christoph Fröhlich
 
-1.2.4 (2022-04-12)
+2.1.3 (2022-12-07)
 ------------------
+* complementary: Build shared library
+  See `#172 <https://github.com/CCNYRoboticsLab/imu_tools/issues/172>`_.
+* Update CMakeLists to use targets
+* Remove node\_ prefix. (`#163 <https://github.com/CCNYRoboticsLab/imu_tools/issues/163>`_)
+* Contributors: Martin Günther, Max Polzin
+
+2.1.2 (2022-07-14)
+------------------
+
+2.1.1 (2022-05-24)
+------------------
+* Add missing build dependency to package.xml. (`#161 <https://github.com/CCNYRoboticsLab/imu_tools/issues/161>`_)
+* Contributors: Martin Günther, Steven! Ragnarök
+
+2.1.0 (2022-05-02)
+------------------
+* complementary: Add missing dependency on geometry_msgs
+* Contributors: Martin Günther
+
+2.0.0 (2022-04-12)
+------------------
+* Initial release into ROS2 foxy, galactic and rolling
+* Fix gcc warnings + clang-tidy suggestions
+* Fix CMakeLists
+* Reformat python code using black
 * Manually reformat licenses + defines
 * Reformat everything using clang-format
-* Fix package dependencies
 * Fix trailing whitespace
-* Contributors: Martin Günther
-
-1.2.3 (2021-04-09)
-------------------
-* Fix "non standard content" warning in imu_tools metapackage
-  Fixes `#135 <https://github.com/ccny-ros-pkg/imu_tools/issues/135>`_.
-* Set cmake_policy CMP0048 to fix warning
-* Contributors: Martin Günther
+* Add launch directory to CMakeLists.txt (`#146 <https://github.com/CCNYRoboticsLab/imu_tools/issues/146>`_)
+* Port imu_complementary_filter to ROS2 (`#138 <https://github.com/CCNYRoboticsLab/imu_tools/issues/138>`_)
+* Madgwick for eloquent (`#110 <https://github.com/CCNYRoboticsLab/imu_tools/issues/110>`_)
+* Contributors: Guido Sanchez, Martin Günther, Maximilian Schik, tgreier
 
 1.2.2 (2020-05-25)
 ------------------

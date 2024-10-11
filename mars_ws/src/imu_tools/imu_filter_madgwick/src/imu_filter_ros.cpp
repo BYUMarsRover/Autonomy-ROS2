@@ -21,43 +21,53 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <chrono>
 
 #include "imu_filter_madgwick/imu_filter_ros.h"
 #include "imu_filter_madgwick/stateless_orientation.h"
-#include "geometry_msgs/TransformStamped.h"
-#include "geometry_msgs/PoseStamped.h"
-#include <tf2/LinearMath/Quaternion.h>
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
 #include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/LinearMath/Quaternion.h>
 
-ImuFilterRos::ImuFilterRos(ros::NodeHandle nh, ros::NodeHandle nh_private)
-    : nh_(nh),
-      nh_private_(nh_private),
-      initialized_(false),
-      tf_listener_(tf_buffer_)
+using namespace std::chrono_literals;
+using namespace rclcpp;
+using namespace std::placeholders;
+
+ImuFilterMadgwickRos::ImuFilterMadgwickRos(const rclcpp::NodeOptions &options)
+    : BaseNode("imu_filter_madgwick", options),
+      tf_broadcaster_(this),
+      initialized_(false)
 {
-    ROS_INFO("Starting ImuFilter");
+    RCLCPP_INFO(get_logger(), "Starting ImuFilter");
 
-    // **** get paramters
-    if (!nh_private_.getParam("stateless", stateless_)) stateless_ = false;
-    if (!nh_private_.getParam("use_mag", use_mag_)) use_mag_ = true;
-    if (!nh_private_.getParam("publish_tf", publish_tf_)) publish_tf_ = true;
-    if (!nh_private_.getParam("reverse_tf", reverse_tf_)) reverse_tf_ = false;
-    if (!nh_private_.getParam("fixed_frame", fixed_frame_))
-        fixed_frame_ = "odom";
-    if (!nh_private_.getParam("constant_dt", constant_dt_)) constant_dt_ = 0.0;
-    if (!nh_private_.getParam("remove_gravity_vector", remove_gravity_vector_))
-        remove_gravity_vector_ = false;
-    if (!nh_private_.getParam("publish_debug_topics", publish_debug_topics_))
-        publish_debug_topics_ = false;
-    double time_jump_threshold{0.0};
-    nh_private_.param("time_jump_threshold", time_jump_threshold,
-                      time_jump_threshold);
-    time_jump_threshold_ = ros::Duration(time_jump_threshold);
+    // **** get parameters
+    auto descriptor = rcl_interfaces::msg::ParameterDescriptor();
+    descriptor.read_only = true;
+    declare_parameter("stateless", false, descriptor);
+    get_parameter("stateless", stateless_);
+    declare_parameter("use_mag", true, descriptor);
+    get_parameter("use_mag", use_mag_);
+    declare_parameter("publish_tf", true, descriptor);
+    get_parameter("publish_tf", publish_tf_);
+    declare_parameter("reverse_tf", false, descriptor);
+    get_parameter("reverse_tf", reverse_tf_);
+    declare_parameter("fixed_frame", "odom", descriptor);
+    get_parameter("fixed_frame", fixed_frame_);
+    declare_parameter("constant_dt", 0.0, descriptor);
+    get_parameter("constant_dt", constant_dt_);
+    declare_parameter("remove_gravity_vector", false, descriptor);
+    get_parameter("remove_gravity_vector", remove_gravity_vector_);
+    declare_parameter("publish_debug_topics", false, descriptor);
+    get_parameter("publish_debug_topics", publish_debug_topics_);
 
     double yaw_offset = 0.0;
-    if (!nh_private_.getParam("yaw_offset", yaw_offset)) yaw_offset = 0.0;
+    declare_parameter("yaw_offset", 0.0, descriptor);
+    get_parameter("yaw_offset", yaw_offset);
     double declination = 0.0;
-    if (!nh_private_.getParam("declination", declination)) declination = 0.0;
+    declare_parameter("declination", 0.0, descriptor);
+    get_parameter("declination", declination);
+
     // create yaw offset quaternion
     yaw_offset_total_ = yaw_offset - declination;
     yaw_offsets_.setRPY(
@@ -65,8 +75,8 @@ ImuFilterRos::ImuFilterRos(ros::NodeHandle nh, ros::NodeHandle nh_private)
         yaw_offset_total_);  // Create this quaternion for yaw offset (radians)
 
     std::string world_frame;
-    if (!nh_private_.getParam("world_frame", world_frame)) world_frame = "enu";
-
+    declare_parameter("world_frame", "enu", descriptor);
+    get_parameter("world_frame", world_frame);
     if (world_frame == "ned")
     {
         world_frame_ = WorldFrame::NED;
@@ -78,9 +88,12 @@ ImuFilterRos::ImuFilterRos(ros::NodeHandle nh, ros::NodeHandle nh_private)
         world_frame_ = WorldFrame::ENU;
     } else
     {
-        ROS_ERROR("The parameter world_frame was set to invalid value '%s'.",
-                  world_frame.c_str());
-        ROS_ERROR("Valid values are 'enu', 'ned' and 'nwu'. Setting to 'enu'.");
+        RCLCPP_ERROR(get_logger(),
+                     "The parameter world_frame was set to invalid value '%s'.",
+                     world_frame.c_str());
+        RCLCPP_ERROR(
+            get_logger(),
+            "Valid values are 'enu', 'ned' and 'nwu'. Setting to 'enu'.");
         world_frame_ = WorldFrame::ENU;
     }
     filter_.setWorldFrame(world_frame_);
@@ -88,104 +101,148 @@ ImuFilterRos::ImuFilterRos(ros::NodeHandle nh, ros::NodeHandle nh_private)
     // check for illegal constant_dt values
     if (constant_dt_ < 0.0)
     {
-        ROS_FATAL("constant_dt parameter is %f, must be >= 0.0. Setting to 0.0",
-                  constant_dt_);
+        RCLCPP_ERROR(
+            get_logger(),
+            "constant_dt parameter is %f, must be >= 0.0. Setting to 0.0",
+            constant_dt_);
         constant_dt_ = 0.0;
     }
 
     // if constant_dt_ is 0.0 (default), use IMU timestamp to determine dt
     // otherwise, it will be constant
     if (constant_dt_ == 0.0)
-        ROS_INFO("Using dt computed from message headers");
-    else
-        ROS_INFO("Using constant dt of %f sec", constant_dt_);
+    {
+        RCLCPP_INFO(get_logger(), "Using dt computed from message headers");
+    } else
+    {
+        RCLCPP_INFO(get_logger(), "Using constant dt of %f sec", constant_dt_);
+    }
 
     if (remove_gravity_vector_)
-        ROS_INFO("The gravity vector will be removed from the acceleration");
-    else
-        ROS_INFO("The gravity vector is kept in the IMU message.");
+    {
+        RCLCPP_INFO(get_logger(),
+                    "The gravity vector will be removed from the acceleration");
+    } else
+    {
+        RCLCPP_INFO(get_logger(),
+                    "The gravity vector is kept in the IMU message.");
+    }
 
-    last_ros_time_ = ros::Time::now();
+    // **** define reconfigurable parameters.
+    double gain;
+    floating_point_range float_range = {0.0, 1.0, 0};
+    add_parameter(
+        "gain", rclcpp::ParameterValue(0.1), float_range,
+        "Gain of the filter. Higher values lead to faster convergence but"
+        "more noise. Lower values lead to slower convergence but smoother "
+        "signal.");
+    double zeta;
+    float_range = {-1.0, 1.0, 0};
+    add_parameter("zeta", rclcpp::ParameterValue(0.0), float_range,
+                  "Gyro drift gain (approx. rad/s).");
+    double mag_bias_x;
+    float_range = {-10.0, 10.0, 0};
+    add_parameter("mag_bias_x", rclcpp::ParameterValue(0.0), float_range,
+                  "Magnetometer bias (hard iron correction), x component.");
+    double mag_bias_y;
+    add_parameter("mag_bias_y", rclcpp::ParameterValue(0.0), float_range,
+                  "Magnetometer bias (hard iron correction), y component.");
+    double mag_bias_z;
+    add_parameter("mag_bias_z", rclcpp::ParameterValue(0.0), float_range,
+                  "Magnetometer bias (hard iron correction), z component.");
+    double orientation_stddev;
+    float_range = {0.0, 1.0, 0};
+    add_parameter("orientation_stddev", rclcpp::ParameterValue(0.0),
+                  float_range,
+                  "Standard deviation of the orientation estimate.");
+
+    // **** get initial values of reconfigurable parameters.
+    get_parameter("gain", gain);
+    get_parameter("zeta", zeta);
+    get_parameter("mag_bias_x", mag_bias_x);
+    get_parameter("mag_bias_y", mag_bias_y);
+    get_parameter("mag_bias_z", mag_bias_z);
+    get_parameter("orientation_stddev", orientation_stddev);
+
+    filter_.setAlgorithmGain(gain);
+    filter_.setDriftBiasGain(zeta);
+    RCLCPP_INFO(get_logger(), "Imu filter gain set to %f", gain);
+    RCLCPP_INFO(get_logger(), "Gyro drift bias set to %f", zeta);
+    mag_bias_.x = mag_bias_x;
+    mag_bias_.y = mag_bias_y;
+    mag_bias_.z = mag_bias_z;
+    orientation_variance_ = orientation_stddev * orientation_stddev;
+    RCLCPP_INFO(get_logger(), "Magnetometer bias values: %f %f %f", mag_bias_.x,
+                mag_bias_.y, mag_bias_.z);
 
     // **** register dynamic reconfigure
-    config_server_.reset(new FilterConfigServer(nh_private_));
-    FilterConfigServer::CallbackType f =
-        boost::bind(&ImuFilterRos::reconfigCallback, this, _1, _2);
-    config_server_->setCallback(f);
+    parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
+        this->get_node_base_interface(), this->get_node_topics_interface(),
+        this->get_node_graph_interface(), this->get_node_services_interface());
+
+    parameter_event_sub_ = parameters_client_->on_parameter_event(
+        std::bind(&ImuFilterMadgwickRos::reconfigCallback, this, _1));
 
     // **** register publishers
-    imu_publisher_ = nh_.advertise<sensor_msgs::Imu>(
-        ros::names::resolve("imu") + "/data", 5);
-
+    imu_publisher_ = create_publisher<sensor_msgs::msg::Imu>("imu/data", 5);
     if (publish_debug_topics_)
     {
         rpy_filtered_debug_publisher_ =
-            nh_.advertise<geometry_msgs::Vector3Stamped>(
-                ros::names::resolve("imu") + "/rpy/filtered", 5);
+            create_publisher<geometry_msgs::msg::Vector3Stamped>(
+                "imu/rpy/filtered", 5);
 
-        rpy_raw_debug_publisher_ = nh_.advertise<geometry_msgs::Vector3Stamped>(
-            ros::names::resolve("imu") + "/rpy/raw", 5);
-
-        orientation_filtered_publisher_ =
-            nh_private.advertise<geometry_msgs::PoseStamped>(
-                ros::names::resolve("imu") + "/orientation_filtered", 5);
+        rpy_raw_debug_publisher_ =
+            create_publisher<geometry_msgs::msg::Vector3Stamped>("imu/rpy/raw",
+                                                                 5);
     }
 
     // **** register subscribers
     // Synchronize inputs. Topic subscriptions happen on demand in the
     // connection callback.
-    int queue_size = 5;
-
-    imu_subscriber_.reset(new ImuSubscriber(
-        nh_, ros::names::resolve("imu") + "/data_raw", queue_size));
+    const int queue_size = 5;
+    rmw_qos_profile_t qos = rmw_qos_profile_sensor_data;
+    imu_subscriber_.reset(new ImuSubscriber(this, "imu/data_raw", qos));
 
     if (use_mag_)
     {
-        mag_subscriber_.reset(new MagSubscriber(
-            nh_, ros::names::resolve("imu") + "/mag", queue_size));
+        mag_subscriber_.reset(new MagSubscriber(this, "imu/mag", qos));
 
         sync_.reset(new Synchronizer(SyncPolicy(queue_size), *imu_subscriber_,
                                      *mag_subscriber_));
-        sync_->registerCallback(
-            boost::bind(&ImuFilterRos::imuMagCallback, this, _1, _2));
+        sync_->registerCallback(&ImuFilterMadgwickRos::imuMagCallback, this);
     } else
     {
-        imu_subscriber_->registerCallback(&ImuFilterRos::imuCallback, this);
+        imu_subscriber_->registerCallback(&ImuFilterMadgwickRos::imuCallback,
+                                          this);
     }
 
-    check_topics_timer_ = nh_.createTimer(
-        ros::Duration(10.0), &ImuFilterRos::checkTopicsTimerCallback, this);
+    check_topics_timer_ = create_wall_timer(
+        std::chrono::seconds(10),
+        std::bind(&ImuFilterMadgwickRos::checkTopicsTimerCallback, this));
 }
 
-ImuFilterRos::~ImuFilterRos()
+void ImuFilterMadgwickRos::imuCallback(ImuMsg::ConstSharedPtr imu_msg_raw)
 {
-    ROS_INFO("Destroying ImuFilter");
+    std::lock_guard<std::mutex> lock(mutex_);
 
-    // Explicitly stop callbacks; they could execute after we're destroyed
-    check_topics_timer_.stop();
-}
+    const geometry_msgs::msg::Vector3 &ang_vel = imu_msg_raw->angular_velocity;
+    const geometry_msgs::msg::Vector3 &lin_acc =
+        imu_msg_raw->linear_acceleration;
 
-void ImuFilterRos::imuCallback(const ImuMsg::ConstPtr& imu_msg_raw)
-{
-    checkTimeJump();
+    rclcpp::Clock steady_clock(RCL_STEADY_TIME);  // for throttle logger message
 
-    boost::mutex::scoped_lock lock(mutex_);
-
-    const geometry_msgs::Vector3& ang_vel = imu_msg_raw->angular_velocity;
-    const geometry_msgs::Vector3& lin_acc = imu_msg_raw->linear_acceleration;
-
-    ros::Time time = imu_msg_raw->header.stamp;
+    rclcpp::Time time = imu_msg_raw->header.stamp;
     imu_frame_ = imu_msg_raw->header.frame_id;
 
     if (!initialized_ || stateless_)
     {
-        geometry_msgs::Quaternion init_q;
+        geometry_msgs::msg::Quaternion init_q;
         if (!StatelessOrientation::computeOrientation(world_frame_, lin_acc,
                                                       init_q))
         {
-            ROS_WARN_THROTTLE(5.0,
-                              "The IMU seems to be in free fall, cannot "
-                              "determine gravity direction!");
+            RCLCPP_WARN_THROTTLE(get_logger(), steady_clock, 5.0,
+                                 "The IMU seems to be in free fall, cannot "
+                                 "determine gravity direction!");
             return;
         }
         filter_.setOrientation(init_q.w, init_q.x, init_q.y, init_q.z);
@@ -193,8 +250,8 @@ void ImuFilterRos::imuCallback(const ImuMsg::ConstPtr& imu_msg_raw)
 
     if (!initialized_)
     {
-        ROS_INFO("First IMU message received.");
-        check_topics_timer_.stop();
+        RCLCPP_INFO(get_logger(), "First IMU message received.");
+        check_topics_timer_->cancel();
 
         // initialize time
         last_time_ = time;
@@ -207,13 +264,15 @@ void ImuFilterRos::imuCallback(const ImuMsg::ConstPtr& imu_msg_raw)
         dt = constant_dt_;
     else
     {
-        dt = (time - last_time_).toSec();
-        if (time.isZero())
-            ROS_WARN_STREAM_THROTTLE(
-                5.0,
+        dt = (time - last_time_).seconds();
+        if (0 == time.nanoseconds())
+        {
+            RCLCPP_WARN_STREAM_THROTTLE(
+                get_logger(), steady_clock, 5.0,
                 "The IMU message time stamp is zero, and the parameter "
                 "constant_dt is not set!"
                     << " The filter will not update the orientation.");
+        }
     }
 
     last_time_ = time;
@@ -226,22 +285,21 @@ void ImuFilterRos::imuCallback(const ImuMsg::ConstPtr& imu_msg_raw)
     if (publish_tf_) publishTransform(imu_msg_raw);
 }
 
-void ImuFilterRos::imuMagCallback(const ImuMsg::ConstPtr& imu_msg_raw,
-                                  const MagMsg::ConstPtr& mag_msg)
+void ImuFilterMadgwickRos::imuMagCallback(ImuMsg::ConstSharedPtr imu_msg_raw,
+                                          MagMsg::ConstSharedPtr mag_msg)
 {
-    checkTimeJump();
+    std::lock_guard<std::mutex> lock(mutex_);
 
-    boost::mutex::scoped_lock lock(mutex_);
+    const geometry_msgs::msg::Vector3 &ang_vel = imu_msg_raw->angular_velocity;
+    const geometry_msgs::msg::Vector3 &lin_acc =
+        imu_msg_raw->linear_acceleration;
+    const geometry_msgs::msg::Vector3 &mag_fld = mag_msg->magnetic_field;
 
-    const geometry_msgs::Vector3& ang_vel = imu_msg_raw->angular_velocity;
-    const geometry_msgs::Vector3& lin_acc = imu_msg_raw->linear_acceleration;
-    const geometry_msgs::Vector3& mag_fld = mag_msg->magnetic_field;
-
-    ros::Time time = imu_msg_raw->header.stamp;
+    rclcpp::Time time = imu_msg_raw->header.stamp;
     imu_frame_ = imu_msg_raw->header.frame_id;
 
     /*** Compensate for hard iron ***/
-    geometry_msgs::Vector3 mag_compensated;
+    geometry_msgs::msg::Vector3 mag_compensated;
     mag_compensated.x = mag_fld.x - mag_bias_.x;
     mag_compensated.y = mag_fld.y - mag_bias_.y;
     mag_compensated.z = mag_fld.z - mag_bias_.z;
@@ -249,6 +307,8 @@ void ImuFilterRos::imuMagCallback(const ImuMsg::ConstPtr& imu_msg_raw,
     double roll = 0.0;
     double pitch = 0.0;
     double yaw = 0.0;
+
+    rclcpp::Clock steady_clock(RCL_STEADY_TIME);  // for throttle logger message
 
     if (!initialized_ || stateless_)
     {
@@ -259,12 +319,12 @@ void ImuFilterRos::imuMagCallback(const ImuMsg::ConstPtr& imu_msg_raw,
             return;
         }
 
-        geometry_msgs::Quaternion init_q;
+        geometry_msgs::msg::Quaternion init_q;
         if (!StatelessOrientation::computeOrientation(world_frame_, lin_acc,
                                                       mag_compensated, init_q))
         {
-            ROS_WARN_THROTTLE(
-                5.0,
+            RCLCPP_WARN_THROTTLE(
+                get_logger(), steady_clock, 5.0,
                 "The IMU seems to be in free fall or close to magnetic north "
                 "pole, cannot determine gravity direction!");
             return;
@@ -274,8 +334,9 @@ void ImuFilterRos::imuMagCallback(const ImuMsg::ConstPtr& imu_msg_raw,
 
     if (!initialized_)
     {
-        ROS_INFO("First pair of IMU and magnetometer messages received.");
-        check_topics_timer_.stop();
+        RCLCPP_INFO(get_logger(),
+                    "First pair of IMU and magnetometer messages received.");
+        check_topics_timer_->cancel();
 
         // initialize time
         last_time_ = time;
@@ -288,28 +349,35 @@ void ImuFilterRos::imuMagCallback(const ImuMsg::ConstPtr& imu_msg_raw,
         dt = constant_dt_;
     else
     {
-        dt = (time - last_time_).toSec();
-        if (time.isZero())
-            ROS_WARN_STREAM_THROTTLE(
-                5.0,
+        dt = (time - last_time_).seconds();
+        if (0 == time.nanoseconds())
+        {
+            RCLCPP_WARN_STREAM_THROTTLE(
+                get_logger(), steady_clock, 5.0,
                 "The IMU message time stamp is zero, and the parameter "
                 "constant_dt is not set!"
                     << " The filter will not update the orientation.");
+        }
     }
 
     last_time_ = time;
 
     if (!stateless_)
+    {
         filter_.madgwickAHRSupdate(ang_vel.x, ang_vel.y, ang_vel.z, lin_acc.x,
                                    lin_acc.y, lin_acc.z, mag_compensated.x,
                                    mag_compensated.y, mag_compensated.z, dt);
+    }
 
     publishFilteredMsg(imu_msg_raw);
-    if (publish_tf_) publishTransform(imu_msg_raw);
+    if (publish_tf_)
+    {
+        publishTransform(imu_msg_raw);
+    }
 
     if (publish_debug_topics_)
     {
-        geometry_msgs::Quaternion orientation;
+        geometry_msgs::msg::Quaternion orientation;
         if (StatelessOrientation::computeOrientation(
                 world_frame_, lin_acc, mag_compensated, orientation))
         {
@@ -321,11 +389,11 @@ void ImuFilterRos::imuMagCallback(const ImuMsg::ConstPtr& imu_msg_raw,
     }
 }
 
-void ImuFilterRos::publishTransform(const ImuMsg::ConstPtr& imu_msg_raw)
+void ImuFilterMadgwickRos::publishTransform(ImuMsg::ConstSharedPtr imu_msg_raw)
 {
     double q0, q1, q2, q3;
     filter_.getOrientation(q0, q1, q2, q3);
-    geometry_msgs::TransformStamped transform;
+    geometry_msgs::msg::TransformStamped transform;
     transform.header.stamp = imu_msg_raw->header.stamp;
     if (reverse_tf_)
     {
@@ -355,8 +423,8 @@ void ImuFilterRos::publishTransform(const ImuMsg::ConstPtr& imu_msg_raw)
  * @param q2 quaternion z component
  * @param q3 quaternion w component
  **/
-void ImuFilterRos::applyYawOffset(double& q0, double& q1, double& q2,
-                                  double& q3)
+void ImuFilterMadgwickRos::applyYawOffset(double &q0, double &q1, double &q2,
+                                          double &q3)
 {
     if (yaw_offset_total_ != 0.0)
     {
@@ -370,7 +438,8 @@ void ImuFilterRos::applyYawOffset(double& q0, double& q1, double& q2,
     }
 }
 
-void ImuFilterRos::publishFilteredMsg(const ImuMsg::ConstPtr& imu_msg_raw)
+void ImuFilterMadgwickRos::publishFilteredMsg(
+    ImuMsg::ConstSharedPtr imu_msg_raw)
 {
     double q0, q1, q2, q3;
     filter_.getOrientation(q0, q1, q2, q3);
@@ -378,142 +447,112 @@ void ImuFilterRos::publishFilteredMsg(const ImuMsg::ConstPtr& imu_msg_raw)
     applyYawOffset(q0, q1, q2, q3);
 
     // create and publish filtered IMU message
-    boost::shared_ptr<ImuMsg> imu_msg =
-        boost::make_shared<ImuMsg>(*imu_msg_raw);
+    ImuMsg imu_msg = *imu_msg_raw;
 
-    imu_msg->orientation.w = q0;
-    imu_msg->orientation.x = q1;
-    imu_msg->orientation.y = q2;
-    imu_msg->orientation.z = q3;
+    imu_msg.orientation.w = q0;
+    imu_msg.orientation.x = q1;
+    imu_msg.orientation.y = q2;
+    imu_msg.orientation.z = q3;
 
-    imu_msg->orientation_covariance[0] = orientation_variance_;
-    imu_msg->orientation_covariance[1] = 0.0;
-    imu_msg->orientation_covariance[2] = 0.0;
-    imu_msg->orientation_covariance[3] = 0.0;
-    imu_msg->orientation_covariance[4] = orientation_variance_;
-    imu_msg->orientation_covariance[5] = 0.0;
-    imu_msg->orientation_covariance[6] = 0.0;
-    imu_msg->orientation_covariance[7] = 0.0;
-    imu_msg->orientation_covariance[8] = orientation_variance_;
+    imu_msg.orientation_covariance[0] = orientation_variance_;
+    imu_msg.orientation_covariance[1] = 0.0;
+    imu_msg.orientation_covariance[2] = 0.0;
+    imu_msg.orientation_covariance[3] = 0.0;
+    imu_msg.orientation_covariance[4] = orientation_variance_;
+    imu_msg.orientation_covariance[5] = 0.0;
+    imu_msg.orientation_covariance[6] = 0.0;
+    imu_msg.orientation_covariance[7] = 0.0;
+    imu_msg.orientation_covariance[8] = orientation_variance_;
 
     if (remove_gravity_vector_)
     {
         float gx, gy, gz;
         filter_.getGravity(gx, gy, gz);
-        imu_msg->linear_acceleration.x -= gx;
-        imu_msg->linear_acceleration.y -= gy;
-        imu_msg->linear_acceleration.z -= gz;
+        imu_msg.linear_acceleration.x -= gx;
+        imu_msg.linear_acceleration.y -= gy;
+        imu_msg.linear_acceleration.z -= gz;
     }
 
-    imu_publisher_.publish(imu_msg);
+    imu_publisher_->publish(imu_msg);
 
     if (publish_debug_topics_)
     {
-        geometry_msgs::Vector3Stamped rpy;
+        geometry_msgs::msg::Vector3Stamped rpy;
         tf2::Matrix3x3(tf2::Quaternion(q1, q2, q3, q0))
             .getRPY(rpy.vector.x, rpy.vector.y, rpy.vector.z);
 
         rpy.header = imu_msg_raw->header;
-        rpy_filtered_debug_publisher_.publish(rpy);
-
-        publishOrientationFiltered(imu_msg);
+        rpy_filtered_debug_publisher_->publish(rpy);
     }
 }
 
-void ImuFilterRos::publishOrientationFiltered(const ImuMsg::ConstPtr& imu_msg)
+void ImuFilterMadgwickRos::publishRawMsg(const rclcpp::Time &t, float roll,
+                                         float pitch, float yaw)
 {
-    geometry_msgs::PoseStamped pose_msg;
-    pose_msg.header.stamp = imu_msg->header.stamp;
-    pose_msg.header.frame_id = fixed_frame_;
-    pose_msg.pose.orientation = imu_msg->orientation;
-
-    // get the current transform from the fixed frame to the imu frame
-    geometry_msgs::TransformStamped transform;
-    try
-    {
-        transform = tf_buffer_.lookupTransform(
-            fixed_frame_, imu_msg->header.frame_id, imu_msg->header.stamp,
-            ros::Duration(0.1));
-    } catch (tf2::TransformException& ex)
-    {
-        ROS_WARN("%s", ex.what());
-        return;
-    }
-
-    pose_msg.pose.position.x = transform.transform.translation.x;
-    pose_msg.pose.position.y = transform.transform.translation.y;
-    pose_msg.pose.position.z = transform.transform.translation.z;
-
-    orientation_filtered_publisher_.publish(pose_msg);
-}
-
-void ImuFilterRos::publishRawMsg(const ros::Time& t, float roll, float pitch,
-                                 float yaw)
-{
-    geometry_msgs::Vector3Stamped rpy;
+    geometry_msgs::msg::Vector3Stamped rpy;
     rpy.vector.x = roll;
     rpy.vector.y = pitch;
     rpy.vector.z = yaw;
     rpy.header.stamp = t;
     rpy.header.frame_id = imu_frame_;
-    rpy_raw_debug_publisher_.publish(rpy);
+    rpy_raw_debug_publisher_->publish(rpy);
 }
 
-void ImuFilterRos::reconfigCallback(FilterConfig& config, uint32_t level)
+void ImuFilterMadgwickRos::reconfigCallback(
+    const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
 {
     double gain, zeta;
-    boost::mutex::scoped_lock lock(mutex_);
-    gain = config.gain;
-    zeta = config.zeta;
-    filter_.setAlgorithmGain(gain);
-    filter_.setDriftBiasGain(zeta);
-    ROS_INFO("Imu filter gain set to %f", gain);
-    ROS_INFO("Gyro drift bias set to %f", zeta);
-    mag_bias_.x = config.mag_bias_x;
-    mag_bias_.y = config.mag_bias_y;
-    mag_bias_.z = config.mag_bias_z;
-    orientation_variance_ =
-        config.orientation_stddev * config.orientation_stddev;
-    ROS_INFO("Magnetometer bias values: %f %f %f", mag_bias_.x, mag_bias_.y,
-             mag_bias_.z);
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    for (auto &changed_parameter : event->changed_parameters)
+    {
+        const auto &type = changed_parameter.value.type;
+        const auto &name = changed_parameter.name;
+        const auto &value = changed_parameter.value;
+
+        if (type == ParameterType::PARAMETER_DOUBLE)
+        {
+            RCLCPP_INFO(get_logger(), "Parameter %s set to %f", name.c_str(),
+                        value.double_value);
+            if (name == "gain")
+            {
+                gain = value.double_value;
+                filter_.setAlgorithmGain(gain);
+            } else if (name == "zeta")
+            {
+                zeta = value.double_value;
+                filter_.setDriftBiasGain(zeta);
+            } else if (name == "mag_bias_x")
+            {
+                mag_bias_.x = value.double_value;
+            } else if (name == "mag_bias_y")
+            {
+                mag_bias_.y = value.double_value;
+            } else if (name == "mag_bias_z")
+            {
+                mag_bias_.z = value.double_value;
+            } else if (name == "orientation_stddev")
+            {
+                double orientation_stddev = value.double_value;
+                orientation_variance_ = orientation_stddev * orientation_stddev;
+            }
+        }
+    }
 }
 
-void ImuFilterRos::checkTopicsTimerCallback(const ros::TimerEvent&)
+void ImuFilterMadgwickRos::checkTopicsTimerCallback()
 {
     if (use_mag_)
-        ROS_WARN_STREAM("Still waiting for data on topics "
-                        << imu_subscriber_->getTopic() << " and "
-                        << mag_subscriber_->getTopic() << "...");
+        RCLCPP_WARN_STREAM(get_logger(),
+                           "Still waiting for data on topics "
+                               << imu_subscriber_->getTopic() << " and "
+                               << mag_subscriber_->getTopic() << "...");
     else
-        ROS_WARN_STREAM("Still waiting for data on topic "
-                        << imu_subscriber_->getTopic() << "...");
+        RCLCPP_WARN_STREAM(get_logger(), "Still waiting for data on topic "
+                                             << imu_subscriber_->getTopic()
+                                             << "...");
 }
 
-void ImuFilterRos::reset()
-{
-    boost::mutex::scoped_lock lock(mutex_);
-    filter_.reset();
-    initialized_ = false;
-    last_time_ = {};
-    last_ros_time_ = ros::Time::now();
-}
+#include "rclcpp_components/register_node_macro.hpp"
 
-void ImuFilterRos::checkTimeJump()
-{
-    const auto now = ros::Time::now();
-    if (last_ros_time_.isZero() || last_ros_time_ <= now + time_jump_threshold_)
-    {
-        last_ros_time_ = now;
-        return;
-    }
-
-    ROS_WARN("Detected jump back in time of %.1f s. Resetting IMU filter.",
-             (last_ros_time_ - now).toSec());
-
-    if (time_jump_threshold_.isZero() && ros::Time::isSystemTime())
-        ROS_INFO(
-            "To ignore short time jumps back, use ~time_jump_threshold "
-            "parameter of the filter.");
-
-    reset();
-}
+RCLCPP_COMPONENTS_REGISTER_NODE(ImuFilterMadgwickRos)

@@ -2,26 +2,38 @@
 Changelog for package rviz_imu_plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1.2.6 (2024-01-12)
+2.1.5 (2024-10-01)
 ------------------
 
-1.2.5 (2022-08-19)
+2.1.4 (2024-04-26)
 ------------------
 
-1.2.4 (2022-04-12)
+2.1.3 (2022-12-07)
 ------------------
+
+2.1.2 (2022-07-14)
+------------------
+
+2.1.1 (2022-05-24)
+------------------
+
+2.1.0 (2022-05-02)
+------------------
+
+2.0.0 (2022-04-12)
+------------------
+* Initial release into ROS2 foxy, galactic and rolling
+* Fix gcc warnings + clang-tidy suggestions
+* Fix CMakeLists
 * Reformat everything using clang-format
-* Fix package dependencies
-* Fix trailing whitespace
-* Contributors: Martin Günther
-
-1.2.3 (2021-04-09)
-------------------
-* Fix "non standard content" warning in imu_tools metapackage
-  Fixes `#135 <https://github.com/ccny-ros-pkg/imu_tools/issues/135>`_.
+* rviz_imu_plugin: Fix include paths
+* rviz_imu_plugin: Use C++14
+* Fix package.xml dependencies
+* Port rviz plugin to ROS2, add new plugin (`#125 <https://github.com/CCNYRoboticsLab/imu_tools/issues/125>`_)
+* Add MagneticField plugin
+* Update imu rviz plugin to ROS2
 * Update maintainers in package.xml
-* Set cmake_policy CMP0048 to fix warning
-* Contributors: Martin Günther
+* Contributors: Martin Günther, tgreier
 
 1.2.2 (2020-05-25)
 ------------------

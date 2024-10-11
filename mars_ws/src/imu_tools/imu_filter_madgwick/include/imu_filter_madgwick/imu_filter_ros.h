@@ -21,30 +21,29 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
 
-#ifndef IMU_FILTER_MADWICK_IMU_FILTER_ROS_H
-#define IMU_FILTER_MADWICK_IMU_FILTER_ROS_H
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
 
-#include <ros/ros.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/MagneticField.h>
-#include <geometry_msgs/Vector3Stamped.h>
-#include <tf2_ros/buffer.h>
 #include "tf2_ros/transform_broadcaster.h"
-#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-#include <dynamic_reconfigure/server.h>
+#include <message_filters/synchronizer.h>
+#include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/magnetic_field.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 
 #include "imu_filter_madgwick/imu_filter.h"
-#include "imu_filter_madgwick/ImuFilterMadgwickConfig.h"
+#include "imu_filter_madgwick/base_node.hpp"
+#include "imu_filter_madgwick/visibility_control.h"
 
-class ImuFilterRos
+class ImuFilterMadgwickRos : public imu_filter::BaseNode
 {
-    typedef sensor_msgs::Imu ImuMsg;
-    typedef sensor_msgs::MagneticField MagMsg;
+    typedef sensor_msgs::msg::Imu ImuMsg;
+    typedef sensor_msgs::msg::MagneticField MagMsg;
+    typedef geometry_msgs::msg::Vector3Stamped RpyVectorMsg;
 
     typedef message_filters::sync_policies::ApproximateTime<ImuMsg, MagMsg>
         SyncPolicy;
@@ -52,81 +51,65 @@ class ImuFilterRos
     typedef message_filters::Subscriber<ImuMsg> ImuSubscriber;
     typedef message_filters::Subscriber<MagMsg> MagSubscriber;
 
-    typedef imu_filter_madgwick::ImuFilterMadgwickConfig FilterConfig;
-    typedef dynamic_reconfigure::Server<FilterConfig> FilterConfigServer;
-
   public:
-    ImuFilterRos(ros::NodeHandle nh, ros::NodeHandle nh_private);
-    virtual ~ImuFilterRos();
+    IMU_FILTER_MADGWICK_CPP_PUBLIC
+    explicit ImuFilterMadgwickRos(const rclcpp::NodeOptions& options);
 
-    //! \brief Reset the filter to the initial state.
-    void reset();
+    // Callbacks are public so they can be called when used as a library
+    void imuCallback(ImuMsg::ConstSharedPtr imu_msg_raw);
+    void imuMagCallback(ImuMsg::ConstSharedPtr imu_msg_raw,
+                        MagMsg::ConstSharedPtr mag_msg);
 
   private:
-    // **** ROS-related
+    std::shared_ptr<ImuSubscriber> imu_subscriber_;
+    std::shared_ptr<MagSubscriber> mag_subscriber_;
+    std::shared_ptr<Synchronizer> sync_;
 
-    ros::NodeHandle nh_;
-    ros::NodeHandle nh_private_;
-    double yaw_offset_total_;
-
-    boost::shared_ptr<ImuSubscriber> imu_subscriber_;
-    boost::shared_ptr<MagSubscriber> mag_subscriber_;
-    boost::shared_ptr<Synchronizer> sync_;
-    tf2::Quaternion yaw_offsets_;
-
-    ros::Publisher rpy_filtered_debug_publisher_;
-    ros::Publisher rpy_raw_debug_publisher_;
-    ros::Publisher orientation_filtered_publisher_;
-    ros::Publisher imu_publisher_;
+    rclcpp::Publisher<RpyVectorMsg>::SharedPtr rpy_filtered_debug_publisher_;
+    rclcpp::Publisher<RpyVectorMsg>::SharedPtr rpy_raw_debug_publisher_;
+    rclcpp::Publisher<ImuMsg>::SharedPtr imu_publisher_;
     tf2_ros::TransformBroadcaster tf_broadcaster_;
-    tf2_ros::Buffer tf_buffer_;
-    tf2_ros::TransformListener tf_listener_;
 
-    boost::shared_ptr<FilterConfigServer> config_server_;
-    ros::Timer check_topics_timer_;
+    rclcpp::TimerBase::SharedPtr check_topics_timer_;
+
+    // Subscription for parameter change
+    rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
+    rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr
+        parameter_event_sub_;
 
     // **** paramaters
     WorldFrame::WorldFrame world_frame_;
-    bool use_mag_;
-    bool stateless_;
-    bool publish_tf_;
-    bool reverse_tf_;
+    bool use_mag_{};
+    bool stateless_{};
+    bool publish_tf_{};
+    bool reverse_tf_{};
     std::string fixed_frame_;
     std::string imu_frame_;
     double constant_dt_;
-    bool publish_debug_topics_;
-    bool remove_gravity_vector_;
-    geometry_msgs::Vector3 mag_bias_;
+    bool publish_debug_topics_{};
+    bool remove_gravity_vector_{};
+    geometry_msgs::msg::Vector3 mag_bias_;
     double orientation_variance_;
-    ros::Duration time_jump_threshold_;
+    double yaw_offset_total_;
 
     // **** state variables
-    boost::mutex mutex_;
+    std::mutex mutex_;
     bool initialized_;
-    ros::Time last_time_;
-    ros::Time last_ros_time_;
+    rclcpp::Time last_time_;
+    tf2::Quaternion yaw_offsets_;
 
     // **** filter implementation
     ImuFilter filter_;
 
     // **** member functions
-    void imuMagCallback(const ImuMsg::ConstPtr& imu_msg_raw,
-                        const MagMsg::ConstPtr& mav_msg);
+    void publishFilteredMsg(ImuMsg::ConstSharedPtr imu_msg_raw);
+    void publishTransform(ImuMsg::ConstSharedPtr imu_msg_raw);
 
-    void imuCallback(const ImuMsg::ConstPtr& imu_msg_raw);
+    void publishRawMsg(const rclcpp::Time& t, float roll, float pitch,
+                       float yaw);
 
-    void publishFilteredMsg(const ImuMsg::ConstPtr& imu_msg_raw);
-    void publishOrientationFiltered(const ImuMsg::ConstPtr& imu_msg);
-    void publishTransform(const ImuMsg::ConstPtr& imu_msg_raw);
-
-    void publishRawMsg(const ros::Time& t, float roll, float pitch, float yaw);
-
-    void reconfigCallback(FilterConfig& config, uint32_t level);
-    void checkTopicsTimerCallback(const ros::TimerEvent&);
+    void reconfigCallback(rcl_interfaces::msg::ParameterEvent::SharedPtr event);
+    void checkTopicsTimerCallback();
 
     void applyYawOffset(double& q0, double& q1, double& q2, double& q3);
-    //! \brief Check whether ROS time has jumped back. If so, reset the filter.
-    void checkTimeJump();
 };
-
-#endif  // IMU_FILTER_IMU_MADWICK_FILTER_ROS_H
