@@ -9,6 +9,7 @@ services:
     container_name: autonomy_ros2
     user: marsrover
     network_mode: host
+    runtime: nvidia
     environment:
       DISPLAY: :0 # Required for GUI applications
       MPLBACKEND: Qt5Agg # Required for GUI applications

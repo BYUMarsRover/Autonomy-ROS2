@@ -1,6 +1,6 @@
 # Created by Nelson Durrant, Oct 2024
 
-FROM stereolabs/zed:4.1-runtime-cuda12.1-ubuntu22.04
+FROM stereolabs/zed:4.2-devel-cuda12.1-ubuntu22.04
 
 # Update and upgrade
 RUN apt update && apt upgrade -y
