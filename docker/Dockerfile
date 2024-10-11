@@ -69,3 +69,6 @@ USER marsrover
 USER root
 RUN chown -R marsrover: /usr/local
 USER marsrover
+# need to rollpack on numpy to v1.26.0 to avoid bug with the odometry package (transforms3d dependency)
+RUN pip3 uninstall -y numpy
+RUN pip3 install numpy==1.26.0
