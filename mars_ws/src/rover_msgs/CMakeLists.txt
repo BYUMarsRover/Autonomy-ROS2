@@ -15,9 +15,17 @@ find_package(geometry_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FiducialData.msg"
+<<<<<<< HEAD
   "msg/FiducialTransformArray.msg"
   "msg/FiducialTransform.msg"
   DEPENDENCIES std_msgs geometry_msgs # Add std_msgs as a dependency
+=======
+  "msg/MobilityAutopilotCommand.msg"
+  "msg/MobilityArucoAutopilotCommand.msg"
+  "msg/GPSWaypoint2Follow.msg"
+  "msg/MobilityVelocityCommands.msg"
+  # DEPENDENCIES # Add packages that above messages depend on
+>>>>>>> 697b0d3 (WIP - Adding msg files)
 )
 
 if(BUILD_TESTING)
