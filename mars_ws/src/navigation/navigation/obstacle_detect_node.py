@@ -19,7 +19,10 @@
 
 # TODO: bushes, poles (such as aruco tag poles)
 
+#!/usr/bin/env python3
+
 import rclpy
+from rclpy.node import Node
 import numpy as np
 import cv2
 
@@ -27,18 +30,16 @@ from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
-from rover_msgs.msg import (
-    ObstacleInfo,
-    WaypointNav,
-    NavStatus,
-    ZedObstacles,
-)
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
+# Assuming these custom messages are also converted to ROS2
+from rover_msgs.msg import ObstacleInfo, WaypointNav, NavStatus, ZedObstacles
 
-class ObstacleDetect:
+class ObstacleDetect(Node):
     def __init__(self):
+        super().__init__('obstacle_detect')
+
         # Constants
         self.alpha = 0.3  # constant for low pass filter
         self.ROVER_CLEARANCE = 5  # [m]
@@ -50,7 +51,7 @@ class ObstacleDetect:
             1  # [m] stuck if median of location array is within this radius
         )
         self.CAMERA_V_FOV = np.deg2rad(70)
-
+        self.execute_period = 0.1
 
         # Variables
         self.center_obs = False  # flag for center obstacle
@@ -62,7 +63,6 @@ class ObstacleDetect:
 
         self.points = np.zeros((90, 2))  # [distances (m), angle (deg)]
         self.points[:, 0] = np.inf
-        # self.points[:,1] = np.arange(90,-91,-1)
         self.points[:, 1] = np.arange(45, -45, -1)
 
         self.locations = np.zeros((self.LOCATION_ARRAY_SIZE, 2))
@@ -101,17 +101,19 @@ class ObstacleDetect:
 
         self.keyPoints = 0  # Stores obstacle locations from blob detector
         self.keyLoc = 0
-        self.keyMeas = 0  # Stores distance and slope to keypoints
-        self.close_slope = (
-            0  # Stores avg slope near center of FOV and within 1.5 - 2.5 meters
-        )
+        self.keyMeas = 0
+        self.close_slope = 0
 
-        self.rate = rospy.Rate(10)  # Hz
-        self.zed_type = rospy.get_param('~zed_type', "zed2")  # Zed type
-        self.skip = rospy.get_param('~skip', 5)  # skip is resolution 
-        self.display = rospy.get_param('~display', False)  # do display debug windows? 
+        # ROS2 parameters
+        self.declare_parameter('zed_type', 'zed2')
+        self.declare_parameter('skip', 5)
+        self.declare_parameter('display', False)
 
-        rospy.loginfo("zed_type: " + self.zed_type)
+        self.zed_type = self.get_parameter('zed_type').value
+        self.skip = self.get_parameter('skip').value
+        self.display = self.get_parameter('display').value
+
+        self.get_logger().info(f"zed_type: {self.zed_type}")
 
         # Obstacle detection parameters
         
@@ -204,6 +206,14 @@ class ObstacleDetect:
         # Tried 1000: Not much change, tbh. Maybe less detection?
         self.distToPixel = 320 / self.skip
         
+        
+        # NOTE - try removing the blurs alltogether. Using default values for everything else.
+        # Original: both guassian and median blur
+        # Tried only median blur: the median blur's squares are far more apparent now. Why are they so black? Do they need to be clamped? Better detection when rotating trashcan.
+        # Tried only guassian blur: Some blurring (still some dark squares - clamping needed?). Poorer detection.
+        # Neither: The dark squares are more apparent albeit smaller. Maybe the squares aren't due to the blurs? Detection seems more jittery but better!
+
+
         # NOTE - try removing the blurs alltogether. Using default values for everything else.
         # Original: both guassian and median blur
         # Tried only median blur: the median blur's squares are far more apparent now. Why are they so black? Do they need to be clamped? Better detection when rotating trashcan.
@@ -214,40 +224,38 @@ class ObstacleDetect:
         self.initialize_blob_detect()
 
         # Subscriptions
-        self. 
-        self.Subscriber(
-            f"/{self.zed_type}/zed_node/left/image_rect_color", Image, self.imageCallback
+        self.create_subscription(
+            Image,
+            f'/{self.zed_type}/zed_node/left/image_rect_color',
+            self.imageCallback,
+            10
         )
-        rospy.Subscriber(
-            f"/{self.zed_type}/zed_node/depth/depth_registered", Image, self.depthCallback
+        self.create_subscription(
+            Image,
+            f'/{self.zed_type}/zed_node/depth/depth_registered',
+            self.depthCallback,
+            10
         )
-       
-        rospy.loginfo(f"/{self.zed_type}/zed_node/left/image_rect_color")
-        rospy.loginfo(f"/{self.zed_type}/zed_node/depth/depth_registered")
 
-        # Publisher
-        self.pub_obstacles = rospy.Publisher("/obstacles", ObstacleInfo, queue_size=1)
-        self.pub_zed_obs = rospy.Publisher("/zed/obstacles", ZedObstacles, queue_size=1)
-        self.pub_obs_img_labeled = rospy.Publisher(
-            "/zed_obstacle_image_labeled", Image, queue_size=1
-        )
-        self.pub_obs_img_dir = rospy.Publisher(
-            "/zed_obstacle_image_dir", Image, queue_size=1
-        )
-        self.pub_obs_img_raw = rospy.Publisher("/zed_obstacle_raw", Image, queue_size=1)
-        
-    ######## Callbacks ########
+        # Publishers
+        self.pub_obstacles = self.create_publisher(ObstacleInfo, '/obstacles', 1)
+        self.pub_zed_obs = self.create_publisher(ZedObstacles, '/zed/obstacles', 1)
+        self.pub_obs_img_labeled = self.create_publisher(Image, '/zed_obstacle_image_labeled', 1)
+        self.pub_obs_img_dir = self.create_publisher(Image, '/zed_obstacle_image_dir', 1)
+        self.pub_obs_img_raw = self.create_publisher(Image, '/zed_obstacle_raw', 1)
+        self.execute_timer = self.create_timer(self.execute_period, self.execute)
+
     def imageCallback(self, msg):
         try:
-            rospy.loginfo_once("received imageCallback")
+            self.get_logger().info("received imageCallback", once=True)
             self.img = self.bridge.imgmsg_to_cv2(msg, "passthrough")
             self.msgread["image"] = True
         except CvBridgeError as e:
-            rospy.loginfo(e)
+            self.get_logger().info(str(e))
 
     def depthCallback(self, msg):
         try:
-            rospy.loginfo_once("received depthCallback")
+            self.get_logger().info("received depthCallback", once=True)
             self.depth_img = np.copy(self.bridge.imgmsg_to_cv2(msg, "passthrough"))
             self.msgread["depth"] = True
 
@@ -259,7 +267,7 @@ class ObstacleDetect:
             # resumed on a new image? That would be pretty bad and should be fixed if it is the case.
             # I'm ignoring it for now only because the competition is in two days.
         except CvBridgeError as e:
-            rospy.loginfo(e)
+            self.get_logger().info(str(e))
 
     ######## Helper Functions ########
     def display_img(self, name, img, scale=2):
@@ -1004,7 +1012,7 @@ class ObstacleDetect:
             return
 
         if not self.init:
-            rospy.logwarn("ObstacleDetection init successful!")
+            self.get_logger().warn("ObstacleDetection init successful!")
             self.init = True
 
     def getZEDObstacles(self):
@@ -1023,28 +1031,26 @@ class ObstacleDetect:
 
     ######## Main Execute Function & Publish ########
     def execute(self):
-        while not rospy.is_shutdown() and not self.shutdown:
+        if self.ready:
+            self.ZED_obstacle_detect()
+            self.filter_data()
+            self.determine_stuck()
+            self.determine_wall()
+            self.check_center()
+            self.check_goal()
+            self.calc_obstacle_centroid()
+            self.calc_obstacle_weights()
+
+            self.publish()
+        else:
+            self.get_logger().info(
+                "ObstacleDetection: Waiting for ZED image and depth messages...", once=True
+            )
+            self.check_ready()
             if self.ready:
-                self.ZED_obstacle_detect()
-                self.filter_data()
-                self.determine_stuck()
-                self.determine_wall()
-                self.check_center()
-                self.check_goal()
-                self.calc_obstacle_centroid()
-                self.calc_obstacle_weights()
+                self.get_logger().info("ObstacleDetection: ZED messages received -- READY!")
+            # Maybe need to add a sleep here
 
-                self.publish()
-            else:
-                rospy.loginfo_once(
-                    "ObstacleDetection: Waiting for ZED image and depth messages..."
-                )
-                self.check_ready()
-                if self.ready:
-                    rospy.loginfo("ObstacleDetection: ZED messages received -- READY!")
-                rospy.sleep(0.1)
-
-            self.rate.sleep()
 
     def publish(self):
         # Publish Obstacles
@@ -1068,13 +1074,13 @@ class ObstacleDetect:
 # ===================================================
 # Main ==============================================
 # ===================================================
-if __name__ == "__main__":
-    rospy.init_node("obstacle_detection")
-    rospy.loginfo("===== Starting Obstacle Detection ======")
 
-    try:  # try to start
-        op = ObstacleDetect()
-        op.execute()
-    except Exception as e:  # throw an exception on failure
-        if e is not KeyboardInterrupt:
-            rospy.logerr("EXCEPTION in ObstacleDetect.py... Quitting\n", exc_info=True)
+def main(args=None):
+    rclpy.init(args=args)
+    obstacle_detect = ObstacleDetect()
+    rclpy.spin(obstacle_detect)
+    obstacle_detect.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
