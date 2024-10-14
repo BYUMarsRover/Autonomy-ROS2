@@ -3,8 +3,7 @@
 import math
 import rclpy
 from rclpy.node import Node
-from fiducial_msgs.msg import FiducialTransformArray
-from rover_msgs.msg import FiducialData
+from rover_msgs.msg import FiducialData, FiducialTransformArray
 
 class FiducialDataNode(Node):
     """
@@ -13,13 +12,7 @@ class FiducialDataNode(Node):
     def __init__(self):
         super().__init__('fiducial_data_node')
 
-        # Subscribing to fiducial detection topics from ZED and Logi cameras
-        # self.sub_ar_detection_zed = self.create_subscription(
-        #     FiducialTransformArray,
-        #     '/aruco_detect_zed/fiducial_transforms',
-        #     self.arTagCallback,
-        #     10)
-        
+        # Subscribing to fiducial detection topics from Logi camera
         self.sub_ar_detection_logi = self.create_subscription(
             FiducialTransformArray,
             '/aruco_detect_logi/fiducial_transforms',
