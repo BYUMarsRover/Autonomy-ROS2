@@ -15,6 +15,10 @@ find_package(sensor_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FiducialData.msg"
   "msg/RoverStateSingleton.msg"
+  "msg/ObstacleInfo.msg"
+  "msg/WaypointNav.msg"
+  "msg/ZedObstacles.msg"
+  "msg/NavStatus.msg"
   DEPENDENCIES sensor_msgs # Add packages that above messages depend on
 )
 
