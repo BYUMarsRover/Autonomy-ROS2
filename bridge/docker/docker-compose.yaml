@@ -12,6 +12,7 @@ services:
     privileged: true
     volumes:
       - ../bridge_ws:/home/marsrover/bridge_ws
+      - ../ros1_msgs_ws:/home/marsrover/ros1_msgs_ws
       - /etc/localtime:/etc/localtime:ro # Syncs the container's time with the host
       - /run/udev:/run/udev:ro
       - /dev:/dev:rw
