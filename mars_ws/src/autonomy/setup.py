@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'fiducial_data = autonomy.fiducial_data:main'
+            'fiducial_data = autonomy.fiducial_data:main', 
+            'drive_controller_api = autonomy.drive_controller_api:main',
         ],
     },
 )
