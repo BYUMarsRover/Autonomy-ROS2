@@ -73,15 +73,6 @@ def generate_launch_description():
         #         output='screen',
         #         parameters=[os.path.join(autonomy_params_dir, 'autonomy_params.yaml')]
         #     )
-        # ], namespace='autonomy')#,
+        # ], namespace='autonomy')
 
-        # Launch buffer node with debug namespace
-        # GroupAction([
-        #     Node(
-        #         package='autonomy',
-        #         executable='buffer_node',
-        #         name='buffer_node',
-        #         output='screen',
-        #     )
-        # ], namespace='debug')
     ])
