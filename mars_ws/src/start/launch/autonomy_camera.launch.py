@@ -12,7 +12,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{
                 'camera_name': 'narrow_stereo',
-                'video_device': '/dev/rover/cameras/autonomyWebCam',
+                'video_device': '/dev/video0', # was '/dev/rover/cameras/autonomyWebCam'
                 'image_width': 1920,
                 'image_height': 1080,
                 'pixel_format': 'yuyv',
