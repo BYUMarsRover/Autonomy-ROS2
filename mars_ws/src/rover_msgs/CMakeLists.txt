@@ -10,10 +10,19 @@ find_package(ament_cmake REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 find_package(rosidl_default_generators REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FiducialData.msg"
+  "msg/FiducialTransformArray.msg"
+  "msg/FiducialTransform.msg"
+  "msg/MobilityAutopilotCommand.msg"
+  "msg/MobilityArucoAutopilotCommand.msg"
+  "msg/MobilityGPSWaypoint2Follow.msg"
+  "msg/MobilityVelocityCommands.msg"
+  DEPENDENCIES std_msgs geometry_msgs
   "msg/RoverStateSingleton.msg"
   DEPENDENCIES sensor_msgs # Add packages that above messages depend on
 )

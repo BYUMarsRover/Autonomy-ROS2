@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>autonomy</name>
+  <version>0.0.0</version>
+  <description>The autonomous state machine package</description>
+
+  <!-- Maintainer information -->
+  <maintainer email="marsrover@todo.todo">marsrover</maintainer>
+
+  <!-- License information -->
+  <license>BYU YOU CANT HAVE IT</license>
+
+  <!-- Build tool dependency -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Build dependencies -->
+  <build_depend>rclcpp</build_depend>
+  <build_depend>rclpy</build_depend>
+  <build_depend>rover_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>rosserial_arduino</build_depend>
+  <build_depend>fiducial_vlam</build_depend> <!-- For fiducial marker handling -->
+  <build_depend>fiducial_msgs</build_depend>  <!-- Added for FiducialTransformArray -->
+  <build_depend>image_tools</build_depend>
+
+  <!-- Execution dependencies -->
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rover_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>rosserial_arduino</exec_depend>
+  <exec_depend>fiducial_vlam</exec_depend> <!-- For fiducial marker handling -->
+  <exec_depend>fiducial_msgs</exec_depend>  <!-- Added for FiducialTransformArray -->
+  <exec_depend>image_tools</exec_depend>
+
+  <!-- Testing dependencies Not sure if we need these-->
+  <!-- <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend> -->
+
+  <!-- Python build type for the node -->
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <!-- Export information -->
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
+
