@@ -14,6 +14,7 @@ services:
       - ../bridge_ws:/home/marsrover/bridge_ws
       - ../ros1_msgs_ws:/home/marsrover/ros1_msgs_ws
       - ../ros2_msgs_ws:/home/marsrover/ros2_msgs_ws
+      - ../scripts:/home/marsrover/scripts
       - /etc/localtime:/etc/localtime:ro # Syncs the container's time with the host
       - /run/udev:/run/udev:ro
       - /dev:/dev:rw

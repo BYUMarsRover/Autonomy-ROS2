@@ -71,4 +71,8 @@ USER marsrover
 
 RUN colcon build --symlink-install
 
+USER root
+RUN apt update && apt install -y tmux
+USER marsrover
+
 WORKDIR /home/marsrover
