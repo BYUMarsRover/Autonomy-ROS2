@@ -5,6 +5,9 @@
       id: 10
 obstacle_detect_node:
   ros__parameters:
+    skip: 3
+    zed_type: zed2
+    display: false
     ports: [2438, 2439, 2440]
 /**:
   ros__parameters:
