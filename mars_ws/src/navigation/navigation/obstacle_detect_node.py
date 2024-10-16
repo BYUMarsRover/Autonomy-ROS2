@@ -1025,7 +1025,7 @@ class ObstacleDetect(Node):
         zed_msg.gry_depth_height = self.gry_depth_shape[0]
         zed_msg.gry_depth_width = self.gry_depth_shape[1]
         zed_msg.close_slope = self.close_slope
-        zed_msg.distToPixel = self.distToPixel
+        zed_msg.dist_to_pixel = self.distToPixel
 
         return zed_msg
 
