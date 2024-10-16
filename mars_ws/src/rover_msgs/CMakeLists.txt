@@ -21,7 +21,13 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MobilityArucoAutopilotCommand.msg"
   "msg/MobilityGPSWaypoint2Follow.msg"
   "msg/MobilityVelocityCommands.msg"
-  DEPENDENCIES std_msgs geometry_msgs
+  "msg/AutonomyTaskInfo.msg"
+  "msg/NavStatus.msg"
+  "msg/RoverState.msg"
+  "srv/AutonomyAbort.srv"
+  "srv/AutonomyWaypoint.srv"
+  "srv/SetFloat32.srv"
+  DEPENDENCIES std_msgs geometry_msgs # Add std_msgs as a dependency
 )
 
 if(BUILD_TESTING)
