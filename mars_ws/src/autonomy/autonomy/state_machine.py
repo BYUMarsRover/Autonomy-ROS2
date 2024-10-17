@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+#TODO: we need to move over the params, and we need to make sure that the service callbacks are right
+
+
+
 import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray
@@ -70,21 +74,21 @@ class AutonomyStateMachine():
         self.srv_switch_abort = self.create_service(AutonomyAbort, '/autonomy/abort_autonomy', self.abort)
         self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback)   # TODO: Add this to the GUI buttons
 
-        # # Parameters
-        # self.dist_tolerance = rospy.get_param('/autonomy/state_machine_node/distance_tolerance')
-        # self.abort_dist_tolerance = rospy.get_param('/autonomy/state_machine_node/abort_distance_tolerance')
-        # self.aruco_dist_tolerance = rospy.get_param('/autonomy/state_machine_node/aruco_distance_tolerance')
-        # self.hex_search_radius = rospy.get_param('/autonomy/state_machine_node/hex_search_radius')
-        # self.navigate_speed = rospy.get_param('/autonomy/state_machine_node/navigate_speed')
-        # self.aruco_speed = rospy.get_param('/autonomy/state_machine_node/aruco_speed')
-        # self.aruco_spin_speed = rospy.get_param('/autonomy/state_machine_node/aruco_spin_speed')
-        # # self.aruco_gate_spin_speed = rospy.get_param('/autonomy/state_machine_node/aruco_gate_spin_speed')
-        # self.aruco_alpha_lpf = rospy.get_param('/autonomy/state_machine_node/aruco_alpha_lpf')
-        # self.aruco_spin_step_size = rospy.get_param('/autonomy/state_machine_node/aruco_spin_step_size')
-        # self.aruco_spin_delay_time = rospy.get_param('/autonomy/state_machine_node/aruco_spin_delay_time')
-        # self.wrong_aruco_backup_distance = rospy.get_param('/autonomy/state_machine_node/wrong_aruco_backup_distance')
-        # # self.aruco_gate_approach_distance = rospy.get_param('/autonomy/state_machine_node/aruco_gate_approach_distance')
-        # self.hex_seach_angle_difference = rospy.get_param('/autonomy/state_machine_node/hex_seach_angle_difference')
+        # Parameters
+        self.dist_tolerance = self.get_parameter('/autonomy/state_machine_node/distance_tolerance').get_parameter_value().double_value
+        self.abort_dist_tolerance = self.get_parameter('/autonomy/state_machine_node/abort_distance_tolerance').get_parameter_value().double_value
+        self.aruco_dist_tolerance = self.get_parameter('/autonomy/state_machine_node/aruco_distance_tolerance').get_parameter_value().double_value
+        self.hex_search_radius = self.get_parameter('/autonomy/state_machine_node/hex_search_radius').get_parameter_value().double_value
+        self.navigate_speed = self.get_parameter('/autonomy/state_machine_node/navigate_speed').get_parameter_value().double_value
+        self.aruco_speed = self.get_parameter('/autonomy/state_machine_node/aruco_speed').get_parameter_value().double_value
+        self.aruco_spin_speed = self.get_parameter('/autonomy/state_machine_node/aruco_spin_speed').get_parameter_value().double_value
+        # self.aruco_gate_spin_speed = rospy.get_param('/autonomy/state_machine_node/aruco_gate_spin_speed')
+        self.aruco_alpha_lpf = self.get_parameter('/autonomy/state_machine_node/aruco_alpha_lpf').get_parameter_value().double_value
+        self.aruco_spin_step_size = self.get_parameter('/autonomy/state_machine_node/aruco_spin_step_size').get_parameter_value().double_value
+        self.aruco_spin_delay_time = self.get_parameter('/autonomy/state_machine_node/aruco_spin_delay_time').get_parameter_value().double_value
+        self.wrong_aruco_backup_distance = self.get_parameter('/autonomy/state_machine_node/wrong_aruco_backup_distance').get_parameter_value().double_value
+        # self.aruco_gate_approach_distance = rospy.get_param('/autonomy/state_machine_node/aruco_gate_approach_distance')
+        self.hex_seach_angle_difference = self.get_parameter('/autonomy/state_machine_node/hex_seach_angle_difference').get_parameter_value().double_value
 
         #self.rover_nav_state = RoverState() #thats a message?
 
@@ -152,14 +156,14 @@ class AutonomyStateMachine():
             self.tag_id = TagID.MALLET
         self.target_point = GPSCoordinate(self.target_latitude, self.target_longitude, 0)
 
-    def set_all_tasks_callback(self, request, response):
+    def set_all_tasks_callback(self, request: AutonomyWaypoint.Request, response: AutonomyWaypoint.Response) -> AutonomyWaypoint.Response:
         '''
         Puts all of the waypoints from the GUI into a queue so the rover can autonomously do the whole mission.
         '''
         print('in set_all_tasks_callback')
-        tasks: list[AutonomyTaskInfo] = task_list.task_list
-        for _ in tasks:
-            self.waypoints.append(_)
+        tasks = request.task_list  # Access the list of AutonomyTaskInfo
+        for task in tasks:
+            self.waypoints.append()  # Append each task to the waypoints NOT GONNA APPEND NUTHING SO IT DON'T BREAK
         print('Waypoints: ', self.waypoints)
         print('Exiting set_all_tasks_callback')
 
