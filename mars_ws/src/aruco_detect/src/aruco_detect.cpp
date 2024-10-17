@@ -52,10 +52,7 @@
 #include <std_srvs/srv/set_bool.hpp> // #include <std_srvs/SetBool.h>
 #include <std_msgs/String.h>
 
-#include "fiducial_msgs/Fiducial.h"
-#include "fiducial_msgs/FiducialArray.h"
-#include "fiducial_msgs/FiducialTransform.h"
-#include "fiducial_msgs/FiducialTransformArray.h"
+#include "rover_msgs/msg/FidudcialData.hpp"
 
 #include "aruco_detect/DetectorParamsConfig.h"
 

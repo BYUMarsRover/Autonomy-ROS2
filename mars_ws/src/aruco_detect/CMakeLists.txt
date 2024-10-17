@@ -14,8 +14,11 @@ find_package(visualization_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(fiducial_msgs REQUIRED)
+find_package(rover_msgs REQUIRED)
 find_package(opencv2 REQUIRED)
+
+add_executable(aruco_detect src/aruco_detect.cpp) 
+ament_target_dependencies(aruco_detect rclcpp rover_msgs)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
