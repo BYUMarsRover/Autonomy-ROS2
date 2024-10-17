@@ -10,9 +10,38 @@ tmux new-session -d -s bridge_session
 tmux split-window -h -t bridge_session
 tmux split-window -v -t bridge_session
 tmux split-window -v -t bridge_session
-tmux select-layout -t bridge_session tiled
+tmux select-pane -t bridge_session:0.0
 
+# Run the ROS1 core
+tmux send-keys -t bridge_session:0.3 "source /opt/ros/noetic/setup.bash" ENTER
+tmux send-keys -t bridge_session:0.3 "source ~/ros1_msgs_ws/install_isolated/setup.bash" ENTER
+tmux send-keys -t bridge_session:0.3 "roscore" ENTER
 
+# Start publishing from ROS2
+tmux send-keys -t bridge_session:0.2 "source ~/ros2_humble/install/setup.bash" ENTER
+tmux send-keys -t bridge_session:0.2 "source ~/ros2_msgs_ws/install/local_setup.bash" ENTER
+tmux send-keys -t bridge_session:0.2 "ros2 topic pub /test rover_msgs/msg/RoverStateSingleton 'map_roll: 1.0'" ENTER
+
+# Start the bridge
+tmux send-keys -t bridge_session:0.1 "source /opt/ros/noetic/setup.bash" ENTER
+tmux send-keys -t bridge_session:0.1 "source ~/ros2_humble/install/setup.bash" ENTER
+tmux send-keys -t bridge_session:0.1 "source ~/ros1_msgs_ws/install_isolated/setup.bash" ENTER
+tmux send-keys -t bridge_session:0.1 "source ~/ros2_msgs_ws/install/local_setup.bash" ENTER
+tmux send-keys -t bridge_session:0.1 "source ~/bridge_ws/install/local_setup.bash" ENTER
+tmux send-keys -t bridge_session:0.1 "ros2 run ros1_bridge dynamic_bridge --bridge-all-topics" ENTER
+
+echo ""
+echo "[INFO] Wait just a second while we get the ROS1-ROS2 test set up..."
+echo "[HELP] You can detach from the tmux session by pressing Ctrl+B, then D."
+echo ""
+
+sleep 3
+
+# Start listening to the ROS1 topic
+tmux send-keys -t bridge_session:0.0 "source /opt/ros/noetic/setup.bash" ENTER
+tmux send-keys -t bridge_session:0.0 "source ~/ros1_msgs_ws/install_isolated/setup.bash" ENTER
+tmux send-keys -t bridge_session:0.0 "rostopic list" ENTER
+tmux send-keys -t bridge_session:0.0 "rostopic echo /test" ENTER
 
 # Attach to the tmux session so we can see the output
 tmux attach -t bridge_session && tmux kill-session -t bridge_session
