@@ -40,8 +40,7 @@ sleep 3
 # Start listening to the ROS1 topic
 tmux send-keys -t bridge_session:0.0 "source /opt/ros/noetic/setup.bash" ENTER
 tmux send-keys -t bridge_session:0.0 "source ~/ros1_msgs_ws/install_isolated/setup.bash" ENTER
-tmux send-keys -t bridge_session:0.0 "rostopic list" ENTER
-tmux send-keys -t bridge_session:0.0 "rostopic echo /test" ENTER
+tmux send-keys -t bridge_session:0.0 "rostopic echo -n 1 /test" ENTER
 
 # Attach to the tmux session so we can see the output
 tmux attach -t bridge_session && tmux kill-session -t bridge_session
