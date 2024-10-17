@@ -71,6 +71,7 @@ USER marsrover
 
 RUN colcon build --symlink-install
 
+# Add tmux for scripting purposes
 USER root
 RUN apt update && apt install -y tmux
 USER marsrover
