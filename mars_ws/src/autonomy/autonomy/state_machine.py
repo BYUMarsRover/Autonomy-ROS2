@@ -11,7 +11,6 @@ from GPSTools import GPSTools, GPSCoordinate
 from enum import Enum
 import numpy as np
 import time
-from collections import deque
 
 class State(Enum):
     MANUAL = 1
