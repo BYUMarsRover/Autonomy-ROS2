@@ -4,7 +4,7 @@
 # Tests the ROS1 bridge using the included ROS1 and ROS2 msg packages
 
 # Define the message type and data to be tested
-export TEST_MSG_TYPE=rover_msgs/msg/RoverStateSingleton
+export TEST_MSG_TYPE="rover_msgs/msg/RoverStateSingleton"
 export TEST_MSG_DATA="map_roll: 1.0"
 
 function printInfo {
