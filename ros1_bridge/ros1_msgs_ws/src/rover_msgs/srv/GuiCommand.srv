@@ -1,0 +1,4 @@
+# DEPRECATED: Used in master_gui.py
+string command
+---
+bool success
