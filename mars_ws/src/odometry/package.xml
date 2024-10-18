@@ -9,22 +9,22 @@
 
   <!-- General Build Dependencies -->
   <depend>robot_localization</depend>
+  <depend>python3-transforms3d</depend>
+  <depend>tf_transformations</depend>
+
 
   <!-- build dependencies -->
   <build_depend>sensor_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
-  <build_depend>tf_transformations</build_depend>
   <build_depend>std_msgs</build_depend>
 
   <build_export_depend>sensor_msgs</build_export_depend>
   <build_export_depend>nav_msgs</build_export_depend>
-  <build_export_depend>tf_transformations</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
 
   <!-- execution dependencies -->
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
-  <exec_depend>tf_transformations</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>ros2launch</exec_depend>
 
