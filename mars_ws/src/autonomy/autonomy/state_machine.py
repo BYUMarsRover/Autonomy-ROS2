@@ -2,8 +2,6 @@
 
 #TODO: we need to move over the params, and we need to make sure that the service callbacks are right
 
-
-
 import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray
@@ -44,7 +42,6 @@ class TagID(Enum):
     MALLET = 5
     GPS_ONLY = 6
     
-
 class AutonomyStateMachine(Node):
     def __init__(self):
 
@@ -191,13 +188,17 @@ class AutonomyStateMachine(Node):
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elvevation)
         self.curr_heading = np.deg2rad(msg.map_yaw)
 
-    def wait_timer_callback(self, event):
-        self.is_continue_to_next_waypoint = True
-
     def start_timer(self):
         if self.is_start_timer:
-            rospy.Timer(rospy.Duration(10.0), self.wait_timer_callback, oneshot=True)
+            # Create a one-shot timer (10 seconds)
+            self.timer = self.create_timer(10.0, self.wait_timer_callback)
             self.is_start_timer = False
+
+    def wait_timer_callback(self):
+        # Timer callback logic
+        self.is_continue_to_next_waypoint = True
+        self.get_logger().info('Timer callback triggered, continuing to the next waypoint')
+        self.timer.cancel()
 
     def ar_tag_callback(self, msg:FiducialTransformArray):
         # print("in ar_tag_callback")
@@ -646,7 +647,6 @@ class AutonomyStateMachine(Node):
             msg.state = "ABORT_STATE"
 
         self.status_pub.publish(msg)
-
 
 def main(args=None):
     """
