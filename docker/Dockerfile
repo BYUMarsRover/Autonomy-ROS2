@@ -62,7 +62,8 @@ USER marsrover
 USER root
 RUN apt update && apt install -y \
     vim \
-    docker.io
+    docker.io \
+    ros-humble-robot-localization
 USER marsrover
 
 # Quick permissions fix (might be too heavy-handed)
