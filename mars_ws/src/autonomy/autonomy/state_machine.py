@@ -45,11 +45,11 @@ class TagID(Enum):
     GPS_ONLY = 6
     
 
-class AutonomyStateMachine():
-
+class AutonomyStateMachine(Node):
     def __init__(self):
 
         print('in init AutonomyStateMachine')
+        self.get_logger().info('Autonomy state machine node initialized')
         
 
         super().__init_('state_machine_node')
@@ -331,16 +331,33 @@ class AutonomyStateMachine():
         return chi_1
     
     def set_autopilot_speed(self, speed):
-        print("setting autopilot speed...")
-        rospy.wait_for_service('/mobility/speed_factor')
-        print("service is live")
-        self.srv_autopilot_speed = rospy.ServiceProxy("/mobility/speed_factor", SetFloat32)
-        self.autopilot_speed_request = SetFloat32Request()
+        print("Setting autopilot speed...")
+
+        # Create a service client for the speed factor service
+        self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
+        
+        # Wait until the service is available
+        if not self.srv_autopilot_speed.wait_for_service(timeout_sec=3.0): #Don't know what would be the appropriate time to wait here
+            self.get_logger().error("Service /mobility/speed_factor not available!")
+            return False
+        print("Service is live")
+
+        # Create a request object
+        self.autopilot_speed_request = SetFloat32.Request()  # Create a request instance
         self.autopilot_speed_request.data = speed
-        print("executing service...")
-        resp = self.srv_autopilot_speed(self.autopilot_speed_request)
-        print("service executed!")
-        return resp.success
+        print("Executing service...")
+        
+        # Send the request and wait for the response
+        future = self.srv_autopilot_speed.call_async(self.autopilot_speed_request)
+        rclpy.spin_until_future_complete(self, future)
+
+        if future.result() is not None:
+            print("Service executed!")
+            return future.result().success
+        else:
+            self.get_logger().error("Service call failed!")
+            return False
+
 
     def stateLoop(self):
         # rospy.logdebug('In State Loop')
@@ -631,29 +648,28 @@ class AutonomyStateMachine():
         self.status_pub.publish(msg)
 
 
-def main(ars=None):
-    rclpy.init(args=args)
-    autonomy_state_machine = AutonomyStateMachine()
-    rclpy.shutdown()
-
-
-
-if __name__ == '__main__':
-    main()
-
-    """if __name__ == '__main__':
-    
+def main(args=None):
+    """
     Main function for the state machine
     
     Continuous loop that publishes status and checks for updates from the GUI
-    
-    FIXME this is probably where we can fix the fact that it finishes a loop before stopping once the GUI tells it to
-   
-    #done rospy.init_node('autonomy_state_machine', anonymous=True, log_level=rospy.DEBUG)
-    rate = rospy.Rate(10)
+    """
+    rclpy.init(args=args)  # Initialize the ROS 2 Python client library
 
-    #done autonomy_state_machine = AutonomyStateMachine()
+    # Create an instance of the AutonomyStateMachine node
+    autonomy_state_machine = AutonomyStateMachine()
 
-    while not rospy.is_shutdown():
-        autonomy_state_machine.stateLoop()
-        rate.sleep()"""
+    rate = autonomy_state_machine.create_rate(10)  # ROS 2 rate (10 Hz)
+
+    # Loop until ROS 2 is shut down
+    while rclpy.ok():
+        rclpy.spin_once(autonomy_state_machine)  # Process callbacks once per loop
+        autonomy_state_machine.stateLoop()  # Call the state loop function
+        rate.sleep()
+
+    # Clean up when shutting down
+    autonomy_state_machine.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
