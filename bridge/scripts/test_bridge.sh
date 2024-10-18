@@ -3,6 +3,10 @@
 #
 # Tests the ROS1 bridge using the included ROS1 and ROS2 msg packages
 
+# Define the message type and data to be tested
+export TEST_MSG_TYPE=rover_msgs/msg/RoverStateSingleton
+export TEST_MSG_DATA="map_roll: 1.0"
+
 function printInfo {
   echo -e "\033[0m\033[36m[INFO] $1\033[0m"
 }
@@ -32,18 +36,18 @@ tmux send-keys -t bridge_session:0.3 "roscore" ENTER
 # Start publishing from ROS2
 tmux send-keys -t bridge_session:0.2 "source ~/ros2_humble/install/setup.bash" ENTER
 tmux send-keys -t bridge_session:0.2 "source ~/ros2_msgs_ws/install/local_setup.bash" ENTER
-tmux send-keys -t bridge_session:0.2 "ros2 topic pub /test rover_msgs/msg/RoverStateSingleton 'map_roll: 1.0'" ENTER
+tmux send-keys -t bridge_session:0.2 "ros2 topic pub /test $TEST_MSG_TYPE '$TEST_MSG_DATA'" ENTER
 
 # Start the bridge
 tmux send-keys -t bridge_session:0.1 "source /opt/ros/noetic/setup.bash" ENTER
-tmux send-keys -t bridge_session:0.1 "source ~/ros2_humble/install/setup.bash" ENTER
 tmux send-keys -t bridge_session:0.1 "source ~/ros1_msgs_ws/install_isolated/setup.bash" ENTER
+tmux send-keys -t bridge_session:0.1 "source ~/ros2_humble/install/setup.bash" ENTER
 tmux send-keys -t bridge_session:0.1 "source ~/ros2_msgs_ws/install/local_setup.bash" ENTER
 tmux send-keys -t bridge_session:0.1 "source ~/bridge_ws/install/local_setup.bash" ENTER
 tmux send-keys -t bridge_session:0.1 "ros2 run ros1_bridge dynamic_bridge --bridge-all-topics" ENTER
 
 echo ""
-printInfo "Wait just a second while we get the ROS1-ROS2 test set up..."
+printInfo "Wait just a second while we get the ROS1 bridge test set up..."
 printInfo "You can detach from the tmux session by pressing Ctrl+B, then D."
 echo ""
 

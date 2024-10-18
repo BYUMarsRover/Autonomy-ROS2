@@ -46,8 +46,8 @@ done
 
 # Source ROS1 and ROS2 environments and build the ROS1 bridge
 tmux send-keys -t bridge_session:0.0 "source /opt/ros/noetic/setup.bash" ENTER
-tmux send-keys -t bridge_session:0.0 "source ~/ros2_humble/install/setup.bash" ENTER
 tmux send-keys -t bridge_session:0.0 "source ~/ros1_msgs_ws/install_isolated/setup.bash" ENTER
+tmux send-keys -t bridge_session:0.0 "source ~/ros2_humble/install/setup.bash" ENTER
 tmux send-keys -t bridge_session:0.0 "source ~/ros2_msgs_ws/install/local_setup.bash" ENTER
 tmux send-keys -t bridge_session:0.0 "cd ~/bridge_ws" ENTER
 tmux send-keys -t bridge_session:0.0 "colcon build --packages-select ros1_bridge --cmake-force-configure" ENTER
