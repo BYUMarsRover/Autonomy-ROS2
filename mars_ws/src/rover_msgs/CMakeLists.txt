@@ -18,7 +18,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ObstacleInfo.msg"
   "msg/WaypointNav.msg"
   "msg/ZedObstacles.msg"
-  "msg/NavStatus.msg"
   "msg/ObstacleInfo.msg"
   "msg/WaypointNav.msg"
   "msg/ZedObstacles.msg"
