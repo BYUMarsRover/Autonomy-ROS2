@@ -69,7 +69,6 @@ class AutonomyStateMachine():
 
 
         # Services
-        self.srv_switch_auto = self.create_service(SetBool,'/autonomy/enable_autonomy',self.enable)
         self.srv_switch_auto = self.create_service(SetBool,'/autonomy/enable_autonomy', self.enable)
         self.srv_switch_abort = self.create_service(AutonomyAbort, '/autonomy/abort_autonomy', self.abort)
         self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback)   # TODO: Add this to the GUI buttons
@@ -284,10 +283,10 @@ class AutonomyStateMachine():
             self.correct_aruco_tag_found = False
             self.wrong_aruco_tag_found = False
             # self.both_aruco_tags_found = False
-
-    def enable(self, msg:SetBoolRequest):
+    
+    def enable(self, request:SetBool.Request, response:SetBool.Response):
         print('in enable')
-        self.enabled = msg.data
+        self.enabled = request.data  # Access request data
 
         # Set the first task
         self.set_current_task()
@@ -296,18 +295,21 @@ class AutonomyStateMachine():
             print("Autonomy state machine is enabled!")
             self.state = State.SEARCH_FOR_WRONG_TAG
             # self.state = State.TASK_COMPLETE
-            # self.state = State.START_ARUCO_SEARCH   #TODO: change back to self.state = State.START_POINT_NAVIGATE
+            # self.state = State.START_ARUCO_SEARCH  # TODO: Change back to State.START_POINT_NAVIGATE
         else:
             print("Autonomy state machine is disabled!")
 
-        return SetBoolResponse(success=True, message="Autonomy state machine is {}!".format(self.enabled))
+        # Set the response
+        response.success = True
+        response.message = "Autonomy state machine is {}!".format(self.enabled)
+
+        return response
     
-    def abort(self, msg:AutonomyAbortRequest):
+    def abort(self, request:AutonomyAbort.Request, response:AutonomyAbort.Response):
         print('in abort')
-        self.abort_status = msg.abort_status
-        self.abort_lat = msg.lat
-        self.abort_lon = msg.lon
-        self.abort_point = GPSCoordinate(self.abort_lat, self.abort_lon, 0)
+        self.abort_status = request.abort_status
+        self.abort_lat = request.lat
+        self.abort_lon = request.lon
 
         if self.abort_status:
             print("Aborting...")
@@ -316,7 +318,10 @@ class AutonomyStateMachine():
             print("Cancelling abort!")
             self.state = State.MANUAL
 
-        return SetBoolResponse(success=True, message="Abort is {}!".format(self.abort_status))
+        response.error = False
+        response.message = "Abort is {}!".format(self.abort_status)
+
+        return response
     
     def wrap(self, chi_1, chi_2):
         while chi_1 - chi_2 > np.pi:
