@@ -19,7 +19,7 @@ setup(
     maintainer='marsrover',
     maintainer_email='marsrover@todo.todo',
     description='The autonomous state machine package',
-    license='BYU YOU CANT HAVE IT"',
+    license='BYU YOU CANT HAVE IT',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
