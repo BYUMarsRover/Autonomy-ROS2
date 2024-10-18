@@ -3,6 +3,18 @@
 #
 # Tests the ROS1 bridge using the included ROS1 and ROS2 msg packages
 
+function printInfo {
+  echo -e "\033[0m\033[36m[INFO] $1\033[0m"
+}
+
+function printWarning {
+  echo -e "\033[0m\033[33m[WARNING] $1\033[0m"
+}
+
+function printError {
+  echo -e "\033[0m\033[31m[ERROR] $1\033[0m"
+}
+
 # Create a new tmux session
 tmux new-session -d -s bridge_session
 
@@ -31,8 +43,8 @@ tmux send-keys -t bridge_session:0.1 "source ~/bridge_ws/install/local_setup.bas
 tmux send-keys -t bridge_session:0.1 "ros2 run ros1_bridge dynamic_bridge --bridge-all-topics" ENTER
 
 echo ""
-echo "[INFO] Wait just a second while we get the ROS1-ROS2 test set up..."
-echo "[HELP] You can detach from the tmux session by pressing Ctrl+B, then D."
+printInfo "Wait just a second while we get the ROS1-ROS2 test set up..."
+printInfo "You can detach from the tmux session by pressing Ctrl+B, then D."
 echo ""
 
 sleep 3

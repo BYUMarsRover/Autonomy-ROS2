@@ -1,5 +1,7 @@
 #!/bin/bash
 # Created by Nelson Durrant, Oct 2024
+#
+# Starts and stops the ROS1 bridge image
 
 function printInfo {
   echo -e "\033[0m\033[36m[INFO] $1\033[0m"
