@@ -1,5 +1,10 @@
 #!/bin/bash
 # Created by Nelson Durrant, Oct 2024
+#
+# Starts and stops the ROS1 bridge image
+
+# Match this username to the one defined in the Dockerfile
+export UNAME=marsrover
 
 function printInfo {
   echo -e "\033[0m\033[36m[INFO] $1\033[0m"
