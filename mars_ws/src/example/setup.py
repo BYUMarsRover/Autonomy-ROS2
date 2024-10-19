@@ -13,7 +13,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='snelsondurrant',
+    maintainer='Nelson Durrant',
     maintainer_email='snelsondurrant@gmail.com',
     description='Example package for Autonomy ROS2 nodes',
     license='Apache-2.0',

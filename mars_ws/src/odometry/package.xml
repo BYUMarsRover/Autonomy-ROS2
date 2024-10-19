@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>odometry</name>
+  <version>0.0.0</version>
+  <description>TODO: Package description</description>
+  <maintainer email="marsrover@todo.todo">marsrover</maintainer>
+  <license>Apache-2.0</license>
+
+  <!-- General Build Dependencies -->
+  <depend>robot_localization</depend>
+  <depend>python3-transforms3d</depend>
+  <depend>tf_transformations</depend>
+
+
+  <!-- build dependencies -->
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+
+  <build_export_depend>sensor_msgs</build_export_depend>
+  <build_export_depend>nav_msgs</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+
+  <!-- execution dependencies -->
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>ros2launch</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <launch>
+      <launch_file>launch/estimation.launch.py</launch_file>
+    </launch>
+
+    <build_type>ament_python</build_type>
+  </export>
+</package>

@@ -1,0 +1,7 @@
+# Distance and heading sent by CoordinateInput GUI to waypoint_manager
+# for converting to a lat and lon based on current rover location.
+float32 distance
+float32 heading
+---
+string lat
+string lon
