@@ -9,6 +9,7 @@ setup(
     data_files=[
         # Install launch files
         ('share/' + package_name, ['launch/estimation.launch.py']),
+        ('share/' + package_name, ['launch/rover.launch.py']),
 
         # Install config files
         ('share/' + package_name + '/config', ['config/estimation.yaml']),
