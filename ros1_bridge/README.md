@@ -32,8 +32,6 @@ This guide outlines the steps to set up and run the containerized ROS 1 bridge.
 
 - Run `bash run_bridge.sh` inside the container to run the bridge.
 
---
-
 > **NOTE:** The ROS 1 bridge might throw the error:
 > 
 > "failed to create 2to1 bridge for topic '/rosout' with ROS 2 type 'rcl_interfaces/msg/Log' and ROS 1 type 'rosgraph_msgs/Log': No template specialization for the pair"
