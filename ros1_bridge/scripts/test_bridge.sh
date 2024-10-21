@@ -1,7 +1,7 @@
 #!/bin/bash
 # Created by Nelson Durrant, Oct 2024
 #
-# Tests the ROS1 bridge using the included ROS1 and ROS2 msg packages
+# Tests the ROS 1 bridge using the included ROS 1 and ROS 2 msg packages
 
 # Define the message type and data to be tested
 export TEST_MSG_TYPE="rover_msgs/msg/RoverStateSingleton"
@@ -28,12 +28,12 @@ tmux split-window -v -t bridge_session
 tmux split-window -v -t bridge_session
 tmux select-pane -t bridge_session:0.0
 
-# Run the ROS1 core
+# Run the ROS 1 core
 tmux send-keys -t bridge_session:0.3 "source /opt/ros/noetic/setup.bash" ENTER
 tmux send-keys -t bridge_session:0.3 "source ~/ros1_msgs_ws/install_isolated/setup.bash" ENTER
 tmux send-keys -t bridge_session:0.3 "roscore" ENTER
 
-# Start publishing from ROS2
+# Start publishing from ROS 2
 tmux send-keys -t bridge_session:0.2 "source ~/ros2_humble/install/setup.bash" ENTER
 tmux send-keys -t bridge_session:0.2 "source ~/ros2_msgs_ws/install/local_setup.bash" ENTER
 tmux send-keys -t bridge_session:0.2 "ros2 topic pub /test $TEST_MSG_TYPE '$TEST_MSG_DATA'" ENTER
@@ -52,7 +52,7 @@ printInfo "You can detach from the tmux session by pressing Ctrl+B, then D."
 # Wait a few seconds for the bridge to start
 sleep 3
 
-# Start listening to the ROS1 topic
+# Start listening to the ROS 1 topic
 tmux send-keys -t bridge_session:0.0 "source /opt/ros/noetic/setup.bash" ENTER
 tmux send-keys -t bridge_session:0.0 "source ~/ros1_msgs_ws/install_isolated/setup.bash" ENTER
 tmux send-keys -t bridge_session:0.0 "rostopic echo -n 1 /test" ENTER

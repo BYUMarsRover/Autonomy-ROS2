@@ -59,7 +59,7 @@ RUN python3 -m pip install -U \
     pytest-repeat \
     pytest-rerunfailures
 
-# Build ROS2 from source
+# Build ROS 2 from source
 RUN mkdir -p ~/ros2_humble/src
 WORKDIR /home/${UNAME}/ros2_humble
 RUN vcs import --input https://raw.githubusercontent.com/ros2/ros2/humble/ros2.repos src
