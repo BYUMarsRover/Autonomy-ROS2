@@ -1,4 +1,4 @@
-## ROS 1 Bridge Instructions
+## ROS 1 Bridge Guide
 
 This guide outlines the steps to set up and run the containerized ROS 1 bridge.
 
