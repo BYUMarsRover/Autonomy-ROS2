@@ -8,11 +8,13 @@ from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, Na
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint  # TODO: Need to call the service in the GUI somewhere.
 from std_srvs.srv import SetBool
 # from mobility.src.drive_controller_api import DriveControllerAPI
-from drive_controller_api import DriveControllerAPI
-from GPSTools import GPSTools, GPSCoordinate
+from autonomy.drive_controller_api import DriveControllerAPI
+from autonomy.GPSTools import GPSTools, GPSCoordinate
 from enum import Enum
 import numpy as np
 import time
+# from ament_index_pyuthon.packages import get_package_share_directory
+# import os
 
 class State(Enum):
     MANUAL = 1
@@ -43,12 +45,9 @@ class TagID(Enum):
     
 class AutonomyStateMachine(Node):
     def __init__(self):
-
+        super().__init__('state_machine')
         print('in init AutonomyStateMachine')
         self.get_logger().info('Autonomy state machine node initialized')
-        
-
-        super().__init_('state_machine_node')
 
         # Subscribers
         # self.task_subs = rospy.Subscriber(
@@ -70,7 +69,8 @@ class AutonomyStateMachine(Node):
         self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback)   # TODO: Add this to the GUI buttons
 
         # Parameters
-        self.dist_tolerance = self.get_parameter('/autonomy/state_machine_node/distance_tolerance').get_parameter_value().double_value
+        self.declare_parameter('distance_tolerance', 1.0)
+        self.distance_tolerance = self.get_parameter('distance_tolerance').get_parameter_value().double_value
         self.abort_dist_tolerance = self.get_parameter('/autonomy/state_machine_node/abort_distance_tolerance').get_parameter_value().double_value
         self.aruco_dist_tolerance = self.get_parameter('/autonomy/state_machine_node/aruco_distance_tolerance').get_parameter_value().double_value
         self.hex_search_radius = self.get_parameter('/autonomy/state_machine_node/hex_search_radius').get_parameter_value().double_value
@@ -395,7 +395,7 @@ class AutonomyStateMachine(Node):
             elif(self.state == State.POINT_NAVIGATION):
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
                 # self.set_autopilot_speed(self.navigate_speed)
-                if(GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.dist_tolerance):
+                if(GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.distance_tolerance):
                     if(self.tag_id == TagID.GPS_ONLY):
                         print('GPS Task is complete!')
                         self.state = State.TASK_COMPLETE
@@ -463,7 +463,7 @@ class AutonomyStateMachine(Node):
             elif(self.state == State.ARUCO_HEX_SEARCH):
                 if disp: print('state is aruco hex search')
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
-                if(GPSTools.distance_between_lat_lon(self.current_point, self.hex_search_point) < self.dist_tolerance):
+                if(GPSTools.distance_between_lat_lon(self.current_point, self.hex_search_point) < self.distance_tolerance):
                     self.state = State.START_ARUCO_SPIN_SEARCH
                     self.hex_search_point_num += 1
                 if(self.correct_aruco_tag_found):
