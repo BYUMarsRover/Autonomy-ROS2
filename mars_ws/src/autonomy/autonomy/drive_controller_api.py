@@ -4,19 +4,20 @@ This class provides an interface with the mobility module
 
 from rover_msgs.msg import MobilityGPSWaypoint2Follow, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityArucoAutopilotCommand
 from std_srvs.srv import SetBool
-import rclpy
-from rclpy.node import Node
 
-
-class DriveControllerAPI(Node):
+class DriveControllerAPI:
     
-    def __init__(self):
-        super().__init__('drive_controller_api')
+    def __init__(self, node=None):
+        if node is None: 
+            raise ValueError("This is a helper class. You need a node to create this object")
+        
+        self.node = node  # Store the node object for later use
 
-        self.path_cmds_pub = self.create_publisher(MobilityGPSWaypoint2Follow, '/mobility/waypoint2follow', 10)
-        self.autopilot_cmds_pub = self.create_publisher(MobilityAutopilotCommand, "/mobility/autopilot_cmds", 10)
-        self.drive_cmds_pub = self.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', 10)
-        self.aruco_autopilot_cmds_pub = self.create_publisher(MobilityArucoAutopilotCommand, '/mobility/aruco_autopilot_cmds', 10)
+        # Use node to create publishers
+        self.path_cmds_pub = self.node.create_publisher(MobilityGPSWaypoint2Follow, '/mobility/waypoint2follow', 10)
+        self.autopilot_cmds_pub = self.node.create_publisher(MobilityAutopilotCommand, "/mobility/autopilot_cmds", 10)
+        self.drive_cmds_pub = self.node.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', 10)
+        self.aruco_autopilot_cmds_pub = self.node.create_publisher(MobilityArucoAutopilotCommand, '/mobility/aruco_autopilot_cmds', 10)
 
         self.path_cmd = MobilityGPSWaypoint2Follow()
         self.autopilot_cmd = MobilityAutopilotCommand()
@@ -89,28 +90,20 @@ class DriveControllerAPI(Node):
         self._toggle_service('/mobility/aruco_autopilot_manager/enabled', enable, 'aruco_autopilot_manager_enabled')
 
     def _toggle_service(self, service_name, enable, manager_attr):
-        client = self.create_client(SetBool, service_name)
+        client = self.node.create_client(SetBool, service_name)  # Use the node to create the client
         while not client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info(f'Service {service_name} not available, waiting...')
+            self.node.get_logger().info(f'Service {service_name} not available, waiting...')  # Use node logger
 
         request = SetBool.Request()
         request.data = enable
 
+        # Call the service asynchronously using the node's spinning functionality
         future = client.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
+        
+        # Wait for the future to complete using the node
+        self.node.executor.spin_until_future_complete(future)
+        
         response = future.result()
-        if response.success:
+        if response and response.success:
             setattr(self, manager_attr, enable)
 
-
-def main(args=None):
-    rclpy.init(args=args)
-    drive_controller_api = DriveControllerAPI()
-    rclpy.spin(drive_controller_api)
-
-    drive_controller_api.destroy_node()
-    rclpy.shutdown()
-
-
-if __name__ == '__main__':
-    main()
