@@ -1,0 +1,6 @@
+int8 grip_elev_nano
+int8 epos_1_control
+int8 epos_2_control
+int8 epos_3_control
+int8 epos_4_control
+int8 epos_5_control

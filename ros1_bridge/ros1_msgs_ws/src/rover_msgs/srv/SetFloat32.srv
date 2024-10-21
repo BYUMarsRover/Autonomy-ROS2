@@ -1,0 +1,6 @@
+# Service request that passes a float to a service
+
+float32 data
+---
+bool success
+string message

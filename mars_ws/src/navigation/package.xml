@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>navigation</name>
+  <version>1.0.1</version>
+  <description>The navigation package</description>
+
+  <!-- Maintainer tag -->
+  <maintainer email="bjm255@byu.edu">Braden Meyers</maintainer>
+
+  <!-- License -->
+  <license>TODO</license>
+
+  <!-- Dependencies -->
+  <!-- Replace catkin-specific dependencies with ROS 2 equivalents -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Build dependencies -->
+  <build_depend>rqt</build_depend>
+  <build_depend>joy</build_depend>
+  <build_depend>rclcpp</build_depend>
+  <build_depend>rclpy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>opencv</build_depend>
+
+  <!-- Export dependencies -->
+  <build_export_depend>rclcpp</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <build_export_depend>opencv</build_export_depend>
+
+  <!-- Execution dependencies -->
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>opencv</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>launch</exec_depend>
+
+  <!-- Export section -->
+  <export>
+    <!-- Specify the build type -->
+    <build_type>ament_python</build_type>
+  </export>
+</package>

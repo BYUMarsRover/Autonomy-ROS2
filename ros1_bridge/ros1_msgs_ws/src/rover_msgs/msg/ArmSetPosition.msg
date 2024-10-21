@@ -1,0 +1,3 @@
+bool move_to_zero
+bool move_to_curl
+bool move_to_tuck

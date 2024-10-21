@@ -62,10 +62,16 @@ USER marsrover
 USER root
 RUN apt update && apt install -y \
     vim \
-    docker.io
+    docker.io \
+    ros-humble-robot-localization
 USER marsrover
 
 # Quick permissions fix (might be too heavy-handed)
 USER root
 RUN chown -R marsrover: /usr/local
 USER marsrover
+
+# need to rollpack on numpy to v1.26.0 to avoid bug with the odometry package (transforms3d dependency)
+# Need to confirm this is still necessary?
+# RUN pip3 uninstall -y numpy
+# RUN pip3 install numpy==1.26.0
