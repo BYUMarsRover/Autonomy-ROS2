@@ -46,11 +46,10 @@ tmux send-keys -t bridge_session:0.1 "source ~/ros2_msgs_ws/install/local_setup.
 tmux send-keys -t bridge_session:0.1 "source ~/bridge_ws/install/local_setup.bash" ENTER
 tmux send-keys -t bridge_session:0.1 "ros2 run ros1_bridge dynamic_bridge --bridge-all-topics" ENTER
 
-echo ""
 printInfo "Wait just a second while we get the ROS1 bridge test set up..."
 printInfo "You can detach from the tmux session by pressing Ctrl+B, then D."
-echo ""
 
+# Wait a few seconds for the bridge to start
 sleep 3
 
 # Start listening to the ROS1 topic

@@ -33,10 +33,8 @@ tmux send-keys -t bridge_session:0.2 "source ~/ros2_humble/install/setup.bash" E
 tmux send-keys -t bridge_session:0.2 "cd ~/ros2_msgs_ws" ENTER
 tmux send-keys -t bridge_session:0.2 "colcon build" ENTER
 
-echo ""
 printInfo "Wait just a second while we build the included ROS1 and ROS2 msg packages..."
 printInfo "You can detach from the tmux session by pressing Ctrl+B, then D."
-echo ""
 
 # Wait until the ROS1 and ROS2 messages finish building
 sleep 3

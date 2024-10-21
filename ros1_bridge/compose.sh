@@ -20,17 +20,11 @@ function printError {
 
 case $1 in
   "down")
-    echo ""
     printInfo "Stopping the ROS1 bridge image..."
-    echo ""
-
     docker compose -f docker/docker-compose.yaml down
     ;;
   *)
-    echo ""
     printInfo "Loading the ROS1 bridge image..."
-    echo ""
-
     docker compose -f docker/docker-compose.yaml up -d
     docker exec -it ros1_bridge bash
     ;;
