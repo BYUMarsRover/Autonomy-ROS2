@@ -9,7 +9,7 @@
       av_device_format: "YUV422P"
       image_width: 1920
       image_height: 1080
-      camera_name: "head_camera"
+      camera_name: "narrow_stereo"
       camera_info_url: "package://start/config/cam_config/head_cam_info.yaml"
       brightness: -1
       contrast: -1
