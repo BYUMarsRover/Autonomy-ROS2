@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
@@ -18,8 +18,8 @@ def generate_launch_description():
 
     # Define nodes
 
-    # UBLOX F9P Node
-    f9p_node = Node(
+    # UBLOX F9P Node for the rover
+    f9p = Node(
         package='ublox_read_2',
         executable='ublox_ros',
         namespace='rover',
@@ -37,26 +37,24 @@ def generate_launch_description():
     )
 
     # Position Velocity Time Translator Node
-    position_velocity_time_translator_node = Node(
+    position_velocity_time_translator = Node(
         package='odometry',
-        executable='PositionVelocityTimeTranslator.py',
+        executable='position_velocity_time_translator.py',
         namespace='rover',
-        name='PositionVelocityTimeTranslator',
+        name='position_velocity_time_translator',
         remappings=[
             ('lla', '/ins/lla')
         ],
         output='screen'
     )
 
-    ld.add_action([
-        standalone_arg,
-        rover_serial_port_arg,
-        base_host_arg,
-        base_port_arg,
-        rover_host_arg,
-        rover_port_arg,
-        f9p_node,
-        position_velocity_time_translator_node
-    ])
+    ld.add_action(standalone_arg)
+    ld.add_action(rover_serial_port_arg)
+    ld.add_action(base_host_arg)
+    ld.add_action(base_port_arg)
+    ld.add_action(rover_host_arg)
+    ld.add_action(rover_port_arg)
+    ld.add_action(f9p)
+    ld.add_action(position_velocity_time_translator)
     
     return ld
