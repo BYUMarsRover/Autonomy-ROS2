@@ -32,7 +32,7 @@
 #include <assert.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include "FiducialsNode.hpp"
+#include "aruco_detect/FiducialsNode.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 #include <tf2/LinearMath/Transform.h>
