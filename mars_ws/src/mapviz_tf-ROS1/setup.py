@@ -1,9 +1,16 @@
 from distutils.core import setup
-from catkin_pkg.python_setup import generate_distutils_setup
 
-setup_args = generate_distutils_setup(
+package_name = 'mapviz_tf'
+
+setup(
+    name= package_name,
+    verion="0.0.0"
+    install_requires=['setuptools'],
+    zip_safe=True,
     packages = ['mapviz_tf'],
-    package_dir={'': 'src'}
+    package_dir={'': 'src'},
+    maintainer='Michael Crandall',
+    maintainer_email="wyomike2020@gmail.com",
+    description='The MapViz package',
+    license='TODO',
 )
-
-setup(**setup_args)
