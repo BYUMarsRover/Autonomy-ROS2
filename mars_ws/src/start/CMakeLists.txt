@@ -21,7 +21,6 @@ install(
 install(
   DIRECTORY config/
   DESTINATION share/${PROJECT_NAME}/config
-  DESTINATION share/${PROJECT_NAME}/config/cam_config
 )
 
 if(BUILD_TESTING)
