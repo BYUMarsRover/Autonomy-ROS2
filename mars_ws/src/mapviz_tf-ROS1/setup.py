@@ -4,7 +4,7 @@ package_name = 'mapviz_tf'
 
 setup(
     name= package_name,
-    verion="0.0.0"
+    version="0.0.0",
     install_requires=['setuptools'],
     zip_safe=True,
     packages = ['mapviz_tf'],
