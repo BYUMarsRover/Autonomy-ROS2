@@ -1,0 +1,9 @@
+int32 width
+int32 height
+bool[10] is_wall
+int32[10] left_bound
+int32[10] right_bound
+int32[10] centroid_x
+int32[10] centroid_y
+float32[10] distance
+#sensor_msgs/Image[10] im

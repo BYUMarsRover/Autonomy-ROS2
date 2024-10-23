@@ -34,14 +34,18 @@
   <exec_depend>fiducial_msgs</exec_depend>  <!-- Added for FiducialTransformArray -->
   <exec_depend>image_tools</exec_depend>
 
+  <depend>std_msgs</depend>
+
   <!-- Testing dependencies Not sure if we need these-->
-  <!-- <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
-  <test_depend>python3-pytest</test_depend> -->
+  <test_depend>python3-pytest</test_depend>
 
   <!-- Python build type for the node -->
   <buildtool_depend>ament_python</buildtool_depend>
+
+  
 
   <!-- Export information -->
   <export>
