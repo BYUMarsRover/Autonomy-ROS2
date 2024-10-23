@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-
-####THIS STATE MACHINE NODE IS BASED OFF OF THE LATEST COMMIT TO HAZARD AVOIDANCE BRANCH####
-
 import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
