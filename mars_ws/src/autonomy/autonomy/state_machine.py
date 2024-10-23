@@ -9,31 +9,30 @@ from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from std_srvs.srv import SetBool
 from autonomy.drive_controller_api import DriveControllerAPI
 from autonomy.GPSTools import GPSTools, GPSCoordinate
-from enum import Enum, StrEnum
+from enum import Enum
 import numpy as np
 import time
 from collections import deque
 
-State = StrEnum("State", [
-    "MANUAL",
-    "SEARCH_FOR_WRONG_TAG",
-    "START_POINT_NAVIGATION",
-    "POINT_NAVIGATION",
-    "START_SPIN_SEARCH",
-    "SPIN_SEARCH",
-    "START_HEX_SEARCH",
-    "HEX_SEARCH",
-    "START_OBJECT_HEX_SEARCH",
-    "ARUCO_NAVIGATE",
-    "OBJECT_NAVIGATE",
-    "ARUCO_GATE_NAVIGATION",
-    "ARUCO_GATE_ORIENTATION",
-    "ARUCO_GATE_APPROACH",
-    "ARUCO_GATE_PAST",
-    "TASK_COMPLETE",
-    "START_ABORT_STATE",
-    "ABORT_STATE"
-])
+class State(Enum):
+    MANUAL = "MANUAL"
+    SEARCH_FOR_WRONG_TAG = "SEARCH_FOR_WRONG_TAG"
+    START_POINT_NAVIGATION = "START_POINT_NAVIGATION"
+    POINT_NAVIGATION = "POINT_NAVIGATION"
+    START_SPIN_SEARCH = "START_SPIN_SEARCH"
+    SPIN_SEARCH = "SPIN_SEARCH"
+    START_HEX_SEARCH = "START_HEX_SEARCH"
+    HEX_SEARCH = "HEX_SEARCH"
+    START_OBJECT_HEX_SEARCH = "START_OBJECT_HEX_SEARCH"
+    ARUCO_NAVIGATE = "ARUCO_NAVIGATE"
+    OBJECT_NAVIGATE = "OBJECT_NAVIGATE"
+    ARUCO_GATE_NAVIGATION = "ARUCO_GATE_NAVIGATION"
+    ARUCO_GATE_ORIENTATION = "ARUCO_GATE_ORIENTATION"
+    ARUCO_GATE_APPROACH = "ARUCO_GATE_APPROACH"
+    ARUCO_GATE_PAST = "ARUCO_GATE_PAST"
+    TASK_COMPLETE = "TASK_COMPLETE"
+    START_ABORT_STATE = "START_ABORT_STATE"
+    ABORT_STATE = "ABORT_STATE"
 
 class TagID(Enum):
     AR_TAG_1 = 1
@@ -42,7 +41,6 @@ class TagID(Enum):
     BOTTLE = 4
     MALLET = 5
     GPS_ONLY = 6
-    
 
 class AutonomyStateMachine(Node):
 
@@ -99,7 +97,7 @@ class AutonomyStateMachine(Node):
 
         #Initialize variables
         self.rover_nav_state = RoverState()
-        self.drive_controller = DriveControllerAPI()
+        self.drive_controller = DriveControllerAPI(self)
         self.state = State.MANUAL
         self.enabled = False
         self.aruco_tag_distance = None
@@ -347,7 +345,7 @@ class AutonomyStateMachine(Node):
 
         #Display state every 10 iterations
         if disp and self.enabled:
-            self.get_logger().info(f"State is: {self.state}")
+            self.get_logger().info(f"State is: {self.state.value}")
 
         if self.enabled:
             if self.state == State.MANUAL:
@@ -539,7 +537,7 @@ def main(args=None):
     # Loop until ROS 2 is shut down
     while rclpy.ok():
         rclpy.spin_once(autonomy_state_machine)  # Process callbacks once per loop
-        autonomy_state_machine.stateLoop()  # Call the state loop function
+        autonomy_state_machine.state_loop() # Call the state loop function
         rate.sleep()
 
     # Clean up when shutting down
