@@ -4,10 +4,9 @@
 
 import rclpy
 from rclpy.node import Node
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray
-from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyAbortRequest, AutonomyWaypoint
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
+from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from std_srvs.srv import SetBool
-from zed_msgs.msg import ObjectDetections #TODO Add zed_msgs pkg
 from autonomy.drive_controller_api import DriveControllerAPI
 from autonomy.GPSTools import GPSTools, GPSCoordinate
 from enum import Enum, StrEnum

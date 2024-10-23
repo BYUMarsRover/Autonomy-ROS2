@@ -31,6 +31,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/AutonomyTaskInfo.msg"
   "msg/NavStatus.msg"
   "msg/RoverState.msg"
+  "msg/ObjectDetection.msg"
+  "msg/ObjectDetections.msg"
   "srv/AutonomyAbort.srv"
   "srv/AutonomyWaypoint.srv"
   "srv/SetFloat32.srv"
