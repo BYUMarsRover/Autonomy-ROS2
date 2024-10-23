@@ -7,6 +7,12 @@ setup(
     version='0.0.0',
     packages=find_packages(exclude=['test']),
     data_files=[
+        # Install launch files
+        ('share/' + package_name, ['launch/estimation.launch.py']),
+
+        # Install config files
+        ('share/' + package_name + '/config', ['config/estimation.yaml']),
+
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
