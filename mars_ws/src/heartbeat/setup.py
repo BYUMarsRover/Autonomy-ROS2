@@ -14,12 +14,13 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='marsrover',
-    maintainer_email='marsrover@todo.todo',
+    maintainer_email='hilton.chloe.y@gmail.com',
     description='TODO: Package description',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'heartbeat_rover = heartbeat.heartbeat_rover:main'
         ],
     },
 )

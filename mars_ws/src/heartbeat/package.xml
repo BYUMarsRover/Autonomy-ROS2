@@ -4,7 +4,7 @@
   <name>heartbeat</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="marsrover@todo.todo">marsrover</maintainer>
+  <maintainer email="hilton.chloe.y@gmail.com">marsrover</maintainer>
   <license>Apache-2.0</license>
 
   <test_depend>ament_copyright</test_depend>
