@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.8)
 project(aruco_detect)
 
+# Check for compiler flags
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
+# Find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
@@ -21,9 +22,12 @@ find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 
 # Include directories
-include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(
+  include
+  ${OpenCV_INCLUDE_DIRS}
+)
 
-# Add executable
+# Add executable for the main node
 add_executable(aruco_detect src/aruco_detect.cpp)
 
 # Link libraries and dependencies
@@ -45,11 +49,48 @@ ament_target_dependencies(aruco_detect
 # Link OpenCV libraries
 target_link_libraries(aruco_detect ${OpenCV_LIBS})
 
+#############
+## Install ##
+#############
+
+# Mark the executable for installation
+install(TARGETS aruco_detect
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install Python launch files
+install(DIRECTORY launch/
+  DESTINATION share/${PROJECT_NAME}/launch
+)
+
+# Install Python scripts if necessary
+install(PROGRAMS scripts/create_markers.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+#############
+## Testing ##
+#############
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  set(ament_cmake_copyright_FOUND TRUE)
-  set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+
+  # Add the C++ test executable
+  add_executable(aruco_images_test test/aruco_images_test.cpp)
+  ament_target_dependencies(aruco_images_test rclcpp OpenCV)
+
+  # Link the test executable
+  target_link_libraries(aruco_images_test ${OpenCV_LIBS})
+
+  # Add a gtest for this test file
+  ament_add_gtest(aruco_images_test test/aruco_images_test.cpp)
+
+  # Install test files
+  install(FILES test/aruco_images.test
+    DESTINATION share/${PROJECT_NAME}/test
+  )
 endif()
 
+# ROS2 package
 ament_package()
