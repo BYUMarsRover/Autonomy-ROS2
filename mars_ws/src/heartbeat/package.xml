@@ -1,22 +1,17 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>heartbeat</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>Heartbeat for the rover</description>
+
   <maintainer email="hilton.chloe.y@gmail.com">marsrover</maintainer>
   <license>Apache-2.0</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>rospy</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>rospy</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <build_depend>message_generation</build_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <run_depend>message_runtime</run_depend>
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
