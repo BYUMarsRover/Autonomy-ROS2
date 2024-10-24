@@ -1,5 +1,7 @@
 #!/bin/bash
 # Created by Nelson Durrant, Oct 2024
+#
+# Starts and stops the Autonomy ROS2 image
 
 function printInfo {
   echo -e "\033[0m\033[36m[INFO] $1\033[0m"
@@ -15,17 +17,11 @@ function printError {
 
 case $1 in
   "down")
-    echo ""
     printInfo "Stopping the Autonomy ROS2 image..."
-    echo ""
-
     docker compose -f docker/docker-compose.yaml down
     ;;
   *)
-    echo ""
     printInfo "Loading the Autonomy ROS2 image..."
-    echo ""
-
     docker compose -f docker/docker-compose.yaml up -d
     docker exec -it autonomy_ros2 bash
     ;;

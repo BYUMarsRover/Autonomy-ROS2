@@ -1,7 +1,7 @@
 #!/bin/bash
 # Created by Nelson Durrant, Oct 2024
 #
-# Tests the ROS 1 bridge using the included ROS 1 and ROS 2 msg packages
+# Tests the ROS 1 bridge using the included ROS 1 and ROS 2 msgs packages
 
 # Define the message type and data to be tested
 export TEST_MSG_TYPE="rover_msgs/msg/RoverStateSingleton"
