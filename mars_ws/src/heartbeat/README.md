@@ -21,3 +21,8 @@ You can use the heartbeat by including the following line in your rover launch f
 ```
 
 Currently, these lines are included in `rover_common.launch` and `base_common.launch`, so the heartbeat statuses are available regardless of the task launched.
+
+Here's how to run the node:
+```
+colcon build --packages-select heartbeat
+```
