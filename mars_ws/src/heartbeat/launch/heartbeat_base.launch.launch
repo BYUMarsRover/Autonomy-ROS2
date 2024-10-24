@@ -1,3 +1,0 @@
-<launch>
-  <node name="heartbeat_base" pkg="heartbeat" type="HeartbeatBase.py" output="screen" />
-</launch>
