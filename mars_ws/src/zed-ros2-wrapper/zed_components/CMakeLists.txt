@@ -78,6 +78,7 @@ endif()
 
 #############################################
 # Dependencies
+set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda)
 find_package(ZED REQUIRED)
 
 exec_program(uname ARGS -p OUTPUT_VARIABLE CMAKE_SYSTEM_NAME2)
