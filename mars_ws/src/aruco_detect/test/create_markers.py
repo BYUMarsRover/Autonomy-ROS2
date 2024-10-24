@@ -21,7 +21,7 @@ for path in sys.path:
              break
 # For-else: else is called if loop doesn't break 
 else:
-    print "ERROR: could not find module em, please sudo apt install python-empy"
+    print ("ERROR: could not find module em, please sudo apt install python-empy")
     exit(2)
 
 import cv2
@@ -34,8 +34,8 @@ Generate a PDF file containaing one or more fiducial marker for printing
 def checkCmd(cmd, package):
     rc = os.system("which %s > /dev/null" % cmd)
     if rc != 0:
-        print """This utility requires %s. It can be installed by typing:
-    sudo apt install %s""" % (cmd, package)
+        print ("""This utility requires %s. It can be installed by typing:
+    sudo apt install %s""") % (cmd, package)
         sys.exit(1)
      
 def genSvg(id, dicno, paper_size):
@@ -89,7 +89,7 @@ def genSvg(id, dicno, paper_size):
 """, {"id": id, "dicno": dicno, "paper_width": paper_size[0], "paper_height": paper_size[1], "fid_len": 140.0})
 
 def genMarker(i, dicno, paper_size):
-    print " Marker %d\r" % i,
+    print (" Marker %d\r") % i,
     sys.stdout.flush()
     aruco_dict = aruco.Dictionary_get(dicno)
     img = aruco.drawMarker(aruco_dict, i, 2000)
@@ -141,11 +141,11 @@ if __name__ == "__main__":
         for i in markers:
             genMarker(i, dicno, paper_size)
 
-    print "Combining into %s" % outfile
+    print ("Combining into %s") % outfile
     os.system("pdfunite %s %s" % (" ".join(pdfs), outfile))
     for f in pdfs:
         os.remove(f)
 
-    print '\033[91m' + """After printing, please make sure that the long lines around the marker are
+    print ('\033[91m') + """After printing, please make sure that the long lines around the marker are
 EXACTLY 14.0 cm long. This is required for accurate position estimation.""" + '\033[0m'
 
