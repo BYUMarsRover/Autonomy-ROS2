@@ -1,22 +1,30 @@
 #!/usr/bin/env python3
 
+import threading
 import rclpy
+from rclpy.executors import ExternalShutdownException
+from rclpy.node import Node
+
 import numpy as np
 import tf
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import NavSatFix
 from lat_lon_meter_convertor import LatLonConvertor
 
+def spin_in_background():
+    executor = rclpy.get_global_executor()
+    try:
+        executor.spin()
+    except ExternalShutdownException:
+        pass
 
-class RoverTransformBroadcaster:
+class RoverTransformBroadcaster(Node):
     def __init__(self):
         self.origin = {}
         self.rover_position = {"x": np.nan, "y": np.nan}
 
-        self.lla_sub = rclpy.Subscriber("/ins/lla", NavSatFix, self.lla_callback)
-        self.odom_sub = rclpy.Subscriber(
-            "/odometry/filtered", Odometry, self.odom_callback
-        )
+        self.lla_sub = self.create_subscriber(NavSatFix, "/ins/lla", self.lla_callback)
+        self.odom_sub = self.create_subscriber(Odometry, "/odometry/filtered", self.odom_callback)
 
         self.latlonconv = LatLonConvertor()
 
@@ -41,6 +49,7 @@ class RoverTransformBroadcaster:
 
 if __name__ == "__main__":
     rclpy.init()
+    node = rclpy.create_node("rover_tf_broadcaster")
     # rospy.init_node("rover_tf_broadcaster")
     transform = RoverTransformBroadcaster()
     rclpy.spin()
