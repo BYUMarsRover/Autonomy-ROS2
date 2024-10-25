@@ -1,6 +1,6 @@
 <launch>
 
-  <env name="ROSCONSOLE_FORMAT" value="[${thread}] [${node}/${function}:${line}]: ${message}"/>
+  <set_env name="ROSCONSOLE_FORMAT" value="[${thread}] [${node}/${function}:${line}]: ${message}"/>
 
   <arg name="print_profile_data" default="false"/>
 
