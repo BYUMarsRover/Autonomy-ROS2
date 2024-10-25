@@ -9,8 +9,8 @@ import socket
 # Base Common Launch
 # Created by Daniel Webb Oct 2024
 
-# Launches everything that is shared among all four tasks. This launch
-# file must be called by every base_task_<task_name>.launch file.
+# Launches everything for the base that is shared among all four tasks. 
+# This launch file must be called by every base_task_<task_name>.launch file.
 
 def get_local_ip():
     """Retrieve the local IP address of the machine."""
