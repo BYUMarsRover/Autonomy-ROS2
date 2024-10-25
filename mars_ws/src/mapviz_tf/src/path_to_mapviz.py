@@ -1,18 +1,28 @@
 #!/usr/bin/env python3
 
 import rclpy
+import threading
+from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from std_msgs.msg import Header
 from nav_msgs.msg import Path as PathMsg
 from geometry_msgs.msg import Point, Pose, Quaternion, PoseStamped
 from lat_lon_meter_convertor import LatLonConvertor
 
-class PathToMapviz:
+def spin_in_background():
+    executor = rclpy.get_global_executor()
+    try:
+        executor.spin()
+    except ExternalShutdownException:
+        pass
+
+class PathToMapviz(Node):
 
     def __init__(self):
-        self.path_planning_sub = rclpy.Subscriber("/path_planning/smoothed_path", PathMsg, self.path_planning_callback)
+        self.path_planning_sub = self.create_subscriber(PathMsg, "/path_planning/smoothed_path", self.path_planning_callback)
 
-        self.pub = rclpy.Publisher('/mapviz/path', PathMsg, queue_size=10)
-
+        # self.pub = rclpy.Publisher('/mapviz/path', PathMsg, queue_size=10)
+        self.pub = self.create_publisher(PathMsg, 'chatter', 10)
         # Pose array.
         self.poses_array = []
 
@@ -77,6 +87,11 @@ class PathToMapviz:
 
 if __name__ == '__main__':
     rclpy.init()
+    t = threading.Thread(target=spin_in_background)
+    t.start()
     # rospy.init_node('path_to_mapviz')
+    node = rclpy.create_node('path_to_mapviz')
+    rclpy.get_global_executor().add_node(node)
     transform = PathToMapviz()
-    rclpy.spin() #this might be fine, but do more research to find out!
+    # rclpy.spin() #It seems like this is unecessary with the use now of t.start and t.join
+    t.join()
