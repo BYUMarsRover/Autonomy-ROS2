@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(mapviz_tf)
+project(mapviz_tf_ros1)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
