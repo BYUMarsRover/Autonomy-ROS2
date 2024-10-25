@@ -45,6 +45,9 @@ class AutonomyStateMachine(Node):
         super().__init__('state_machine')
         self.get_logger().info('in init AutonomyStateMachine')
 
+        # Create a timer to call `state_loop` every 0.1 seconds (10 Hz)
+        self.create_timer(0.1, self.state_loop)
+
         # Subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
         self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10)
@@ -151,9 +154,6 @@ class AutonomyStateMachine(Node):
     def set_all_tasks_callback(self, request: AutonomyWaypoint.Request, response: AutonomyWaypoint.Response) -> AutonomyWaypoint.Response:
         self.get_logger().info('in set_all_tasks_callback')
 
-        # Clear existing waypoints and add the new ones
-        self.waypoints.clear()  # Make sure to clear existing waypoints if starting fresh
-
         tasks = request.task_list  
         for task in tasks:
             self.waypoints.append(task)  # Append new waypoints to the deque
@@ -168,6 +168,7 @@ class AutonomyStateMachine(Node):
 
         response.success = True
         response.message = 'Adding waypoints was successful'
+        self.get_logger().info(f"Response: success={response.success}, message='{response.message}'")
         return response
 
     def set_current_task(self):
@@ -279,11 +280,12 @@ class AutonomyStateMachine(Node):
         self.get_logger().info('in enable')
         
         # Check if there are waypoints before enabling the state machine
-        if len(self.waypoints) == 0:
-            self.get_logger().warn("No waypoints available, cannot enable autonomy.")
-            response.success = False
-            response.message = "No waypoints available."
-            return response
+        #TODO Add error checking
+        # if len(self.waypoints) == 0:
+        #     self.get_logger().warn("No waypoints available, cannot enable autonomy.")
+        #     response.success = False
+        #     response.message = "No waypoints available."
+        #     return response
         
         self.enabled = request.data
         
@@ -362,6 +364,7 @@ class AutonomyStateMachine(Node):
             self.get_logger().info(f"State is: {self.state.value}")
 
         if self.enabled:
+            self.get_logger().info(f"State is: {self.state.value}")
             if self.state == State.MANUAL:
                 self.rover_nav_state.navigation_state = RoverState.TELEOPERATION_STATE
                 self.correct_aruco_tag_found = False
@@ -541,18 +544,9 @@ def main(args=None):
     
     Continuous loop that publishes status and checks for updates from the GUI
     """
-    rclpy.init(args=args)  # Initialize the ROS 2 Python client library
-
-    # Create an instance of the AutonomyStateMachine node
+    rclpy.init(args=args)
     autonomy_state_machine = AutonomyStateMachine()
-
-    rate = autonomy_state_machine.create_rate(10)  # ROS 2 rate (10 Hz)
-
-    # Loop until ROS 2 is shut down
-    while rclpy.ok():
-        rclpy.spin_once(autonomy_state_machine)  # Process callbacks once per loop
-        autonomy_state_machine.state_loop() # Call the state loop function
-        rate.sleep()
+    rclpy.spin(autonomy_state_machine)
 
     # Clean up when shutting down
     autonomy_state_machine.destroy_node()
