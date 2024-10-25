@@ -2,6 +2,7 @@
 
 import threading
 import rclpy
+from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 
 import numpy as np
@@ -21,24 +22,24 @@ def spin_in_background():
 ROS_RATE = 15
 
 
-class GPSPublisher:
+class GPSPublisher(Node):
     def __init__(self): #left old publishers to show conversion, will remove before final commit and push.
         # self.rover_filtered_gps_pub = rclpy.Publisher(
         #     "/GPSFix_rover_filtered", GPSFix, queue_size=1
         # )
-        self.rover_filtered_gps_pub = node.create_publisher(GPSFix, "/GPSFix_rover_filtered", 1)
+        self.rover_filtered_gps_pub = self.create_publisher(GPSFix, "/GPSFix_rover_filtered", 1)
         # self.rover_unfiltered_gps_pub = rclpy.Publisher(
         #     "/GPSFix_rover_unfiltered", GPSFix, queue_size=1
         # )
-        self.rover_unfiltered_gps_pub = node.create_publisher(GPSFix, "/GPSFix_rover_unfiltered", 1)
-        self.base_gps_pub = node.create_publisher(GPSFix, "/GPSFix_base", queue_size=1)
+        self.rover_unfiltered_gps_pub = self.create_publisher(GPSFix, "/GPSFix_rover_unfiltered", 1)
+        self.base_gps_pub = self.create_publisher(GPSFix, "/GPSFix_base", queue_size=1)
 
         # Add waypoints to the plotter
         # self.gps_plotter_pub = rclpy.Publisher("/GPS_waypoint_plotter", GPSFix, queue_size=1)
-        self.gps_plotter_pub = node.create_publisher(GPSFix, "/GPS_waypoint_plotter", 1)
+        self.gps_plotter_pub = self.create_publisher(GPSFix, "/GPS_waypoint_plotter", 1)
         #self.gps_plotter_sub = rospy.Subscriber("/mapviz_GPS_waypoint", GPSFix, self.plotter_callback)
 
-        self.gps_plotter_srv = rospy.Service('/GPS_waypoint_plotter', AutonomyWaypoint, self.set_all_tasks_callback)   # TODO: Add this to the GUI buttons TODO: change this to rclpy
+        self.gps_plotter_srv = rclpy.Service('/GPS_waypoint_plotter', AutonomyWaypoint, self.set_all_tasks_callback)   # TODO: Add this to the GUI buttons TODO: change this to rclpy
 
 
         self.rover_state_singleton_sub = rclpy.Subscriber(
@@ -105,7 +106,6 @@ if __name__ == "__main__":
     rclpy.init()
     t = threading.Thread(target=spin_in_background)
     t.start()
-    # rospy.init_node("gps_to_mapviz")
     node = rclpy.create_node("gps_to_mapviz")
     rclpy.get_global_executor().add_node(node)
     rate = node.create_rate(ROS_RATE)   #rospy.Rate(ROS_RATE)
