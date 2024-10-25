@@ -1,3 +1,6 @@
+xml
+<?xml version="1.0" encoding="UTF-8"?>
+
 <launch>
 
   <set_env name="ROSCONSOLE_FORMAT" value="[${thread}] [${node}/${function}:${line}]: ${message}"/>
