@@ -5,8 +5,6 @@ from std_srvs.srv import SetBool
 class DriveControllerAPI:
 
     def __init__(self, node):
-        super().__init__('drive_controller_api')
-        
         if node is None:
             raise ValueError("This is a helper class. You need a node to create this object")
 

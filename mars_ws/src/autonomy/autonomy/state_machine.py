@@ -147,16 +147,25 @@ class AutonomyStateMachine(Node):
             self.tag_id = TagID.BOTTLE
         elif task_info.tag_id == 'mallet':
             self.tag_id = TagID.MALLET
-
+    
     def set_all_tasks_callback(self, request: AutonomyWaypoint.Request, response: AutonomyWaypoint.Response) -> AutonomyWaypoint.Response:
-        '''
-        Puts all of the waypoints from the GUI into a queue so the rover can autonomously do the whole mission.
-        '''
         self.get_logger().info('in set_all_tasks_callback')
-        tasks: list[AutonomyTaskInfo] = request.task_list
-        for _ in tasks:
-            self.waypoints.append(_)
-        response = AutonomyWaypoint.Response()
+
+        # Clear existing waypoints and add the new ones
+        self.waypoints.clear()  # Make sure to clear existing waypoints if starting fresh
+
+        tasks = request.task_list  
+        for task in tasks:
+            self.waypoints.append(task)  # Append new waypoints to the deque
+
+        self.get_logger().info(f'Waypoints: {self.waypoints}')
+
+        # Transition the state machine to the next state if it's ready to begin
+        if len(self.waypoints) > 0:
+            self.get_logger().info("Waypoint(s) added, Waiting for autonomy enable")
+        else:
+            self.get_logger().warn("No waypoints received, staying idle")
+
         response.success = True
         response.message = 'Adding waypoints was successful'
         return response
@@ -268,8 +277,16 @@ class AutonomyStateMachine(Node):
 
     def enable(self, request: SetBool.Request, response: SetBool.Response):
         self.get_logger().info('in enable')
+        
+        # Check if there are waypoints before enabling the state machine
+        if len(self.waypoints) == 0:
+            self.get_logger().warn("No waypoints available, cannot enable autonomy.")
+            response.success = False
+            response.message = "No waypoints available."
+            return response
+        
         self.enabled = request.data
-
+        
         # Set the first task
         self.set_current_task()
 
@@ -544,4 +561,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
