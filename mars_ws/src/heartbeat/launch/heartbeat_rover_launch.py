@@ -6,7 +6,7 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='heartbeat',
-            executable='HeartbeatRover',
+            executable='HeartbeatRover.py',
             name='heartbeat_rover',
             output='screen',
         )
