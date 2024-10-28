@@ -42,10 +42,10 @@ def generate_launch_description():
         #     )
         # ], condition=IfCondition(LaunchConfiguration('simulation').to_bool() == False)),
 
-        # Include autonomy camera launch file (usb_cam)
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(usb_cam_launch_dir, 'autonomy_camera.launch.py'))
-        ),
+        # Include autonomy camera launch file (usb_cam) Don't run this on a PC docker computer
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join(usb_cam_launch_dir, 'autonomy_camera.launch.py'))
+        # ),
 
         # Include ArUco detection launch for two cameras (logi and zed)
         # IncludeLaunchDescription(
