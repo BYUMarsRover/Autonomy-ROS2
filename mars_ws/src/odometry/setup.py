@@ -1,15 +1,19 @@
 from setuptools import find_packages, setup
 from glob import glob
+import os
 
 package_name = 'odometry'
+
+# print(os.path.join('share', package_name, 'launch'))
+# print(os.path.join('launch', '*.launch.py'))
 
 setup(
     name=package_name,
     version='0.0.0',
     packages=find_packages(exclude=['test']),
     data_files=[
-        # Install launch files
-        ('share/' + package_name, glob('/launch*launch.[pxy][yma]*')),
+        # Install all launch files
+        ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
 
         # Install config files
         ('share/' + package_name + '/config', ['config/estimation.yaml']),
