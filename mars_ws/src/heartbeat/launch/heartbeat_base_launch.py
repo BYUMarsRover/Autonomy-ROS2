@@ -6,7 +6,7 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='heartbeat',
-            executable='HeartbeatBase',
+            executable='heartbeat_base',
             name='heartbeat_base',
             output='screen',
         )
