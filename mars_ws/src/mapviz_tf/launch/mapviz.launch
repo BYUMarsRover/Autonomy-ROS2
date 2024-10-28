@@ -7,7 +7,7 @@
 
   <arg name="print_profile_data" default="false"/>
 
-  <arg name="location" default="$(optenv MAPVIZ_LOCATION hanksville)"/>
+  <arg name="location" default="$(env MAPVIZ_LOCATION hanksville)"/>
 
   <node pkg="mapviz" exec="mapviz" name="mapviz">
     <param name="print_profile_data" value="$(arg print_profile_data)"/>
