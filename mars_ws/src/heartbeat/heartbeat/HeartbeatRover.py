@@ -2,6 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import Heartbeat, HeartbeatStatusRover
+from builtin_interfaces.msg import Time
 from . import parameters as p
 
 
@@ -26,11 +27,19 @@ class RoverHeartbeat(Node):
         self.last_received = t
 
     def ping_and_publish(self):
-        self.pub_heartbeat.publish(self.get_clock().now())
+        heartbeat_msg = Heartbeat()
+        heartbeat_msg.current_time = Time()
+        now = self.get_clock().now()
+        heartbeat_msg.current_time.sec = now.seconds
+        heartbeat_msg.current_time.nanosec = now.nanoseconds
+
+        self.pub_heartbeat.publish(heartbeat_msg)
+
         if self.last_received is not None:
-            self.pub_heartbeat_status.publish(
-                (self.get_clock().now() - self.last_received).nanoseconds / 1e9
-            )
+            elapsed_time = (self.get_clock().now() - self.last_received).nanoseconds / 1e9
+            status_msg = HeartbeatStatusRover()
+            status_msg.elapsed_time = elapsed_time
+            self.pub_heartbeat_status.publish(status_msg)
 
 
 def main(args=None):
