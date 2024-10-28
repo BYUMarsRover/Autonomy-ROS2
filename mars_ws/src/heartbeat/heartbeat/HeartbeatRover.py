@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import Heartbeat, HeartbeatStatusRover
-import parameters as p
+from . import parameters as p
 
 
 class RoverHeartbeat(Node):
