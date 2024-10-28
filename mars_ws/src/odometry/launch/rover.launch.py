@@ -13,7 +13,7 @@ def generate_launch_description():
     rover_serial_port_arg = DeclareLaunchArgument('rover_serial_port', default_value='/dev/ttyACM0')
     base_host_arg = DeclareLaunchArgument('base_host', default_value='') #TODO: set a default value
     base_port_arg = DeclareLaunchArgument('base_port', default_value='16140')
-    rover_host_arg = DeclareLaunchArgument('rover_host', default_value='') #TODO: set a default value
+    rover_host_arg = DeclareLaunchArgument('rover_host', default_value='192.168.1.120') #TODO: set a default value
     rover_port_arg = DeclareLaunchArgument('rover_port', default_value='16145')
 
     # Define nodes
@@ -39,7 +39,7 @@ def generate_launch_description():
     # Position Velocity Time Translator Node
     position_velocity_time_translator = Node(
         package='odometry',
-        executable='position_velocity_time_translator.py',
+        executable='position_velocity_time_translator',
         namespace='rover',
         name='position_velocity_time_translator',
         remappings=[
