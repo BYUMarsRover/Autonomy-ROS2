@@ -94,8 +94,8 @@ def generate_launch_description():
         ),
 
         # Heartbeat launch file inclusion
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(
-                heartbeat_dir, 'launch', 'heartbeat_rover.launch.py'))
-        ),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join(
+        #         heartbeat_dir, 'launch', 'heartbeat_rover.launch.py'))
+        # ),
     ])
