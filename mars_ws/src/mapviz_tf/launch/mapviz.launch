@@ -7,27 +7,26 @@
 
   <arg name="print_profile_data" default="false"/>
 
-  <!-- <arg name="location" default="$(env MAPVIZ_LOCATION hanksville)"/>-->
-  <arg name="location" default="hanksville"/>
+  <arg name="location" default="$(env MAPVIZ_LOCATION hanksville)"/>
 
   <node pkg="mapviz" exec="mapviz" name="mapviz">
     <param name="print_profile_data" value="$(arg print_profile_data)"/>
-    <param name="config" value="$(env HOME)/BYU-Mars-Rover/rover_ws/src/mapviz_tf/scripts/.mapviz_config"/>
+    <param name="config" value="$(optenv HOME)/BYU-Mars-Rover/rover_ws/src/mapviz_tf/scripts/.mapviz_config"/>
   </node>
 
-  <group if="$(arg location == 'byu')">
+  <group if="$(eval location == 'byu')">
     <param name="map_origin_index" value="0" />
   </group>
-  <group if="$(arg location == 'rock_canyon')">
+  <group if="$(eval location == 'rock_canyon')">
     <param name="map_origin_index" value="1" />
   </group>
-  <group if="$(arg location == 'hanksville')">
+  <group if="$(eval location == 'hanksville')">
     <param name="map_origin_index" value="2" />
   </group>
-  <group if="$(arg location == 'gravel_pit')">
+  <group if="$(eval location == 'gravel_pit')">
     <param name="map_origin_index" value="3" />
   </group>
-  <group if="$(arg location == 'little_moab')">
+  <group if="$(eval location == 'little_moab')">
     <param name="map_origin_index" value="4" />
   </group>
   
