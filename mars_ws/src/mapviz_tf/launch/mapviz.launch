@@ -14,19 +14,19 @@
     <param name="config" value="$(env HOME)/BYU-Mars-Rover/rover_ws/src/mapviz_tf/scripts/.mapviz_config"/>
   </node>
 
-  <group if="$(eval location == 'byu')">
+  <group if="$(arg location == 'byu')">
     <param name="map_origin_index" value="0" />
   </group>
-  <group if="$(eval location == 'rock_canyon')">
+  <group if="$(arg location == 'rock_canyon')">
     <param name="map_origin_index" value="1" />
   </group>
-  <group if="$(eval location == 'hanksville')">
+  <group if="$(arg location == 'hanksville')">
     <param name="map_origin_index" value="2" />
   </group>
-  <group if="$(eval location == 'gravel_pit')">
+  <group if="$(arg location == 'gravel_pit')">
     <param name="map_origin_index" value="3" />
   </group>
-  <group if="$(eval location == 'little_moab')">
+  <group if="$(arg location == 'little_moab')">
     <param name="map_origin_index" value="4" />
   </group>
   
