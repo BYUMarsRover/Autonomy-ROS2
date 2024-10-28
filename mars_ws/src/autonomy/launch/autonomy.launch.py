@@ -10,7 +10,7 @@ import os
 def generate_launch_description():
     # Get the share directory for packages
     #zed_wrapper_launch_dir = os.path.join(get_package_share_directory('zed_wrapper'), 'launch')
-    #usb_cam_launch_dir = os.path.join(get_package_share_directory('usb_cam'), 'launch')
+    usb_cam_launch_dir = os.path.join(get_package_share_directory('start'), 'launch')
     autonomy_launch_dir = os.path.join(get_package_share_directory('autonomy'), 'launch')
     autonomy_params_dir = os.path.join(get_package_share_directory('autonomy'), 'params')
     print(f'Params file path: {os.path.join(autonomy_params_dir, "autonomy_params.yaml")}')
@@ -43,9 +43,9 @@ def generate_launch_description():
         # ], condition=IfCondition(LaunchConfiguration('simulation').to_bool() == False)),
 
         # Include autonomy camera launch file (usb_cam)
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join(usb_cam_launch_dir, 'autonomy_camera.launch.py'))
-        # ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(usb_cam_launch_dir, 'autonomy_camera.launch.py'))
+        ),
 
         # Include ArUco detection launch for two cameras (logi and zed)
         # IncludeLaunchDescription(
@@ -56,14 +56,6 @@ def generate_launch_description():
         #         'camera': '/usb_cam'
         #     }.items(),
         # )#,
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join(autonomy_launch_dir, 'aruco_detect.launch.py')),
-        #     launch_arguments={
-        #         'node_name': 'aruco_detect_zed',
-        #         'image': 'image_rect_color',
-        #         'camera': '/zed/left'
-        #     }.items(),
-        # ),
 
         # Launch state machine with autonomy namespace
         GroupAction([
