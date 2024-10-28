@@ -278,23 +278,22 @@ class AutonomyStateMachine(Node):
 
     def enable(self, request: SetBool.Request, response: SetBool.Response):
         self.get_logger().info('in enable')
-        
-        # Check if there are waypoints before enabling the state machine
-        #TODO Add error checking
-        # if len(self.waypoints) == 0:
-        #     self.get_logger().warn("No waypoints available, cannot enable autonomy.")
-        #     response.success = False
-        #     response.message = "No waypoints available."
-        #     return response
-        
+
         self.enabled = request.data
         
-        # Set the first task
-        self.set_current_task()
-
         if self.enabled:
-            self.get_logger().info("Autonomy state machine is enabled!")
-            self.state = State.SEARCH_FOR_WRONG_TAG
+            if (len(self.waypoints) == 0):
+                #No waypoints
+                self.get_logger().warn("No waypoints available, cannot enable autonomy.")
+                self.enabled = False
+                response.success = False
+                response.message = "No waypoints available."
+                return response
+            else:
+                # Set the first task, and get state loop ready
+                self.set_current_task()
+                self.get_logger().info("Autonomy state machine is enabled!")
+                self.state = State.SEARCH_FOR_WRONG_TAG
         else:
             self.get_logger().info("Autonomy state machine is disabled!")
         
