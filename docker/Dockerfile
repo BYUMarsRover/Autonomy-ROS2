@@ -74,3 +74,21 @@ USER marsrover
 # Need to confirm this is still necessary?
 # RUN pip3 uninstall -y numpy
 # RUN pip3 install numpy==1.26.0
+
+# Add OpenCV dependency -- needed for aruco detect
+USER root
+RUN apt-get update && \
+    apt-get install -y libopencv-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set CMake prefix path for OpenCV and ROS
+ENV CMAKE_PREFIX_PATH="/usr/local/share/OpenCV;/opt/ros/humble"
+USER marsrover
+
+
+# Install tf2-geometry -- aruco detect testing
+USER root
+RUN apt update && apt install -y \
+    ros-humble-tf2-geometry-msgs && \
+    rm -rf /var/lib/apt/lists/*
+USER marsrover

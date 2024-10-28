@@ -36,7 +36,6 @@
 
 #include <rclcpp/rclcpp.hpp> // #include <ros/ros.h>
 
-#include <tf2/LinearMath/Transform.h> // #include <tf/transform_datatypes.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>

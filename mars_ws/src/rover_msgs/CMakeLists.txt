@@ -22,8 +22,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MobilityArucoAutopilotCommand.msg"
   "msg/MobilityGPSWaypoint2Follow.msg"
   "msg/MobilityVelocityCommands.msg"
-  DEPENDENCIES std_msgs geometry_msgs
   "msg/RoverStateSingleton.msg"
+  DEPENDENCIES std_msgs geometry_msgs
   DEPENDENCIES sensor_msgs # Add packages that above messages depend on
 )
 

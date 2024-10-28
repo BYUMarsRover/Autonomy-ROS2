@@ -3,8 +3,7 @@
 
 #pragma once
 #include <rclcpp/rclcpp.hpp> 
-#include <std_msgs/String.h>
-#include <rclcpp/rclcpp.hpp> 
+#include <std_msgs/msg/string.hpp>  // Corrected for ROS 2
 #include <vector>
 #include <string>
 using namespace std;
