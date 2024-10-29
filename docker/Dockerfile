@@ -82,13 +82,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Set CMake prefix path for OpenCV and ROS
-ENV CMAKE_PREFIX_PATH="/usr/local/share/OpenCV;/opt/ros/humble"
+# ENV CMAKE_PREFIX_PATH="/usr/local/share/OpenCV;/opt/ros/humble"
 USER marsrover
 
-
-# Install tf2-geometry -- aruco detect testing
-USER root
-RUN apt update && apt install -y \
-    ros-humble-tf2-geometry-msgs && \
-    rm -rf /var/lib/apt/lists/*
-USER marsrover
+# Install ROS2 dependencies for aruco_detect
+# USER root
+# RUN apt update && \
+#     apt install -y ros-humble-tf2-geometry-msgs ros-humble-visualization-msgs && \
+#     rm -rf /var/lib/apt/lists/*
+# USER marsrover

@@ -32,7 +32,7 @@
 #include <assert.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include "FiducialsNode.h"
+#include "FiducialsNode.h" //CHANGE - this might need to be changed to the .cpp file?
 
 #include <rclcpp/rclcpp.hpp> // #include <ros/ros.h>
 
@@ -40,20 +40,22 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-#include <visualization_msgs/Marker.h>
-#include <image_transport/image_transport.h>
+#include <visualization_msgs/msg/marker.hpp>
+#include <image_transport/image_transport.hpp>
 #include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/image_encodings.h>
-#include <dynamic_reconfigure/server.h> // This is not available in ROS2
+#include <sensor_msgs/image_encodings.hpp>
+// #include <dynamic_reconfigure/server.hpp>
+// Do we need this? What is its use? This is not available in ROS2 
 
 #include <std_srvs/srv/set_bool.hpp> // #include <std_srvs/SetBool.h>
-#include <std_msgs/String.h>
+#include <std_msgs/msg/string.hpp>
 
-#include "rover_msgs/msg/FidudcialData.hpp"
+#include <rover_msgs/msg/fiducial_data.hpp>
 
-#include "aruco_detect/DetectorParamsConfig.h"
+// #include "config/DetectorParamsConfig.h" // we don't have the dynamic reconfigure available & this 
+// has to do with that. Need to look into getting that set up
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/aruco.hpp>
