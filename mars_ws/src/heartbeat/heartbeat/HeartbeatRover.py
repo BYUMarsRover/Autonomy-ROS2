@@ -31,13 +31,13 @@ class RoverHeartbeat(Node):
         heartbeat_msg.current_time = Time()
         now = self.get_clock().now()
         print(now)
-        heartbeat_msg.current_time.sec = now.nanoseconds // 1e9
-        heartbeat_msg.current_time.nanosec = now.nanoseconds % 1e9
+        heartbeat_msg.current_time.sec = now.nanoseconds // 1000000000
+        heartbeat_msg.current_time.nanosec = now.nanoseconds % 1000000000
 
         self.pub_heartbeat.publish(heartbeat_msg)
 
         if self.last_received is not None:
-            elapsed_time = (self.get_clock().now() - self.last_received).nanoseconds // 1e9
+            elapsed_time = (self.get_clock().now() - self.last_received).nanoseconds // 1000000000
             status_msg = HeartbeatStatusRover()
             status_msg.elapsed_time = elapsed_time
             self.pub_heartbeat_status.publish(status_msg)
