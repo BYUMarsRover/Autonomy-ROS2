@@ -30,7 +30,6 @@ class RoverHeartbeat(Node):
         heartbeat_msg = Heartbeat()
         heartbeat_msg.current_time = Time()
         now = self.get_clock().now()
-        print(now)
         heartbeat_msg.current_time.sec = now.nanoseconds // 1000000000
         heartbeat_msg.current_time.nanosec = now.nanoseconds % 1000000000
 
