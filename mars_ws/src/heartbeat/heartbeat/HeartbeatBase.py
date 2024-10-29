@@ -27,7 +27,9 @@ class BaseHeartbeat(Node):
         self.last_received = t
 
     def ping_and_publish(self):
-        self.pub_heartbeat.publish(self.get_clock().now())
+        heartbeat_msg = Heartbeat()
+        heartbeat_msg.current_time = self.get_clock().now().to_msg()
+        self.pub_heartbeat.publish(heartbeat_msg.current_time)
         if self.last_received is not None:
             self.pub_heartbeat_status.publish(
                 (self.get_clock().now() - self.last_received).nanoseconds / 1e9
