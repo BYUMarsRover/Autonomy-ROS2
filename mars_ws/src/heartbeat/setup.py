@@ -23,6 +23,7 @@ setup(
     entry_points={
         'console_scripts': [
             'heartbeat_rover = heartbeat.HeartbeatRover:main',
+            'heartbeat_base = heartbeat.HeartbeatBase:main'
         ],
     },
 )
