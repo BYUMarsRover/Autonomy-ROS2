@@ -19,6 +19,7 @@ class RoverHeartbeat(Node):
         self.pub_heartbeat_status = self.create_publisher(
             HeartbeatStatusRover, "/heartbeat_status_rover", 10
         )
+        self.timer = self.create_timer(1 / p.RATE, self.ping_and_publish)
 
     def update_elapsed_time(self, msg):
         t = self.get_clock().now()
@@ -28,15 +29,11 @@ class RoverHeartbeat(Node):
 
     def ping_and_publish(self):
         heartbeat_msg = Heartbeat()
-        heartbeat_msg.current_time = Time()
-        now = self.get_clock().now()
-        heartbeat_msg.current_time.sec = now.nanoseconds // 1000000000
-        heartbeat_msg.current_time.nanosec = now.nanoseconds % 1000000000
-
+        heartbeat_msg.current_time = self.get_clock().now().to_msg()
         self.pub_heartbeat.publish(heartbeat_msg)
 
         if self.last_received is not None:
-            elapsed_time = (self.get_clock().now() - self.last_received).nanoseconds // 1000000000
+            elapsed_time = (self.get_clock().now() - self.last_received).nanoseconds / 1e9
             status_msg = HeartbeatStatusRover()
             status_msg.elapsed_time = elapsed_time
             self.pub_heartbeat_status.publish(status_msg)
@@ -45,13 +42,7 @@ class RoverHeartbeat(Node):
 def main(args=None):
     rclpy.init(args=args)
     heartbeat = RoverHeartbeat()
-    rate = heartbeat.create_rate(p.RATE)
-
-    while rclpy.ok():
-        heartbeat.ping_and_publish()
-        rclpy.spin_once(heartbeat)
-        rate.sleep()
-
+    rclpy.spin(heartbeat)
     heartbeat.destroy_node()
     rclpy.shutdown()
 

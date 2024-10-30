@@ -19,6 +19,7 @@ class BaseHeartbeat(Node):
         self.pub_heartbeat_status = self.create_publisher(
             HeartbeatStatusBase, "/heartbeat_status_base", 10
         )
+        self.timer = self.create_timer(1 / p.RATE, self.ping_and_publish)
 
     def update_elapsed_time(self, msg):
         t = self.get_clock().now()
@@ -29,11 +30,13 @@ class BaseHeartbeat(Node):
     def ping_and_publish(self):
         heartbeat_msg = Heartbeat()
         heartbeat_msg.current_time = self.get_clock().now().to_msg()
-        self.pub_heartbeat.publish(heartbeat_msg.current_time)
+        self.pub_heartbeat.publish(heartbeat_msg)
         if self.last_received is not None:
-            self.pub_heartbeat_status.publish(
+            heartbeat_status_msg = HeartbeatStatusBase()
+            heartbeat_status_msg.elapsed_time = (
                 (self.get_clock().now() - self.last_received).nanoseconds / 1e9
             )
+            self.pub_heartbeat_status.publish(heartbeat_status_msg)
             self.check_status()
 
     def check_status(self):
@@ -47,13 +50,7 @@ class BaseHeartbeat(Node):
 def main(args=None):
     rclpy.init(args=args)
     heartbeat = BaseHeartbeat()
-    rate = heartbeat.create_rate(p.RATE)
-
-    while rclpy.ok():
-        heartbeat.ping_and_publish()
-        rclpy.spin_once(heartbeat)
-        rate.sleep()
-
+    rclpy.spin(heartbeat)
     heartbeat.destroy_node()
     rclpy.shutdown()
 
