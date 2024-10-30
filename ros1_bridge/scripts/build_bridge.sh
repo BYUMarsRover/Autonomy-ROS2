@@ -1,7 +1,7 @@
 #!/bin/bash
 # Created by Nelson Durrant, Oct 2024
 #
-# Builds the ROS 1 bridge using the included ROS 1 and ROS 2 msg packages
+# Builds the ROS 1 bridge using the included ROS 1 and ROS 2 msgs packages
 
 function printInfo {
   echo -e "\033[0m\033[36m[INFO] $1\033[0m"
