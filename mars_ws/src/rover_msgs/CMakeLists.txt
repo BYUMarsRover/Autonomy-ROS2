@@ -11,6 +11,8 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 find_package(rosidl_default_generators REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FiducialData.msg"
@@ -18,7 +20,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ObstacleInfo.msg"
   "msg/WaypointNav.msg"
   "msg/ZedObstacles.msg"
-  DEPENDENCIES sensor_msgs # Add packages that above messages depend on
+  "msg/Camera.msg"
+  "srv/CameraControl.srv"
+  DEPENDENCIES std_msgs geometry_msgs sensor_msgs # Add packages that above messages depend on
 )
 
 if(BUILD_TESTING)
