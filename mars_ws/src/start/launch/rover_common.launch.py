@@ -18,7 +18,7 @@ def generate_launch_description():
     # Get directories TODO: Uncomment packages as they are created
     odometry_dir = get_package_share_directory('odometry')
     # peripherals_dir = get_package_share_directory('peripherals')
-    # heartbeat_dir = get_package_share_directory('heartbeat')
+    heartbeat_dir = get_package_share_directory('heartbeat')
     # home_gui_dir = get_package_share_directory('home_gui')
 
     return LaunchDescription([
@@ -96,8 +96,8 @@ def generate_launch_description():
         ),
 
         # Heartbeat launch file inclusion
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join(
-        #         heartbeat_dir, 'launch', 'heartbeat_rover.launch.py'))
-        # ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(
+                heartbeat_dir, 'launch', 'heartbeat_rover_launch.py'))
+        ),
     ])

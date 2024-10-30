@@ -56,10 +56,10 @@ def generate_launch_description():
     #         get_package_share_directory('home_gui'), 'launch', 'base_home_gui.launch.py'))
     # )
 
-    # include_heartbeat_base = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(os.path.join(
-    #         get_package_share_directory('heartbeat'), 'launch', 'heartbeat_base.launch.py'))
-    # )
+    include_heartbeat_base = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(
+            get_package_share_directory('heartbeat'), 'launch', 'heartbeat_base_launch.py'))
+    )
 
     # include_mapviz = IncludeLaunchDescription(
     #     PythonLaunchDescriptionSource(os.path.join(
@@ -83,7 +83,7 @@ def generate_launch_description():
         # set_rosconsole_format,
         # include_xbox_drive,
         # include_base_home_gui,
-        # include_heartbeat_base,
+        include_heartbeat_base,
         # include_mapviz,
         include_odometry_base
     ])
