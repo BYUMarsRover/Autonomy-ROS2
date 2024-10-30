@@ -24,10 +24,8 @@ class RoverHeartbeat(Node):
     def update_elapsed_time(self, msg):
         t = self.get_clock().now()
         self.get_logger().info("At update elapsed time" + self.last_received)
-        if self.last_received is None:
-            self.get_logger().info("Received first heartbeat from base: t=" + str(msg.current_time))
-        else:
-            self.get_logger().debug("Rover received heartbeat: t=" + str(msg.current_time))
+        self.get_logger().info("Received first heartbeat from base: t=" + str(msg.current_time))
+        self.get_logger().debug("Rover received heartbeat: t=" + str(msg.current_time))
         self.last_received = t
 
     def ping_and_publish(self):
