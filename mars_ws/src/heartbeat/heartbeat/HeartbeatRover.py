@@ -19,7 +19,7 @@ class RoverHeartbeat(Node):
         self.pub_heartbeat_status = self.create_publisher(
             HeartbeatStatusRover, "/heartbeat_status_rover", 10
         )
-        self.timer = self.create_timer(1 / p.RATE, self.ping_and_publish)
+        self.timer = self.create_timer(1.0 / p.RATE, self.ping_and_publish)
 
     def update_elapsed_time(self, msg):
         t = self.get_clock().now()
@@ -30,6 +30,7 @@ class RoverHeartbeat(Node):
         self.last_received = t
 
     def ping_and_publish(self):
+        self.get_logger().info("Reached ping and publish")
         heartbeat_msg = Heartbeat()
         heartbeat_msg.current_time = self.get_clock().now().to_msg()
         self.pub_heartbeat.publish(heartbeat_msg)
