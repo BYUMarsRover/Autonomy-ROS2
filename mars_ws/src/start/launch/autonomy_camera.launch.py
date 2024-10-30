@@ -50,7 +50,7 @@ CAMERAS = []
 CAMERAS.append(
     CameraConfig(
         name='head_camera',
-        param_path=Path(START_DIR, 'config', 'cam_config', 'params_1.yaml')
+        param_path=Path(START_DIR, 'config', 'cam_config', 'head_cam_params.yaml')
         # remappings=[('/image_raw', '/head_camera/image_raw')],
     )
     # Add more Camera's here and they will automatically be launched below
