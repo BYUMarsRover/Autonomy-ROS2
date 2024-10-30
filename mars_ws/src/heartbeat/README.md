@@ -25,4 +25,7 @@ Currently, these lines are included in `rover_common.launch` and `base_common.la
 Here's how to run the node:
 ```
 colcon build --packages-select heartbeat
+source install/setup.bash
+ros2 launch start heartbeat_base_launch.py
+ros2 launch start heartbeat_rover_launch.py
 ```
