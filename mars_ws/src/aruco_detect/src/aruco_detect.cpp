@@ -32,16 +32,10 @@
 #include <assert.h>
 #include <sys/time.h>
 #include <unistd.h>
-<<<<<<< HEAD
-#include "FiducialsNode.h" //CHANGE - this might need to be changed to the .cpp file?
-
-#include <rclcpp/rclcpp.hpp> // #include <ros/ros.h>
-
-=======
-#include "aruco_detect/FiducialsNode.hpp"
+#include "FiducialsNode.h"
 
 #include <rclcpp/rclcpp.hpp>
->>>>>>> Aruco-Detect-Parent
+
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -52,23 +46,16 @@
 #include <image_transport/image_transport.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.hpp>
-<<<<<<< HEAD
 // #include <dynamic_reconfigure/server.hpp>
 // Do we need this? What is its use? This is not available in ROS2 
 
-#include <std_srvs/srv/set_bool.hpp> // #include <std_srvs/SetBool.h>
+#include <std_srvs/srv/set_bool.hpp>
 #include <std_msgs/msg/string.hpp>
 
 #include <rover_msgs/msg/fiducial_data.hpp>
 
-// #include "config/DetectorParamsConfig.h" // we don't have the dynamic reconfigure available & this 
-// has to do with that. Need to look into getting that set up
-=======
-#include <std_srvs/srv/set_bool.hpp>
-#include <std_msgs/msg/string.hpp>
-
-#include "rover_msgs/msg/fiducial_data.hpp"
->>>>>>> Aruco-Detect-Parent
+// #include "config/DetectorParamsConfig.h" --> should this be DetectorParams.cfg?
+// we don't have the dynamic reconfigure available & this has to do with that. Need to look into getting that set up 
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/aruco.hpp>
