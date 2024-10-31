@@ -11,7 +11,17 @@
 
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
-  <depend>OpenCV</depend>
+  <depend>std_srvs</depend>
+  <depend>std_msgs</depend>
+<<<<<<< HEAD
+  <depend>opencv</depend>
+=======
+  <depend>rover_msgs</depend>
+>>>>>>> Aruco-Detect-Parent
+  <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
+  <depend>ament_index_cpp</depend>
+  <depend>opencv</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

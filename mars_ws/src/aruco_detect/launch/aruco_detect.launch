@@ -1,0 +1,38 @@
+<launch>
+  <!-- namespace for camera input -->
+  <arg name="camera" default="/zed/zed_node/left"/> <!--should this be changed to logi?-->
+  <arg name="image" default="image_rect_color"/> 
+      <!--if default = "image_rect_color" : provides color corrected or rectified image, affecting image processing quality and alignment-->
+      <!--if default = "image__raw" : provides raw camera image-->
+  <arg name="transport" default="compressed"/>
+  <arg name="fiducial_len" default="0.2"/>
+  <arg name="dictionary" default="0"/>
+  <arg name="do_pose_estimation" default="true"/>
+  <arg name="vis_msgs" default="false"/>
+      <!--if vis_msgs = true: pose estimation will be published with ROS standard vision_msgs, 
+      useful for compatibility with other ROS vision tools or for specific message formatting-->
+  <arg name="ignore_fiducials" default="" />
+  <arg name="fiducial_len_override" default="" />
+  <arg name="verbose" default="false"/>
+      <!--if verbose = true: include more logging or debugging information that the node outputs-->
+  <arg name="node_name" default="aruco_detect" />
+
+  <node pkg="aruco_detect" name="$(arg node_name)"
+    type="aruco_detect" output="screen" respawn="true" respawn_delay="5">
+    <param name="image_transport" value="$(arg transport)"/>
+    <param name="publish_images" value="true" />
+    <param name="fiducial_len" value="$(arg fiducial_len)"/>
+    <param name="dictionary" value="$(arg dictionary)"/>
+    <param name="do_pose_estimation" value="$(arg do_pose_estimation)"/>
+    <param name="vis_msgs" value="$(arg vis_msgs)"/>
+    <param name="ignore_fiducials" value="$(arg ignore_fiducials)"/>
+    <param name="fiducial_len_override" value="$(arg fiducial_len_override)"/>
+    <param name="verbose" value="$(arg verbose)"/>
+    <remap from="camera/compressed" to="$(arg camera)/$(arg image)/$(arg transport)"/>
+    <remap from="camera_info" to="$(arg camera)/camera_info"/>
+    <remap from="/fiducial_transforms" to="$(arg node_name)/fiducial_transforms" />
+    <remap from="/fiducial_vertices" to="$(arg node_name)/fiducial_vertices" />
+    <remap from="/fiducial_data" to="$(arg node_name)/fiducial_data" />
+    <remap from="/fiducial_images" to="$(arg node_name)/fiducial_images" />
+  </node>
+</launch>
