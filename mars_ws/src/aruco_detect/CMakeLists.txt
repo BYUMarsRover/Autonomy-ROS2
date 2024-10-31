@@ -12,7 +12,6 @@ find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED) 
 find_package(tf2_ros REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(cv_bridge REQUIRED)
@@ -58,21 +57,6 @@ install(TARGETS aruco_detect
   DESTINATION lib/${PROJECT_NAME}
 )
 
-<<<<<<< HEAD
-install(DIRECTORY include/
-  DESTINATION include/
-)
-
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
-  set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
-  set(ament_cmake_cpplint_FOUND TRUE)
-=======
 # Install Python launch files
 install(DIRECTORY launch/
   DESTINATION share/${PROJECT_NAME}/launch
@@ -89,22 +73,23 @@ install(PROGRAMS scripts/create_markers.py
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  set(ament_cmake_copyright_FOUND TRUE)
+  set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 
-  # Add the C++ test executable
-  add_executable(aruco_images_test test/aruco_images_test.cpp)
-  ament_target_dependencies(aruco_images_test rclcpp OpenCV)
-
-  # Link the test executable
-  target_link_libraries(aruco_images_test ${OpenCV_LIBS})
-
-  # Add a gtest for this test file
+  # Add the C++ test executable with gtest
   ament_add_gtest(aruco_images_test test/aruco_images_test.cpp)
+  if(aruco_images_test) # Check if the gtest executable was created successfully
+    ament_target_dependencies(aruco_images_test rclcpp OpenCV)
 
-  # Install test files
-  install(FILES test/aruco_images.test
-    DESTINATION share/${PROJECT_NAME}/test
-  )
+    # Link the test executable with OpenCV
+    target_link_libraries(aruco_images_test ${OpenCV_LIBS})
+
+    # Install test files
+    install(FILES test/aruco_images.test
+      DESTINATION share/${PROJECT_NAME}/test
+    )
+  endif()
 endif()
 
 # ROS2 package

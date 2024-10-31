@@ -23,8 +23,10 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MobilityGPSWaypoint2Follow.msg"
   "msg/MobilityVelocityCommands.msg"
   "msg/RoverStateSingleton.msg"
-  DEPENDENCIES std_msgs geometry_msgs
-  DEPENDENCIES sensor_msgs # Add packages that above messages depend on
+  "msg/ObstacleInfo.msg"
+  "msg/WaypointNav.msg"
+  "msg/ZedObstacles.msg"
+  DEPENDENCIES sensor_msgs std_msgs geometry_msgs# Add packages that above messages depend on
 )
 
 if(BUILD_TESTING)
