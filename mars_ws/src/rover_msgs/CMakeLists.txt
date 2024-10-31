@@ -21,6 +21,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/WaypointNav.msg"
   "msg/ZedObstacles.msg"
   "msg/Camera.msg"
+  "msg/DeviceList.msg"
   "srv/CameraControl.srv"
   DEPENDENCIES std_msgs geometry_msgs sensor_msgs # Add packages that above messages depend on
 )

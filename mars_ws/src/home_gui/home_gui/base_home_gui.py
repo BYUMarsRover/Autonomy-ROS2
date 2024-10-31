@@ -16,8 +16,8 @@ from std_msgs.msg import UInt16MultiArray
 from rover_msgs.msg import DeviceList, Camera
 from rover_msgs.srv import CameraControl
 from subprocess import Popen, PIPE
-from html_templates import *
-from dev_name_map import BASE_DEV_NAME_MAP, ROVER_DEV_NAME_MAP
+from .html_templates import *
+from .dev_name_map import BASE_DEV_NAME_MAP, ROVER_DEV_NAME_MAP
 
 import sys
 import atexit
@@ -51,11 +51,11 @@ class HomeGuiUI(QWidget, Node):
 
     def __init__(self):
         # Call the inherited classes __init__ method
-        QWidget.__init__(self)
-        Node.__init__(self, 'base_home_gui')
+        QWidget.__init__(self, node_name='base_home_gui')
+        Node.__init__(self, node_name='base_home_gui_node')
         # Load the .ui file
         uic.loadUi(
-            os.path.expanduser('~') + '/BYU-Mars-Rover/rover_ws/src/home_gui/home_gui.ui', self)
+            os.path.expanduser('~') + '/mars_ws/src/home_gui/home_gui.ui', self)
         self.show()  # Show the GUI
 
         self.device_list_QLabel = self.roverDeviceList
@@ -73,10 +73,10 @@ class HomeGuiUI(QWidget, Node):
 
         self.threadpool.start(base_devlist_updater)
 
-        self.dev_subscriber = rclpy.create_subscription(
-            DeviceList, '/connected_devices_list', callback=self.update_rover_dev_list, queue_size=1)
+        self.dev_subscriber = self.create_subscription(
+            DeviceList, '/connected_devices_list', self.update_rover_dev_list, 1)
 
-        self.ir_subscriber = rclpy.create_subscription(UInt16MultiArray, '/IR', callback=self.update_ir_distances, queue_size=1)
+        self.ir_subscriber = self.create_subscription(UInt16MultiArray, '/IR', self.update_ir_distances, 1)
         self.last_left_ir = None
         self.last_right_ir = None
         self.ir_alpha = 0.95
@@ -112,9 +112,9 @@ class HomeGuiUI(QWidget, Node):
 
         atexit.register(self.cleanup)
 
-        self.camera_control = rclpy.create_client(
+        self.camera_control = self.create_client(
             CameraControl, 'camera_control')
-        rclpy.create_service(
+        self.create_service(
             CameraControl, 'camera_cleanup', self.handle_camera_cleanup)
 
         signal.signal(signal.SIGINT, self.handler_stop_signals)
@@ -204,8 +204,10 @@ class HomeGuiUI(QWidget, Node):
     def launch_camera(self, camera, process, script):
         print("INFO: Launching \"{}\" . . .".format(camera.camera_name))
         try:
+            if not self.camera_control.wait_for_service(timeout_sec=1.0):
+                raise ServiceException("Rover camera service not available")
             self.rover_launch_camera(camera)
-        except rospy.service.ServiceException as e:
+        except Exception as e: #TODO
             print(e)
             print(
                 "HINT: Rover camera control node did not respond. Is the rover connected?")
@@ -446,11 +448,16 @@ class HomeGuiUI(QWidget, Node):
         print("Closing all camera processes . . .")
         self.close_all_cameras()
 
-
-if __name__ == '__main__':
-    rospy.init_node('base_home_gui')
+def main(args=None):
+    rclpy.init(args=args)
     Popen("pkill gst", shell=True, preexec_fn=os.setsid, stderr=PIPE)
     app = QApplication(sys.argv)
     window = HomeGuiUI()
     # Start GUI app
     app.exec_()
+    rclpy.shutdown()
+
+
+
+if __name__ == '__main__':
+    main()
