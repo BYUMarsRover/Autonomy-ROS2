@@ -204,8 +204,6 @@ class HomeGuiUI(QWidget, Node):
     def launch_camera(self, camera, process, script):
         print("INFO: Launching \"{}\" . . .".format(camera.camera_name))
         try:
-            if not self.camera_control.wait_for_service(timeout_sec=1.0):
-                raise ServiceException("Rover camera service not available")
             self.rover_launch_camera(camera)
         except Exception as e: #TODO
             print(e)
@@ -337,7 +335,7 @@ class HomeGuiUI(QWidget, Node):
         print("INFO: Closing \"{}\" . . .".format(camera.camera_name))
         try:
             self.rover_close_camera(camera)
-        except rospy.service.ServiceException as e:
+        except Exception as e:
             print(e)
             print(
                 "HINT: Rover camera control node did not respond. Is the rover connected?")
