@@ -21,14 +21,6 @@ find_package(std_srvs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rover_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
-<<<<<<< HEAD
-
-# Include directories
-include_directories(include) # Adjust this if your headers are in a different directory
-
-# Add the executable
-add_executable(aruco_detect src/aruco_detect.cpp) 
-=======
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 
@@ -42,7 +34,6 @@ include_directories(
 add_executable(aruco_detect src/aruco_detect.cpp)
 
 # Link libraries and dependencies
->>>>>>> Aruco-Detect-Parent
 ament_target_dependencies(aruco_detect 
   rclcpp 
   rover_msgs 
@@ -50,17 +41,6 @@ ament_target_dependencies(aruco_detect
   tf2_ros 
   tf2_geometry_msgs 
   visualization_msgs 
-<<<<<<< HEAD
-  image_transport 
-  cv_bridge 
-  sensor_msgs 
-  std_msgs 
-  std_srvs 
-  OpenCV
-)
-
-# Install targets
-=======
   sensor_msgs 
   std_srvs 
   std_msgs 
@@ -77,21 +57,10 @@ target_link_libraries(aruco_detect ${OpenCV_LIBS})
 #############
 
 # Mark the executable for installation
->>>>>>> Aruco-Detect-Parent
 install(TARGETS aruco_detect
   DESTINATION lib/${PROJECT_NAME}
 )
 
-<<<<<<< HEAD
-install(DIRECTORY include/
-  DESTINATION include/
-)
-
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  set(ament_cmake_copyright_FOUND TRUE)
-  set(ament_cmake_cpplint_FOUND TRUE)
-=======
 # Install Python launch files
 install(DIRECTORY launch/
   DESTINATION share/${PROJECT_NAME}/launch
@@ -108,7 +77,6 @@ install(PROGRAMS scripts/create_markers.py
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
->>>>>>> Aruco-Detect-Parent
   ament_lint_auto_find_test_dependencies()
 
   # Add the C++ test executable

@@ -21,11 +21,7 @@
   <depend>sensor_msgs</depend>
   <depend>std_srvs</depend>
   <depend>std_msgs</depend>
-<<<<<<< HEAD
-  <depend>opencv</depend>
-=======
   <depend>rover_msgs</depend>
->>>>>>> Aruco-Detect-Parent
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
   <depend>ament_index_cpp</depend>
