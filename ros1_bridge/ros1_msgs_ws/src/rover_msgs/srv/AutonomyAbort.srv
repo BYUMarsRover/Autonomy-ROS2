@@ -1,0 +1,6 @@
+bool abort_status
+float32 lat
+float32 lon
+---
+bool error
+string message

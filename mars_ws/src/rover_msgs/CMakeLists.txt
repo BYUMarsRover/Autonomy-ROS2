@@ -23,11 +23,12 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MobilityGPSWaypoint2Follow.msg"
   "msg/MobilityVelocityCommands.msg"
   "msg/RoverStateSingleton.msg"
-  DEPENDENCIES std_msgs geometry_msgs
-  DEPENDENCIES sensor_msgs # Add packages that above messages depend on
+  "msg/ObstacleInfo.msg"
+  "msg/WaypointNav.msg"
+  "msg/ZedObstacles.msg"
+  DEPENDENCIES sensor_msgs std_msgs geometry_msgs# Add packages that above messages depend on
 )
 
-if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
   # comment the line when a copyright and license is added to all source files
