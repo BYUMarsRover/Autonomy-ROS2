@@ -18,11 +18,10 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ObstacleInfo.msg"
   "msg/WaypointNav.msg"
   "msg/ZedObstacles.msg"
-  "msg/NavStatus.msg"
-  "msg/ObstacleInfo.msg"
-  "msg/WaypointNav.msg"
-  "msg/ZedObstacles.msg"
-  DEPENDENCIES sensor_msgs # Add packages that above messages depend on
+  "msg/Heartbeat.msg"
+  "msg/HeartbeatStatusRover.msg"
+  "msg/HeartbeatStatusBase.msg"
+  DEPENDENCIES sensor_msgs builtin_interfaces # Add packages that above messages depend on
 )
 
 if(BUILD_TESTING)
