@@ -2,38 +2,20 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>aruco_detect</name>
-  <version>0.1.0</version>
-  <description>A ROS2 package for detecting Aruco markers using OpenCV and fiducial markers. It includes image transport and uses the fiducial markers for detection in robotics applications.</description>
-  
-  <maintainer email="marsrover@example.com">marsrover</maintainer>
-  <author email="your.email@example.com">Your Name</author>
-  <license>Apache License 2.0</license>
+  <version>0.0.0</version>
+  <description>TODO: Package description</description>
+  <maintainer email="marsrover@todo.todo">marsrover</maintainer>
+  <license>Apache-2.0</license>
 
-  <!-- Build tools -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <!-- Build and Run Dependencies -->
   <depend>rclcpp</depend>
-  <depend>tf2</depend>
-  <depend>tf2_ros</depend>
-  <depend>tf2_geometry_msgs</depend>
-  <depend>visualization_msgs</depend>
   <depend>sensor_msgs</depend>
-  <depend>std_srvs</depend>
-  <depend>std_msgs</depend>
-  <depend>rover_msgs</depend>
-  <depend>cv_bridge</depend>
-  <depend>image_transport</depend>
-  <depend>ament_index_cpp</depend>
-  <depend>opencv</depend>
+  <depend>OpenCV</depend>
 
-  <!-- Testing dependencies -->
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
-  <test_depend>ament_cmake_gtest</test_depend>
-  <test_depend>ament_cmake_pytest</test_depend>
 
-  <!-- Export build type -->
   <export>
     <build_type>ament_cmake</build_type>
   </export>
