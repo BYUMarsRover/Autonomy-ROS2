@@ -29,32 +29,34 @@
  *
  */
 
-#include <assert.h>
-#include <sys/time.h>
-#include <unistd.h>
+#include <cassert> // Using <cassert> aligns with modern C++ standards, which are emphasized more in ROS2 for compatibility
+#include <chrono> // In ROS2, it’s common to use C++'s <chrono> library
+#include <unistd.h> // Often remains the same if you need system time functions
+
 #include "FiducialsNode.h"
 
-#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/rclcpp.hpp> // Updated to ROS2
 
+// Packages below are for transformations
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker.hpp>  // In ROS2, messages (msg), services (srv), and actions (action) are stored in separate folders and .hpp makes it clear that these headers are designed for C++
 #include <image_transport/image_transport.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.hpp>
 // #include <dynamic_reconfigure/server.hpp>
+// TODO: Use ROS2 parameters instead of dynamic reconfigure
 // Do we need this? What is its use? This is not available in ROS2 
 
 #include <std_srvs/srv/set_bool.hpp>
 #include <std_msgs/msg/string.hpp>
-
 #include <rover_msgs/msg/fiducial_data.hpp>
 
-// #include "config/DetectorParamsConfig.h" --> should this be DetectorParams.cfg?
+// #include "config/DetectorParamsConfig.h" --> should this be DetectorParams.cfg? TODO: JM - I think that they should be .yaml
 // we don't have the dynamic reconfigure available & this has to do with that. Need to look into getting that set up 
 
 #include <opencv2/highgui.hpp>
@@ -66,6 +68,8 @@
 #include <sstream>
 #include <vector>
 
+using namespace std;
+using namespace cv;
 using std::vector;
 using std::string;
 
