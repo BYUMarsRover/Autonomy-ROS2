@@ -34,6 +34,8 @@ class KeyboardStateMachine(Node):
     def openCV(self):
         if self.img is not None:
             cv2.imshow("Annotated Image", self.img)
+            # TODO: all openCV stuff
+            # keyboard outline, adjust from fisheye, read text from the screen in case we need to backspace, etc.
             if cv2.waitKey(10) == 13:
                 rclpy.shutdown()
                 cv2.destroyAllWindows()
