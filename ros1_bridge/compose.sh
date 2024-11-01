@@ -1,7 +1,7 @@
 #!/bin/bash
 # Created by Nelson Durrant, Oct 2024
 #
-# Starts and stops the ROS1 bridge image
+# Starts and stops the ROS 1 bridge image
 
 # Match this username to the one defined in the Dockerfile
 export UNAME=marsrover
@@ -20,17 +20,11 @@ function printError {
 
 case $1 in
   "down")
-    echo ""
-    printInfo "Stopping the ROS1 bridge image..."
-    echo ""
-
+    printInfo "Stopping the ROS 1 bridge image..."
     docker compose -f docker/docker-compose.yaml down
     ;;
   *)
-    echo ""
-    printInfo "Loading the ROS1 bridge image..."
-    echo ""
-
+    printInfo "Loading the ROS 1 bridge image..."
     docker compose -f docker/docker-compose.yaml up -d
     docker exec -it ros1_bridge bash
     ;;

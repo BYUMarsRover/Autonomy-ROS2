@@ -1,7 +1,7 @@
 #!/bin/bash
 # Created by Nelson Durrant, Oct 2024
 #
-# Runs the ROS1 bridge
+# Runs the ROS 1 bridge
 
 source /opt/ros/noetic/setup.bash
 source ~/ros1_msgs_ws/install_isolated/setup.bash

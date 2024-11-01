@@ -36,6 +36,8 @@
   <export>
     <launch>
       <launch_file>launch/estimation.launch.py</launch_file>
+      <launch_file>launch/rover.launch.py</launch_file>
+      <launch_file>launch/base.launch.py</launch_file>
     </launch>
 
     <build_type>ament_python</build_type>
