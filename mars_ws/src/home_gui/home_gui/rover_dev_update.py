@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-import rospy
+import rclpy
+from rclpy.node import Node
 import glob
 import os
 
@@ -9,11 +10,13 @@ from rover_msgs.msg import DeviceList
 ROS_RATE_HZ = 1
 
 
-class RoverDeviceUpdater:
+class RoverDeviceUpdater(Node):
+
     def __init__(self):
-        self.dev_publisher = rospy.Publisher(
-            '/connected_devices_list', DeviceList, queue_size=1)
-        pass
+        super().__init__('rover_dev_update')
+        self.dev_publisher = self.create_publisher(
+            DeviceList, '/connected_devices_list', 1)
+        self.timer = self.create_timer(1.0 / ROS_RATE_HZ, self.update_dev_list)
 
     def update_dev_list(self):
         path = "/dev/rover/"
@@ -23,18 +26,21 @@ class RoverDeviceUpdater:
         devices = list(dev.split("/dev/rover/")[1]
                        for dev in paths if os.path.islink(dev))
         camera_devices = list(dev.split("/")[-1] for dev in paths if "cameras/" in dev)
-        self.dev_publisher.publish(devices=devices, camera_devices=camera_devices)
+        message = DeviceList()
+        message.devices = devices
+        message.camera_devices = camera_devices
+        self.dev_publisher.publish(message) #TODO "devices" unexpected
 
-
-
-
-
-if __name__ == '__main__':
-    rospy.init_node('rover_dev_update')
-    rate = rospy.Rate(ROS_RATE_HZ)
+def main(args=None):
+    rclpy.init(args=args)
 
     rover_dev_updater = RoverDeviceUpdater()
 
-    while not rospy.is_shutdown():
-        rover_dev_updater.update_dev_list()
-        rate.sleep()
+    rclpy.spin(rover_dev_updater)
+
+    rover_dev_updater.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()

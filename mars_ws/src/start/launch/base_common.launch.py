@@ -51,10 +51,10 @@ def generate_launch_description():
     #         get_package_share_directory('mobility'), 'launch', 'xbox_drive.launch.py'))
     # )
 
-    # include_base_home_gui = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(os.path.join(
-    #         get_package_share_directory('home_gui'), 'launch', 'base_home_gui.launch.py'))
-    # )
+    include_base_home_gui = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(
+            get_package_share_directory('home_gui'), 'launch', 'base_home_gui.launch.py'))
+    )
 
     # include_heartbeat_base = IncludeLaunchDescription(
     #     PythonLaunchDescriptionSource(os.path.join(
@@ -82,7 +82,7 @@ def generate_launch_description():
         base_serial_port_arg,
         # set_rosconsole_format,
         # include_xbox_drive,
-        # include_base_home_gui,
+        include_base_home_gui,
         # include_heartbeat_base,
         # include_mapviz,
         include_odometry_base
