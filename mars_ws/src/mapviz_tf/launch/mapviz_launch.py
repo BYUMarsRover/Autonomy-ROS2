@@ -20,7 +20,7 @@ def generate_launch_description():
             name='mapviz',
             parameters=[{
                 'print_profile_data': LaunchConfiguration('print_profile_data'),
-                'config': '/home/user/BYU-Mars-Rover/rover_ws/src/mapviz_tf/scripts/.mapviz_config',
+                'config': '$(env HOME)/marsrover/mar_ws/src/mapviz_tf/scripts/.mapviz_config',
             }]
         ),
 
@@ -30,7 +30,7 @@ def generate_launch_description():
             executable='initialize_origin.py',
             name='initialize_origin',
             output='screen',
-            parameters=['/home/user/BYU-Mars-Rover/rover_ws/src/mapviz_tf/launch/local_xy_origins.yaml']
+            parameters=['$(env HOME)/marsrover/mar_ws/src/mapviz_tf/scripts/local_xy_origins.yaml']
         ),
 
         # Static transform publisher
