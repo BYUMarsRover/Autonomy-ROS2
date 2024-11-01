@@ -15,11 +15,24 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Fiducial.msg"
+  "msg/FiducialArray.msg"
   "msg/FiducialData.msg"
   "msg/RoverStateSingleton.msg"
   "msg/ObstacleInfo.msg"
   "msg/WaypointNav.msg"
   "msg/ZedObstacles.msg"
+  "msg/FiducialTransformArray.msg"
+  "msg/FiducialTransform.msg"
+  "msg/MobilityAutopilotCommand.msg"
+  "msg/MobilityArucoAutopilotCommand.msg"
+  "msg/MobilityGPSWaypoint2Follow.msg"
+  "msg/MobilityVelocityCommands.msg"
+  "msg/AutonomyTaskInfo.msg"
+  "msg/NavStatus.msg"
+  "msg/RoverState.msg"
+  "msg/ObjectDetection.msg"
+  "msg/ObjectDetections.msg"
   "msg/Camera.msg"
   "msg/DeviceList.msg"
   "msg/ScienceFADIntensity.msg"
@@ -28,6 +41,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HeartbeatStatusBase.msg"
   "srv/CameraControl.srv"
   "srv/CameraControlResponse.srv"
+  "srv/AutonomyAbort.srv"
+  "srv/AutonomyWaypoint.srv"
+  "srv/SetFloat32.srv"
   DEPENDENCIES std_msgs geometry_msgs sensor_msgs builtin_interfaces # Add packages that above messages depend on
 )
 
