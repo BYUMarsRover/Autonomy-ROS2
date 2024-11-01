@@ -84,6 +84,13 @@
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QPushButton" name="keyboardLaunchSingleButton">
+               <property name="text">
+                <string>Start Keyboard</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
            <item>
