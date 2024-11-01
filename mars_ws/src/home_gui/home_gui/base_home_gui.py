@@ -45,14 +45,14 @@ class DeviceListUpdater(QRunnable):
             time.sleep(DEV_UPDATE_PERIOD)
 
 
-class HomeGuiUI(QWidget, Node):
+class HomeGuiUI(Node, QWidget):
     # rover_dev_list_trigger = pyqtSignal()
     base_dev_list_trigger = pyqtSignal()
 
     def __init__(self):
         # Call the inherited classes __init__ method
-        QWidget.__init__(self, node_name='base_home_gui')
-        Node.__init__(self, node_name='base_home_gui_node')
+        Node.__init__(self, 'base_home_gui')
+        QWidget.__init__(self)
         # Load the .ui file
         uic.loadUi(
             os.path.expanduser('~') + '/mars_ws/src/home_gui/home_gui.ui', self)
