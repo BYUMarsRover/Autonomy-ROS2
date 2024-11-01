@@ -15,6 +15,7 @@ from std_msgs.msg import String
 
 
 class KeyboardStateMachine(Node):
+    # TODO: need to adjust usb_cam node still which is not in this repo yet
     def __init__(self):
         super().__init__('autonomy_state_machine')
         self.img = None
@@ -22,12 +23,14 @@ class KeyboardStateMachine(Node):
         self.sub_keyboard_img = self.create_subscription(Image, '/camera/rgb/keyboard_cam/image_raw',
                                                          self.image_callback, 10)
 
+    # Callback which triggers when image is sent on topic
     def image_callback(self, msg):
         try:
             self.img = self.bridge.imgmsg_to_cv2(msg, "passthrough")
         except CvBridgeError as e:
             self.get_logger().error(f"CvBridge Error: {e}")
 
+    # Performs calculation and image transforms for the keyboard autonomy task
     def openCV(self):
         if self.img is not None:
             cv2.imshow("Annotated Image", self.img)
