@@ -1,0 +1,3 @@
+object_detection:
+  ros__parameters:
+    engine_name: "/home/marsrover/yolov8m_1024.engine"

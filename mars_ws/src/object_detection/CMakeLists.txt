@@ -19,80 +19,92 @@ if (ENABLE_INT8_CALIBRATOR)
 endif()
 
 
-
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(cv_bridge_2 REQUIRED) #DO WE STILL NEED CV _ BRIDGE 2?
+find_package(cv_bridge REQUIRED) #DO WE STILL NEED CV _ BRIDGE 2?
 find_package(rclcpp REQUIRED)
-find_package(zed_interfaces REQUIRED)
+find_package(rover_msgs REQUIRED)
 find_package(image_transport REQUIRED)
+find_package(sensor_msgs REQUIRED)
+# find_package(TensorRT REQUIRED)
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
-find_package(ZED 3 REQUIRED)
+find_package(ZED 4 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(CUDA REQUIRED)
 
-# Include directories
-target_include_directories(
-  include
-  ${OpenCV_INCLUDE_DIRS}
-  ${ZED_INCLUDE_DIRS}
+# Install other files
+install(DIRECTORY include/
+  DESTINATION include/${PROJECT_NAME})
+
+
+# INCLUDES and LIBS
+include_directories(
   ${CUDA_INCLUDE_DIRS}
-  /usr/local/cuda/include
-  /usr/include/aarch64-linux-gnu/
+  ${ZED_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+include_directories(include)
+include_directories(${TensorRT_INCLUDE_DIRS})
 
-# Link directories
-link_directories(
-  ${ZED_LIBRARY_DIR}
-  ${CUDA_LIBRARY_DIRS}
-  ${OpenCV_LIBRARY_DIRS}
-  /usr/local/cuda/lib64
-  /usr/lib/aarch64-linux-gnu/
-)
-
-# Find source files
+# # Find source files
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
 file(GLOB_RECURSE HDR_FILES include/*.h)
 
 # Add executable
-add_executable(${PROJECT_NAME}_node ${SRC_FILES} ${HDR_FILES})
+# add_executable(${PROJECT_NAME}_node ${SRC_FILES} ${HDR_FILES})
+add_executable(object_detection src/main.cpp src/yolo.cpp)
+target_include_directories(object_detection PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Set compile definitions and optimizations
 add_definitions(-O3 -D_MWAITXINTRIN_H_INCLUDED -Wno-deprecated-declarations)
 
 # Link libraries
 if (LINK_SHARED_ZED)
-    set(ZED_LIBS ${ZED_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUDART_LIBRARY})
+set(ZED_LIBS ${ZED_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUDART_LIBRARY})
 else()
-    set(ZED_LIBS ${ZED_STATIC_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_LIBRARY})
+set(ZED_LIBS ${ZED_STATIC_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_LIBRARY})
 endif()
 
 set(TRT_LIBS nvinfer)
 
-target_link_libraries(${PROJECT_NAME}_node
+target_link_libraries(object_detection
   ${TRT_LIBS}
   ${SPECIAL_OS_LIBS}
   ${ZED_LIBS}
   ${OpenCV_LIBRARIES}
 )
 
-ament_target_dependencies(${PROJECT_NAME}_node
+ament_target_dependencies(object_detection
   rclcpp
   cv_bridge
-  zed_interfaces
+  rover_msgs
   image_transport
+  sensor_msgs
 )
 
 # Install targets
-install(TARGETS ${PROJECT_NAME}_node
+install(TARGETS object_detection
   DESTINATION lib/${PROJECT_NAME})
 
-# Install other files
-install(DIRECTORY include/
-  DESTINATION include/${PROJECT_NAME})
 
+install(
+  DIRECTORY params
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+# Install launch files
+install(
+  DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
 
 
 if(BUILD_TESTING)
@@ -108,7 +120,7 @@ if(BUILD_TESTING)
 endif()
 
 
-ament_export_dependencies(rclcpp cv_bridge zed_interfaces image_transport)
-ament_export_include_directories(include)
+# ament_export_dependencies(rclcpp cv_bridge rover_msgs image_transport sensor_msgs)
+# ament_export_include_directories(include)
 
 ament_package()
