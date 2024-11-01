@@ -33,13 +33,18 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RoverState.msg"
   "msg/ObjectDetection.msg"
   "msg/ObjectDetections.msg"
+  "msg/Camera.msg"
+  "msg/DeviceList.msg"
+  "msg/ScienceFADIntensity.msg"
   "msg/Heartbeat.msg"
   "msg/HeartbeatStatusRover.msg"
   "msg/HeartbeatStatusBase.msg"
+  "srv/CameraControl.srv"
+  "srv/CameraControlResponse.srv"
   "srv/AutonomyAbort.srv"
   "srv/AutonomyWaypoint.srv"
   "srv/SetFloat32.srv"
-  DEPENDENCIES std_msgs geometry_msgs sensor_msgs sensor_msgs builtin_interfaces # Add dependencies
+  DEPENDENCIES std_msgs geometry_msgs sensor_msgs builtin_interfaces # Add packages that above messages depend on
 )
 
 if(BUILD_TESTING)

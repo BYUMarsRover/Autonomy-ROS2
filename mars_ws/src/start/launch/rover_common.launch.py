@@ -18,8 +18,8 @@ def generate_launch_description():
     # Get directories TODO: Uncomment packages as they are created
     odometry_dir = get_package_share_directory('odometry')
     # peripherals_dir = get_package_share_directory('peripherals')
+    home_gui_dir = get_package_share_directory('home_gui')
     heartbeat_dir = get_package_share_directory('heartbeat')
-    # home_gui_dir = get_package_share_directory('home_gui')
 
     return LaunchDescription([
         # Environment variable for ROS console output format
@@ -49,10 +49,10 @@ def generate_launch_description():
         #     PythonLaunchDescriptionSource(os.path.join( 
         #         peripherals_dir, 'launch', 'battery_info.launch.py'))
         # ),
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join( 
-        #         home_gui_dir, 'launch', 'rover_home_gui.launch.py'))
-        # ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join( 
+                home_gui_dir, 'launch', 'rover_home_gui.launch.py'))
+        ),
 
         # Node for rover status listener TODO: Uncomment once created
         # Node(
