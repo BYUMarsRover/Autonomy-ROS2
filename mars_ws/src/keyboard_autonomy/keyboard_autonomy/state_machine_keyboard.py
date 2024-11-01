@@ -37,6 +37,13 @@ class KeyboardStateMachine(Node):
 
 
 def main(args=None):
+    """
+     Main function for the state machine
+
+     Continuous loop that publishes status and checks for updates from the GUI
+
+     FIXME this is probably where we can fix the fact that it finishes a loop before stopping once the GUI tells it to
+     """
     rclpy.init(args=args)
     keyboard_state_machine = KeyboardStateMachine()
     rate = keyboard_state_machine.create_rate(10)
