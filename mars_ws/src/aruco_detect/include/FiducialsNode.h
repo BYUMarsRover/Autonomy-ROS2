@@ -1,117 +1,108 @@
 #ifndef FIDUCIALS_NODE_H  // Include guard to prevent multiple inclusion
 #define FIDUCIALS_NODE_H
 
-#pragma once
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
-#include <visualization_msgs/msg/marker.hpp>
-#include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
-#include <rover_msgs/msg/fiducial_data.hpp>
-#include <rover_msgs/msg/fiducial_array.hpp>
-#include <rover_msgs/msg/fiducial_transform.hpp>
-// #include <fiducial_msgs/msg/fiducial_array.hpp>
-// #include <fiducial_msgs/msg/fiducial_transform_array.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <std_srvs/srv/set_bool.hpp>
-#include <image_transport/image_transport.h>
-#include <opencv2/opencv.hpp>
-#include <opencv2/aruco.hpp>
-#include <boost/algorithm/string.hpp>
+#include <image_transport/image_transport.hpp>
+
 #include <map>
+#include <string>
 #include <vector>
 
-using namespace rclcpp;  // Use the rclcpp namespace directly
+// Forward declarations to minimize includes
+namespace cv {
+    class Mat;
+    namespace aruco {
+        class DetectorParameters;
+        class Dictionary;
+    }
+}
 
-class FiducialsNode {
+class FiducialsNode : public rclcpp::Node {
+public:
+    // Constructor
+    explicit FiducialsNode();
+
 private:
     // Publishers
-    Publisher<fiducial_msgs::msg::FiducialArray>::SharedPtr vertices_pub;  
-    Publisher<fiducial_msgs::msg::FiducialTransformArray>::SharedPtr pose_pub;
+    rclcpp::Publisher<fiducial_msgs::msg::FiducialArray>::SharedPtr vertices_pub_;
+    rclcpp::Publisher<fiducial_msgs::msg::FiducialTransformArray>::SharedPtr pose_pub_;
 
     // Subscribers
-    Subscription<std_msgs::msg::String>::SharedPtr caminfo_sub;
-    Subscription<std_msgs::msg::String>::SharedPtr ignore_sub;
-    image_transport::Subscriber img_sub;
+    rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr caminfo_sub_;
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr ignore_sub_;
+    image_transport::Subscriber image_sub_;
 
     // Service server
-    Service<std_srvs::srv::SetBool>::SharedPtr service_enable_detections;
+    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr enable_detections_srv_;
 
     // Parameters
-    bool publish_images;
-    bool enable_detections;
-    bool doPoseEstimation;
-    bool haveCamInfo;
+    bool publish_images_;
+    bool enable_detections_;
+    bool do_pose_estimation_;
+    bool have_cam_info_;
 
-    int frameNum;
-    double fiducial_len;
+    int frame_num_;
+    double fiducial_len_;
 
-    cv::Mat cameraMatrix;
-    cv::Mat distortionCoeffs;
-    
-    std::string frameId;
-    std::vector<int> ignoreIds;
-    std::map<int, double> fiducialLens;
+    // Detector parameters
+    double adaptive_thresh_constant_;
+    int adaptive_thresh_win_size_min_;
+    int adaptive_thresh_win_size_max_;
+    int adaptive_thresh_win_size_step_;
+    int corner_refinement_max_iterations_;
+    double corner_refinement_min_accuracy_;
+    int corner_refinement_win_size_;
+    bool do_corner_refinement_;
+    bool corner_refinement_subpix_;
+    double error_correction_rate_;
+    double min_corner_distance_rate_;
+    int marker_border_bits_;
+    double max_erroneous_bits_in_border_rate_;
+    double min_distance_to_border_;
+    double min_marker_distance_rate_;
+    double min_marker_perimeter_rate_;
+    double max_marker_perimeter_rate_;
+    double min_otsu_std_dev_;
+    double perspective_remove_ignored_margin_per_cell_;
+    int perspective_remove_pixel_per_cell_;
+    double polygonal_approx_accuracy_rate_;
 
-    image_transport::ImageTransport it;
+    // Camera parameters
+    cv::Mat camera_matrix_;
+    cv::Mat distortion_coeffs_;
 
-    // OpenCV and ARUCO
-    cv::Ptr<cv::aruco::DetectorParameters> detectorParams;
-    cv::Ptr<cv::aruco::Dictionary> dictionary;
-    
+    std::string frame_id_;
+    std::vector<int> ignore_ids_;
+    std::map<int, double> fiducial_lens_;
+
+    image_transport::ImageTransport image_transport_;
+
+    // OpenCV and ArUco
+    cv::Ptr<cv::aruco::DetectorParameters> detector_params_;
+    cv::Ptr<cv::aruco::Dictionary> dictionary_;
+
+    // Member functions
     void handleIgnoreString(const std::string& str);
-    void estimatePoseSingleMarkers(const std::vector<int>& ids,
-                                    const std::vector<std::vector<cv::Point2f>>& corners,
-                                    float markerLength,
-                                    const cv::Mat& cameraMatrix,
-                                    const cv::Mat& distCoeffs,
-                                    std::vector<cv::Vec3d>& rvecs, 
-                                    std::vector<cv::Vec3d>& tvecs,
-                                    std::vector<double>& reprojectionError);
+    void estimatePoseSingleMarkers(
+        const std::vector<int>& ids,
+        const std::vector<std::vector<cv::Point2f>>& corners,
+        float marker_length,
+        const cv::Mat& camera_matrix,
+        const cv::Mat& dist_coeffs,
+        std::vector<cv::Vec3d>& rvecs,
+        std::vector<cv::Vec3d>& tvecs,
+        std::vector<double>& reprojection_errors);
 
     void ignoreCallback(const std_msgs::msg::String::SharedPtr msg);
-    void imageCallback(const sensor_msgs::msg::Image::SharedPtr msg);
-    void camInfoCallback(const sensor_msgs::msg::CameraInfo::SharedPtr msg);
-    
-    bool enableDetectionsCallback(const std::shared_ptr<rmw_request_id_t> request_header,
-                                   const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
-                                   const std::shared_ptr<std_srvs::srv::SetBool::Response> res);
+    void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg);
+    void camInfoCallback(const sensor_msgs::msg::CameraInfo::ConstSharedPtr msg);
 
-    rcl_interfaces::msg::SetParametersResult parameterCallback(const std::vector<Parameter>& params);
-
-    // COMMENTED OUT CODE BELOW AS dynamic_reconfigure is not available for ROS2
-    // dynamic_reconfigure::Server<aruco_detect::DetectorParamsConfig> configServer; 
-    // dynamic_reconfigure::Server<aruco_detect::DetectorParamsConfig>::CallbackType callbackType; 
-
-    // NOTE: Parameter callback for dynamic changes. This function is called whenever a parameter is updated at runtime. 
-    // Inside this callback, you check which parameters were updated and modify the node’s internal state accordingly.
-    // rcl_interfaces::msg::SetParametersResult parameterCallback(const std::vector<rclcpp::Parameter> &params) {
-    //     for (const auto &param : params) {
-    //         if (param.get_name() == "fiducial_len") {
-    //             fiducial_len = param.as_double();
-    //         } else if (param.get_name() == "publish_images") {
-    //             publish_images = param.as_bool();
-    //         } else if (param.get_name() == "enable_detections") {
-    //             enable_detections = param.as_bool();
-    //         }
-    //         // Update other parameters as needed
-    //     }
-    //     return rcl_interfaces::msg::SetParametersResult{true};
-    // }
-
-    public:
-    FiducialsNode();  // Constructor
-
-    // Callback methods
-    void imageCallback(const sensor_msgs::msg::Image::SharedPtr msg);
-    void camInfoCallback(const sensor_msgs::msg::CameraInfo::SharedPtr msg);
-    void ignoreCallback(const std_msgs::msg::String::SharedPtr msg);
-
-    // Service callback
-    bool enableDetectionsCallback(const std::shared_ptr<rmw_request_id_t> request_header,
-                                   const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
-                                   const std::shared_ptr<std_srvs::srv::SetBool::Response> res);
-
-    // Parameter callback
-    rcl_interfaces::msg::SetParametersResult parameterCallback(const std::vector<Parameter>& params);
+    rcl_interfaces::msg::SetParametersResult parameterCallback(
+        const std::vector<rclcpp::Parameter>& params);
 };
+
+#endif  // FIDUCIALS_NODE_H
