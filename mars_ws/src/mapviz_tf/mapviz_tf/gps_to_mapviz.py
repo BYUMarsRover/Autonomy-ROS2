@@ -7,7 +7,7 @@ from rclpy.executors import ExternalShutdownException
 
 import numpy as np
 
-from gps_common.msg import GPSFix
+from sensor_msgs.msg import NavSatFix
 from rover_msgs.msg import RoverStateSingleton, AutonomyTaskInfo
 from rover_msgs.srv import AutonomyWaypoint, AutonomyWaypointResponse
 from ublox.msg import PositionVelocityTime
@@ -21,35 +21,27 @@ def spin_in_background():
 
 ROS_RATE = 15
 
-
 class GPSPublisher(Node):
-    def __init__(self): #left old publishers to show conversion, will remove before final commit and push.
-        # self.rover_filtered_gps_pub = rclpy.Publisher(
-        #     "/GPSFix_rover_filtered", GPSFix, queue_size=1
-        # )
-        self.rover_filtered_gps_pub = self.create_publisher(GPSFix, "/GPSFix_rover_filtered", 1)
-        # self.rover_unfiltered_gps_pub = rclpy.Publisher(
-        #     "/GPSFix_rover_unfiltered", GPSFix, queue_size=1
-        # )
-        self.rover_unfiltered_gps_pub = self.create_publisher(GPSFix, "/GPSFix_rover_unfiltered", 1)
-        self.base_gps_pub = self.create_publisher(GPSFix, "/GPSFix_base", queue_size=1)
+    def __init__(self):
+        self.rover_filtered_gps_pub = self.create_publisher(NavSatFix, "/GPSFix_rover_filtered", 1)
+        self.rover_unfiltered_gps_pub = self.create_publisher(NavSatFix, "/GPSFix_rover_unfiltered", 1)
+        self.base_gps_pub = self.create_publisher(NavSatFix, "/GPSFix_base", 1)
+        self.gps_plotter_pub = self.create_publisher(NavSatFix, "/GPS_waypoint_plotter", 1)
 
-        # Add waypoints to the plotter
-        # self.gps_plotter_pub = rclpy.Publisher("/GPS_waypoint_plotter", GPSFix, queue_size=1)
-        self.gps_plotter_pub = self.create_publisher(GPSFix, "/GPS_waypoint_plotter", 1)
-        #self.gps_plotter_sub = rospy.Subscriber("/mapviz_GPS_waypoint", GPSFix, self.plotter_callback)
+        self.gps_plotter_srv = self.create_service(AutonomyWaypoint, '/GPS_waypoint_plotter', self.set_all_tasks_callback)
 
-        self.gps_plotter_srv = rclpy.Service('/GPS_waypoint_plotter', AutonomyWaypoint, self.set_all_tasks_callback)   # TODO: Add this to the GUI buttons TODO: change this to rclpy
-
-
-        self.rover_state_singleton_sub = rclpy.Subscriber(
-            "/odometry/rover_state_singleton",
+        self.rover_state_singleton_sub = self.create_subscription(
             RoverStateSingleton,
+            "/odometry/rover_state_singleton",
             self.singleton_callback,
+            1
         )
 
-        self.base_sub = rclpy.Subscriber(
-            "/base/PosVelTime", PositionVelocityTime, self.base_callback
+        self.base_sub = self.create_subscription(
+            PositionVelocityTime,
+            "/base/PosVelTime",
+            self.base_callback,
+            1
         )
 
         self.rover_state_singleton = RoverStateSingleton()
@@ -74,23 +66,20 @@ class GPSPublisher(Node):
         )
 
     def _publish_rover_gps_data(self, gps_publisher, gps, yaw):
-        GPSFix_msg = GPSFix(latitude=gps.latitude, longitude=gps.longitude, track=yaw)
-        gps_publisher.publish(GPSFix_msg)
+        NavSatFix_msg = NavSatFix(latitude=gps.latitude, longitude=gps.longitude)
+        gps_publisher.publish(NavSatFix_msg)
 
     def _publish_base_gps_data(self, gps_publisher, posVelTime):
-        GPSFix_msg = GPSFix(
-            latitude=posVelTime.lla[0], longitude=posVelTime.lla[1], track=0
+        NavSatFix_msg = NavSatFix(
+            latitude=posVelTime.lla[0], longitude=posVelTime.lla[1]
         )
-        gps_publisher.publish(GPSFix_msg)
+        gps_publisher.publish(NavSatFix_msg)
 
     def set_all_tasks_callback(self, task_list:AutonomyWaypoint) -> AutonomyWaypointResponse:
-        '''
-        Puts all of the waypoints from the GUI into a queue so the rover can autonomously do the whole mission.
-        '''
         print('in set_all_tasks_callback')
         tasks: list[AutonomyTaskInfo] = task_list.task_list
         for task_info in tasks:
-            gps_msg = GPSFix(latitude=task_info.latitude,longitude=task_info.longitude)
+            gps_msg = NavSatFix(latitude=task_info.latitude, longitude=task_info.longitude)
             self.gps_plotter_pub.publish(gps_msg)
         print('Exiting set_all_tasks_callback')
 
@@ -98,9 +87,6 @@ class GPSPublisher(Node):
         response.success = True
         response.message = 'Adding waypoints was successful'
         return response
-        
-
-
 
 if __name__ == "__main__":
     rclpy.init()
@@ -108,9 +94,8 @@ if __name__ == "__main__":
     t.start()
     node = rclpy.create_node("gps_to_mapviz")
     rclpy.get_global_executor().add_node(node)
-    rate = node.create_rate(ROS_RATE)   #rospy.Rate(ROS_RATE)
+    rate = node.create_rate(ROS_RATE)
     gps_pub = GPSPublisher()
     while rclpy.ok():
         gps_pub.publish_gps_data()
-        # rate.sleep()    - Theoretically t.start and join do this.
     t.join()
