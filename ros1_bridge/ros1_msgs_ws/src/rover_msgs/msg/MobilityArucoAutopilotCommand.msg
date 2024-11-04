@@ -1,0 +1,2 @@
+float32 distance_to_target
+float32 angle_to_target
