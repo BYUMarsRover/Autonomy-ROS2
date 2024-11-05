@@ -14,7 +14,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'), glob.glob('launch/*.py')),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'ublox',],
     zip_safe=True,
     maintainer='Michael Crandall',
     maintainer_email="wyomike2020@gmail.com",
