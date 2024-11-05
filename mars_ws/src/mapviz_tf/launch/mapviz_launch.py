@@ -3,6 +3,11 @@ from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration, EnvironmentVariable
 from launch_ros.actions import Node
 from launch.conditions import IfCondition
+from ament_index_python.packages import get_package_share_directory
+import os
+
+mapviz_tf_dir = get_package_share_directory('mapviz_tf')
+
 
 def generate_launch_description():
     return LaunchDescription([
@@ -20,7 +25,7 @@ def generate_launch_description():
             name='mapviz',
             parameters=[{
                 'print_profile_data': LaunchConfiguration('print_profile_data'),
-                'config': '/home/user/BYU-Mars-Rover/rover_ws/src/mapviz_tf/scripts/.mapviz_config',
+                'config': os.path.join(mapviz_tf_dir, '/scripts/.mapviz_config'),
             }]
         ),
 
