@@ -10,10 +10,11 @@ import os
 def generate_launch_description():
     # Get the share directory for packages
     #zed_wrapper_launch_dir = os.path.join(get_package_share_directory('zed_wrapper'), 'launch')
-    #usb_cam_launch_dir = os.path.join(get_package_share_directory('usb_cam'), 'launch')
+    usb_cam_launch_dir = os.path.join(get_package_share_directory('start'), 'launch')
     autonomy_launch_dir = os.path.join(get_package_share_directory('autonomy'), 'launch')
     autonomy_params_dir = os.path.join(get_package_share_directory('autonomy'), 'params')
-    
+    print(f'Params file path: {os.path.join(autonomy_params_dir, "autonomy_params.yaml")}')
+
     return LaunchDescription([
         # Declare launch arguments
         DeclareLaunchArgument('target_ar_tag_id', default_value='-1', description='Target AR Tag ID'),
@@ -32,7 +33,7 @@ def generate_launch_description():
                 {'simulation': LaunchConfiguration('simulation')},
                 {'target_ar_tag_id': LaunchConfiguration('target_ar_tag_id')}
             ]
-        )#,
+        ),
 
         # Group for ZED wrapper launch if simulation is false
         # GroupAction([
@@ -41,7 +42,7 @@ def generate_launch_description():
         #     )
         # ], condition=IfCondition(LaunchConfiguration('simulation').to_bool() == False)),
 
-        # Include autonomy camera launch file (usb_cam)
+        # Include autonomy camera launch file (usb_cam) Don't run this on a PC docker computer
         # IncludeLaunchDescription(
         #     PythonLaunchDescriptionSource(os.path.join(usb_cam_launch_dir, 'autonomy_camera.launch.py'))
         # ),
@@ -55,24 +56,17 @@ def generate_launch_description():
         #         'camera': '/usb_cam'
         #     }.items(),
         # )#,
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join(autonomy_launch_dir, 'aruco_detect.launch.py')),
-        #     launch_arguments={
-        #         'node_name': 'aruco_detect_zed',
-        #         'image': 'image_rect_color',
-        #         'camera': '/zed/left'
-        #     }.items(),
-        # ),
 
         # Launch state machine with autonomy namespace
-        # GroupAction([
-        #     Node(
-        #         package='autonomy',
-        #         executable='state_machine_new',
-        #         name='state_machine_node',
-        #         output='screen',
-        #         parameters=[os.path.join(autonomy_params_dir, 'autonomy_params.yaml')]
-        #     )
-        # ], namespace='autonomy')
+        GroupAction([
+               Node(
+                package='autonomy',
+                executable='state_machine',
+                name='state_machine',
+                namespace='autonomy',
+                output='screen',
+                parameters=[os.path.join(autonomy_params_dir, 'autonomy_params.yaml')]
+            )
+        ])
 
     ])

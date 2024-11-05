@@ -1,18 +1,20 @@
-import rclpy
-from rclpy.node import Node
+
 from rover_msgs.msg import MobilityGPSWaypoint2Follow, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityArucoAutopilotCommand
 from std_srvs.srv import SetBool
 
-class DriveControllerAPI(Node):
+class DriveControllerAPI:
 
-    def __init__(self):
-        super().__init__('drive_controller_api')
+    def __init__(self, node):
+        if node is None:
+            raise ValueError("This is a helper class. You need a node to create this object")
+
+        self.node = node # Store the node object for later use
         
-        # Publishers
-        self.path_cmds_pub = self.create_publisher(MobilityGPSWaypoint2Follow, '/mobility/waypoint2follow', 10)
-        self.autopilot_cmds_pub = self.create_publisher(MobilityAutopilotCommand, '/mobility/autopilot_cmds', 10)
-        self.drive_cmds_pub = self.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', 10)
-        self.aruco_autopilot_cmds_pub = self.create_publisher(MobilityArucoAutopilotCommand, '/mobility/aruco_autopilot_cmds', 10)
+        # Publishers - Use node to create publishers
+        self.path_cmds_pub = self.node.create_publisher(MobilityGPSWaypoint2Follow, '/mobility/waypoint2follow', 10)
+        self.autopilot_cmds_pub = self.node.create_publisher(MobilityAutopilotCommand, '/mobility/autopilot_cmds', 10)
+        self.drive_cmds_pub = self.node.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', 10)
+        self.aruco_autopilot_cmds_pub = self.node.create_publisher(MobilityArucoAutopilotCommand, '/mobility/aruco_autopilot_cmds', 10)
 
         # Messages
         self.path_cmd = MobilityGPSWaypoint2Follow()
@@ -84,9 +86,9 @@ class DriveControllerAPI(Node):
     # and if the service call is successful, the respective manager’s enabled status is updated.
     
     def _toggle_enable_path_manager(self, enable: bool):
-        client = self.create_client(SetBool, '/mobility/path_manager/enabled')
+        client = self.node.create_client(SetBool, '/mobility/path_manager/enabled')
         while not client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for service /mobility/path_manager/enabled...')
+            self.node.get_logger().info('Waiting for service /mobility/path_manager/enabled...')
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
@@ -97,9 +99,9 @@ class DriveControllerAPI(Node):
             self.path_manager_enabled = future.result().data
 
     def _toggle_enable_autopilot_manager(self, enable: bool):
-        client = self.create_client(SetBool, '/mobility/autopilot_manager/enabled')
+        client = self.node.create_client(SetBool, '/mobility/autopilot_manager/enabled')
         while not client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for service /mobility/autopilot_manager/enabled...')
+            self.node.get_logger().info('Waiting for service /mobility/autopilot_manager/enabled...')
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
@@ -110,9 +112,9 @@ class DriveControllerAPI(Node):
             self.autopilot_manager_enabled = future.result().data
 
     def _toggle_enable_drive_manager(self, enable: bool):
-        client = self.create_client(SetBool, '/mobility/drive_manager/enabled')
+        client = self.node.create_client(SetBool, '/mobility/drive_manager/enabled')
         while not client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for service /mobility/drive_manager/enabled...')
+            self.node.get_logger().info('Waiting for service /mobility/drive_manager/enabled...')
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
@@ -123,9 +125,9 @@ class DriveControllerAPI(Node):
             self.drive_manager_enabled = future.result().data
 
     def _toggle_enable_wheel_manager(self, enable: bool):
-        client = self.create_client(SetBool, '/mobility/wheel_manager/enabled')
+        client = self.node.create_client(SetBool, '/mobility/wheel_manager/enabled')
         while not client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for service /mobility/wheel_manager/enabled...')
+            self.node.get_logger().info('Waiting for service /mobility/wheel_manager/enabled...')
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
@@ -136,9 +138,9 @@ class DriveControllerAPI(Node):
             self.wheel_manager_enabled = future.result().data
 
     def _toggle_enable_aruco_autopilot_manager(self, enable: bool):
-        client = self.create_client(SetBool, '/mobility/aruco_autopilot_manager/enabled')
+        client = self.node.create_client(SetBool, '/mobility/aruco_autopilot_manager/enabled')
         while not client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for service /mobility/aruco_autopilot_manager/enabled...')
+            self.node.get_logger().info('Waiting for service /mobility/aruco_autopilot_manager/enabled...')
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
@@ -147,26 +149,15 @@ class DriveControllerAPI(Node):
     def _update_aruco_autopilot_manager_status(self, future):
         if future.result().success:
             self.aruco_autopilot_manager_enabled = future.result().data
-    #-------------------------------------------------------------------------------
-
-def main(args=None):
-    rclpy.init(args=args)
-    drive_controller_api = DriveControllerAPI()
-    rclpy.spin(drive_controller_api)
-    rclpy.shutdown()
-
-if __name__ == '__main__':
-    main()
-
-
-#Debugging Tips-------------------------
+#-------------------------------------------------------------------------------
+#Debugging Tips
 # Service Availability:
 # The while not client.wait_for_service() blocks in the code are helpful for debugging 
 # issues related to service availability. If your node seems stuck, check the services 
 # being called—ensure they are actually running.
 
 # Logging:
-# Use self.get_logger().info() to track the execution flow. If something seems off, you can 
+# Use self.node.get_logger().info() to track the execution flow. If something seems off, you can 
 # add additional logs to get more details about which parts of the code are executing.
 
 # Service Callbacks:

@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 from glob import glob
 
-package_name = 'autonomy'
+package_name = 'home_gui'
 
 setup(
     name=package_name,
@@ -12,21 +12,19 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
-        ('share/' + package_name + '/params', glob('params/*.yaml')),
-
     ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='marsrover',
     maintainer_email='marsrover@todo.todo',
-    description='The autonomous state machine package',
-    license='BYU YOU CANT HAVE IT',
+    description='TODO: Package description',
+    license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'fiducial_data = autonomy.fiducial_data:main', 
-            'drive_controller_api = autonomy.drive_controller_api:main',
-            'state_machine = autonomy.state_machine:main',
+            'base_home_gui = home_gui.base_home_gui:main',
+            'rover_camera_control = home_gui.rover_camera_control:main',
+            'rover_dev_update = home_gui.rover_dev_update:main',
         ],
     },
 )

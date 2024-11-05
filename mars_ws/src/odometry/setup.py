@@ -13,7 +13,7 @@ setup(
     packages=find_packages(exclude=['test']),
     data_files=[
         # Install all launch files
-        ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
+        ('share/' + package_name + '/launch', glob('launch/*launch.py')),
 
         # Install config files
         ('share/' + package_name + '/config', ['config/estimation.yaml']),
@@ -33,6 +33,7 @@ setup(
         'console_scripts': [
             'rover_state_singleton_creator = odometry.rover_state_singleton_creator:main',
             'position_velocity_time_translator = odometry.position_velocity_time_translator:main',
+            'dummy_singleton_publisher = odometry.dummy_singleton_publisher:main',
         ],
     },
 )
