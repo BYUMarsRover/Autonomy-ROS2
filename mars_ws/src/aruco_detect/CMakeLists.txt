@@ -6,9 +6,15 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# Find dependencies
+# Find ament_Cmake first: 
 find_package(ament_cmake REQUIRED)
+
+# Find dependencies
 find_package(rclcpp REQUIRED)
+find_package(rover_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(std_msgs REQUIRED)
+# find_package(fiducial_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED) 
 find_package(tf2_ros REQUIRED)
@@ -28,6 +34,7 @@ include_directories(
 
 # Add executable for the main node
 add_executable(aruco_detect src/aruco_detect.cpp)
+add_executable(fiducials_node src/FiducialsNode.cpp)
 
 # Link libraries and dependencies
 ament_target_dependencies(aruco_detect 
@@ -40,9 +47,9 @@ ament_target_dependencies(aruco_detect
   sensor_msgs 
   std_srvs 
   std_msgs 
-  OpenCV
   cv_bridge
   image_transport
+  # fiducial_msgs
 )
 
 # Link OpenCV libraries
@@ -53,7 +60,9 @@ target_link_libraries(aruco_detect ${OpenCV_LIBS})
 #############
 
 # Mark the executable for installation
-install(TARGETS aruco_detect
+install(TARGETS 
+  aruco_detect
+  fiducials_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -72,6 +81,7 @@ install(PROGRAMS scripts/create_markers.py
 #############
 
 if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED) 
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)

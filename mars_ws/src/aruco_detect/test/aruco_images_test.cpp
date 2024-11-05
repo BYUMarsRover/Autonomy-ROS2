@@ -4,7 +4,7 @@ This file is used for validation that the software aspect of aruco detect is wor
 
 #include <gtest/gtest.h>
 
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <opencv2/highgui/highgui.hpp>

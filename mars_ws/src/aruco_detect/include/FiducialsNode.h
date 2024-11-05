@@ -7,19 +7,12 @@
 #include <std_msgs/msg/string.hpp>
 #include <std_srvs/srv/set_bool.hpp>
 #include <image_transport/image_transport.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/aruco.hpp>
 
 #include <map>
 #include <string>
 #include <vector>
-
-// Forward declarations to minimize includes
-namespace cv {
-    class Mat;
-    namespace aruco {
-        class DetectorParameters;
-        class Dictionary;
-    }
-}
 
 class FiducialsNode : public rclcpp::Node {
 public:
@@ -96,10 +89,20 @@ private:
         std::vector<cv::Vec3d>& rvecs,
         std::vector<cv::Vec3d>& tvecs,
         std::vector<double>& reprojection_errors);
-
+    
+    double calculateDistance(const cv::Point2f& p1, const cv::Point2f& p2);
+    double calculateFiducialArea(const std::vector<cv::Point2f>& points);
+    double getReprojectionError(
+        const std::vector<cv::Point3f>& object_points,
+        const std::vector<cv::Point2f>& image_points,
+        const cv::Mat& camera_matrix,
+        const cv::Mat& dist_coeffs,
+        const cv::Vec3d& rvec,
+        const cv::Vec3d& tvec)
     void ignoreCallback(const std_msgs::msg::String::SharedPtr msg);
     void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg);
     void camInfoCallback(const sensor_msgs::msg::CameraInfo::ConstSharedPtr msg);
+
 
     rcl_interfaces::msg::SetParametersResult parameterCallback(
         const std::vector<rclcpp::Parameter>& params);
