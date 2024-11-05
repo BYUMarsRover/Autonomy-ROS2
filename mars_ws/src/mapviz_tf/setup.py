@@ -26,7 +26,8 @@ setup(
             'click_waypoint = mapviz_tf.click_waypoint:main',  # Separate each entry with a comma
             'gps_to_mapviz = mapviz_tf.gps_to_mapviz:main',
             'path_to_mapviz = mapviz_tf.path_to_mapviz:main',
-            'rover_tf_broadcaster = mapviz_tf.rover_tf_broadcaster:main'
+            'rover_tf_broadcaster = mapviz_tf.rover_tf_broadcaster:main',
+            'lat_lon_meter_convertor = mapviz_tf.lat_lon_meter_convertor:main',
         ],
     },
 )
