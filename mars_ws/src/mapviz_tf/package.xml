@@ -8,7 +8,6 @@
 
 <!--Sarah 10/22/2024: Updated dependencies with the new simplified form -->
   <depend>python3-rospkg</depend>
-  <depend>roscpp</depend>
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
   <depend>nav_msgs</depend>
@@ -19,7 +18,10 @@
   <build_depend>mapviz_plugins</build_depend>
   <build_depend>tile_map</build_depend>
 
-  <test_depend>rosunit</test_depend>
+  <test_depend>ament_cmake_test</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>

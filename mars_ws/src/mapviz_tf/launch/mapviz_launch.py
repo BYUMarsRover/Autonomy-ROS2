@@ -52,9 +52,7 @@ def generate_launch_description():
             package='tf2_ros',
             executable='static_transform_publisher',
             name='swri_transform',
-            parameters=[{
-                'args': '0 0 0 0 0 0 /map /origin 100'
-            }]
+            arguments=['0', '0', '0', '0', '0', '0', 'map', 'origin', '100']
         ),
 
         # Other nodes
