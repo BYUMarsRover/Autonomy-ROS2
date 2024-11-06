@@ -9,8 +9,7 @@ from matplotlib import pyplot as plt
 This script is used to test the OpenCV keyboard homography calculation. 
 It uses the SIFT algorithm to find keypoints and descriptors in both images, 
 and then uses the FLANN algorithm to find matches between the descriptors. 
-If enough matches are found, the homography is calculated and a plot is displayed
-showing the matches and the homography outline.
+If enough matches are found, the homography is calculated and displayed.
 '''
 
 # Minimum number of matches required
