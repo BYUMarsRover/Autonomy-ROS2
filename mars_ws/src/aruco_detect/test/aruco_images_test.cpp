@@ -4,14 +4,14 @@ This file is used for validation that the software aspect of aruco detect is wor
 
 #include <gtest/gtest.h>
 
-#include "rclcpp/rclcpp.hpp"
+#include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 
-#include <fiducial_msgs/FiducialArray.h>
-#include <fiducial_msgs/FiducialTransformArray.h>
+#include <rover_msgs/FiducialArray.hpp>
+#include <rover_msgs/FiducialTransformArray.hpp>
 
 class ArucoImagesTest : public ::testing::Test {
 protected:
@@ -53,12 +53,12 @@ protected:
     CameraInfoPub.publish(c_info);
   }
 
-  void vertices_callback(const fiducial_msgs::FiducialArray f) {
+  void vertices_callback(const rover_msgs::FiducialArray f) {
     got_vertices = true;
     fiducials = f;
   }
 
-  void transforms_callback(const fiducial_msgs::FiducialTransformArray f) {
+  void transforms_callback(const rover_msgs::FiducialTransformArray f) {
     got_transforms = true;
     fiducial_tfs = f;
   }
@@ -76,11 +76,11 @@ protected:
 
   // Set up subscribing
   bool got_vertices;
-  fiducial_msgs::FiducialArray fiducials;
+  rover_msgs::FiducialArray fiducials;
   ros::Subscriber vertices_sub;
 
   bool got_transforms;
-  fiducial_msgs::FiducialTransformArray fiducial_tfs;
+  rover_msgs::FiducialTransformArray fiducial_tfs;
   ros::Subscriber transforms_sub;
 };
 
@@ -100,7 +100,7 @@ TEST_F(ArucoImagesTest, tag_01_d7_14cm) {
   ASSERT_EQ(1, fiducials.fiducials.size());
   ASSERT_EQ(1, fiducial_tfs.transforms.size());
 
-  const fiducial_msgs::Fiducial& vertices = fiducials.fiducials[0];
+  const rover_msgs::Fiducial& vertices = fiducials.fiducials[0];
   ASSERT_EQ(1, vertices.fiducial_id);
 
   ASSERT_FLOAT_EQ(569.89917, vertices.x0);

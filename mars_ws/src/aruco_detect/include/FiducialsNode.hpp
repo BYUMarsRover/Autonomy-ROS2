@@ -9,6 +9,8 @@
 #include <image_transport/image_transport.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/aruco.hpp>
+#include <rover_msgs/msg/fiducial_array.hpp>
+#include <rover_msgs/msg/fiducial_transform_array.hpp>
 
 #include <map>
 #include <string>
@@ -21,8 +23,8 @@ public:
 
 private:
     // Publishers
-    rclcpp::Publisher<fiducial_msgs::msg::FiducialArray>::SharedPtr vertices_pub_;
-    rclcpp::Publisher<fiducial_msgs::msg::FiducialTransformArray>::SharedPtr pose_pub_;
+    rclcpp::Publisher<rover_msgs::msg::FiducialArray>::SharedPtr vertices_pub_;
+    rclcpp::Publisher<rover_msgs::msg::FiducialTransformArray>::SharedPtr pose_pub_;
 
     // Subscribers
     rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr caminfo_sub_;
@@ -98,7 +100,7 @@ private:
         const cv::Mat& camera_matrix,
         const cv::Mat& dist_coeffs,
         const cv::Vec3d& rvec,
-        const cv::Vec3d& tvec)
+        const cv::Vec3d& tvec);
     void ignoreCallback(const std_msgs::msg::String::SharedPtr msg);
     void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg);
     void camInfoCallback(const sensor_msgs::msg::CameraInfo::ConstSharedPtr msg);

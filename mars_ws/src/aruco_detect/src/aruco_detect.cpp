@@ -1,7 +1,7 @@
 #include <cassert>
 #include <chrono> // In ROS2, it’s common to use C++'s <chrono> library
 
-#include "FiducialsNode.h"
+#include "FiducialsNode.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 
