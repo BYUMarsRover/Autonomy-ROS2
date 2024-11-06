@@ -58,7 +58,7 @@ class HomeGuiUI(Node, QWidget):
 
     def __init__(self):
         # Call the inherited classes __init__ method
-        Node.__init__(self, 'base_home_gui')
+        Node.__init__(self, executable='base_home_gui')
         QWidget.__init__(self)
         # Load the .ui file
         uic.loadUi(
