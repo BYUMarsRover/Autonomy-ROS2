@@ -7,17 +7,12 @@ import cv2
 
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import Twist
-from sensor_msgs.msg import LaserScan
-from rover_msgs.msg import ObstacleInfo, WaypointNav, NavStatus, DynamixelState, ZedObstacles
-from nav_msgs.msg import Odometry
-from std_msgs.msg import String
 
 
 class KeyboardStateMachine(Node):
     # TODO: need to adjust usb_cam node still which is not in this repo yet
     def __init__(self):
-        super().__init__('autonomy_state_machine')
+        super().__init__('state_machine_keyboard')
         self.img = None
         self.bridge = CvBridge()
         self.sub_keyboard_img = self.create_subscription(Image, '/camera/rgb/keyboard_cam/image_raw',
