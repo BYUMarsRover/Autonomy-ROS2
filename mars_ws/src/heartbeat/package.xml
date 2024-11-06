@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>heartbeat</name>
+  <version>0.0.1</version>
+  <description>Heartbeat for the rover</description>
+
+  <maintainer email="hilton.chloe.y@gmail.com">marsrover</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
