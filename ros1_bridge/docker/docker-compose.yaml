@@ -15,6 +15,7 @@ services:
       - ../ros1_msgs_ws:/home/${UNAME}/ros1_msgs_ws
       - ../ros2_msgs_ws:/home/${UNAME}/ros2_msgs_ws
       - ../scripts:/home/${UNAME}/scripts
+      - ../bag:/home/${UNAME}/bag
       - /etc/localtime:/etc/localtime:ro # Syncs the container's time with the host
     command: /bin/bash
     stdin_open: true  # Equivalent to -it in docker run
