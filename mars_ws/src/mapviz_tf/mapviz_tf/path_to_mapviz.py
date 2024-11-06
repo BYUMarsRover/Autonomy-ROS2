@@ -8,7 +8,7 @@ from rclpy.time import Time
 from std_msgs.msg import Header
 from nav_msgs.msg import Path as PathMsg
 from geometry_msgs.msg import Point, Pose, Quaternion, PoseStamped
-from lat_lon_meter_convertor import LatLonConvertor
+from mapviz_tf.lat_lon_meter_convertor import LatLonConvertor
 
 def spin_in_background():
     executor = rclpy.get_global_executor()

@@ -8,13 +8,13 @@ import os
 def generate_launch_description():
     config_path = os.path.join(
         os.getenv('HOME', '/home/marsrover'),  # Fallback in case HOME is not set
-        'marsrover/mar_ws/src/mapviz_tf/scripts/.mapviz_config'
+        '/mars_ws/src/mapviz_tf/scripts/.mapviz_config'     # removed marsrover/ at the beginning
     )
     yaml_path = os.path.join(
-        os.getenv('HOME', '/home/marsrover'),  # Fallback in case HOME is not set
-        # mars_ws/src/mapviz_tf/launch/local_xy_origins.yaml
-        'marsrover/mar_ws/src/mapviz_tf/launch/local_xy_origins.yaml'
-    )
+    os.getenv('HOME', '/home/marsrover'),
+    'mars_ws/src/mapviz_tf/launch/mapviz_params.yaml'
+)
+
 
     return LaunchDescription([
         # Set environment variable

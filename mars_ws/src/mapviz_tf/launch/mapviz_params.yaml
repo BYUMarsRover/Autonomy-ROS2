@@ -1,4 +1,5 @@
-local_xy_origins:
+/**:
+  ros__parameters:
   - name: 'byu'
     latitude: 40.2497218
     longitude: -111.649276
