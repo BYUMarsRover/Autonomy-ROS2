@@ -14,12 +14,8 @@
 #include <image_transport/image_transport.hpp>
 
 // Constructor implementation
-FiducialsNode::FiducialsNode()
-    : Node("fiducials_node"),
-      image_transport_(this),
-      have_cam_info_(false),
-      frame_num_(0),
-      enable_detections_(true) {
+FiducialsNode::FiducialsNode(): Node("fiducials_node"), image_transport_(this), have_cam_info_(false), frame_num_(0), enable_detections_(true) {
+
     // Declare and get parameters
     this->declare_parameter<bool>("publish_images", false);
     this->declare_parameter<double>("fiducial_len", 0.14);
