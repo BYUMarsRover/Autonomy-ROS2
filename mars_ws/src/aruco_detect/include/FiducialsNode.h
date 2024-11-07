@@ -1,7 +1,10 @@
 #ifndef FIDUCIALS_NODE_H  // Include guard to prevent multiple inclusion
 #define FIDUCIALS_NODE_H
 
+
 #include <rclcpp/rclcpp.hpp>
+#include "rover_msgs/msg/fiducial_array.hpp"                // JM Added this
+#include "rover_msgs/msg/fiducial_transform_array.hpp"
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <std_msgs/msg/string.hpp>
@@ -21,8 +24,9 @@ public:
 
 private:
     // Publishers
-    rclcpp::Publisher<fiducial_msgs::msg::FiducialArray>::SharedPtr vertices_pub_;
-    rclcpp::Publisher<fiducial_msgs::msg::FiducialTransformArray>::SharedPtr pose_pub_;
+    rclcpp::Publisher<rover_msgs::msg::FiducialArray>::SharedPtr vertices_pub_;
+    rclcpp::Publisher<rover_msgs::msg::FiducialTransformArray>::SharedPtr pose_pub_;
+    image_transport::Publisher image_pub_;
 
     // Subscribers
     rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr caminfo_sub_;
@@ -89,7 +93,11 @@ private:
         std::vector<cv::Vec3d>& rvecs,
         std::vector<cv::Vec3d>& tvecs,
         std::vector<double>& reprojection_errors);
-    
+
+    void enableDetectionsCallback(
+        const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+        std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+
     double calculateDistance(const cv::Point2f& p1, const cv::Point2f& p2);
     double calculateFiducialArea(const std::vector<cv::Point2f>& points);
     double getReprojectionError(
@@ -98,7 +106,8 @@ private:
         const cv::Mat& camera_matrix,
         const cv::Mat& dist_coeffs,
         const cv::Vec3d& rvec,
-        const cv::Vec3d& tvec)
+        const cv::Vec3d& tvec);
+
     void ignoreCallback(const std_msgs::msg::String::SharedPtr msg);
     void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg);
     void camInfoCallback(const sensor_msgs::msg::CameraInfo::ConstSharedPtr msg);

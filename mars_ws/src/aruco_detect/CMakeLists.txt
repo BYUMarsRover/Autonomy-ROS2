@@ -29,6 +29,8 @@ find_package(image_transport REQUIRED)
 # Include directories
 include_directories(
   include
+  ${rclcpp_INCLUDE_DIRS}      # JM added this
+  ${rover_msgs_INCLUDE_DIRS}  # JM added this
   ${OpenCV_INCLUDE_DIRS}
 )
 
@@ -50,6 +52,21 @@ ament_target_dependencies(aruco_detect
   cv_bridge
   image_transport
   # fiducial_msgs
+)
+
+ament_target_dependencies(fiducials_node
+  rclcpp
+  rover_msgs
+    tf2 
+  tf2_ros 
+  tf2_geometry_msgs 
+  visualization_msgs 
+  sensor_msgs 
+  std_srvs 
+  std_msgs 
+  cv_bridge
+  image_transport
+  # ... other dependencies ...
 )
 
 # Link OpenCV libraries
