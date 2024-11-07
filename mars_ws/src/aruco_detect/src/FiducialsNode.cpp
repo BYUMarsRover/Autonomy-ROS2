@@ -1,17 +1,17 @@
 // FiducialsNode.cpp
-#include "FiducialsNode.h"
-
+#include "FiducialsNode.hpp"
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/aruco.hpp>
 #include <opencv2/calib3d.hpp>
 
-#include "rover_msgs/msg/fiducial.hpp"
-#include "rover_msgs/msg/fiducial_array.hpp"
-#include "rover_msgs/msg/fiducial_transform.hpp"
-#include "rover_msgs/msg/fiducial_transform_array.hpp"
+#include <rover_msgs/msg/fiducial.hpp>
+#include <rover_msgs/msg/fiducial_array.hpp>
+#include <rover_msgs/msg/fiducial_transform.hpp>
+#include <rover_msgs/msg/fiducial_transform_array.hpp>
 
 #include <tf2/LinearMath/Quaternion.h>
+#include <image_transport/image_transport.hpp>
 
 // Constructor implementation
 FiducialsNode::FiducialsNode()
@@ -35,6 +35,8 @@ FiducialsNode::FiducialsNode()
     this->get_parameter("frame_id", frame_id_);
 
     // Initialize publishers
+    vertices_pub_ = this->create_publisher<rover_msgs::msg::FiducialArray>("fiducial_vertices", 10);
+    pose_pub_ = this->create_publisher<rover_msgs::msg::FiducialTransformArray>("fiducial_transforms", 10);
     vertices_pub_ = this->create_publisher<rover_msgs::msg::FiducialArray>("fiducial_vertices", 10);
     pose_pub_ = this->create_publisher<rover_msgs::msg::FiducialTransformArray>("fiducial_transforms", 10);
     if (publish_images_) {
@@ -90,9 +92,11 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
     cv_bridge::CvImagePtr cv_ptr;
 
     auto fta = rover_msgs::msg::FiducialTransformArray();
+    auto fta = rover_msgs::msg::FiducialTransformArray();
     fta.header.stamp = msg->header.stamp;
     fta.header.frame_id = frame_id_;
 
+    auto fva = rover_msgs::msg::FiducialArray();
     auto fva = rover_msgs::msg::FiducialArray();
     fva.header.stamp = msg->header.stamp;
     fva.header.frame_id = frame_id_;
@@ -114,6 +118,7 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
                 RCLCPP_INFO(this->get_logger(), "Ignoring id %d", ids[i]);
                 continue;
             }
+            auto fid = rover_msgs::msg::Fiducial();
             auto fid = rover_msgs::msg::Fiducial();
             fid.fiducial_id = ids[i];
 
@@ -166,6 +171,7 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
                 RCLCPP_INFO(this->get_logger(), "Angle %f Axis [%f %f %f]",
                             angle, axis[0], axis[1], axis[2]);
 
+                auto ft = rover_msgs::msg::FiducialTransform();
                 auto ft = rover_msgs::msg::FiducialTransform();
                 ft.fiducial_id = ids[i];
 
