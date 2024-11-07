@@ -31,13 +31,15 @@ FLANN_INDEX_KDTREE = 0
 index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
 search_params = dict(checks = 50)
 
-# Create the FLANN matcher and find matches
+# Create the FLANN matcher and find matches (best two matches for each descriptor)
 flann = cv2.FlannBasedMatcher(index_params, search_params)
 matches = flann.knnMatch(des1, des2, k=2)
 
 print("FLANN matches found")
 
-# Store all the good matches using Lowe's ratio test (TODO: What is this doing?)
+# Store all the good matches using Lowe's ratio test
+# Check to make sure that the distance to the closest match is sufficiently
+# less than the distance to the second closest match
 good_matches = []
 for m, n in matches:
     if m.distance < 0.7 * n.distance:
@@ -50,20 +52,20 @@ if len(good_matches) >= MIN_MATCH_COUNT:
     src_pts = np.float32([ kp1[m.queryIdx].pt for m in good_matches ]).reshape(-1, 1, 2)
     dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good_matches ]).reshape(-1, 1, 2)
 
-    # Calculate the homography
+    # Calculate the homography matrix and mask
     M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
     matchesMask = mask.ravel().tolist()
 
-    # Plot and display the results (TODO: What is this doing?)
+    # Plot and display the results
     h, w = img1.shape[0:2]
-    pts = np.float32([[0, 0],[0, h-1],[w-1, h-1],[w-1, 0]]).reshape(-1, 1, 2)
-    outline = cv2.perspectiveTransform(pts, M)
-    img2 = cv2.polylines(img2, [np.int32(outline)], True, 255, 3, cv2.LINE_AA)
+    pts = np.float32([[0, 0],[0, h-1],[w-1, h-1],[w-1, 0]]).reshape(-1, 1, 2) # get the corners
+    outline = cv2.perspectiveTransform(pts, M) # transform the corners of the first image onto the second
+    img2 = cv2.polylines(img2, [np.int32(outline)], True, 255, 3, cv2.LINE_AA) # draw the box
     draw_params = dict(
             singlePointColor = None,
-            matchesMask = matchesMask, # draw only inliers
+            matchesMask = matchesMask,
             flags = 2)
-    img3 = cv2.drawMatches(img1,kp1,img2,kp2,good_matches,None,**draw_params)
+    img3 = cv2.drawMatches(img1, kp1, img2, kp2, good_matches, None, **draw_params)
     plt.imshow(img3, 'gray')
     plt.show()
 
