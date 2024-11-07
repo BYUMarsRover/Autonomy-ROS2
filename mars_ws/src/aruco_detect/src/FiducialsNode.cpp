@@ -81,6 +81,7 @@ FiducialsNode::FiducialsNode()
     RCLCPP_INFO(this->get_logger(), "FiducialsNode initialized");
 }
 
+
 // Image callback
 void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg) {
     if (!enable_detections_) {
@@ -92,11 +93,9 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
     cv_bridge::CvImagePtr cv_ptr;
 
     auto fta = rover_msgs::msg::FiducialTransformArray();
-    auto fta = rover_msgs::msg::FiducialTransformArray();
     fta.header.stamp = msg->header.stamp;
     fta.header.frame_id = frame_id_;
 
-    auto fva = rover_msgs::msg::FiducialArray();
     auto fva = rover_msgs::msg::FiducialArray();
     fva.header.stamp = msg->header.stamp;
     fva.header.frame_id = frame_id_;
@@ -118,7 +117,6 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
                 RCLCPP_INFO(this->get_logger(), "Ignoring id %d", ids[i]);
                 continue;
             }
-            auto fid = rover_msgs::msg::Fiducial();
             auto fid = rover_msgs::msg::Fiducial();
             fid.fiducial_id = ids[i];
 
@@ -171,7 +169,6 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
                 RCLCPP_INFO(this->get_logger(), "Angle %f Axis [%f %f %f]",
                             angle, axis[0], axis[1], axis[2]);
 
-                auto ft = rover_msgs::msg::FiducialTransform();
                 auto ft = rover_msgs::msg::FiducialTransform();
                 ft.fiducial_id = ids[i];
 
