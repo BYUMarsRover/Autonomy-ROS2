@@ -16,7 +16,8 @@
 #include <string>
 #include <vector>
 
-class FiducialsNode : public rclcpp::Node {
+// JM added: public std::enable_shared_from_this<FiducialsNode> 
+class FiducialsNode : public rclcpp::Node, public std::enable_shared_from_this<FiducialsNode> {
 public:
     // Constructor
     explicit FiducialsNode();
@@ -25,6 +26,7 @@ private:
     // Publishers
     rclcpp::Publisher<rover_msgs::msg::FiducialArray>::SharedPtr vertices_pub_;
     rclcpp::Publisher<rover_msgs::msg::FiducialTransformArray>::SharedPtr pose_pub_;
+    image_transport::Publisher image_pub;
 
     // Subscribers
     rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr caminfo_sub_;
