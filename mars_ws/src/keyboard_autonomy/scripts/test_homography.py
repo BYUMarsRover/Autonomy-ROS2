@@ -20,7 +20,7 @@ img1 = cv2.imread("keyboard_cropped.jpg")
 img2 = cv2.imread("keyboard1.jpg")
 
 # Initiate SIFT detector and find the keypoints and descriptors
-sift = cv2.SIFT_create()
+sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, edgeThreshold=10)
 kp1, des1 = sift.detectAndCompute(img1, None)
 kp2, des2 = sift.detectAndCompute(img2, None)
 
@@ -55,6 +55,8 @@ if len(good_matches) >= MIN_MATCH_COUNT:
     # Calculate the homography matrix and mask
     M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
     matchesMask = mask.ravel().tolist()
+
+    print(M)
 
     # Plot and display the results
     h, w = img1.shape[0:2]
