@@ -43,6 +43,7 @@ private:
     int frame_num_;
     double fiducial_len_;
 
+
     // Detector parameters
     double adaptive_thresh_constant_;
     int adaptive_thresh_win_size_min_;
@@ -106,6 +107,7 @@ private:
     void camInfoCallback(const sensor_msgs::msg::CameraInfo::ConstSharedPtr msg);
 
 
+    rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr parameter_callback_handle_;
     rcl_interfaces::msg::SetParametersResult parameterCallback(
         const std::vector<rclcpp::Parameter>& params);
 };
