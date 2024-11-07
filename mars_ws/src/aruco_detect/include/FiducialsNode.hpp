@@ -25,6 +25,7 @@ private:
     // Publishers
     rclcpp::Publisher<rover_msgs::msg::FiducialArray>::SharedPtr vertices_pub_;
     rclcpp::Publisher<rover_msgs::msg::FiducialTransformArray>::SharedPtr pose_pub_;
+    image_transport::Publisher image_pub_;
 
     // Subscribers
     rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr caminfo_sub_;
@@ -91,6 +92,9 @@ private:
         std::vector<cv::Vec3d>& rvecs,
         std::vector<cv::Vec3d>& tvecs,
         std::vector<double>& reprojection_errors);
+    void enableDetectionsCallback(
+        const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+        std::shared_ptr<std_srvs::srv::SetBool::Response> response);
     
     double calculateDistance(const cv::Point2f& p1, const cv::Point2f& p2);
     double calculateFiducialArea(const std::vector<cv::Point2f>& points);
@@ -104,6 +108,8 @@ private:
     void ignoreCallback(const std_msgs::msg::String::SharedPtr msg);
     void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg);
     void camInfoCallback(const sensor_msgs::msg::CameraInfo::ConstSharedPtr msg);
+    void parseFiducialLenOverride(const std::string& str);
+    void getSingleMarkerObjectPoints(float marker_length, std::vector<cv::Point3f>& obj_points);
 
 
     rcl_interfaces::msg::SetParametersResult parameterCallback(
