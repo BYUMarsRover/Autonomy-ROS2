@@ -16,7 +16,8 @@
 #include <string>
 #include <vector>
 
-class FiducialsNode : public rclcpp::Node {
+// JM added: public std::enable_shared_from_this<FiducialsNode> 
+class FiducialsNode : public rclcpp::Node, public std::enable_shared_from_this<FiducialsNode> {
 public:
     // Constructor
     explicit FiducialsNode();
