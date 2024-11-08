@@ -1,8 +1,7 @@
 import rclpy
 from rclpy.node import Node
 import keyboard_calibration
-# TODO: Add custom homography message (with timestamp)
-# TODO: Add custom key locations message (with timestamp)
+from rover_msgs.msg import KeyboardHomography, KeyLocations
 
 class Homography2KeysNode(Node):
     '''
@@ -13,9 +12,9 @@ class Homography2KeysNode(Node):
     locations in the camera image frame.
 
     Subscribes:
-        - /keyboard_homography (TODO: Add custom message)
+        - /keyboard_homography (rovers_msgs/msg/KeyboardHomography)
     Publishes:
-        - /key_locations (TODO: Add custom message)
+        - /key_locations (rovers_msgs/msg/KeyLocations)
     '''
 
     def __init__(self):
@@ -24,17 +23,15 @@ class Homography2KeysNode(Node):
         '''
         super().__init__('homography2keys')
 
-        # TODO: Add custom homography message (with timestamp) to subscriber
-        # self.subscription = self.create_subscription(<custom_message>, '/keyboard_homography', self.listener_callback, 10)
+        self.subscription = self.create_subscription(KeyboardHomography, '/keyboard_homography', self.listener_callback, 10)
         '''
-        Subscription to the "/keyboard_homography" topic with the message type TODO: Add here.
+        Subscription to the "/keyboard_homography" topic with the message type KeyboardHomography.
         '''
         self.subscription  # Prevent unused variable warning
 
-        # TODO: Add custom key locations message (with timestamp) to publisher
-        # self.publisher_ = self.create_publisher(<custom_message>, '/key_locations', 10)
+        self.publisher_ = self.create_publisher(KeyLocations, '/key_locations', 10)
         '''
-        Publisher to the "/key_locations" topic with the message type TODO: Add here.
+        Publisher to the "/key_locations" topic with the message type KeyLocations.
         '''
 
     def listener_callback(self, msg):
@@ -42,11 +39,14 @@ class Homography2KeysNode(Node):
         Callback function for the "/keyboard_homography" subscription.
         Uses the homography to find the key locations in the camera image frame.
 
-        :param msg: The TODO: Add here message received from the "/keyboard_homography" topic.
+        :param msg: The KeyboardHomography message received from the "/keyboard_homography" topic.
         '''
 
         # TODO: Add key locations calculation
-        # TODO: Publish key locations as custom message
+
+        key_locations = KeyLocations()
+
+        self.publisher_.publish(key_locations)
 
 def main(args=None):
     rclpy.init(args=args)

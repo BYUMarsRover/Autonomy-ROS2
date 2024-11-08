@@ -23,6 +23,7 @@ setup(
     entry_points={
         'console_scripts': [
             'feat2homography = keyboard_autonomy.feat2homography:main',
+            'homography2keys = keyboard_autonomy.homography2keys:main',
         ],
     },
 )

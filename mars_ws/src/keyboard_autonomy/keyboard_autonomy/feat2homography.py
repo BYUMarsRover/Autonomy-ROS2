@@ -3,7 +3,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
-# TODO: Add custom homography message (with timestamp)
+from rover_msgs.msg import KeyboardHomography
 
 class Feat2HomographyNode(Node):
     '''
@@ -17,7 +17,7 @@ class Feat2HomographyNode(Node):
     Subscribes:
         - TODO: Add topic (sensor_msgs/msg/Image)
     Publishes:
-        - /keyboard_homography (TODO: Add custom message)
+        - /keyboard_homography (rover_msgs/msg/KeyboardHomography)
     '''
 
     def __init__(self):
@@ -33,10 +33,9 @@ class Feat2HomographyNode(Node):
         '''
         self.subscription  # Prevent unused variable warning
 
-        # TODO: Add custom homography message (with timestamp) to publisher
-        # self.publisher_ = self.create_publisher(<custom_message>, '/keyboard_homography', 10)
+        self.publisher_ = self.create_publisher(KeyboardHomography, '/keyboard_homography', 10)
         '''
-        Publisher to the "/keyboard_homography" topic with the message type TODO: Add here.
+        Publisher to the "/keyboard_homography" topic with the message type KeyboardHomography.
         '''
 
         self.bridge = CvBridge()
@@ -56,7 +55,11 @@ class Feat2HomographyNode(Node):
         # TODO: Add SIFT algorithm to find keypoints and descriptors in both images
         # TODO: Add FLANN algorithm to find matches between the descriptors
         # TODO: Add homography calculation (Should be a 3x3 matrix)
-        # TODO: Publish homography as custom message
+
+        keyboard_homography = KeyboardHomography()
+        keyboard_homography.homography = None
+
+        self.publisher_.publish(keyboard_homography)
 
 def main(args=None):
     rclpy.init(args=args)
