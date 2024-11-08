@@ -19,9 +19,8 @@ start_time = time.time()
 MIN_MATCH_COUNT = 10
 
 # Load the images using OpenCV
-img1 = cv2.imread("keyboard_cropped.jpg")
-img2 = cv2.imread("keyboard1.jpg")
-image_read_time = time.time()
+img1 = cv2.imread("../images/keyboard_cropped.jpg")
+img2 = cv2.imread("../images/keyboard1.jpg")
 
 # Initiate SIFT detector and find the keypoints and descriptors
 sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, edgeThreshold=10)
