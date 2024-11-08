@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
+import time
 
 '''
 :author: Nelson Durrant
@@ -11,6 +12,8 @@ It uses the SIFT algorithm to find keypoints and descriptors in both images,
 and then uses the FLANN algorithm to find matches between the descriptors. 
 If enough matches are found, the homography is calculated and displayed.
 '''
+
+start_time = time.time()
 
 # Minimum number of matches required
 MIN_MATCH_COUNT = 10
@@ -24,18 +27,20 @@ sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, e
 kp1, des1 = sift.detectAndCompute(img1, None)
 kp2, des2 = sift.detectAndCompute(img2, None)
 
-print("SIFT keypoints and descriptors found")
+detect_and_compute_time = time.time()
 
 # Set FLANN parameters (TODO: What are these?)
 FLANN_INDEX_KDTREE = 0
 index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
 search_params = dict(checks = 50)
 
+parameter_dictionary_time = time.time()
+
 # Create the FLANN matcher and find matches (best two matches for each descriptor)
 flann = cv2.FlannBasedMatcher(index_params, search_params)
 matches = flann.knnMatch(des1, des2, k=2)
 
-print("FLANN matches found")
+matches_calculated_time = time.time()
 
 # Store all the good matches using Lowe's ratio test
 # Check to make sure that the distance to the closest match is sufficiently
@@ -48,6 +53,7 @@ for m, n in matches:
 # If enough matches are found, calculate the homography
 if len(good_matches) >= MIN_MATCH_COUNT:
 
+
     # Get the keypoints from the good matches
     src_pts = np.float32([ kp1[m.queryIdx].pt for m in good_matches ]).reshape(-1, 1, 2)
     dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good_matches ]).reshape(-1, 1, 2)
@@ -56,8 +62,7 @@ if len(good_matches) >= MIN_MATCH_COUNT:
     M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
     matchesMask = mask.ravel().tolist()
 
-    print(M)
-
+    homography_calculated_time = time.time()
     # Plot and display the results
     h, w = img1.shape[0:2]
     pts = np.float32([[0, 0],[0, h-1],[w-1, h-1],[w-1, 0]]).reshape(-1, 1, 2) # get the corners
@@ -71,7 +76,19 @@ if len(good_matches) >= MIN_MATCH_COUNT:
     plt.imshow(img3, 'gray')
     plt.show()
 
-    print("Homography calculated")
-
 else:
     print("Not enough matches are found - %d/%d" % (len(good_matches), MIN_MATCH_COUNT))
+
+
+
+end_time = time.time()
+
+elapsed_time = end_time - start_time
+
+print(f"time for image reading: {image_read_time-start_time}")
+print(f"time for detecting and computing SIFT keypoints and descriptors: {detect_and_compute_time-image_read_time}")
+print(f"time for creating the dictionaries: {parameter_dictionary_time-detect_and_compute_time}")
+print(f"time for calling FlannBasedMatcher and knnMatch: {matches_calculated_time-parameter_dictionary_time}")
+print(f"time for calculating the homography matrix and mask: {homography_calculated_time-matches_calculated_time}")
+
+
