@@ -10,8 +10,9 @@ class Feat2HomographyNode(Node):
     :author: Nelson Durrant
     :date: November 2024
 
-    ROS2 node that subscribes to an image topic, uses the SIFT algorithm to find keypoints and descriptors in both images,
-    uses the FLANN algorithm to find matches between the descriptors, and calculates the homography between the two images.
+    ROS2 node that subscribes to an image topic, uses the SIFT algorithm to find keypoints and
+    descriptors in both images, uses the FLANN algorithm to find matches between the descriptors, 
+    and calculates the homography between the two images.
 
     Subscribes:
         - TODO: Add topic (sensor_msgs/msg/Image)
@@ -44,7 +45,8 @@ class Feat2HomographyNode(Node):
     def listener_callback(self, msg):
         '''
         Callback function for the "TODO: Add here" subscription.
-        Uses the SIFT and FLANN algorithms to find the homography between the keyboard image and the received image.
+        Uses the SIFT and FLANN algorithms to find the homography between the keyboard image and the
+        received image.
 
         :param msg: The Image message received from the "TODO: Add here" topic.
         '''
