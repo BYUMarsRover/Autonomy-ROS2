@@ -10,6 +10,9 @@ def generate_launch_description():
     
     Launches the keyboard autonomy nodes.
 
+    IMPORTANT!: Use this format when calling the launch file:
+    'ros2 launch keyboard_autonomy keyboard_autonomy_launch.py word:=hello'
+
     :return: The launch description.
     '''
     
