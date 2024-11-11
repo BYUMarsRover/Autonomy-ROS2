@@ -25,6 +25,9 @@ img2 = cv2.imread("../images/keyboard1.jpg")
 image_read_time = time.time()
 
 # Initiate SIFT detector and find the keypoints and descriptors
+# surf = cv2.xfeatures2d.SURF_create(400)  # The threshold value can be adjusted.
+# kp1, des1 = surf.detectAndCompute(img1, None)
+# kp2, des2 = surf.detectAndCompute(img2, None)
 sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, edgeThreshold=10)
 kp1, des1 = sift.detectAndCompute(img1, None)
 kp2, des2 = sift.detectAndCompute(img2, None)
@@ -92,5 +95,3 @@ print(f"time for detecting and computing SIFT keypoints and descriptors: {detect
 print(f"time for creating the dictionaries: {parameter_dictionary_time-detect_and_compute_time}")
 print(f"time for calling FlannBasedMatcher and knnMatch: {matches_calculated_time-parameter_dictionary_time}")
 print(f"time for calculating the homography matrix and mask: {homography_calculated_time-matches_calculated_time}")
-
-
