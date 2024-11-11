@@ -367,7 +367,7 @@ void FiducialsNode::estimatePoseSingleMarkers(
 }
 
 // Utility functions
-void getSingleMarkerObjectPoints(float marker_length, std::vector<cv::Point3f>& obj_points) {
+void FiducialsNode::getSingleMarkerObjectPoints(float marker_length, std::vector<cv::Point3f>& obj_points) {
     CV_Assert(marker_length > 0);
 
     // Set coordinate system in the middle of the marker, with Z pointing out
@@ -379,14 +379,14 @@ void getSingleMarkerObjectPoints(float marker_length, std::vector<cv::Point3f>& 
 }
 
 // Calculate Euclidean distance between two points
-double calculateDistance(const cv::Point2f& p1, const cv::Point2f& p2) {
+double FiducialsNode::calculateDistance(const cv::Point2f& p1, const cv::Point2f& p2) {
     double dx = p1.x - p2.x;
     double dy = p1.y - p2.y;
     return std::sqrt(dx * dx + dy * dy);
 }
 
 // Compute area of a fiducial using Heron's formula
-double calculateFiducialArea(const std::vector<cv::Point2f>& points) {
+double FiducialsNode::calculateFiducialArea(const std::vector<cv::Point2f>& points) {
     const cv::Point2f& p0 = points.at(0);
     const cv::Point2f& p1 = points.at(1);
     const cv::Point2f& p2 = points.at(2);
@@ -410,7 +410,7 @@ double calculateFiducialArea(const std::vector<cv::Point2f>& points) {
 }
 
 // Estimate reprojection error
-double getReprojectionError(
+double FiducialsNode::getReprojectionError(
     const std::vector<cv::Point3f>& object_points,
     const std::vector<cv::Point2f>& image_points,
     const cv::Mat& camera_matrix,
