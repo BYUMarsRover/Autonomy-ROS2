@@ -24,6 +24,10 @@ def generate_launch_description():
         ),
         launch_ros.actions.Node(
             package='keyboard_autonomy',
-            executable='keys2control.py',
+            executable='arm_controls.py',
+        ),
+        launch_ros.actions.Node(
+            package='keyboard_autonomy',
+            executable='keyboard_fsm.py',
         ),
     ])

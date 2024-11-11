@@ -4,12 +4,13 @@ from control_msgs.msg import JointJog
 from sensor_msgs.msg import JointState
 from rover_msgs.msg import KeyLocations, Elevator
 
-class Keys2ControlNode(Node):
+class ArmControlsNode(Node):
     '''
     :author: Nelson Durrant
     :date: November 2024
 
-    ROS2 node that controls the arm and elevator based on the detected key locations.
+    ROS2 node that controls the arm and elevator of the rover as it interacts with the keyboard,
+    using the detected key locations and the current arm state.
 
     Subscribes:
         - /key_locations (rovers_msgs/msg/KeyLocations)
@@ -17,13 +18,15 @@ class Keys2ControlNode(Node):
     Publishes:
         - /motor_commands (control_msgs/msg/JointJog)
         - /elevator (rovers_msgs/msg/Elevator)
+    Services:
+        - /key_press (rovers_msgs/srv/KeyPress)
     '''
 
     def __init__(self):
         '''
-        Creates a new Keys2Control node.
+        Creates a new ArmControls node.
         '''
-        super().__init__('keys2control')
+        super().__init__('arm_controls')
 
         self.loc_subscription = self.create_subscription(KeyLocations, '/key_locations', self.loc_listener_callback, 10)
         '''
@@ -47,6 +50,11 @@ class Keys2ControlNode(Node):
         Publisher to the "/elevator" topic with the message type Elevator.
         '''
 
+        self.srv = self.create_service(KeyPress, '/key_press', self.key_press_callback)
+        '''
+        Service that attempts to press a certain key based on the KeyPress request.
+        '''
+
     def loc_listener_callback(self, msg):
         '''
         Callback function for the "/key_locations" topic subscription.
@@ -65,17 +73,25 @@ class Keys2ControlNode(Node):
         :param msg: The JointState message received from the "/arm_state" topic.
         '''
 
-        # TODO: Fancy controls work
+        self.curr_arm_state = msg # TODO: Store this correctly
 
-        cmd_msg = JointJog()
-        elevator_msg = Elevator()
+    def key_press_callback(self, request, response):
+        '''
+        Callback function for the "/key_press" service.
+        Attempts to press the key requested in the KeyPress request.
 
-        self.cmd_publisher.publish(cmd_msg)
-        self.elevator_publisher.publish(elevator_msg)
+        :param request: The KeyPress request.
+        :param response: The KeyPress response.
+        '''
+
+        # TODO: Add fancy controls work here
+
+        response.success = False
+        return response
 
 def main(args=None):
     rclpy.init(args=args)
-    node = Keys2ControlNode()
+    node = ArmControlsNode()
     rclpy.spin(node)
     rclpy.shutdown()
 

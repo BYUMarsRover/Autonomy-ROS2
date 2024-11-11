@@ -24,7 +24,8 @@ setup(
         'console_scripts': [
             'feat2homography = keyboard_autonomy.feat2homography:main',
             'homography2keys = keyboard_autonomy.homography2keys:main',
-            'keys2control = keyboard_autonomy.keys2control:main',
+            'arm_controls = keyboard_autonomy.arm_controls:main',
+            'keyboard_fsm = keyboard_autonomy.keyboard_fsm:main',
         ],
     },
 )
