@@ -18,4 +18,12 @@ def generate_launch_description():
             package='keyboard_autonomy',
             executable='feat2homography.py',
         ),
+        launch_ros.actions.Node(
+            package='keyboard_autonomy',
+            executable='homography2keys.py',
+        ),
+        launch_ros.actions.Node(
+            package='keyboard_autonomy',
+            executable='keys2control.py',
+        ),
     ])

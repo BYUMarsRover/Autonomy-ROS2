@@ -95,5 +95,3 @@ print(f"time for detecting and computing SIFT keypoints and descriptors: {detect
 print(f"time for creating the dictionaries: {parameter_dictionary_time-detect_and_compute_time}")
 print(f"time for calling FlannBasedMatcher and knnMatch: {matches_calculated_time-parameter_dictionary_time}")
 print(f"time for calculating the homography matrix and mask: {homography_calculated_time-matches_calculated_time}")
-
-
