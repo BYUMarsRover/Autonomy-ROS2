@@ -1,4 +1,4 @@
-<!-- xml
+<!-- <!-- xml
 <?xml version="1.0" encoding="UTF-8"?> -->
 
 <launch>
@@ -80,4 +80,4 @@
   <!-- Needed only for searching for services -->
   <node pkg="rosapi" exec="rosapi_node" name="rosapi"/>
 
-</launch>
+</launch> -->

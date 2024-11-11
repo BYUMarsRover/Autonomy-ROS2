@@ -12,9 +12,8 @@ def generate_launch_description():
     )
     yaml_path = os.path.join(
     os.getenv('HOME', '/home/marsrover'),
-    'mars_ws/src/mapviz_tf/launch/mapviz_params.yaml'
-)
-
+    'mars_ws/src/mapviz_tf/params/mapviz_params.yaml'
+    )
 
     return LaunchDescription([
         # Set environment variable
