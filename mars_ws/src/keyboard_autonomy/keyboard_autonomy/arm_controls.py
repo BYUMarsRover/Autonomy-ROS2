@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from control_msgs.msg import JointJog
 from sensor_msgs.msg import JointState
-from rover_msgs.msg import KeyLocations, Elevator
+from rover_msgs.msg import KeyLocations, Elevator, KeyPress
 
 class ArmControlsNode(Node):
     '''

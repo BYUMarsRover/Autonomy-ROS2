@@ -58,7 +58,7 @@ def main(args=None):
     rclpy.init(args=args)
     node = KeyboardFSMNode()
 
-    keys = sys.argv[1:] # TODO: Implement this differently?
+    keys = sys.argv[1:] # TODO: Implement this differently? ROS param?
 
     for key in keys:
         send_key_press(node, key)
