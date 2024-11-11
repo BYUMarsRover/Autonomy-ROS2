@@ -69,7 +69,7 @@ class ArmControlsNode(Node):
     def state_listener_callback(self, msg):
         '''
         Callback function for the "/arm_state" topic subscription.
-        TODO: Add a description of the function.
+        Saves the JointState message to a class variable.
 
         :param msg: The JointState message received from the "/arm_state" topic.
         '''
