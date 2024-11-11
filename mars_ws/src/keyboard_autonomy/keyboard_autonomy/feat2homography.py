@@ -8,6 +8,7 @@ from rover_msgs.msg import KeyboardHomography
 
 MIN_MATCH_COUNT = 10
 
+
 class Feat2HomographyNode(Node):
     '''
     :author: Nelson Durrant
@@ -62,8 +63,8 @@ class Feat2HomographyNode(Node):
 
         # Set FLANN parameters
         FLANN_INDEX_KDTREE = 0
-        index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-        search_params = dict(checks = 50)
+        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+        search_params = dict(checks=50)
 
         # Create the FLANN matcher and find matches (best two matches for each descriptor)
         flann = cv2.FlannBasedMatcher(index_params, search_params)
@@ -71,7 +72,7 @@ class Feat2HomographyNode(Node):
 
         # Store all the good matches using Lowe's ratio test
         # Check to make sure that the distance to the closest match is sufficiently
-        # less than the distance to the second closest match
+        # less than the distance to the second-closest match
         good_matches = []
         for m, n in matches:
             if m.distance < 0.7 * n.distance:
@@ -81,8 +82,8 @@ class Feat2HomographyNode(Node):
         if len(good_matches) >= MIN_MATCH_COUNT:
 
             # Get the keypoints from the good matches
-            src_pts = np.float32([ kp1[m.queryIdx].pt for m in good_matches ]).reshape(-1, 1, 2)
-            dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good_matches ]).reshape(-1, 1, 2)
+            src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+            dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
 
             # Calculate the homography matrix using RANSAC
             M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
@@ -92,15 +93,17 @@ class Feat2HomographyNode(Node):
 
         keyboard_homography = KeyboardHomography()
         keyboard_homography.header.stamp = msg.header.stamp
-        keyboard_homography.homography = M.flatten().tolist() # TODO: Test this
+        keyboard_homography.homography = M.flatten().tolist()  # TODO: Test this
 
         self.publisher_.publish(keyboard_homography)
+
 
 def main(args=None):
     rclpy.init(args=args)
     node = Feat2HomographyNode()
     rclpy.spin(node)
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
