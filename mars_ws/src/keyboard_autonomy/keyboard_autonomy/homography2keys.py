@@ -27,13 +27,13 @@ class Homography2KeysNode(Node):
         super().__init__('homography2keys')
         self.get_logger().info("Homography2KeysNode started")
 
-        self.subscription = self.create_subscription(KeyboardHomography, '/keyboard_homography', self.listener_callback,
-                                                     10)
+        self.subscription = self.create_subscription(KeyboardHomography, '/keyboard_homography', self.listener_callback, 10)
         '''
         Subscription to the "/keyboard_homography" topic with the message type KeyboardHomography.
         '''
-        self.publisher_ = self.create_publisher(KeyLocations, '/key_locations', 10)
+        self.subscription  # Prevent unused variable warning
 
+        self.publisher_ = self.create_publisher(KeyLocations, '/key_locations', 10)
         '''
         Publisher to the "/key_locations" topic with the message type KeyLocations.
         '''
