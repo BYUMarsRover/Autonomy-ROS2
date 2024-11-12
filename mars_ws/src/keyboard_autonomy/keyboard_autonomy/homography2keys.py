@@ -35,12 +35,6 @@ class Homography2KeysNode(Node):
         #self.subscription  # Prevent unused variable warning
         self.publisher_ = self.create_publisher(KeyLocations, '/key_locations', 10)
 
-        self.declare_parameter('homography_matrix', [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
-        homography_param = self.get_parameter('homography_matrix').value
-
-        # Convert the flat homography parameter to a 3x3 matrix
-        self.homography_matrix = np.array(homography_param).reshape((3, 3))
-
         '''
         Publisher to the "/key_locations" topic with the message type KeyLocations.
         '''

@@ -7,11 +7,6 @@ def generate_launch_description():
         Node(
             package='keyboard_autonomy',
             executable='homography2keys.py',
-            name='homography2keys',
-            parameters=[{
-                'homography_matrix': [1.0, 0.0, 0.0,
-                                      0.0, 1.0, 0.0,
-                                      0.0, 0.0, 1.0]
-            }]
+            name='homography2keys'
         )
     ])
