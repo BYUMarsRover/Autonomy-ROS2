@@ -3,8 +3,8 @@
 <package format="3">
   <name>keyboard_autonomy</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="marsrover@todo.todo">marsrover</maintainer>
+  <description>Contains code for autonomous keyboard typing (Equipment Servicing Task)</description>
+  <maintainer email="snelsondurrant@gmail.com">Nelson Durrant</maintainer>
   <license>Apache-2.0</license>
 
   <test_depend>ament_copyright</test_depend>

@@ -31,7 +31,7 @@ class Feat2HomographyNode(Node):
         super().__init__('feat2homography')
 
         # TODO: Add topic name from camera here
-        # self.subscription = self.create_subscription(Image, '<topic_name>', self.listener_callback, 10)
+        self.subscription = self.create_subscription(Image, 'topic_name', self.listener_callback, 10)
         '''
         Subscription to the "TODO: Add here" topic with the message type sensor_msgs/msg/Image.
         '''
@@ -43,7 +43,7 @@ class Feat2HomographyNode(Node):
         '''
 
         self.bridge = CvBridge()
-        self.keyboard_img = cv2.imread("../images/keyboard_cropped.jpg")
+        self.keyboard_img = cv2.imread("/home/marsrover/mars_ws/src/keyboard_autonomy/images/keyboard_better.jpg")
 
     def listener_callback(self, msg):
         '''

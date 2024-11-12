@@ -1,8 +1,12 @@
+import time
+
 import rclpy
 from rclpy.node import Node
 from control_msgs.msg import JointJog
 from sensor_msgs.msg import JointState
 from rover_msgs.msg import KeyLocations, Elevator
+from rover_msgs.srv import KeyPress
+
 
 class ArmControlsNode(Node):
     '''
@@ -32,13 +36,13 @@ class ArmControlsNode(Node):
         '''
         Subscription to the "/key_locations" topic with the message type KeyLocations.
         '''
-        self.subscription  # Prevent unused variable warning
+        self.loc_subscription  # Prevent unused variable warning
 
         self.state_subscription = self.create_subscription(JointState, '/arm_state', self.state_listener_callback, 10)
         '''
         Subscription to the "/arm_state" topic with the message type JointState.
         '''
-        self.subscription  # Prevent unused variable warning
+        self.state_subscription  # Prevent unused variable warning
 
         self.cmd_publisher = self.create_publisher(JointJog, '/motor_commands', 10)
         '''
@@ -63,15 +67,19 @@ class ArmControlsNode(Node):
         :param msg: The KeyLocations message received from the "/key_locations" topic.
         '''
 
+        self.get_logger().info('Received key locations')
+
         self.curr_key_loc = msg # TODO: Store this correctly
 
     def state_listener_callback(self, msg):
         '''
         Callback function for the "/arm_state" topic subscription.
-        TODO: Add a description of the function.
+        Saves the JointState message to a class variable.
 
         :param msg: The JointState message received from the "/arm_state" topic.
         '''
+
+        self.get_logger().info('Received arm state')
 
         self.curr_arm_state = msg # TODO: Store this correctly
 
@@ -83,6 +91,9 @@ class ArmControlsNode(Node):
         :param request: The KeyPress request.
         :param response: The KeyPress response.
         '''
+
+        time.sleep(2) # TODO: Remove this
+        self.get_logger().info('Completed request to press key: %s' % chr(request.key))
 
         # TODO: Add fancy controls work here
 
