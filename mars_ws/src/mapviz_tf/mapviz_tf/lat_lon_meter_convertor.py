@@ -18,14 +18,14 @@ class LatLonConvertor(Node):
         self.location = os.getenv('MAPVIZ_LOCATION', 'hanksville')
 
 
-        # self.declare_parameter(latitude_param, 0.0)  # Declare with a default
-
         # Access the altitude parameter for the selected location
         latitude_param = f'locations.{self.location}.latitude'
+        self.declare_parameter(latitude_param, 0.0)  # Declare with a default
         self.latitude = self.get_parameter(latitude_param).value
         self.get_logger().info(f"{self.location.capitalize()} Latitude: {self.latitude}")
 
         longitude_param = f'locations.{self.location}.longitude'
+        self.declare_parameter(longitude_param, 0.0)  # Declare with a default
         self.longitude = self.get_parameter(longitude_param).value
         self.get_logger().info(f"{self.location.capitalize()} Longitude: {self.longitude}")
 
