@@ -38,7 +38,7 @@ class Feat2HomographyNode(Node):
         '''
         self.subscription  # Prevent unused variable warning
 
-        self.publisher_ = self.create_publisher(KeyboardHomography, '/keyboard_homography', 10)
+        self.publisher = self.create_publisher(KeyboardHomography, '/keyboard_homography', 10)
         '''
         Publisher to the "/keyboard_homography" topic with the message type KeyboardHomography.
         '''
@@ -96,7 +96,7 @@ class Feat2HomographyNode(Node):
         keyboard_homography.header.stamp = msg.header.stamp
         keyboard_homography.homography = M.flatten().tolist()  # TODO: Test this
 
-        self.publisher_.publish(keyboard_homography)
+        self.publisher.publish(keyboard_homography)
 
 
 def main(args=None):

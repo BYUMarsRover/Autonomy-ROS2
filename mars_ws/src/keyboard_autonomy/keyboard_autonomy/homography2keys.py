@@ -33,7 +33,7 @@ class Homography2KeysNode(Node):
         '''
         self.subscription  # Prevent unused variable warning
 
-        self.publisher_ = self.create_publisher(KeyLocations, '/key_locations', 10)
+        self.publisher = self.create_publisher(KeyLocations, '/key_locations', 10)
         '''
         Publisher to the "/key_locations" topic with the message type KeyLocations.
         '''
@@ -52,7 +52,7 @@ class Homography2KeysNode(Node):
         for key, point in zip(KEYPIX.keys(), transformed_points):
             setattr(key_locations, key, point.flatten().tolist())
 
-        self.publisher_.publish(key_locations)
+        self.publisher.publish(key_locations)
 
 
 def main(args=None):
