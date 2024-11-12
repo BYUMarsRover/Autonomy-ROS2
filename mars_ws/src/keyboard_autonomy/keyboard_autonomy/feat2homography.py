@@ -43,7 +43,7 @@ class Feat2HomographyNode(Node):
         '''
 
         self.bridge = CvBridge()
-        self.keyboard_img = cv2.imread("../images/keyboard_cropped.jpg")
+        self.keyboard_img = cv2.imread("/home/marsrover/mars_ws/src/keyboard_autonomy/images/keyboard_better.jpg")
 
     def listener_callback(self, msg):
         '''

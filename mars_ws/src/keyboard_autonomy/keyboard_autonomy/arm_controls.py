@@ -1,3 +1,5 @@
+import time
+
 import rclpy
 from rclpy.node import Node
 from control_msgs.msg import JointJog
@@ -65,6 +67,8 @@ class ArmControlsNode(Node):
         :param msg: The KeyLocations message received from the "/key_locations" topic.
         '''
 
+        self.get_logger().info('Received key locations')
+
         self.curr_key_loc = msg # TODO: Store this correctly
 
     def state_listener_callback(self, msg):
@@ -74,6 +78,8 @@ class ArmControlsNode(Node):
 
         :param msg: The JointState message received from the "/arm_state" topic.
         '''
+
+        self.get_logger().info('Received arm state')
 
         self.curr_arm_state = msg # TODO: Store this correctly
 
@@ -85,6 +91,9 @@ class ArmControlsNode(Node):
         :param request: The KeyPress request.
         :param response: The KeyPress response.
         '''
+
+        time.sleep(2) # TODO: Remove this
+        self.get_logger().info('Completed request to press key: %s' % chr(request.key))
 
         # TODO: Add fancy controls work here
 

@@ -41,7 +41,7 @@ class KeyboardFSMNode(Node):
         '''
         Sends a request to the KeyPress service to press the desired key.
         '''
-        self.req.key = key
+        self.req.key = ord(key)
         return self.cli.call_async(self.req)
 
 
@@ -61,14 +61,10 @@ def main(args=None):
 
     # Use this format when calling the launch file:
     # ros2 launch keyboard_autonomy keyboard_autonomy_launch.py word:=hello
-    for arg in sys.argv:
-        if arg.startswith("word:="):
-            word = arg.split(":=")[1]
-            keys = list(word) # TODO: Test this
+    keys = list(sys.argv[1]) # TODO: Test this
 
     for key in keys:
-        # send_key_press(node, key)
-        node.get_logger().info(f'Key pressed: {key}')
+        send_key_press(node, key)
     
     rclpy.shutdown()
 
