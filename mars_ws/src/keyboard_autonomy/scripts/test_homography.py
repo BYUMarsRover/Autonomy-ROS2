@@ -19,7 +19,7 @@ start_time = time.time()
 MIN_MATCH_COUNT = 10
 
 # Load the images using OpenCV
-img1 = cv2.imread("../images/keyboard_cropped.jpg")
+img1 = cv2.imread("../images/keyboard_better.jpg")
 img2 = cv2.imread("../images/keyboard1.jpg")
 
 image_read_time = time.time()
