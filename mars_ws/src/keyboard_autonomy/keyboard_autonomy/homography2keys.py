@@ -32,7 +32,6 @@ class Homography2KeysNode(Node):
         '''
         Subscription to the "/keyboard_homography" topic with the message type KeyboardHomography.
         '''
-        #self.subscription  # Prevent unused variable warning
         self.publisher_ = self.create_publisher(KeyLocations, '/key_locations', 10)
 
         '''
