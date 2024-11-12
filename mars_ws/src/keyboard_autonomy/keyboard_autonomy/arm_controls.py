@@ -31,6 +31,7 @@ class ArmControlsNode(Node):
         Creates a new ArmControls node.
         '''
         super().__init__('arm_controls')
+        self.get_logger().info("ArmControlsNode started")
 
         self.loc_subscription = self.create_subscription(KeyLocations, '/key_locations', self.loc_listener_callback, 10)
         '''

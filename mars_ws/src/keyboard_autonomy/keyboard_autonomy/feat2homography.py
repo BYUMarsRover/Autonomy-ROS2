@@ -29,6 +29,7 @@ class Feat2HomographyNode(Node):
         Creates a new Feat2Homography node.
         '''
         super().__init__('feat2homography')
+        self.get_logger().info("Feat2HomographyNode started")
 
         # TODO: Add topic name from camera here
         self.subscription = self.create_subscription(Image, 'topic_name', self.listener_callback, 10)

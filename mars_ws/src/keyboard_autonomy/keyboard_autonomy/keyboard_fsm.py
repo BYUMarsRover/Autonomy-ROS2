@@ -24,6 +24,7 @@ class KeyboardFSMNode(Node):
         Creates a new KeyboardFSM node.
         '''
         super().__init__('keyboard_fsm')
+        self.get_logger().info("KeyboardFSMNode started")
 
         self.cli = self.create_client(KeyPress, '/key_press')
         '''
