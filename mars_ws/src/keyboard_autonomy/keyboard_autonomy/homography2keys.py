@@ -52,7 +52,6 @@ class Homography2KeysNode(Node):
 
         :param msg: The KeyboardHomography message received from the "/keyboard_homography" topic.
         '''
-        self.get_logger().info("Received homography matrix")
         homography = np.array(msg.homography).reshape((3, 3))
         key_points = np.array(list(KEYPIX.values()), dtype=np.float32).reshape(-1, 1, 2)
         key_locations = KeyLocations()
