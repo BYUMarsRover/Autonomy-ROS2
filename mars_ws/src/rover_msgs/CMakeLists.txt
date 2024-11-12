@@ -41,6 +41,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HeartbeatStatusBase.msg"
   "msg/KeyboardHomography.msg"
   "msg/KeyLocations.msg"
+  "srv/KeyPress.srv"
+  "msg/Elevator.msg"
   "srv/CameraControl.srv"
   "srv/CameraControlResponse.srv"
   "srv/AutonomyAbort.srv"

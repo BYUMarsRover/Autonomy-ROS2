@@ -1,3 +1,5 @@
+import sys
+
 import launch
 import launch_ros.actions
 import launch_ros.descriptions
@@ -19,18 +21,20 @@ def generate_launch_description():
     return launch.LaunchDescription([
         launch_ros.actions.Node(
             package='keyboard_autonomy',
-            executable='feat2homography.py',
+            executable='feat2homography',
         ),
         launch_ros.actions.Node(
             package='keyboard_autonomy',
-            executable='homography2keys.py',
+            executable='homography2keys',
         ),
         launch_ros.actions.Node(
             package='keyboard_autonomy',
-            executable='arm_controls.py',
+            executable='arm_controls',
         ),
         launch_ros.actions.Node(
             package='keyboard_autonomy',
-            executable='keyboard_fsm.py',
+            executable='keyboard_fsm',
+            # pass in from command line
+            arguments=[sys.argv[1]],
         ),
     ])

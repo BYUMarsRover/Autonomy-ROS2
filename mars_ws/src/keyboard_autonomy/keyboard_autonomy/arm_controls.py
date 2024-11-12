@@ -2,7 +2,8 @@ import rclpy
 from rclpy.node import Node
 from control_msgs.msg import JointJog
 from sensor_msgs.msg import JointState
-from rover_msgs.msg import KeyLocations, Elevator, KeyPress
+from rover_msgs.msg import KeyLocations, Elevator
+from rover_msgs.srv import KeyPress
 
 
 class ArmControlsNode(Node):
@@ -33,13 +34,13 @@ class ArmControlsNode(Node):
         '''
         Subscription to the "/key_locations" topic with the message type KeyLocations.
         '''
-        self.subscription  # Prevent unused variable warning
+        self.loc_subscription  # Prevent unused variable warning
 
         self.state_subscription = self.create_subscription(JointState, '/arm_state', self.state_listener_callback, 10)
         '''
         Subscription to the "/arm_state" topic with the message type JointState.
         '''
-        self.subscription  # Prevent unused variable warning
+        self.state_subscription  # Prevent unused variable warning
 
         self.cmd_publisher = self.create_publisher(JointJog, '/motor_commands', 10)
         '''
