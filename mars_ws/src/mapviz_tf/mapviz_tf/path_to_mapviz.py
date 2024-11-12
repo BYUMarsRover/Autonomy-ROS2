@@ -21,7 +21,6 @@ class PathToMapviz(Node):
 
     def __init__(self):
         super().__init__('path_to_mapviz')
-
         # Subscriber to "/path_planning/smoothed_path"
         self.path_planning_sub = self.create_subscription(PathMsg, "/path_planning/smoothed_path", self.path_planning_callback, 10)
 
@@ -30,10 +29,10 @@ class PathToMapviz(Node):
 
         # Pose array to store poses
         self.poses_array = []
-
         # Latitude and longitude conversion utility
         self.latlonconv = LatLonConvertor()
         self.meters_per_degree_latitude, self.meters_per_degree_longitude = self.latlonconv.get_meters_per_degree_lat_lon()
+        # self.get_logger().info(f"Meters per degree (Latitude, Longitude): ({self.meters_per_degree_latitude}, {self.meters_per_degree_longitude})")
 
     def clean(self):
         """
@@ -86,23 +85,18 @@ class PathToMapviz(Node):
         self.get_logger().info("Publishing path message!")
         self.pub.publish(path_msg)
 
-
 def main():
     rclpy.init()
     node = PathToMapviz()
 
-    # Run spin in a separate thread
-    spin_thread = threading.Thread(target=spin_in_background)
-    spin_thread.start()
-
     try:
+        # Run spin in the main thread
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
         node.destroy_node()
         rclpy.shutdown()
-        spin_thread.join()
 
 if __name__ == '__main__':
     main()

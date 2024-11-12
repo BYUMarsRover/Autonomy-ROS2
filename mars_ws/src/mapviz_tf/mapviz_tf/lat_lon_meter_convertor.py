@@ -1,42 +1,21 @@
 #!/usr/bin/env python3
-
 import os
-import rclpy
-from rclpy.node import Node
+import yaml
 from math import cos, radians
 
 
-class LatLonConvertor(Node):
+class LatLonConvertor:
     def __init__(self):
-        super().__init__("lat_lon_converter")
-
-        # # Initialize the node
-        # self.declare_parameter("map_origin_index", 0)
-        # self.declare_parameter("initialize_origin/local_xy_origins", [])
-
         # Use os.getenv to fetch MAPVIZ_LOCATION or default to 'hanksville'
         self.location = os.getenv('MAPVIZ_LOCATION', 'hanksville')
-
-
-        # Access the altitude parameter for the selected location
-        latitude_param = f'locations.{self.location}.latitude'
-        self.declare_parameter(latitude_param, 0.0)  # Declare with a default
-        self.latitude = self.get_parameter(latitude_param).value
-        self.get_logger().info(f"{self.location.capitalize()} Latitude: {self.latitude}")
-
-        longitude_param = f'locations.{self.location}.longitude'
-        self.declare_parameter(longitude_param, 0.0)  # Declare with a default
-        self.longitude = self.get_parameter(longitude_param).value
-        self.get_logger().info(f"{self.location.capitalize()} Longitude: {self.longitude}")
-
-        # Fetch the origin point from parameters.
-        # index = self.get_parameter("map_origin_index").value
-        # origins = self.get_parameter("initialize_origin/local_xy_origins").value
-        # if index >= len(origins):
-        #     self.get_logger().error("Index out of bounds for local_xy_origins list")
-        #     return
-
-        # self.origin = origins[index]
+        yaml_path = os.path.join(os.getenv('HOME', '/home/marsrover'),'mars_ws/src/mapviz_tf/params/mapviz_params.yaml')
+        with open(yaml_path, 'r') as file:
+            config = yaml.safe_load(file)
+            self.latitude = config.get('locations', {}).get(self.location, {}).get('latitude', 0.0)
+            self.longitude = config.get('locations', {}).get(self.location, {}).get('longitude', 0.0)
+        # print(f"{self.location.capitalize()} Latitude: {self.latitude}")
+        # print(f"{self.location.capitalize()} Longitude: {self.longitude}")
+        # Set the meter-per-degree conversion factors based on the latitude
         self.set_meters_per_degree_lat_lon()
 
     def set_meters_per_degree_lat_lon(self):
@@ -56,18 +35,9 @@ class LatLonConvertor(Node):
 
     def get_meters_per_degree_lat_lon(self):
         """
-        Returns the meter-per-degree factor.
+        Returns the meter-per-degree factor for latitude and longitude.
         """
         return (self.meters_per_degree_latitude, self.meters_per_degree_longitude)
-
-    # def get_origin(self):
-    #     """
-    #     Returns the origin point.
-    #     """
-    #     self.get_logger().info(
-    #         f"ORIGIN SET TO "{self.location.capitalize()}": [Latitude: {self.latitude}, Longitude: {self.longitude}]"
-    #     )
-    #     return self.origin
 
     def convert_to_meters(self, lat, lon):
         """
@@ -88,19 +58,4 @@ class LatLonConvertor(Node):
             "lon": (x / self.meters_per_degree_longitude) + self.longitude,
         }
         return coordinates
-
-
-def main(args=None):
-    rclpy.init(args=args)
-    node = LatLonConvertor()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    main()
+    
