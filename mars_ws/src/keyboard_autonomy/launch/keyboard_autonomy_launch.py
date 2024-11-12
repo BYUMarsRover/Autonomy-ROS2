@@ -18,6 +18,7 @@ def generate_launch_description():
     :return: The launch description.
     '''
 
+    # Get the word to type from the command line arguments
     for arg in sys.argv:
         if arg.startswith("word:="):
             word = arg.split(":=")[1]
@@ -38,7 +39,6 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='keyboard_autonomy',
             executable='keyboard_fsm',
-            # pass in the string argument
             arguments=[word],
         ),
     ])
