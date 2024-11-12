@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import time
 
 '''
-:author: Nelson Durrant
+:author: Nelson Durrant, Hannah Spigarelli
 :date: November 2024
 
 This script is used to test the OpenCV keyboard homography calculation. 
