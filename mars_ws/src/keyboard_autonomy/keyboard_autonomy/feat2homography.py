@@ -31,7 +31,7 @@ class Feat2HomographyNode(Node):
         super().__init__('feat2homography')
 
         # TODO: Add topic name from camera here
-        # self.subscription = self.create_subscription(Image, '<topic_name>', self.listener_callback, 10)
+        self.subscription = self.create_subscription(Image, 'topic_name', self.listener_callback, 10)
         '''
         Subscription to the "TODO: Add here" topic with the message type sensor_msgs/msg/Image.
         '''

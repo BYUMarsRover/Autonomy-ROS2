@@ -67,7 +67,8 @@ def main(args=None):
             keys = list(word) # TODO: Test this
 
     for key in keys:
-        send_key_press(node, key)
+        # send_key_press(node, key)
+        node.get_logger().info(f'Key pressed: {key}')
     
     rclpy.shutdown()
 
