@@ -33,8 +33,9 @@ def generate_launch_description():
             parameters=[{
                 'print_profile_data': LaunchConfiguration('print_profile_data'),
                 #'config': '$(env HOME)/marsrover/mar_ws/src/mapviz_tf/scripts/.mapviz_config',
-                'config': config_path
-            }]
+                # 'config': config_path
+            }],
+            arguments=['-d', config_path]
         ),
 
         # Conditional parameters for map_origin_index
