@@ -11,7 +11,7 @@ MIN_MATCH_COUNT = 10
 
 class Feat2HomographyNode(Node):
     '''
-    :author: Nelson Durrant
+    :author: Nelson Durrant, Hannah Spigarelli
     :date: November 2024
 
     ROS2 node that subscribes to an image topic, uses the SIFT algorithm to find keypoints and

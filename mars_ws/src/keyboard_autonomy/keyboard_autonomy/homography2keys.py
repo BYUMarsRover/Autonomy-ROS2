@@ -8,7 +8,7 @@ from rover_msgs.msg import KeyboardHomography, KeyLocations
 
 class Homography2KeysNode(Node):
     '''
-    :author: Nelson Durrant
+    :author: Nelson Durrant, Chloe Hilton
     :date: November 2024
 
     ROS2 node that uses the homography between the keyboard image and the camera image to find the key
