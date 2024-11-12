@@ -10,10 +10,10 @@ def generate_launch_description():
     :author: Nelson Durrant
     :date: November 2024
     
-    Launches the keyboard autonomy nodes.
+    Launches the keyboard autonomy nodes and passes in the word to type.
 
     IMPORTANT!: Use this format when calling the launch file:
-    'ros2 launch keyboard_autonomy keyboard_autonomy_launch.py word:=hello'
+    'ros2 launch keyboard_autonomy keyboard_autonomy_launch.py word:=test'
 
     :return: The launch description.
     '''

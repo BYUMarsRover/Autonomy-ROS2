@@ -59,7 +59,7 @@ def main(args=None):
     node = KeyboardFSMNode()
 
     # Use this format when calling the launch file:
-    # ros2 launch keyboard_autonomy keyboard_autonomy_launch.py word:=hello
+    # 'ros2 launch keyboard_autonomy keyboard_autonomy_launch.py word:=test'
     keys = list(sys.argv[1])
 
     for key in keys:
