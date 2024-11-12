@@ -13,8 +13,6 @@ class KeyboardFSMNode(Node):
     ROS2 node that parses through a list of desired keys to press and sends them one by one to the
     KeyPress service.
 
-    TODO: Could add text and backspace detection here?
-
     Clients:
         - /key_press (rovers_msgs/srv/KeyPress)
     '''
