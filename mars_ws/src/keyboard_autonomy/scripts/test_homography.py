@@ -28,15 +28,21 @@ image_read_time = time.time()
 # surf = cv2.xfeatures2d.SURF_create(400)  # The threshold value can be adjusted.
 # kp1, des1 = surf.detectAndCompute(img1, None)
 # kp2, des2 = surf.detectAndCompute(img2, None)
-sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, edgeThreshold=10)
-kp1, des1 = sift.detectAndCompute(img1, None)
-kp2, des2 = sift.detectAndCompute(img2, None)
+# sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, edgeThreshold=10)
+# kp1, des1 = sift.detectAndCompute(img1, None)
+# kp2, des2 = sift.detectAndCompute(img2, None)
+sift_detect_and_compute_time = time.time()
 
-detect_and_compute_time = time.time()
+orb = cv2.ORB_create(300)
+kp1, des1 = orb.detectAndCompute(img1, None)
+kp2, des2 = orb.detectAndCompute(img2, None)
+orb_detect_and_compute_time = time.time()
 
 # Set FLANN parameters (TODO: What are these?)
 FLANN_INDEX_KDTREE = 0
-index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+FLANN_INDEX_LSH = 6
+index_params = dict(algorithm = FLANN_INDEX_LSH, table_number = 6)# key_size = 12, multi_probe_level = 1) #2
+# index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
 search_params = dict(checks = 50)
 
 parameter_dictionary_time = time.time()
@@ -51,13 +57,21 @@ matches_calculated_time = time.time()
 # Check to make sure that the distance to the closest match is sufficiently
 # less than the distance to the second closest match
 good_matches = []
-for m, n in matches:
-    if m.distance < 0.7 * n.distance:
-        good_matches.append(m)
+skipped_matches = 0
+for match_pair in matches:
+    if len(match_pair) == 2:  # Ensure we have two matches
+        m, n = match_pair
+        if m.distance < 0.7 * n.distance:
+            good_matches.append(m)
+    else: 
+        skipped_matches+=1
+
 
 # If enough matches are found, calculate the homography
 if len(good_matches) >= MIN_MATCH_COUNT:
-
+    print(f'Found: {len(good_matches)} good matches out of {len(matches)} total matches')
+    print(f'skipped: {skipped_matches} because there weren\'t two pairs')
+    
 
     # Get the keypoints from the good matches
     src_pts = np.float32([ kp1[m.queryIdx].pt for m in good_matches ]).reshape(-1, 1, 2)
@@ -91,7 +105,8 @@ end_time = time.time()
 elapsed_time = end_time - start_time
 
 print(f"time for image reading: {image_read_time-start_time}")
-print(f"time for detecting and computing SIFT keypoints and descriptors: {detect_and_compute_time-image_read_time}")
-print(f"time for creating the dictionaries: {parameter_dictionary_time-detect_and_compute_time}")
+print(f"time for detecting and computing SIFT keypoints and descriptors: {sift_detect_and_compute_time-image_read_time}")
+print(f"time for detecting and computing ORB keypoints and descriptors: {orb_detect_and_compute_time-sift_detect_and_compute_time}")
+print(f"time for creating the dictionaries: {parameter_dictionary_time-orb_detect_and_compute_time}")
 print(f"time for calling FlannBasedMatcher and knnMatch: {matches_calculated_time-parameter_dictionary_time}")
 print(f"time for calculating the homography matrix and mask: {homography_calculated_time-matches_calculated_time}")
