@@ -1,4 +1,5 @@
 import sys
+import time
 
 import rclpy
 from rclpy.node import Node
@@ -52,7 +53,12 @@ def send_key_press(node, key):
     rclpy.spin_until_future_complete(node, future)
     response = future.result()
     if not response:
-        node.get_logger().warn('Service call failed')
+        node.get_logger().error('Service call failed')
+    else:
+        if response.success:
+            node.get_logger().info(f"[SUCCESS] Key {key} pressed")
+        else:
+            node.get_logger().error(f"[FAILURE] Key {key} not pressed")
 
 def main(args=None):
     rclpy.init(args=args)
