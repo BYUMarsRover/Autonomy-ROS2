@@ -211,8 +211,8 @@ class ArmControlsNode(Node):
         CLOSE_ENOUGH = 10 # Buffer for how close the key needs to be to the desired position
         STABILITY_REQ = 3 # Number of frames the key needs to be in the desired position
 
-        elevator_set = False
-        arm_set = False
+        elevator_set = True # TODO: change this
+        arm_set = True # TODO: change this
         elevator_stability = 0
         arm_stability = 0
 
@@ -253,9 +253,10 @@ class ArmControlsNode(Node):
                     self.get_logger().info('Arm stable', once=True)
 
             # TODO: make sure the feature detection is running fast enough for this to work
-            time.sleep(3)
+            # time.sleep(1)
 
         # TODO: Press the key
+        time.sleep(3)
 
         response.success = True
         return response
