@@ -152,7 +152,7 @@ class ArmControlsNode(Node):
         # Elevator control
         if (DESIRED_POS[1] + CLOSE > self.key_locations[self.key][1]) or (DESIRED_POS[1] - CLOSE < self.key_locations[self.key][1]):
             # Simple P controller
-            elev_msg = Elevator()
+            elev_msg = Elevator() # TODO: Get request right
             elev_msg.position = ELEV_BASE + ELEV_KP * (DESIRED_POS[1] - self.key_locations[self.key][1])
             self.elevator_publisher.publish(elev_msg)
             elev_stability = 0
@@ -166,7 +166,7 @@ class ArmControlsNode(Node):
         # Arm control
         if (DESIRED_POS[0] + CLOSE > self.key_locations[self.key][0]) or (DESIRED_POS[0] - CLOSE < self.key_locations[self.key][0]):
             # Simple P controller
-            arm_msg = JointJog()
+            arm_msg = JointJog() # TODO: Get request right
             arm_msg.position = ARM_BASE + ARM_KP * (DESIRED_POS[0] - self.key_locations[self.key][0])
             self.arm_publisher.publish(arm_msg)
             arm_stability = 0
