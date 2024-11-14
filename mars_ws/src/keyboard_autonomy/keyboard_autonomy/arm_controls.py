@@ -7,6 +7,15 @@ from sensor_msgs.msg import JointState
 from rover_msgs.msg import KeyLocations, Elevator
 from rover_msgs.srv import KeyPress
 
+DESIRED_POS = [0, 0] # TODO: Add desired key position in the camera frame
+CLOSE = 5 # TODO: Add buffer for how close the key needs to be to the desired position
+STABLE_REQ = 3 # TODO: Add number of frames the key needs to be in the desired position
+
+ELEV_BASE = 0.0 # TODO: Add base position of elevator
+ARM_BASE = 0.0 # TODO: Add base position of arm
+
+ELEV_KP = 0.01 # TODO: Tune kp value for elevator
+ARM_KP = 0.01 # TODO: Tune kp value for arm
 
 class ArmControlsNode(Node):
     '''
@@ -14,11 +23,10 @@ class ArmControlsNode(Node):
     :date: November 2024
 
     ROS2 node that controls the arm and elevator of the rover as it interacts with the keyboard,
-    using the detected key locations and the current arm state.
+    using the detected and desired key locations.
 
     Subscribes:
         - /key_locations (rovers_msgs/msg/KeyLocations)
-        - /arm_state (sensor_msgs/msg/JointState)
     Publishes:
         - /motor_commands (control_msgs/msg/JointJog)
         - /elevator (rovers_msgs/msg/Elevator)
@@ -38,7 +46,7 @@ class ArmControlsNode(Node):
             'b': None,
             'c': None,
             'd': None,
-            'e': [0, 0],
+            'e': None,
             'f': None,
             'g': None,
             'h': None,
@@ -72,13 +80,7 @@ class ArmControlsNode(Node):
         '''
         self.loc_subscription  # Prevent unused variable warning
 
-        self.state_subscription = self.create_subscription(JointState, '/arm_state', self.state_listener_callback, 10)
-        '''
-        Subscription to the "/arm_state" topic with the message type JointState.
-        '''
-        self.state_subscription  # Prevent unused variable warning
-
-        self.cmd_publisher = self.create_publisher(JointJog, '/motor_commands', 10)
+        self.arm_publisher = self.create_publisher(JointJog, '/motor_commands', 10)
         '''
         Publisher to the "/motor_commands" topic with the message type JointJog.
         '''
@@ -92,6 +94,13 @@ class ArmControlsNode(Node):
         '''
         Service that attempts to press a certain key based on the KeyPress request.
         '''
+
+        # Controller states
+        self.elev_set = True # TODO: change this
+        self.arm_set = True # TODO: change this
+        self.elev_stability = 0
+        self.arm_stability = 0
+        self.key = None # When this is not None, the controller runs
 
     def loc_listener_callback(self, msg):
         '''
@@ -135,60 +144,43 @@ class ArmControlsNode(Node):
             'space': msg.space
         }
 
-    def state_listener_callback(self, msg):
-        '''
-        Callback function for the "/arm_state" topic subscription.
-        Saves the JointState message to a class variable.
+        if self.key is not None:
+            self.position()
 
-        :param msg: The JointState message received from the "/arm_state" topic.
-        '''
+    def position(self):
 
-        self.get_logger().info('Received arm state')
+        # Elevator control
+        if (DESIRED_POS[1] + CLOSE > self.key_locations[self.key][1]) or (DESIRED_POS[1] - CLOSE < self.key_locations[self.key][1]):
+            # Simple P controller
+            elev_msg = Elevator()
+            elev_msg.position = ELEV_BASE + ELEV_KP * (DESIRED_POS[1] - self.key_locations[self.key][1])
+            self.elevator_publisher.publish(elev_msg)
+            elev_stability = 0
+        else:
+            # Ensure the elevator position is stable
+            elev_stability += 1
+            if elev_stability >= STABLE_REQ:
+                elev_set = True
+                self.get_logger().info('Elevator stability achieved', once=True)
 
-        # TODO: It looks like the code is set up so that the arm state is only reported when the 
-        # MotorAndSimManager node is running in simulation mode (self.active_connection is False).
-        # We'd need to change this in the code, or figure out a way to control the arm based solely
-        # on the detected key position from the camera -- which I think should probably be possible,
-        # especially if we can get in a good initial position and only need to control one joint or
-        # two and the elevator.
+        # Arm control
+        if (DESIRED_POS[0] + CLOSE > self.key_locations[self.key][0]) or (DESIRED_POS[0] - CLOSE < self.key_locations[self.key][0]):
+            # Simple P controller
+            arm_msg = JointJog()
+            arm_msg.position = ARM_BASE + ARM_KP * (DESIRED_POS[0] - self.key_locations[self.key][0])
+            self.arm_publisher.publish(arm_msg)
+            arm_stability = 0
+        else:
+            # Ensure the arm position is stable
+            arm_stability += 1
+            if arm_stability >= STABLE_REQ:
+                arm_set = True
+                self.get_logger().info('Arm stability achieved', once=True)
 
-        # JOINSTATE MESSAGE FORMAT
-        #
-        # Header header
-        # string[] name
-        # float64[] position
-        # float64[] velocity
-        # float64[] effort
-
-        # JOINT_NAMES FROM MOTORANDSIMMANAGER.PY
-        #
-        # JOINT_NAMES = [
-        # "base_joint",  # elevator
-        # "bracket01_joint",
-        # "bracket02_joint",
-        # "bracket03_joint",
-        # "bracket04_joint",
-        # "arm05_joint",
-        # ]
-
-        # FUNCTION IN MOTORANDSIMMANAGER.PY THAT RUNS ONLY IF SELF.ACTIVE_CONNECTION IS FALSE
-        #
-        # def publish(self):
-        # # Publish normally for controllers
-        # self.pub_arm_pos.publish(position=self.joints.position, name=p.JOINT_NAMES[1:])
-        # # Publish elevator and reversed positions for RVIZ
-        # # For some reason RVIZ has nodes 1-3 rotate backward.
-        # RVIZ_pos = [self.elev_pos] + [
-        #     pos if i > 2 else -pos for i, pos in enumerate(self.joints.position)
-        # ]
-        # self.pub_arm_pos_RVIZ.publish(position=RVIZ_pos, name=p.JOINT_NAMES)
-
-        self.base_joint = -1 * msg.position[0]
-        self.bracket01_joint = -1 * msg.position[1]
-        self.bracket02_joint = -1 * msg.position[2]
-        self.bracket03_joint = msg.position[3]
-        self.bracket04_joint = msg.position[4]
-        self.arm05_joint = msg.position[5]
+        if elev_set and arm_set:
+            # Stop the controller and report correct positioning
+            self.positioned = True
+            self.key = None
 
 
     def key_press_callback(self, request, response):
@@ -204,59 +196,14 @@ class ArmControlsNode(Node):
             response.success = False
             self.get_logger().warn(f"Key {chr(request.key)} position not found")
             return response
-        
-        ### Super simple controls for now ###
 
-        DESIRED_POSITION = [0, 0] # Desired key position in the camera frame
-        CLOSE_ENOUGH = 10 # Buffer for how close the key needs to be to the desired position
-        STABILITY_REQ = 3 # Number of frames the key needs to be in the desired position
+        # Wait for the arm and elevator to be positioned right
+        self.positioned = False
+        self.key = chr(request.key)
+        while not self.positioned:
+            time.sleep(1)
 
-        elevator_set = True # TODO: change this
-        arm_set = True # TODO: change this
-        elevator_stability = 0
-        arm_stability = 0
-
-        while not elevator_set and not arm_set:
-
-            # Elevator control
-            if DESIRED_POSITION[1] + CLOSE_ENOUGH > self.key_locations[chr(request.key)][1]:
-                # TODO: Move elevator up
-                elevator_msg = Elevator()
-                self.elevator_publisher.publish(elevator_msg)
-                elevator_stability = 0
-            elif DESIRED_POSITION[1] - CLOSE_ENOUGH < self.key_locations[chr(request.key)][1]:
-                # TODO: Move elevator down
-                elevator_msg = Elevator()
-                self.elevator_publisher.publish(elevator_msg)
-                elevator_stability = 0
-            else:
-                elevator_stability += 1
-                if elevator_stability >= STABILITY_REQ:
-                    elevator_set = True
-                    self.get_logger().info('Elevator stable', once=True)
-
-            # Arm control
-            if DESIRED_POSITION[0] + CLOSE_ENOUGH > self.key_locations[chr(request.key)][0]:
-                # TODO: Move arm left
-                arm_msg = JointJog()
-                self.cmd_publisher.publish(arm_msg)
-                arm_stability = 0
-            elif DESIRED_POSITION[0] - CLOSE_ENOUGH < self.key_locations[chr(request.key)][0]:
-                # TODO: Move arm right
-                arm_msg = JointJog()
-                self.cmd_publisher.publish(arm_msg)
-                arm_stability = 0
-            else:
-                arm_stability += 1
-                if arm_stability >= STABILITY_REQ:
-                    arm_set = True
-                    self.get_logger().info('Arm stable', once=True)
-
-            # TODO: make sure the feature detection is running fast enough for this to work
-            # time.sleep(1)
-
-        # TODO: Press the key
-        time.sleep(3)
+        # TODO: Press the button
 
         response.success = True
         return response
