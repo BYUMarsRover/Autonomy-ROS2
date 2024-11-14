@@ -16,10 +16,12 @@
 // Constructor implementation
 FiducialsNode::FiducialsNode()
     : Node("fiducials_node"),
-      image_transport_(std::enable_shared_from_this<FiducialsNode>::shared_from_this()),
-      have_cam_info_(false),
+      enable_detections_(true),
       frame_num_(0),
-      enable_detections_(true) {
+      have_cam_info_(false),
+      node_handle_(std::shared_ptr<FiducialsNode>(this, [](auto *) {})),
+      image_transport_(node_handle_) {
+
     // Declare and get parameters
     this->declare_parameter<bool>("publish_images", false);
     this->declare_parameter<double>("fiducial_len", 0.14);
@@ -34,22 +36,23 @@ FiducialsNode::FiducialsNode()
     this->get_parameter("do_pose_estimation", do_pose_estimation_);
     this->get_parameter("frame_id", frame_id_);
 
-    // Initialize publishers
-    vertices_pub_ = this->create_publisher<rover_msgs::msg::FiducialArray>("fiducial_vertices", 10);
-    pose_pub_ = this->create_publisher<rover_msgs::msg::FiducialTransformArray>("fiducial_transforms", 10);
-    vertices_pub_ = this->create_publisher<rover_msgs::msg::FiducialArray>("fiducial_vertices", 10);
-    pose_pub_ = this->create_publisher<rover_msgs::msg::FiducialTransformArray>("fiducial_transforms", 10);
+    // Only initialize the image publisher if publish_images_ is true
     if (publish_images_) {
         image_pub_ = image_transport_.advertise("fiducial_images", 10);
     }
 
-    // Initialize subscribers
+    // Initialize image subscriber
+    image_sub_ = image_transport_.subscribe(
+        "image_raw", 10, std::bind(&FiducialsNode::imageCallback, this, std::placeholders::_1));
+
+    // Initialize publishers (not dependent on image_transport_)
+    pose_pub_ = this->create_publisher<rover_msgs::msg::FiducialTransformArray>("fiducial_transforms", 10);
+
+    // Initialize subscribers (only CameraInfo and ignore_sub_, since they don't use image_transport_)
     caminfo_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
         "camera_info", 10, std::bind(&FiducialsNode::camInfoCallback, this, std::placeholders::_1));
     ignore_sub_ = this->create_subscription<std_msgs::msg::String>(
         "ignore_fiducials", 10, std::bind(&FiducialsNode::ignoreCallback, this, std::placeholders::_1));
-    image_sub_ = image_transport_.subscribe(
-        "image_raw", 10, std::bind(&FiducialsNode::imageCallback, this, std::placeholders::_1));
 
     // Initialize service
     enable_detections_srv_ = this->create_service<std_srvs::srv::SetBool>(
@@ -82,6 +85,13 @@ FiducialsNode::FiducialsNode()
 }
 
 
+void FiducialsNode::initialize() {
+    // Initialize image_transport_ with shared_from_this()
+    //image_transport_ = image_transport::create_image_transport(node);
+
+    
+}
+
 // Image callback
 void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg) {
     if (!enable_detections_) {
@@ -110,30 +120,6 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
         cv::aruco::detectMarkers(cv_ptr->image, dictionary_, corners, ids, detector_params_);
         if (!ids.empty()) {
             RCLCPP_INFO(this->get_logger(), "Detected %d markers", static_cast<int>(ids.size()));
-        }
-
-        for (size_t i = 0; i < ids.size(); i++) {
-            if (std::find(ignore_ids_.begin(), ignore_ids_.end(), ids[i]) != ignore_ids_.end()) {
-                RCLCPP_INFO(this->get_logger(), "Ignoring id %d", ids[i]);
-                continue;
-            }
-            auto fid = rover_msgs::msg::Fiducial();
-            fid.fiducial_id = ids[i];
-
-            fid.x0 = corners[i][0].x;
-            fid.y0 = corners[i][0].y;
-            fid.x1 = corners[i][1].x;
-            fid.y1 = corners[i][1].y;
-            fid.x2 = corners[i][2].x;
-            fid.y2 = corners[i][2].y;
-            fid.x3 = corners[i][3].x;
-            fid.y3 = corners[i][3].y;
-            fva.fiducials.push_back(fid);
-        }
-
-        vertices_pub_->publish(fva);
-
-        if (!ids.empty()) {
             cv::aruco::drawDetectedMarkers(cv_ptr->image, corners, ids);
         }
 

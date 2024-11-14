@@ -18,13 +18,26 @@
 
 // JM added: public std::enable_shared_from_this<FiducialsNode> 
 class FiducialsNode : public rclcpp::Node, public std::enable_shared_from_this<FiducialsNode> {
+protected:
+    rclcpp::Node::SharedPtr node_handle_;
+    image_transport::ImageTransport image_transport_;
 public:
     // Constructor
     explicit FiducialsNode();
+    // Initialize method to be called after construction
+    void initialize();
 
 private:
+    // Parameters
+    bool enable_detections_;
+    int frame_num_;
+    //image_transport::ImageTransport image_transport_;
+    bool publish_images_;
+    bool do_pose_estimation_;
+    bool have_cam_info_;
+    double fiducial_len_;
+
     // Publishers
-    rclcpp::Publisher<rover_msgs::msg::FiducialArray>::SharedPtr vertices_pub_;
     rclcpp::Publisher<rover_msgs::msg::FiducialTransformArray>::SharedPtr pose_pub_;
     image_transport::Publisher image_pub_;
 
@@ -35,15 +48,6 @@ private:
 
     // Service server
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr enable_detections_srv_;
-
-    // Parameters
-    bool publish_images_;
-    bool enable_detections_;
-    bool do_pose_estimation_;
-    bool have_cam_info_;
-
-    int frame_num_;
-    double fiducial_len_;
 
 
     // Detector parameters
@@ -77,7 +81,6 @@ private:
     std::vector<int> ignore_ids_;
     std::map<int, double> fiducial_lens_;
 
-    image_transport::ImageTransport image_transport_;
 
     // OpenCV and ArUco
     cv::Ptr<cv::aruco::DetectorParameters> detector_params_;

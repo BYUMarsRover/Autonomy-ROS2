@@ -47,15 +47,15 @@ def generate_launch_description():
         #     PythonLaunchDescriptionSource(os.path.join(usb_cam_launch_dir, 'autonomy_camera.launch.py'))
         # ),
 
-        # Include ArUco detection launch for two cameras (logi and zed)
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join(autonomy_launch_dir, 'aruco_detect.launch.py')),
-        #     launch_arguments={
-        #         'node_name': 'aruco_detect_logi',
-        #         'image': 'image_raw',
-        #         'camera': '/usb_cam'
-        #     }.items(),
-        # )#,
+        # Include ArUco detection launch for logi webcam
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(autonomy_launch_dir, 'aruco_detect.launch.py')),
+            launch_arguments={
+                'node_name': 'aruco_detect_logi',
+                'image': 'image_raw',
+                'camera': '/usb_cam'
+            }.items(),
+        ),
 
         # Launch state machine with autonomy namespace
         GroupAction([
