@@ -25,7 +25,6 @@ class Homography2KeysNode(Node):
         Creates a new Homography2Keys node.
         '''
         super().__init__('homography2keys')
-        self.get_logger().info("Homography2KeysNode started")
 
         self.subscription = self.create_subscription(KeyboardHomography, '/keyboard_homography', self.listener_callback, 10)
         '''
@@ -37,6 +36,8 @@ class Homography2KeysNode(Node):
         '''
         Publisher to the "/key_locations" topic with the message type KeyLocations.
         '''
+
+        self.get_logger().info("Homography2KeysNode started")
 
     def listener_callback(self, msg):
         '''

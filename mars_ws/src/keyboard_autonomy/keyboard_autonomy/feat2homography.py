@@ -29,7 +29,6 @@ class Feat2HomographyNode(Node):
         Creates a new Feat2Homography node.
         '''
         super().__init__('feat2homography')
-        self.get_logger().info("Feat2HomographyNode started")
 
         # TODO: Add topic name from camera here
         self.subscription = self.create_subscription(Image, 'topic_name', self.listener_callback, 10)
@@ -45,6 +44,8 @@ class Feat2HomographyNode(Node):
 
         self.bridge = CvBridge()
         self.keyboard_img = cv2.imread("/home/marsrover/mars_ws/src/keyboard_autonomy/images/keyboard_better.jpg")
+
+        self.get_logger().info("Feat2HomographyNode started")
 
     def listener_callback(self, msg):
         '''
@@ -93,8 +94,7 @@ class Feat2HomographyNode(Node):
             self.get_logger().warn("Insufficient # of matches found - %d/%d" % (len(good_matches), MIN_MATCH_COUNT))
 
         keyboard_homography = KeyboardHomography()
-        keyboard_homography.header.stamp = msg.header.stamp
-        keyboard_homography.homography = M.flatten().tolist()  # TODO: Test this
+        keyboard_homography.homography = M.flatten().tolist()
 
         self.publisher.publish(keyboard_homography)
 

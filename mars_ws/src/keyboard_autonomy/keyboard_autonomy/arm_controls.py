@@ -1,10 +1,10 @@
-import time
-
 import rclpy
 from rclpy.node import Node
 from control_msgs.msg import JointJog
 from rover_msgs.msg import KeyLocations, Elevator
 from rover_msgs.srv import KeyPress
+
+### Controller Constants ###
 
 DESIRED_POS = [0, 0] # TODO: Add desired key position in the camera frame
 CLOSE = 5 # TODO: Add buffer for how close the key needs to be to the desired position
@@ -15,6 +15,7 @@ ARM_BASE = 0.0 # TODO: Add base position of arm
 
 ELEV_KP = 0.01 # TODO: Tune kp value for elevator
 ARM_KP = 0.01 # TODO: Tune kp value for arm
+
 
 class ArmControlsNode(Node):
     '''
@@ -38,14 +39,13 @@ class ArmControlsNode(Node):
         Creates a new ArmControls node.
         '''
         super().__init__('arm_controls')
-        self.get_logger().info("ArmControlsNode started")
 
         self.key_locations = {
             'a': None,
             'b': None,
             'c': None,
             'd': None,
-            'e': [0, 0],
+            'e': None,
             'f': None,
             'g': None,
             'h': None,
@@ -94,12 +94,14 @@ class ArmControlsNode(Node):
         Service that attempts to press a certain key based on the KeyPress request.
         '''
 
-        # Controller states
-        self.elev_set = True # TODO: change this
-        self.arm_set = True # TODO: change this
-        self.elev_stability = 0
-        self.arm_stability = 0
+        # Initial controller states
+        self.elev_set = False # Is the elevator in the desired position?
+        self.arm_set = False # Is the arm in the desired position?
+        self.elev_stability = 0 # How many frames has the elevator been stable?
+        self.arm_stability = 0 # How many frames has the arm been stable?
         self.key = None # When this is not None, the controller runs
+
+        self.get_logger().info("ArmControlsNode started")
 
     def loc_listener_callback(self, msg):
         '''
@@ -143,44 +145,46 @@ class ArmControlsNode(Node):
             'space': msg.space
         }
 
+        # Run the controller on receiving new key locations
         if self.key is not None:
-            self.position()
+            self.control()
 
-    def position(self):
+    def control(self):
 
         # Elevator control
-        if (DESIRED_POS[1] + CLOSE > self.key_locations[self.key][1]) or (DESIRED_POS[1] - CLOSE < self.key_locations[self.key][1]):
-            # Simple P controller
-            elev_msg = Elevator() # TODO: Get request right
-            elev_msg.position = ELEV_BASE + ELEV_KP * (DESIRED_POS[1] - self.key_locations[self.key][1])
-            self.elevator_publisher.publish(elev_msg)
+        if not elev_set and ((DESIRED_POS[1] + CLOSE > self.key_locations[self.key][1]) or (DESIRED_POS[1] - CLOSE < self.key_locations[self.key][1])):
+            # Simple proportional controller
+            elev_msg = Elevator() # TODO: Get these fields right
+            # elev_msg.position = ELEV_BASE + ELEV_KP * (DESIRED_POS[1] - self.key_locations[self.key][1])
+            # self.elevator_publisher.publish(elev_msg)
             elev_stability = 0
         else:
             # Ensure the elevator position is stable
             elev_stability += 1
             if elev_stability >= STABLE_REQ:
                 elev_set = True
-                self.get_logger().info('Elevator stability achieved', once=True)
+                self.get_logger().info('Elevator stability achieved')
 
         # Arm control
-        if (DESIRED_POS[0] + CLOSE > self.key_locations[self.key][0]) or (DESIRED_POS[0] - CLOSE < self.key_locations[self.key][0]):
-            # Simple P controller
-            arm_msg = JointJog() # TODO: Get request right
-            arm_msg.position = ARM_BASE + ARM_KP * (DESIRED_POS[0] - self.key_locations[self.key][0])
-            self.arm_publisher.publish(arm_msg)
+        if not arm_set and ((DESIRED_POS[0] + CLOSE > self.key_locations[self.key][0]) or (DESIRED_POS[0] - CLOSE < self.key_locations[self.key][0])):
+            # Simple proportional controller
+            arm_msg = JointJog() # TODO: Get these fields right
+            # arm_msg.position = ARM_BASE + ARM_KP * (DESIRED_POS[0] - self.key_locations[self.key][0])
+            # self.arm_publisher.publish(arm_msg)
             arm_stability = 0
         else:
             # Ensure the arm position is stable
             arm_stability += 1
             if arm_stability >= STABLE_REQ:
                 arm_set = True
-                self.get_logger().info('Arm stability achieved', once=True)
+                self.get_logger().info('Arm stability achieved')
 
         if elev_set and arm_set:
-            # Stop the controller and report correct positioning
-            self.positioned = True
-            self.key = None
+            self.key = None # IMPORTANT! This stops the controller
 
+            # TODO: Press the button
+
+            self.get_logger().info(f"[SUCCESS] Key {self.key} has been pressed")
 
     def key_press_callback(self, request, response):
         '''
@@ -191,27 +195,30 @@ class ArmControlsNode(Node):
         :param response: The KeyPress response.
         '''
 
+        # Check if the feature detector is working
         if self.key_locations[chr(request.key)] is None:
             response.success = False
-            self.get_logger().warn(f"Key {chr(request.key)} position not found")
+            self.get_logger().error(f"Key {chr(request.key)} position not found", throttle_duration_sec=2)
+            return response
+        # Check if the controller is already running
+        elif self.key is not None:
+            response.success = False
+            self.get_logger().info("The controller is running", throttle_duration_sec=5)
+            return response
+        # If none of the above, start the controller for a new key
+        else:
+            self.key = chr(request.key)
+            self.get_logger().info(f"Attempting to press key {self.key}")
+            response.success = True
             return response
 
-        # Wait for the arm and elevator to be positioned right
-        self.positioned = False
-        self.key = chr(request.key)
-        while not self.positioned:
-            time.sleep(1)
-
-        # TODO: Press the button
-
-        response.success = True
-        return response
 
 def main(args=None):
     rclpy.init(args=args)
     node = ArmControlsNode()
     rclpy.spin(node)
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

@@ -1,4 +1,5 @@
 import sys
+import time
 
 import rclpy
 from rclpy.node import Node
@@ -48,16 +49,21 @@ def send_key_press(node, key):
     '''
     Calls the KeyPress service and checks to make sure it executed successfully.
     '''
-    future = node.send_request(key)
-    rclpy.spin_until_future_complete(node, future)
-    response = future.result()
-    if not response:
-        node.get_logger().error('Service call failed')
-    else:
-        if response.success:
-            node.get_logger().info(f"[SUCCESS] Key {key} pressed")
+
+    # Keep requesting the service until it is successful
+    completed = False
+    while not completed:
+        
+        future = node.send_request(key)
+        rclpy.spin_until_future_complete(node, future)
+        response = future.result()
+        if not response:
+            node.get_logger().error('Service call failed')
         else:
-            node.get_logger().error(f"[FAILURE] Key {key} not pressed")
+            if response.success:
+                completed = True
+
+        time.sleep(1)
 
 def main(args=None):
     rclpy.init(args=args)
