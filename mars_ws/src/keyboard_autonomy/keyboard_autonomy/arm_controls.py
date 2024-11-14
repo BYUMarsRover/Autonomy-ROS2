@@ -45,7 +45,7 @@ class ArmControlsNode(Node):
             'b': None,
             'c': None,
             'd': None,
-            'e': None,
+            'e': [0, 0],
             'f': None,
             'g': None,
             'h': None,
