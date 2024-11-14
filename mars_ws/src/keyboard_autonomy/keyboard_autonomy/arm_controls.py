@@ -205,6 +205,8 @@ class ArmControlsNode(Node):
             self.get_logger().warn(f"Key {chr(request.key)} position not found")
             return response
         
+        ### Super simple controls for now ###
+
         DESIRED_POSITION = [0, 0] # Desired key position in the camera frame
         CLOSE_ENOUGH = 10 # Buffer for how close the key needs to be to the desired position
         STABILITY_REQ = 3 # Number of frames the key needs to be in the desired position
