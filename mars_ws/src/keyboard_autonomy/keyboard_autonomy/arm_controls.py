@@ -205,12 +205,12 @@ class ArmControlsNode(Node):
             response.success = False
             self.get_logger().info("The controller is running", throttle_duration_sec=5)
             return response
+        
         # If none of the above, start the controller for a new key
-        else:
-            self.key = chr(request.key)
-            self.get_logger().info(f"Attempting to press key {self.key}")
-            response.success = True
-            return response
+        self.key = chr(request.key)
+        self.get_logger().info(f"Attempting to press key {self.key}")
+        response.success = True
+        return response
 
 
 def main(args=None):
