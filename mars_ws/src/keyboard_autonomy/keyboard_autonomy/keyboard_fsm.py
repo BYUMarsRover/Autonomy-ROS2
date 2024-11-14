@@ -63,7 +63,7 @@ def send_key_press(node, key):
             if response.success:
                 completed = True
 
-        time.sleep(1)
+        time.sleep(1) # Throttle the service calls
 
 def main(args=None):
     rclpy.init(args=args)
