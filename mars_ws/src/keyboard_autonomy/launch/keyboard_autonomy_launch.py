@@ -24,10 +24,13 @@ def generate_launch_description():
             word = arg.split(":=")[1]
     
     return launch.LaunchDescription([
+        # NOTE: The below will probably throw these errors:
+        # [ERROR]: Unable to open camera calibration file [/home/marsrover/.ros/camera_info/default_cam.yaml]
+        # [WARN]: Camera calibration file /home/marsrover/.ros/camera_info/default_cam.yaml not found
+        # You can safely ignore these errors -- they won't affect the keyboard autonomy functionality.
         launch_ros.actions.Node(
-            package='usb_camera',
-            executable='usb_camera_node_exe',
-            name='keyboard_camera',
+            package='usb_cam',
+            executable='usb_cam_node_exe',
         ),
         launch_ros.actions.Node(
             package='keyboard_autonomy',
