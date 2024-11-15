@@ -69,6 +69,8 @@ def main(args=None):
     rclpy.init(args=args)
     node = KeyboardFSMNode()
 
+    time.sleep(5) # Wait for the other nodes to start up
+
     # Use this format when calling the launch file:
     # 'ros2 launch keyboard_autonomy keyboard_autonomy_launch.py word:=test'
     keys = list(sys.argv[1])
