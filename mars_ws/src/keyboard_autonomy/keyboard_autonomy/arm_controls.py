@@ -180,13 +180,13 @@ class ArmControlsNode(Node):
                 self.get_logger().info('Arm stability achieved')
 
         if elev_set and arm_set:
-            self.key = None # IMPORTANT! This stops the controller
-
             # TODO: Press the button
 
             self.get_logger().info(f"[SUCCESS] Key {self.key} has been pressed")
 
             # TODO: Reset the arm and elevator positions
+
+            self.key = None # IMPORTANT! This stops the controller
 
     def key_press_callback(self, request, response):
         '''
