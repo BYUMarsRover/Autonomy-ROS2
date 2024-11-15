@@ -10,8 +10,7 @@ DESIRED_POS = [0, 0] # TODO: Add desired key position in the camera frame
 CLOSE = 5 # TODO: Add buffer for how close the key needs to be to the desired position
 STABLE_REQ = 3 # TODO: Add number of frames the key needs to be in the desired position
 
-ELEV_BASE = 0.0 # TODO: Add base position of elevator
-ARM_BASE = 0.0 # TODO: Add base position of arm
+ARM_BASE = 0.0 # TODO: Add base position of arm, do we need this?
 
 ELEV_KP = 0.01 # TODO: Tune kp value for elevator
 ARM_KP = 0.01 # TODO: Tune kp value for arm
@@ -154,9 +153,12 @@ class ArmControlsNode(Node):
         # Elevator control
         if not elev_set and ((DESIRED_POS[1] + CLOSE > self.key_locations[self.key][1]) or (DESIRED_POS[1] - CLOSE < self.key_locations[self.key][1])):
             # Simple proportional controller
-            elev_msg = Elevator() # TODO: Get these fields right
-            # elev_msg.position = ELEV_BASE + ELEV_KP * (DESIRED_POS[1] - self.key_locations[self.key][1])
-            # self.elevator_publisher.publish(elev_msg)
+            elev_msg = Elevator()
+            # There doesn't seem to be a way to get current elevator position
+            elev_msg.elevator_speed = abs(ELEV_KP * (DESIRED_POS[1] - self.key_locations[self.key][1]))
+            # 1 to move up, 0 to move down
+            elev_msg.elevator_direction = 1 if DESIRED_POS[1] > self.key_locations[self.key][1] else 0
+            self.elevator_publisher.publish(elev_msg)
             elev_stability = 0
         else:
             # Ensure the elevator position is stable
@@ -180,12 +182,10 @@ class ArmControlsNode(Node):
                 self.get_logger().info('Arm stability achieved')
 
         if elev_set and arm_set:
+
             # TODO: Press the button
 
             self.get_logger().info(f"[SUCCESS] Key {self.key} has been pressed")
-
-            # TODO: Reset the arm and elevator positions
-
             self.key = None # IMPORTANT! This stops the controller
 
     def key_press_callback(self, request, response):
