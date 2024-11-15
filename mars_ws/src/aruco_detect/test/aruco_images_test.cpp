@@ -7,7 +7,7 @@ This file is used for validation that the software aspect of aruco detect is wor
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv4/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 
 #include <rover_msgs/FiducialArray.hpp>

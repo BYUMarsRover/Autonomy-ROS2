@@ -13,6 +13,124 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <image_transport/image_transport.hpp>
 
+
+//This set is for the competition tags (two black borders)
+unsigned char COMPETITION_MARKERS_7X7[][7][4] = 
+    {{
+	//leg1
+	{  0, 217, 178, 167},
+	{207, 128, 0,   0  },
+	{249, 176, 230, 207},
+	{128, 0,   0,   249},
+	{242, 166, 205, 128},
+	{0,   0,   249, 179},
+	{134, 207, 128, 0  },
+    },
+    {
+	//leg2
+	{0,   217, 178, 161},
+	{142, 128, 0,   0  },
+	{233, 160, 230, 78 },
+	{128, 0,   0,   184},
+	{194, 166, 205, 128},
+	{0,   0,   185, 51 },
+	{130, 203, 128, 0  },
+    },
+    {
+	//leg3
+	{0,   217, 178, 165},
+	{139, 0,   0,   0 },
+	{225, 176, 230, 15 },
+	{128, 0,   0,   104},
+	{210, 166, 205, 128},
+	{0,   0,    248, 51},
+	{134, 195,  128, 0 },
+    },
+    {
+	//leg4l
+	{0,  217, 178, 163},
+	{202, 0, 0, 0},
+	{241, 160, 230, 142},
+	{128,0, 0, 41},
+	{226, 166, 205, 128},
+	{0, 0, 184, 179},
+	{130, 199, 128, 0},
+    },
+    {
+	//leg4r
+	{0,   217, 178, 163},
+	{135, 0,   0,   0 },
+	{225, 176, 230, 206 },
+	{0, 0,   0,   112},
+	{226, 166, 205, 128},
+	{0,   0,    57, 179},
+	{134, 195,  128, 0 },
+    },
+    {
+	//leg5l
+	{0,   217, 178, 165},
+	{198, 0,   0,   0 },
+	{241, 160, 230, 79 },
+	{0, 0,   0,   49},
+	{210, 166, 205, 128},
+	{0,   0,    121, 51},
+	{130, 199,  128, 0 },
+    },
+    {
+	//leg5r
+	{0,   217, 178, 161},
+	{195, 128,   0,   0 },
+	{249, 176, 230, 14 },
+	{0, 0,   0,   225},
+	{194, 166, 205, 128},
+	{0,   0,    56, 51},
+	{134, 207,  128, 0 }, 
+    },
+    {
+	//leg6l
+	{0,   217, 178, 167},
+	{130, 128,   0,   0 },
+	{233, 160, 230, 143 },
+	{0, 0,   0,   160},
+	{242, 166, 205, 128},
+	{0,   0,    120, 179},
+	{130, 203,  128, 0 },
+    },
+    {
+	//leg6r
+	{0,   217, 178, 161},
+	{79, 0,   0,   0 },
+	{241, 144, 230, 78 },
+	{128, 0,   0,   121},
+	{66, 166, 205, 128},
+	{0,   0,    185, 51},
+	{132, 199,  128, 0 },
+    },
+    {
+	//leg7l
+	{0,   217, 178, 167},
+	{14, 0,   0,   0 },
+	{225, 128, 230, 207 },
+	{128, 0,   0,   56},
+	{214, 166, 205, 128},
+	{0,   0,    249, 179},
+	{128, 195,  128, 0 },
+    },
+    {
+	//leg7r
+	{0,   217, 178, 163},
+	{11, 128,   0,   0 },
+	{233, 144, 230, 142 },
+	{128, 0,   0,   232},
+	{98, 166, 205, 128},
+	{0,   0,    184, 179},
+	{132, 203,  128, 0 },
+    }};
+
+
+
+
+
 // Constructor implementation
 FiducialsNode::FiducialsNode()
     : Node("fiducials_node"),
@@ -26,7 +144,7 @@ FiducialsNode::FiducialsNode()
     this->declare_parameter<bool>("publish_images", false);
     this->declare_parameter<double>("fiducial_len", 0.14);
     this->declare_parameter<bool>("do_pose_estimation", true);
-    this->declare_parameter<std::string>("dictionary", "DICT_6X6_250");
+    this->declare_parameter<std::string>("dictionary", "DICT_4X4_50");
     this->declare_parameter<std::string>("ignore_fiducials", "");
     this->declare_parameter<std::string>("fiducial_len_override", "");
     this->declare_parameter<std::string>("frame_id", "camera_frame");
@@ -43,14 +161,14 @@ FiducialsNode::FiducialsNode()
 
     // Initialize image subscriber
     image_sub_ = image_transport_.subscribe(
-        "image_raw", 10, std::bind(&FiducialsNode::imageCallback, this, std::placeholders::_1));
+        "head_camera/image_raw", 10, std::bind(&FiducialsNode::imageCallback, this, std::placeholders::_1));
 
     // Initialize publishers (not dependent on image_transport_)
     pose_pub_ = this->create_publisher<rover_msgs::msg::FiducialTransformArray>("fiducial_transforms", 10);
 
     // Initialize subscribers (only CameraInfo and ignore_sub_, since they don't use image_transport_)
     caminfo_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
-        "camera_info", 10, std::bind(&FiducialsNode::camInfoCallback, this, std::placeholders::_1));
+        "head_camera/camera_info", 10, std::bind(&FiducialsNode::camInfoCallback, this, std::placeholders::_1));
     ignore_sub_ = this->create_subscription<std_msgs::msg::String>(
         "ignore_fiducials", 10, std::bind(&FiducialsNode::ignoreCallback, this, std::placeholders::_1));
 
@@ -69,7 +187,7 @@ FiducialsNode::FiducialsNode()
     // Set up the ArUco dictionary
     std::string dictionary_name;
     this->get_parameter("dictionary", dictionary_name);
-    dictionary_ = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
+    dictionary_ = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
 
     // Handle ignored fiducials
     std::string ignore_fiducials;
@@ -82,6 +200,20 @@ FiducialsNode::FiducialsNode()
     parseFiducialLenOverride(fiducial_len_override);
 
     RCLCPP_INFO(this->get_logger(), "FiducialsNode initialized");
+
+    static const cv::aruco::Dictionary COMPETITION_MARKERS = cv::aruco::Dictionary(
+    cv::Mat(
+            11,
+            //(5 * 5 + 7) / 8,
+        (7 * 7 + 7) / 8,		// 7 bits x 7 bits + 7 to avoid integer truncation / 8 bits.
+            CV_8UC4,
+            //(uchar *)COMPETITION_MARKERS_5X5_20_BYTES),
+        (uchar *)COMPETITION_MARKERS_7X7),
+        //5,
+        7,
+        3);
+
+    dictionary = cv::makePtr<cv::aruco::Dictionary>(COMPETITION_MARKERS);
 }
 
 
@@ -120,6 +252,15 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
         cv::aruco::detectMarkers(cv_ptr->image, dictionary_, corners, ids, detector_params_);
         if (!ids.empty()) {
             RCLCPP_INFO(this->get_logger(), "Detected %d markers", static_cast<int>(ids.size()));
+            for (const auto& id : ids) {
+                RCLCPP_INFO(this->get_logger(), "Detected marker ID: %d", id);
+            }
+        } else {
+            RCLCPP_WARN(this->get_logger(), "No markers detected.");
+        }
+                
+        if (!ids.empty()) {
+            RCLCPP_INFO(this->get_logger(), "Detected %d markers", static_cast<int>(ids.size()));
             cv::aruco::drawDetectedMarkers(cv_ptr->image, corners, ids);
         }
 
@@ -132,6 +273,7 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
             }
 
             std::vector<double> reprojection_errors;
+            //Camera matrix and distortion coeffs are good
             estimatePoseSingleMarkers(ids, corners, static_cast<float>(fiducial_len_),
                                       camera_matrix_, distortion_coeffs_,
                                       rvecs, tvecs, reprojection_errors);
@@ -416,3 +558,6 @@ double FiducialsNode::getReprojectionError(
     }
     return std::sqrt(total_error / static_cast<double>(object_points.size()));
 }
+
+
+

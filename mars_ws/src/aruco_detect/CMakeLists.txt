@@ -23,17 +23,32 @@ find_package(visualization_msgs REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4 REQUIRED)
 
 # Include directories
 include_directories(
   include  # Your local include directory
 )
 
+# Include directories (for OpenCV headers)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
 # Add the FiducialsNode library
 add_library(fiducials_node
   src/FiducialsNode.cpp
 )
+
+# Add the executable for aruco_detect
+add_executable(aruco_detect
+  src/aruco_detect.cpp
+)
+
+
+# Link OpenCV libraries to the executable
+target_link_libraries(aruco_detect ${OpenCV_LIBS})
+
+# Include OpenCV header files
+target_include_directories(aruco_detect PRIVATE ${OpenCV_INCLUDE_DIRS})
 
 # Link dependencies for fiducials_node
 ament_target_dependencies(fiducials_node
@@ -53,10 +68,7 @@ target_link_libraries(fiducials_node
   ${OpenCV_LIBS}
 )
 
-# Add the executable for aruco_detect
-add_executable(aruco_detect
-  src/aruco_detect.cpp
-)
+
 
 # Link dependencies for aruco_detect
 ament_target_dependencies(aruco_detect

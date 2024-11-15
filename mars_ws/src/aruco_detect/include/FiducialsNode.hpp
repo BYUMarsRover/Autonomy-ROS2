@@ -36,6 +36,9 @@ private:
     bool do_pose_estimation_;
     bool have_cam_info_;
     double fiducial_len_;
+    cv::Ptr<cv::aruco::Dictionary> dictionary;
+    // static cv::aruco::Dictionary COMPETITION_MARKERS;
+    // static unsigned char COMPETITION_MARKERS_7X7[][7][4];
 
     // Publishers
     rclcpp::Publisher<rover_msgs::msg::FiducialTransformArray>::SharedPtr pose_pub_;
