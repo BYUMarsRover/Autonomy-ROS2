@@ -25,6 +25,11 @@ def generate_launch_description():
     
     return launch.LaunchDescription([
         launch_ros.actions.Node(
+            package='usb_camera',
+            executable='usb_camera_node_exe',
+            name='keyboard_camera',
+        ),
+        launch_ros.actions.Node(
             package='keyboard_autonomy',
             executable='feat2homography',
         ),

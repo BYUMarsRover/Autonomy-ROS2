@@ -19,7 +19,7 @@ class Feat2HomographyNode(Node):
     and calculates the homography between the two images.
 
     Subscribes:
-        - TODO: Add topic (sensor_msgs/msg/Image)
+        - /image_raw (sensor_msgs/msg/Image)
     Publishes:
         - /keyboard_homography (rover_msgs/msg/KeyboardHomography)
     '''
@@ -30,10 +30,9 @@ class Feat2HomographyNode(Node):
         '''
         super().__init__('feat2homography')
 
-        # TODO: Add topic name from camera here
-        self.subscription = self.create_subscription(Image, 'topic_name', self.listener_callback, 10)
+        self.subscription = self.create_subscription(Image, '/image_raw', self.listener_callback, 10)
         '''
-        Subscription to the "TODO: Add here" topic with the message type sensor_msgs/msg/Image.
+        Subscription to the "/image_raw" topic with the message type sensor_msgs/msg/Image.
         '''
         self.subscription  # Prevent unused variable warning
 
@@ -49,7 +48,7 @@ class Feat2HomographyNode(Node):
 
     def listener_callback(self, msg):
         '''
-        Callback function for the "TODO: Add here" subscription.
+        Callback function for the "/image_raw" subscription.
         Uses the SIFT and FLANN algorithms to find the homography between the keyboard image and the
         received image.
 
