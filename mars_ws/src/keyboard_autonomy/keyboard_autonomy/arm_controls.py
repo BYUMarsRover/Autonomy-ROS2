@@ -186,6 +186,8 @@ class ArmControlsNode(Node):
 
             self.get_logger().info(f"[SUCCESS] Key {self.key} has been pressed")
 
+            # TODO: Reset the arm and elevator positions
+
     def key_press_callback(self, request, response):
         '''
         Callback function for the "/key_press" service.
