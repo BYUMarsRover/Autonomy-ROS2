@@ -11,12 +11,12 @@ def generate_launch_description():
     # Get the share directory for packages
     #zed_wrapper_launch_dir = os.path.join(get_package_share_directory('zed_wrapper'), 'launch')
     usb_cam_launch_dir = os.path.join(get_package_share_directory('start'), 'launch')
-    autonomy_launch_dir = os.path.join(get_package_share_directory('autonomy'), 'launch')
+    aruco_detect_launch_dir = os.path.join(get_package_share_directory('aruco_detect'), 'launch')
     autonomy_params_dir = os.path.join(get_package_share_directory('autonomy'), 'params')
     print(f'Params file path: {os.path.join(autonomy_params_dir, "autonomy_params.yaml")}')
 
     return LaunchDescription([
-        # Declare launch arguments
+        # Declare launch argumensts
         DeclareLaunchArgument('target_ar_tag_id', default_value='-1', description='Target AR Tag ID'),
         DeclareLaunchArgument('display', default_value='false', description='Display output'),
         DeclareLaunchArgument('depth', default_value='true', description='Use depth camera'),
@@ -42,14 +42,14 @@ def generate_launch_description():
         #     )
         # ], condition=IfCondition(LaunchConfiguration('simulation').to_bool() == False)),
 
-        # Include autonomy camera launch file (usb_cam) Don't run this on a PC docker computer
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join(usb_cam_launch_dir, 'autonomy_camera.launch.py'))
-        # ),
+        #Include autonomy camera launch file (usb_cam) Don't run this on a PC docker computer
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(usb_cam_launch_dir, 'autonomy_camera.launch.py'))
+        ),
 
         # Include ArUco detection launch for logi webcam
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(autonomy_launch_dir, 'aruco_detect.launch.py')),
+            PythonLaunchDescriptionSource(os.path.join(aruco_detect_launch_dir, 'aruco_detect.launch.py')),
             launch_arguments={
                 'node_name': 'aruco_detect_logi',
                 'image': 'image_raw',
