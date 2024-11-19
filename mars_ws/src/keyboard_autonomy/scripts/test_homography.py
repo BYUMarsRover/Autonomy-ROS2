@@ -185,16 +185,30 @@ def orb_calculate(first_image, second_image, path_to_save_result, orb_create_mat
         f"time for calculating the homography matrix and mask: {homography_calculated_time - matches_calculated_time}")
     return elapsed_time
 
-elapsed_100 = orb_calculate("../images/keyboard_better_rotated.jpg","../images/keyboard_better.jpg",'key_board_better_inverted_compare.png',orb_create_matches=100)
-elapsed_2000 = orb_calculate("../images/keyboard_better_rotated.jpg","../images/keyboard_better.jpg",'key_board_better_inverted_compare.png',orb_create_matches=2000)
-elapsed_4000 = orb_calculate("../images/keyboard_better_rotated.jpg","../images/keyboard_better.jpg",'key_board_better_inverted_compare.png',orb_create_matches=4000)
-elapsed_6000 = orb_calculate("../images/keyboard_better_rotated.jpg","../images/keyboard_better.jpg",'key_board_better_inverted_compare.png',orb_create_matches=6000)
-elapsed_8000 = orb_calculate("../images/keyboard_better_rotated.jpg","../images/keyboard_better.jpg",'key_board_better_inverted_compare.png',orb_create_matches=8000)
-print(f'100: {elapsed_100}')
-print(f'2000: {elapsed_2000}, increasing from 100 to 2000 was {elapsed_2000/elapsed_100}')
-print(f'4000: {elapsed_4000}, increasing from 2000 to 4000 was a {elapsed_4000/elapsed_2000} times increase')
-print(f'6000: {elapsed_6000}, increasing from 4000 to 6000 was a {elapsed_6000/elapsed_4000} times increase')
-print(f'8000: {elapsed_8000}, increasing from 6000 to 8000 was a {elapsed_8000/elapsed_6000} times increase')
+
+# Below are some different ways to test
+# elapsed_100 = orb_calculate("../images/keyboard_better_rotated.jpg","../images/keyboard_better.jpg",'key_board_better_inverted_compare.png',orb_create_matches=100)
+# elapsed_2000 = orb_calculate("../images/keyboard_better_rotated.jpg","../images/keyboard_better.jpg",'key_board_better_inverted_compare.png',orb_create_matches=2000)
+# elapsed_4000 = orb_calculate("../images/keyboard_better_rotated.jpg","../images/keyboard_better.jpg",'key_board_better_inverted_compare.png',orb_create_matches=4000)
+# elapsed_6000 = orb_calculate("../images/keyboard_better_rotated.jpg","../images/keyboard_better.jpg",'key_board_better_inverted_compare.png',orb_create_matches=6000)
+# elapsed_8000 = orb_calculate("../images/keyboard_better_rotated.jpg","../images/keyboard_better.jpg",'key_board_better_inverted_compare.png',orb_create_matches=8000)
+# print(f'100: {elapsed_100}')
+# print(f'2000: {elapsed_2000}, increasing from 100 to 2000 was {elapsed_2000/elapsed_100}')
+# print(f'4000: {elapsed_4000}, increasing from 2000 to 4000 was a {elapsed_4000/elapsed_2000} times increase')
+# print(f'6000: {elapsed_6000}, increasing from 4000 to 6000 was a {elapsed_6000/elapsed_4000} times increase')
+# print(f'8000: {elapsed_8000}, increasing from 6000 to 8000 was a {elapsed_8000/elapsed_6000} times increase')
+
+
+
+
+
+# lander_images = ["../images/lander_head_on_center.jpeg","../images/lander_above_left_skewed.jpeg","../images/lander_above_right_skewed.jpeg","../images/lander_below_left_skewed.jpeg","../images/lander_below_right_skewed.jpeg","../images/lander_close_up_right_skewed.jpeg"]
+# for i,image in enumerate(lander_images):
+#     orb_calculate("../images/keyboard_better.jpg",image,f'1000/compare{i}.png',orb_create_matches=1000)
+#     orb_calculate("../images/keyboard_better.jpg",image,f'4000/compare{i}.png',orb_create_matches=4000)
+
+# elapsed_2000 = orb_calculate("../images/keyboard_better.jpg","../images/lander_head_on_center.jpeg",'generated_images/better_lander_compare.png',orb_create_matches=1000)
+
 
 
 # sift_calculate("../images/keyboard_better_rotated.jpg","../images/keyboard_better_rotated.jpg",'sift_function_test.png')
