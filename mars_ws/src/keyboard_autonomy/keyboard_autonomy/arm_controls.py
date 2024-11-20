@@ -213,6 +213,18 @@ class ArmControlsNode(Node):
         self.get_logger().info(f"Attempting to press key {self.key}")
         response.success = True
         return response
+    
+
+def key_pos_to_arm_state(x, y):
+    '''
+    Converts the key position in the camera frame to the arm state.
+
+    :param x: The x-coordinate of the key in the camera frame.
+    :param y: The y-coordinate of the key in the camera frame.
+    :return: The arm state.
+    '''
+
+    pass
 
 
 def main(args=None):

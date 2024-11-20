@@ -51,6 +51,7 @@ def send_key_press(node, key):
     '''
 
     # Keep requesting the service until it is successful
+    # Could be replaced with an action and is kind of hacky -- but hey, it works
     completed = False
     while not completed:
         
