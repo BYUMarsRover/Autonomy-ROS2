@@ -78,7 +78,7 @@ class Feat2HomographyNode(Node):
         for m, n in matches:
             if m.distance < 0.7 * n.distance:
                 good_matches.append(m)
-
+        M = None
         # If enough matches are found, calculate the homography
         if len(good_matches) >= MIN_MATCH_COUNT:
 
