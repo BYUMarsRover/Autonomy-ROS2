@@ -91,12 +91,10 @@ def main():
     rclpy.init()
     node = PathToMapviz()
 
-    # Run spin in a separate thread
-    spin_thread = threading.Thread(target=spin_in_background)
-    spin_thread.start()
-
     try:
-        rclpy.spin(node)
+        # Run spin in a separate thread
+        spin_thread = threading.Thread(target=spin_in_background)
+        spin_thread.start()
     except KeyboardInterrupt:
         pass
     finally:

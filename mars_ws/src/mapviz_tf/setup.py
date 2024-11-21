@@ -13,6 +13,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/params', glob.glob('params/*.yaml')),
+        ('share/' + package_name + '/params', glob.glob('scripts/*.py')),
         (os.path.join('share', package_name, 'launch'), glob.glob('launch/*.py')),
     ],
     install_requires=['setuptools'],
