@@ -34,10 +34,13 @@ import argparse
 import os
 from pathlib import Path  # noqa: E402
 import sys
+from ament_index_python.packages import get_package_share_directory
 
 # Hack to get relative import of .camera_config file working
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
+cam_config_path = os.path.join(get_package_share_directory('start'), 'config', 'cam_config')
+sys.path.append(cam_config_path)
 
 from camera_config import CameraConfig, START_DIR  # noqa: E402
 
