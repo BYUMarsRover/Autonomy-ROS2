@@ -60,3 +60,5 @@ USER marsrover
 #     apt install -y ros-humble-tf2-geometry-msgs ros-humble-visualization-msgs && \
 #     rm -rf /var/lib/apt/lists/*
 # USER marsrover
+
+# Edit so it tries to build (YOU CAN REMOVE THIS)

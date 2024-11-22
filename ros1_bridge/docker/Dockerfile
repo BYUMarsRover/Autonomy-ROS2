@@ -80,3 +80,5 @@ RUN apt update && apt install -y tmux
 USER ${NAME}
 
 WORKDIR /home/${NAME}
+
+# Edit so it tries to build (YOU CAN REMOVE THIS)
