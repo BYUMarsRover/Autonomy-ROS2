@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
     <!-- be sure to check the rover serial port, it is often not ACM0-->
-    <arg name="rover_serial_port"   default="/dev/ttyACM0"/>
+    <arg name="rover_serial_port"   default="/dev/rover/rtk"/>
 
     <arg name="base_host"           default="192.168.1.111"/>
     <arg name="base_port"           default="16140"/>
