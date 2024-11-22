@@ -75,3 +75,5 @@ USER marsrover
 # Need to confirm this is still necessary?
 # RUN pip3 uninstall -y numpy
 # RUN pip3 install numpy==1.26.0
+
+RUN echo "export RCUTILS_COLORIZED_OUTPUT=1" >> ~/.bashrc
