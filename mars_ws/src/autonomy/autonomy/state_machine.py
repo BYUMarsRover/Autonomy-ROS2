@@ -121,6 +121,7 @@ class AutonomyStateMachine(Node):
         self.curr_latitude = 0
         self.curr_longitude = 0
         self.curr_elevation = 0
+        self.curr_heading = 0
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)  
         self.tag_id = TagID.GPS_ONLY
         self.i = 0
@@ -240,7 +241,7 @@ class AutonomyStateMachine(Node):
 
     def ar_tag_callback(self, msg: FiducialTransformArray):
         # print("in ar_tag_callback")
-        if len(msg.transforms) == 1:
+        if len(msg.transforms) == 1: #TODO: if we happpen to see 2, this will not run
             # print("found 1 tag")
             if self.aruco_tag_distance is None:
                 self.aruco_tag_distance = np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2)
