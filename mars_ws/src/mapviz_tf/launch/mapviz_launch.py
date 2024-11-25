@@ -49,10 +49,10 @@ def generate_launch_description():
     }
 
     # Use a default location (or fetch the value dynamically in runtime scripts if necessary)
-    default_location = 'hanksville'  # Change this default as needed
+    current_location = 'byu'  # Change this default as needed
 
     # Resolve the dictionary entry for the given location
-    resolved_origin = local_xy_origins.get(default_location, {})  # Default to an empty dictionary
+    resolved_origin = local_xy_origins.get(current_location, {})  # Default to an empty dictionary
     manual_list = [resolved_origin.get('latitude'), resolved_origin.get('longitude'), resolved_origin.get('altitude'), resolved_origin.get('heading')]
 
     return LaunchDescription([
@@ -83,7 +83,7 @@ def generate_launch_description():
             name='initialize_origin',
             parameters=[{
                 'local_xy_frame': '/map',
-                'local_xy_origin': default_location,  # Pass location name directly
+                'local_xy_origin': current_location,  # Pass location name directly
                 'local_xy_origins': manual_list  # Pass the resolved dictionary entry directly
             }]
         ),
