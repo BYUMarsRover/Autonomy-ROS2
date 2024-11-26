@@ -1,59 +1,28 @@
 import cv2
 import numpy as np
 
-# Define real-world coordinates of the key points on the keyboard (in mm)
-# Example: corners of 3x3 key grid for simplicity
-real_world_points = np.array([
-    [0, 0, 0],      # Tab
-    [86, 20, 0],    # Y
-    [136, 20, 0],   # P
-    [0, 40, 0],     # Caps Lock
-    [66, 60, 0],    # G
-    [126, 60, 0],   # L
-    [0, 80, 0],     # Shift
-    [56, 100, 0],   # V
-    [106, 100, 0]   # M
-], dtype=np.float32)
+# Load the fisheye image
+img = cv2.imread("img.png")
+h, w = img.shape[:2]
+
+# Camera matrix (K): Approximation
+K = np.array([[700, 0, w / 2],  # fx, 0, cx
+              [0, 700, h / 2],  # 0, fy, cy
+              [0, 0, 1]], dtype=np.float32)
+
+# Distortion coefficients (D): Example with strong distortion
+D = np.array([-0.5, 0.2, 0, 0], dtype=np.float32)  # Use more extreme values
 
 
-# Store object points (same for all images) and image points
-object_points = []  # 3D points in the real world
-image_points = []   # 2D points in the image plane
+# Undistortion map
+map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, np.eye(3), K, (w, h), cv2.CV_16SC2)
 
-images = ["img.png"]
+# Undistort the image
+undistorted_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
 
-for fname in images:
-    img = cv2.imread(fname)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    # Detect key points automatically or annotate them manually
-    # Use cv2.goodFeaturesToTrack or a custom detection approach
-    # Here, manually input the image coordinates (example for simplicity)
-    img_points = np.array([
-        [33.41, 89.71], [137.46, 90.22], [209.38, 90.22],  # Row 1 - tab, y, and p keys
-        [26.78, 99.40], [118.59, 103.99], [207.34, 101.44],  # Row 2 - caps lock, g, and l keys
-        [20.66, 110.62], [100.74, 122.86], [187.45, 119.80]   # Row 3 - shift, v, and m keys
-    ], dtype=np.float32)
-
-    object_points.append(real_world_points)
-    image_points.append(img_points)
-
-    # Optionally visualize points
-    for point in img_points:
-        cv2.circle(img, (int(point[0]), int(point[1])), 5, (0, 255, 0), -1)
-    cv2.imshow('Key Points', img)
-    cv2.waitKey(10000)
-
+# Show and save the undistorted image
+cv2.imshow("Original", img)
+cv2.imshow("Undistorted", undistorted_img)
+cv2.waitKey(0)
 cv2.destroyAllWindows()
-
-# Calibrate the camera
-ret, K, D, rvecs, tvecs = cv2.calibrateCamera(object_points, image_points, gray.shape[::-1], None, None)
-
-# Print the calibration results
-print("Intrinsic Matrix (K):")
-print(K)
-print("\nDistortion Coefficients (D):")
-print(D)
-
-# Save calibration data
-np.savez("keyboard_calibration_data.npz", K=K, D=D)
+cv2.imwrite("undistorted_img.png", undistorted_img)
