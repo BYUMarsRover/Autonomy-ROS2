@@ -12,6 +12,8 @@ This guide outlines the steps to set up and run the containerized ROS 1 bridge.
 
 - Edit the `TEST_MSG_TYPE` and `TEST_MSG_DATA` variables at the beginning of `test_bridge.sh` to match the desired custom message type.
 
+- Edit the `ROS_MASTER_URI` environment variable in `run_bridge.sh` to match the ROS 1 configuration.
+
 --
 
 **Building and Testing the Bridge:**

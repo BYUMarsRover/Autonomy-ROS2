@@ -34,12 +34,15 @@ import argparse
 import os
 from pathlib import Path  # noqa: E402
 import sys
+from ament_index_python.packages import get_package_share_directory
 
 # Hack to get relative import of .camera_config file working
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
+cam_config_path = os.path.join(get_package_share_directory('start'), 'config', 'cam_config')
+sys.path.append(cam_config_path)
 
-from camera_config import CameraConfig, USB_CAM_DIR  # noqa: E402
+from camera_config import CameraConfig, START_DIR  # noqa: E402
 
 from launch import LaunchDescription  # noqa: E402
 from launch.actions import GroupAction  # noqa: E402
@@ -50,7 +53,7 @@ CAMERAS = []
 CAMERAS.append(
     CameraConfig(
         name='camera1',
-        param_path=Path(USB_CAM_DIR, 'config', 'params_1.yaml')
+        param_path=Path(START_DIR, 'config', 'cam_config', 'params_1.yaml')
     )
     # Add more Camera's here and they will automatically be launched below
 )

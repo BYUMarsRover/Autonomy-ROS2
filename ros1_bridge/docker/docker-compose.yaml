@@ -2,10 +2,7 @@
 
 services:
   ros1_bridge:
-    build:
-      context: .
-      dockerfile: Dockerfile 
-    image: ros1_bridge
+    image: byuawesomerover/ros1_bridge:latest
     container_name: ros1_bridge
     user: ${NAME}
     network_mode: host
