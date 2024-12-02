@@ -80,5 +80,3 @@ RUN apt update && apt install -y tmux
 USER ${NAME}
 
 WORKDIR /home/${NAME}
-
-# Comment to make this rebuild again
