@@ -1,0 +1,4 @@
+/**:
+  ros__parameters:
+    height_threshold: 0.5
+    slope_threshold: 15.0
