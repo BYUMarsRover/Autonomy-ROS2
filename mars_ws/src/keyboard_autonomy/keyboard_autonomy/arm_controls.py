@@ -174,8 +174,7 @@ class ArmControlsNode(Node):
         if not arm_set and ((DESIRED_POS[0] + CLOSE > self.key_locations[self.key][0]) or (DESIRED_POS[0] - CLOSE < self.key_locations[self.key][0])):
             # Simple proportional controller
             arm_msg = JointJog()
-            arm_msg.joint_names = ['joint1', 'joint2']
-            arm_msg.
+            # TODO: Add arm control
             arm_stability = 0
         else:
             # Ensure the arm position is stable
