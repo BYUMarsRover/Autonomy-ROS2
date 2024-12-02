@@ -1,0 +1,50 @@
+name: Docker Image CI (ros1_bridge)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: 
+      - "ros1_bridge/docker/Dockerfile" 
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "ros1_bridge/docker/Dockerfile"
+
+jobs:
+
+  docker:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Patch Docker Daemon data-root
+      run: |
+        DOCKER_DATA_ROOT='/mnt/var/lib/docker'
+        DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
+        sudo mkdir -p "${DOCKER_DATA_ROOT}"
+        jq --arg dataroot "${DOCKER_DATA_ROOT}" '. + {"data-root": $dataroot}' "${DOCKER_DAEMON_JSON}" > "/tmp/docker.json.tmp"
+        sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
+        sudo systemctl restart docker
+        
+    - name: Checkout the repo
+      uses: actions/checkout@v4
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+       username: ${{ secrets.DOCKERHUB_USERNAME }}
+       password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push to DockerHub
+      uses: docker/build-push-action@v6
+      with:
+       context: "{{defaultContext}}:ros1_bridge/docker"
+       platforms: linux/arm64
+       push: true
+       tags: ${{ secrets.DOCKERHUB_USERNAME }}/ros1_bridge:latest
