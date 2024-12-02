@@ -79,4 +79,4 @@ USER root
 RUN apt update && apt install -y tmux
 USER ${NAME}
 
-WORKDIR /home/${NAME} 
+WORKDIR /home/${NAME}
