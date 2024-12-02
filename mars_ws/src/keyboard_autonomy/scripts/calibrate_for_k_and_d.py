@@ -1,64 +1,78 @@
 import cv2
 import numpy as np
 import glob
+import json
 
-# Specify the dimensions of the chessboard
-CHESSBOARD_DIM = (10, 7)
-SQUARE_SIZE = 20  # Size of a square in mm
+CHECKERBOARD = (10, 7)
+subpix_criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.1)
+calibration_flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC + cv2.fisheye.CALIB_CHECK_COND + cv2.fisheye.CALIB_FIX_SKEW
 
-# Prepare object points (3D points in real-world space)
-objp = np.zeros((CHESSBOARD_DIM[0] * CHESSBOARD_DIM[1], 3), np.float32)
-objp[:, :2] = np.mgrid[0:CHESSBOARD_DIM[0], 0:CHESSBOARD_DIM[1]].T.reshape(-1, 2) * SQUARE_SIZE
+# Prepare object points
+objp = np.zeros((1, CHECKERBOARD[0] * CHECKERBOARD[1], 3), np.float32)
+objp[0, :, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
 
-# Arrays to store object points and image points
-objpoints = []  # 3D points in real-world space
+# Initialize storage for points
+objpoints = []  # 3D points in real world space
 imgpoints = []  # 2D points in image plane
+image_shape = None  # Placeholder for image shape
 
-# Load calibration images
+# Load all calibration images
 images = glob.glob("calibration_images/*.jpg")
-
 for fname in images:
     img = cv2.imread(fname)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    print(f"Image resolution: {gray.shape}")
+    if img is None:
+        print(f"Failed to load image: {fname}")
+        continue
 
-    # Find the chessboard corners
-    ret, corners = cv2.findChessboardCorners(gray, CHESSBOARD_DIM, None)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    if image_shape is None:
+        image_shape = gray.shape[::-1]  # Set image shape based on the first valid image
+
+    ret, corners = cv2.findChessboardCorners(
+        gray, CHECKERBOARD,
+        cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_NORMALIZE_IMAGE
+    )
 
     if ret:
-        objpoints.append(np.array(objp, dtype=np.float32))
+        objpoints.append(objp)
+        cv2.cornerSubPix(gray, corners, (3, 3), (-1, -1), subpix_criteria)
         imgpoints.append(corners)
-
-        # Draw and display the corners
-        cv2.drawChessboardCorners(img, CHESSBOARD_DIM, corners, ret)
-        cv2.imshow('Corners', img)
-        cv2.waitKey(100)
     else:
         print(f"Chessboard corners not found in image: {fname}")
 
-cv2.destroyAllWindows()
+# Verify points before calibration
+if len(objpoints) == 0 or len(imgpoints) == 0:
+    raise ValueError("No valid chessboard corners found. Ensure images are correct.")
 
-# Reshape object points and image points to match cv2.fisheye.calibrate() requirements
-objpoints_reshaped = [points.reshape(-1, 1, 3) for points in objpoints]
-imgpoints_reshaped = [points.reshape(-1, 1, 2) for points in imgpoints]
-
-# Perform calibration
+# Perform fisheye calibration
 K = np.zeros((3, 3))
 D = np.zeros((4, 1))
+rvecs = [np.zeros((1, 1, 3), dtype=np.float64) for _ in range(len(objpoints))]
+tvecs = [np.zeros((1, 1, 3), dtype=np.float64) for _ in range(len(objpoints))]
 
-print(f"objpoints shape: {[o.shape for o in objpoints_reshaped]}")
-print(f"objpoints dtype: {[o.dtype for o in objpoints_reshaped]}")
-print(f"imgpoints shape: {[i.shape for i in imgpoints_reshaped]}")
-print(f"imgpoints dtype: {[i.dtype for i in imgpoints_reshaped]}")
-
-ret, K, D, rvecs, tvecs = cv2.fisheye.calibrate(
-    objpoints_reshaped, imgpoints_reshaped, gray.shape[::-1], K, D
+rms, _, _, _, _ = cv2.fisheye.calibrate(
+    objpoints,
+    imgpoints,
+    image_shape,
+    K,
+    D,
+    rvecs,
+    tvecs,
+    calibration_flags,
+    (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 1e-6)
 )
 
+print(f"RMS error: {rms}")
 print("Intrinsic Matrix (K):")
 print(K)
-print("\nDistortion Coefficients (D):")
+print("Distortion Coefficients (D):")
 print(D)
 
-# Save calibration data for future use
-np.savez("calibration_data.npz", K=K, D=D)
+# Save calibration data
+data = {
+    "image_shape": image_shape,
+    "K": K.tolist(),
+    "D": D.tolist()
+}
+with open("fisheye_calibration_data.json", "w") as f:
+    json.dump(data, f)
