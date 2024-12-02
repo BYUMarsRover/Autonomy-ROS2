@@ -1,8 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
-from rover_msgs.srv import PlanPath
-from rover_msgs.msg import PointList
+from rover_msgs.srv import PlanPath, PointList
 import os
 
 from .e_mapping import Mapper
@@ -18,29 +17,38 @@ class PathPlanner(Node):
         self.get_logger().info("Path Planner Node Started")
 
         # Publishers
-        self.path_pub = self.create_publisher(PointList, 'path', 10)
+        # TODO: path publisher
 
         # Subscribers
         # TODO: subscription to know the current lat lon position of the rover
+        self.location = (40.3224, -111.6436) # NOTE: gravel pits placeholder
 
         # Services
+        # This service plans the order of waypoints to visit
+        self.plan_order_service = self.create_service(PointList, 'plan_order', self.plan_order)
+        # This service plans a path from start to goal using slope as cost
         self.plan_path_service = self.create_service(PlanPath, 'plan_path', self.plan_path)
 
         # Clients
 
         # Check Actions Needed
-        self.timer = self.create_timer(0.1, self.action)
+        self.timer = self.create_timer(0.1, self.loop)
 
         # Initialize Mapper object with ascii file
-        file_path=os.path.join(get_package_share_directory('path_planning'), 'data', 'gravel_pits.asc')
-        self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='N')
-        self.eMapper.chop_map(200, 700, 0, 500)
+        if self.location[0] > -111.649553 and self.location[1] < -111.6369 and self.location[0] > 40.3166 and self.location[1] < 40.323302:
+            self.get_logger().info("Welcome to the gravel pits! Path Planning is ready.")
+            file_path=os.path.join(get_package_share_directory('path_planning'), 'data', 'gravel_pits.asc')
+            self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='N')
+            self.eMapper.chop_map(200, 700, 0, 500)
+        else:
+            print("Current location not supported")
+            self.get_logger().warn("Current location not supported for path planning")
 
         # Initialize PathPlanner object
         self.path_planner = AStarPlanner(cost_map=self.eMapper.map, ew=30., e_thresh=10)
         self.path_needed = False
 
-    def action(self):
+    def loop(self):
         if self.path_needed:
             # Plan path - pass start and goal coordinates in x, y format using the Mapper function
             path, length = self.path_planner.plan_path(self.start, self.goal)
@@ -56,25 +64,35 @@ class PathPlanner(Node):
 
             self.path_needed = False
 
+    # Plan Waypoint Order Service Callback
     def plan_order(self, request, response):
         '''
         Plan the order of waypoints to visit
             Pass in: the waypoints in lat/lon format
             Returns: the optimal order of waypoints in lat/lon format
+            NOTE: will take too long for more than 8 waypoints
         '''
-        # Convert lat/lon to x/y for order planning
+        if len(request.points) > 8:
+            response.success = False
+            self.get_logger().info("Too many waypoints") #TODO: get this message somewhere useful
+            return response
+        
         wp = []
+        # Convert lat/lon to x/y for order planning
         for n in request.points:
             wp.append(self.eMapper.latlon_to_xy(n.x, n.y))
+        start = self.eMapper.latlon_to_xy(self.location)
 
-        order = self.path_planner.plan_order(wp)
+        _, ids = self.path_planner.plan_order(start, wp)
 
-        wp = []
-        for n in order:
-            wp.append(self.eMapper.xy_to_latlon(n[0], n[1]))
-        
-        for point in wp:
-            response.points.append(PointList(x=point[0], y=point[1]))
+        for n in ids:
+            # Grab the original lat lon coords in order they were planned
+            lat = request.points[n].x
+            lon = request.points[n].y
+
+            # Append the waypoints to the response in the 
+            # order they should be visited
+            response.points.append(PointList(x=lat, y=lon))
 
         return response
 

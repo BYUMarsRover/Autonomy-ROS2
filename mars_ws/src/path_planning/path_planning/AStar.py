@@ -218,13 +218,19 @@ class AStarPlanner:
             Pass in: a list of waypoints in (x, y) format
             Returns: a list of waypoints in optimized order based on distance
         '''
+        # Create a set of ids for each wp
+        wp_ids = []
+        for i in range(len(wp)):
+            wp_ids.append(i)
+
         # All possibilities of orders
-        orders = list(itertools.permutations(wp))
+        orders_wp = list(itertools.permutations(wp))
+        orders_ids = list(itertools.permutations(wp_ids))
         dist = []
         n = len(wp)
 
         # Calculate the total distance of each order
-        for order in orders:
+        for order in orders_wp:
             total_dist = 0
             # Add distance from start to the first waypoint
             total_dist += np.linalg.norm(np.array(start) - np.array(order[0]))
@@ -237,7 +243,7 @@ class AStarPlanner:
             # if greater than a certain dxdy threshold, add np.inf to the distance?
             # add up all of the elevation changes that are above a certain threshold?
 
-        return list(orders[np.argmin(dist)])
+        return list(orders_wp[np.argmin(dist)]), list(orders_ids[np.argmin(dist)])
         
 def visualize_plan_wp_order(start, order):
     '''
@@ -303,8 +309,8 @@ def main():
     # Testing Waypoint Planning
     start = (12, 8)
     wp = [(5, 5), (12, 10), (8, 7), (6, 7), (10, 2), (11,5), (15, 10), (18, 8)]
-    order = AStarPlanner.plan_wp_order(start, wp)
-    visualize_plan_wp_order(start, order)
+    wp_ordered, _ = AStarPlanner.plan_wp_order(start, wp)
+    visualize_plan_wp_order(start, wp_ordered)
 
 if __name__ == '__main__':
     main()
