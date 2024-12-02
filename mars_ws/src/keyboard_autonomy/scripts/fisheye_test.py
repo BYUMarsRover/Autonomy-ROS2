@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Load the fisheye image
-img = cv2.imread("calibration_images/2024-11-25-090806.jpg")
+img = cv2.imread("calibration_images/2024-11-25-090713.jpg")
 h, w = img.shape[:2]
 
 # Camera matrix (K): Approximation

@@ -56,11 +56,44 @@ class Feat2HomographyNode(Node):
         '''
         # Convert ROS Image to OpenCV
         camera_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        # FISHEYE CONVERSION
+        h, w = camera_image.shape[:2]
 
+        # Camera matrix (K) from calibration
+        K = np.array([[240.0742270720785, 0.0, 303.87271958823317], [0.0, 240.2956790772891, 242.63742883611513],
+                      [0.0, 0.0, 1.0]], dtype=np.float32)
+
+        # Distortion coefficients (D) from calibration
+        D = np.array([[-0.032316597779098725],
+                      [-0.014192392170667197],
+                      [0.004485507618487958],
+                      [-0.0007679973472430706]], dtype=np.float32)
+
+        # Adjust K to prevent lots of zooming
+        scaled_K = K.copy()
+        scaled_K[0, 0] *= 0.8  # Reduce focal length in x-direction
+        scaled_K[1, 1] *= 0.8  # Reduce focal length in y-direction
+
+        # Undistortion map
+        map1, map2 = cv2.fisheye.initUndistortRectifyMap(
+            K, D, np.eye(3), scaled_K, (w, h), cv2.CV_16SC2
+        )
+
+        # Undistort the image
+        undistorted_img = cv2.remap(camera_image, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+
+        # Show and save the undistorted image TODO take this out after testing
+        cv2.imshow("Original", camera_image)
+        cv2.imshow("Undistorted", undistorted_img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        cv2.imwrite("undistorted_img.png", undistorted_img)
+
+        # SIFT and FLANN
         # Initiate SIFT detector and find the keypoints and descriptors
         sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, edgeThreshold=10)
         kp1, des1 = sift.detectAndCompute(self.keyboard_image, None)
-        kp2, des2 = sift.detectAndCompute(camera_image, None)
+        kp2, des2 = sift.detectAndCompute(undistorted_img, None)
 
         # Set FLANN parameters
         FLANN_INDEX_KDTREE = 0
@@ -82,7 +115,7 @@ class Feat2HomographyNode(Node):
         # If enough matches are found, calculate the homography
         if len(good_matches) >= MIN_MATCH_COUNT:
 
-            # Get the keypoints from the good matches
+            # Get the key points from the good matches
             src_pts = np.float32([kp1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
             dst_pts = np.float32([kp2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
 
