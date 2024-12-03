@@ -2,19 +2,17 @@
 
 services:
   ros1_bridge:
-    build:
-      context: .
-      dockerfile: Dockerfile 
-    image: ros1_bridge
+    image: byuawesomerover/ros1_bridge:latest
     container_name: ros1_bridge
-    user: ${UNAME}
+    user: ${NAME}
     network_mode: host
     privileged: true
     volumes:
-      - ../bridge_ws:/home/${UNAME}/bridge_ws
-      - ../ros1_msgs_ws:/home/${UNAME}/ros1_msgs_ws
-      - ../ros2_msgs_ws:/home/${UNAME}/ros2_msgs_ws
-      - ../scripts:/home/${UNAME}/scripts
+      - ../bridge_ws:/home/${NAME}/bridge_ws
+      - ../ros1_msgs_ws:/home/${NAME}/ros1_msgs_ws
+      - ../ros2_msgs_ws:/home/${NAME}/ros2_msgs_ws
+      - ../scripts:/home/${NAME}/scripts
+      - ../bag:/home/${NAME}/bag
       - /etc/localtime:/etc/localtime:ro # Syncs the container's time with the host
     command: /bin/bash
     stdin_open: true  # Equivalent to -it in docker run
