@@ -11,22 +11,22 @@ import os
 import sys
 
 class Signals(QObject):
-    super().__init__('signals')
     sensor_signal = Signal(ScienceSensorValues)
     auger_position = Signal(ScienceToolPosition)
     sensor_save_signal = Signal(ScienceSaveSensor)
     notes_save_signal = Signal(ScienceSaveNotes)
     fad_intensity_signal = Signal(ScienceFADIntensity)
 
-class science_GUI(QtWidgets.QWidget, Node):
+class science_GUI(Node):
     def __init__(self):
 
         # rospy.init_node("science_GUI")
-        super(science_GUI, self).__init__('science_gui') # Call the inherited classes __init__ method
-        uic.loadUi(os.path.expanduser('~') + '/BYU-Mars-Rover/rover_ws/src/science/src/gui/science_GUI.ui', self) # Load the .ui file
-        self.show() # Show the GUI
-        
-        self.base_ip = self.get_base_ip()
+        super().__init__('science_GUI')
+        qt = QtWidgets.QWidget()
+        uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/science/science/gui/science_GUI.ui', self) # Load the .ui file
+        qt.show() # Show the GUI
+
+        self.base_ip = qt.get_base_ip()
         self.camera_control = rclpy.ServiceProxy(
             'camera_control', CameraControl)
 

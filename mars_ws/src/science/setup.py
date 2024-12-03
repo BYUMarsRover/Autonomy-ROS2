@@ -36,7 +36,9 @@ setup(
     entry_points={
         'console_scripts': [
             'science_control = science.science_control:main',
-            'science_serial_interface = science.science_serial_interface:main'
+            'science_serial_interface = science.science_serial_interface:main',
+            'science_data_saver = science.presentation.science_data_saver:main',
+            'science_GUI = science.gui.science_GUI:main'
         ],
     },
 )
