@@ -61,7 +61,7 @@ RUN pip3 install numpy==1.26.0
 RUN pip3 install pydantic==1.10.9
 
 USER root
-RUN apt install libboost-all-dev
+RUN apt install libboost-dev
 RUN apt install ros-humble-rviz_common
 USER marsrover
 
