@@ -40,6 +40,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Heartbeat.msg"
   "msg/HeartbeatStatusRover.msg"
   "msg/HeartbeatStatusBase.msg"
+  "msg/IWCMotors.msg"
+  "msg/Elevator.msg"
   "srv/CameraControl.srv"
   "srv/CameraControlResponse.srv"
   "srv/AutonomyAbort.srv"

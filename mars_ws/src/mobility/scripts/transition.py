@@ -2,7 +2,9 @@
 
 import rclpy
 from rclpy.node import Node
-from rover_msgs.msg import IWCMotors, MobilityJoyDriveEnable
+from rover_msgs.msg import IWCMotors
+# TODO: See if we can convert mobility drive enable to a service
+from std_msgs import Bool
 from geometry_msgs.msg import Twist
 
 class Transition(Node):
@@ -15,7 +17,7 @@ class Transition(Node):
 
         # ROS Subscribers
         self.joy_drive_enabled_sub = self.create_subscription(
-            MobilityJoyDriveEnable,
+            Bool,
             '/mobility/joy_drive_enabled',
             self.joy_drive_enabled_callback,
             1)
@@ -29,11 +31,11 @@ class Transition(Node):
             '/mobility/auto_drive_cmds',
             self.auto_drive_cmds_callback,
             1)
-
+        
         self.joy_drive_enabled = False
 
-    def joy_drive_enabled_callback(self, mobility_joy_drive_enabled):
-        self.joy_drive_enabled = mobility_joy_drive_enabled.enabled
+    def joy_drive_enabled_callback(self, msg):
+        self.joy_drive_enabled = msg.data
 
     def teleop_drive_cmds_callback(self, IWC_cmd_msg):
         if self.joy_drive_enabled:
