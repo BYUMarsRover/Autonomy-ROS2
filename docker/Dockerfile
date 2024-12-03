@@ -39,11 +39,6 @@ USER root
 RUN chown -R marsrover: /usr/local
 USER marsrover
 
-# need to rollpack on numpy to v1.26.0 to avoid bug with the odometry package (transforms3d dependency)
-# Need to confirm this is still necessary?
-# RUN pip3 uninstall -y numpy
-# RUN pip3 install numpy==1.26.0
-
 # Add OpenCV dependency -- needed for aruco detect
 USER root
 RUN apt-get update && \
@@ -60,5 +55,13 @@ USER marsrover
 #     apt install -y ros-humble-tf2-geometry-msgs ros-humble-visualization-msgs && \
 #     rm -rf /var/lib/apt/lists/*
 # USER marsrover
+
+RUN pip3 install numpy==1.26.0
+RUN pip3 install pydantic==1.10.9
+
+USER root
+RUN apt install libboost-all-dev
+RUN apt install ros-humble-rviz_common
+USER marsrover
 
 # Edit so it tries to build (YOU CAN REMOVE THIS)
