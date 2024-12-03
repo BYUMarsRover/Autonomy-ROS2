@@ -20,7 +20,8 @@ RUN apt update && apt install -y \
     ros-humble-rqt* \
     vim \
     docker.io \
-    ros-humble-robot-localization
+    ros-humble-robot-localization \
+    python3-pip
 
 # Set up a new user
 RUN useradd -ms /bin/bash marsrover
