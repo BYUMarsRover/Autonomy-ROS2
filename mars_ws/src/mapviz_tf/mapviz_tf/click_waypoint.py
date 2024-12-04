@@ -1,50 +1,46 @@
 #!/usr/bin/env python3
-import rospkg
 import threading
 import rclpy
 from rclpy.node import Node
-from rclpy.executors import ExternalShutdownException
 from geometry_msgs.msg import PointStamped
-from lat_lon_meter_convertor import LatLonConvertor
+from mapviz_tf.lat_lon_meter_convertor import LatLonConvertor
 
-def spin_in_background():
-    executor = rclpy.get_global_executor()
-    try:
-        executor.spin()
-    except ExternalShutdownException:
-        pass
-
-class WaypointTranslator(Node): # For ros2 conversion we're just replacing rospy with rclpy, we're not entirely sure if rcl has the same 
+class WaypointTranslator(Node):
     def __init__(self):
-        rclpy.Subscriber("/clicked_point", PointStamped, self.handle_click_callback)
-        # self.result_publisher = rospy.Publisher(
-        #     "/clicked_lat_lon", PointStamped, queue_size=10
-        # )
-        # rospy.Publisher("/clicked_latlon")
-        self.result_publisher = self.create_publisher(PointStamped, "/clicked_lat_lon", 10)
+        super().__init__('waypoint_clicker')  # Initialize the node with a name
+        self.subscription = self.create_subscription(
+            PointStamped,
+            '/clicked_point',
+            self.handle_click_callback,
+            10  # QoS history depth
+        )
+        self.result_publisher = self.create_publisher(PointStamped, '/clicked_lat_lon', 10)
         self.convertor = LatLonConvertor()
 
     def handle_click_callback(self, msg):
-        print(msg.point)
+        self.get_logger().info(f'Received point: {msg.point}')
         position = self.convertor.convert_to_latlon(msg.point.x, msg.point.y)
 
-        print(position["lat"])
-        print(position["lon"])
+        self.get_logger().info(f'Converted to lat: {position["lat"]}, lon: {position["lon"]}')
 
         result_msg = PointStamped()
-
         result_msg.header = msg.header
         result_msg.point.x = position["lon"]
         result_msg.point.y = position["lat"]
 
         self.result_publisher.publish(result_msg)
 
+def spin_in_background(node):
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
 
-if __name__ == "__main__":
+def main(args=None):
     rclpy.init()
-    t = threading.Thread(target=spin_in_background)
-    t.start()
-    node = rclpy.create_node("waypoint_clicker")
-    rclpy.get_global_executor().add_node(node)
-    waypoint = WaypointTranslator()
-    t.join()
+    waypoint_translator = WaypointTranslator()
+    thread = threading.Thread(target=spin_in_background, args=(waypoint_translator,))
+    thread.start()
+    thread.join()
+
+if __name__ == '__main__':
+    main()

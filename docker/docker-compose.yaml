@@ -10,7 +10,7 @@ services:
     user: marsrover
     network_mode: host
     environment:
-      DISPLAY: :0 # Required for GUI applications
+      DISPLAY: $DISPLAY # Required for GUI applications
       MPLBACKEND: Qt5Agg # Required for GUI applications
     privileged: true
     volumes:
