@@ -43,7 +43,6 @@ class AutonomyStateMachine(Node):
 
     def __init__(self):
         super().__init__('state_machine')
-        self.get_logger().info('in init AutonomyStateMachine')
 
         # Create a timer to call `state_loop` every 0.1 seconds (10 Hz)
         self.create_timer(0.1, self.state_loop)
@@ -134,6 +133,8 @@ class AutonomyStateMachine(Node):
         self.last_waypoint: AutonomyTaskInfo = None
         self.is_continue_to_next_waypoint = False
         self.is_start_timer = True
+
+        self.get_logger().info('Autonomy State Machine initialized')
 
     def set_task_callback(self, task_info: AutonomyTaskInfo):
         self.get_logger().info('in set_task_callback')

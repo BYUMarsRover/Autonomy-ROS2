@@ -17,11 +17,11 @@
 // Constructor implementation
 FiducialsNode::FiducialsNode()
     : Node("fiducials_node"),
+      node_handle_(std::shared_ptr<FiducialsNode>(this, [](auto *) {})),
+      image_transport_(node_handle_),
       enable_detections_(true),
       frame_num_(0),
-      have_cam_info_(false),
-      node_handle_(std::shared_ptr<FiducialsNode>(this, [](auto *) {})),
-      image_transport_(node_handle_) {
+      have_cam_info_(false) {
 
     // Declare and get parameters
     this->declare_parameter<bool>("publish_images", false);
@@ -84,14 +84,6 @@ FiducialsNode::FiducialsNode()
 
     RCLCPP_INFO(this->get_logger(), "FiducialsNode initialized");
 
-}
-
-
-void FiducialsNode::initialize() {
-    // Initialize image_transport_ with shared_from_this()
-    //image_transport_ = image_transport::create_image_transport(node);
-
-    
 }
 
 // Image callback

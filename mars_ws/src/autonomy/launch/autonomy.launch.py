@@ -9,43 +9,19 @@ import os
 
 def generate_launch_description():
     # Get the share directory for packages
-    #zed_wrapper_launch_dir = os.path.join(get_package_share_directory('zed_wrapper'), 'launch')
-    usb_cam_launch_dir = os.path.join(get_package_share_directory('start'), 'launch')
+    #usb_cam_launch_dir = os.path.join(get_package_share_directory('start'), 'launch')
     aruco_detect_launch_dir = os.path.join(get_package_share_directory('aruco_detect'), 'launch')
     autonomy_params_dir = os.path.join(get_package_share_directory('autonomy'), 'params')
-    print(f'Params file path: {os.path.join(autonomy_params_dir, "autonomy_params.yaml")}')
+    hazard_detection_params_dir = os.path.join(get_package_share_directory('hazard_detection', 'params'))
 
     return LaunchDescription([
         # Declare launch argumensts
         DeclareLaunchArgument('target_ar_tag_id', default_value='-1', description='Target AR Tag ID'),
-        DeclareLaunchArgument('display', default_value='false', description='Display output'),
-        DeclareLaunchArgument('depth', default_value='true', description='Use depth camera'),
-        DeclareLaunchArgument('video_res', default_value='1080', description='Video resolution'),
-        DeclareLaunchArgument('simulation', default_value='false', description='Run in simulation mode'),
-
-        # Set parameters from arguments
-        Node(
-            package='autonomy',
-            executable='fiducial_data',
-            name='fiducial_data',
-            output='screen',
-            parameters=[
-                {'simulation': LaunchConfiguration('simulation')},
-                {'target_ar_tag_id': LaunchConfiguration('target_ar_tag_id')}
-            ]
-        ),
-
-        # Group for ZED wrapper launch if simulation is false
-        # GroupAction([
-        #     IncludeLaunchDescription(
-        #         PythonLaunchDescriptionSource(os.path.join(zed_wrapper_launch_dir, 'zed2i.launch.py'))
-        #     )
-        # ], condition=IfCondition(LaunchConfiguration('simulation').to_bool() == False)),
 
         #Include autonomy camera launch file (usb_cam) Don't run this on a PC docker computer
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(usb_cam_launch_dir, 'autonomy_camera.launch.py'))
-        ),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join(usb_cam_launch_dir, 'autonomy_camera.launch.py'))
+        # ),
 
         # Include ArUco detection launch for logi webcam
         IncludeLaunchDescription(
@@ -57,7 +33,7 @@ def generate_launch_description():
             }.items(),
         ),
 
-        # Launch state machine with autonomy namespace
+        # Launch state machine, FiducialData, and Hazard Detection with autonomy namespace
         GroupAction([
                Node(
                 package='autonomy',
@@ -66,7 +42,24 @@ def generate_launch_description():
                 namespace='autonomy',
                 output='screen',
                 parameters=[os.path.join(autonomy_params_dir, 'autonomy_params.yaml')]
+            ),
+               Node(
+                package='autonomy',
+                executable='fiducial_data',
+                name='fiducial_data',
+                namespace='autonomy',
+                output='screen',
+                parameters=[
+                    {'target_ar_tag_id': LaunchConfiguration('target_ar_tag_id')}
+                ]
+            ),
+               Node( # Launch hazard Detection
+                package='hazard_detection',
+                executable='hazard_detector',
+                name='hazard_detector',
+                namespace='autonomy',
+                output='screen',
+                parameters=[os.path.join(hazard_detection_params_dir, 'hazard_detection.yaml')]
             )
         ])
-
     ])

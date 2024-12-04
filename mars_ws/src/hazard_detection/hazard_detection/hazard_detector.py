@@ -23,6 +23,8 @@ class HazardDetector(Node):
             10
         )
         self.publisher = self.create_publisher(String, '/hazard_zones', 10)
+        self.get_logger().info('Hazard_detector initialized')
+
 
     def point_cloud_callback(self, msg):
         # Convert PointCloud2 to PCL format
