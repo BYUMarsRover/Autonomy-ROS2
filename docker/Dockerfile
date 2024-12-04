@@ -61,10 +61,11 @@ RUN pip3 install numpy==1.26.0
 RUN pip3 install pydantic==1.10.9
 
 USER root
-RUN apt install libboost-dev
-RUN apt install ros-humble-rviz-common
-RUN apt install ros-humble-usb-cam
-RUN apt install tmux
+RUN apt update && apt install -y \
+    libboost-dev \
+    ros-humble-rviz-common \
+    ros-humble-usb-cam \
+    tmux
 USER marsrover
 
 # Edit so it tries to build (YOU CAN REMOVE THIS)
