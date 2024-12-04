@@ -14,6 +14,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/params', glob.glob('params/*.yaml')),
         ('share/' + package_name + '/params', glob.glob('scripts/*.py')),
+        ('share/' + package_name + '/scripts', glob.glob('scripts/.mapviz_config')),
         (os.path.join('share', package_name, 'launch'), glob.glob('launch/*.py')),
     ],
     install_requires=['setuptools'],

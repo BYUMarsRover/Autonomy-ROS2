@@ -66,6 +66,15 @@ RUN apt update && apt install -y \
     ros-humble-robot-localization
 USER marsrover
 
+USER root
+RUN apt update && apt-get install -y \
+    ros-humble-mapviz \
+    ros-humble-mapviz-plugins \
+    ros-humble-tile-map \
+    ros-humble-multires-image \
+    ros-humble-rosapi
+USER marsrover
+
 # Quick permissions fix (might be too heavy-handed)
 USER root
 RUN chown -R marsrover: /usr/local
