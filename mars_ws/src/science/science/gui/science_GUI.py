@@ -22,13 +22,13 @@ class science_GUI(Node):
 
         # rospy.init_node("science_GUI")
         super().__init__('science_GUI')
-        qt = QtWidgets.QWidget()
-        uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/science/science/gui/science_GUI.ui', qt) # Load the .ui file
-        qt.show() # Show the GUI
+        self.qt = QtWidgets.QWidget()
+        uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/science/science/gui/science_GUI.ui', self.qt) # Load the .ui file
+        self.qt.show() # Show the GUI
 
         self.base_ip = self.get_base_ip()
         self.cli = self.create_client(CameraControl, 'camera_control')
-        while not self.cli.wait_for_service(timeout_sec=1.0):
+        if not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Camera control not available, waiting...')
         self.req = CameraControl.Request()
         self.future = self.cli.call_async(self.req)
@@ -56,15 +56,15 @@ class science_GUI(Node):
     def task_launcher_init(self):
         self.signals = Signals()
 
-        self.pushButton_save_notes.clicked.connect(self.save_notes)
-        self.pushButton_fad.clicked.connect(self.fad_detector_calibration)
+        self.qt.pushButton_save_notes.clicked.connect(self.save_notes)
+        self.qt.pushButton_fad.clicked.connect(self.fad_detector_calibration)
 
-        self.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
-        self.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
-        self.fad_radio.toggled.connect(lambda: self.toggle_sensor_save(2))  # fad
+        self.qt.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
+        self.qt.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
+        self.qt.fad_radio.toggled.connect(lambda: self.toggle_sensor_save(2))  # fad
 
-        self.lcd_site_num.display(self.site_number)
-        self.pushButton_change_site.clicked.connect(self.increment_site_number)
+        self.qt.lcd_site_num.display(self.site_number)
+        self.qt.pushButton_change_site.clicked.connect(self.increment_site_number)
 
         self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1)
         self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
@@ -132,12 +132,12 @@ class science_GUI(Node):
         temperature = msg.temperature
         moisture = msg.moisture
 
-        self.lcd_moist.display(moisture)
-        self.lcd_temp.display(temperature)
+        self.qt.lcd_moist.display(moisture)
+        self.qt.lcd_temp.display(temperature)
 
     def update_fad_intensity_value(self, msg):
         print('Displaying intensity!', msg)
-        self.le_fad.setPlaceholderText(str(msg))
+        self.qt.le_fad.setPlaceholderText(str(msg))
 
     def update_pos_vel_time(self, msg):
         altitude = f'{msg.gps.altitude} ft'
@@ -146,9 +146,9 @@ class science_GUI(Node):
 
         print(f'(lat, long, altitude, heading): ({coordinates}, {altitude}, {heading})')
 
-        self.lbl_altitude.setText(altitude)
-        self.lbl_heading.setText(heading)
-        self.lbl_coordinates.setText(coordinates)
+        self.qt.lbl_altitude.setText(altitude)
+        self.qt.lbl_heading.setText(heading)
+        self.qt.lbl_coordinates.setText(coordinates)
 
     def update_auger_position(self, msg):
         """
@@ -157,11 +157,11 @@ class science_GUI(Node):
         This is like this because the photoresistors are backwards on the board.
         """
         if msg.position == 0:
-            self.lcd_auger.display(2)
+            self.qt.lcd_auger.display(2)
         elif msg.position == 1:
-            self.lcd_auger.display(1)
+            self.qt.lcd_auger.display(1)
         else:
-            self.lcd_auger.display(-1)
+            self.qt.lcd_auger.display(-1)
 
     def fad_detector_calibration(self, event=None):
         print('Calibrate FADD')
@@ -184,7 +184,7 @@ def main(args=None):
     app = QtWidgets.QApplication(sys.argv)
     window = science_GUI()
 
-    window.show()
+    window.qt.show()
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
