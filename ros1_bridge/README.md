@@ -1,6 +1,6 @@
-## Containerized ROS 1 Bridge Guide
+## Simple ROS 1 Bridge Guide
 
-This guide outlines the steps to set up and run the containerized ROS 1 bridge.
+This guide outlines the steps to set up and run a containerized bridge between ROS 1 Noetic and ROS 2 Humble. It allows for the inclusion of custom message types.
 
 --
 
@@ -11,6 +11,8 @@ This guide outlines the steps to set up and run the containerized ROS 1 bridge.
 - Include any necessary mapping declarations for those custom messages in `ros2_msgs_ws/src/ros2_bridge_mappings/mapping_rules.yaml`. Refer to the official documentation for help: [https://github.com/ros2/ros1_bridge/blob/master/doc/index.rst](https://github.com/ros2/ros1_bridge/blob/master/doc/index.rst)
 
 - Edit the `TEST_MSG_TYPE` and `TEST_MSG_DATA` variables at the beginning of `test_bridge.sh` to match the desired custom message type.
+
+- Edit the `ROS_MASTER_URI` environment variable in `run_bridge.sh` to match the ROS 1 master configuration.
 
 --
 

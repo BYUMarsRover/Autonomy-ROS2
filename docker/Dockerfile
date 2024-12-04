@@ -1,6 +1,5 @@
 # Created by Nelson Durrant, Oct 2024
-
-FROM stereolabs/zed:4.1-runtime-cuda12.1-ubuntu22.04
+FROM ros:humble-ros-base
 
 # Update and upgrade
 RUN apt update && apt upgrade -y
@@ -8,44 +7,7 @@ RUN apt update && apt upgrade -y
 # Install dependencies needed below
 RUN apt update && apt install -y \
     sudo \
-    curl 
-
-# Set locale
-RUN apt update && sudo apt install locales
-RUN locale-gen en_US en_US.UTF-8
-RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-RUN export LANG=en_US.UTF-8
-
-# Set up a new user
-RUN useradd -ms /bin/bash marsrover
-RUN usermod -aG sudo marsrover
-RUN usermod -aG dialout marsrover
-RUN echo 'marsrover:marsrover' | chpasswd
-USER marsrover
-WORKDIR /home/marsrover
-
-# Add ROS apt repository
-USER root
-RUN apt update && apt install -y software-properties-common
-RUN add-apt-repository universe
-RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
-USER marsrover
-
-# Install ROS Humble
-USER root
-RUN apt update && apt install -y \
-    ros-humble-desktop \
-    ros-dev-tools
-USER marsrover
-
-# Set up automatic sourcing
-RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
-RUN /bin/bash -c "source ~/.bashrc"
-
-# Install GUI dependencies
-USER root
-RUN apt update && apt install -y \
+    curl \
     libx11-dev \
     libxext-dev \
     libxrender-dev \
@@ -55,16 +17,23 @@ RUN apt update && apt install -y \
     python3-gi \
     gir1.2-gtk-3.0 \
     x11-apps \
-    ros-humble-rqt*
-USER marsrover
-
-# Install general dependencies
-USER root
-RUN apt update && apt install -y \
+    ros-humble-rqt* \
     vim \
     docker.io \
-    ros-humble-robot-localization
+    ros-humble-robot-localization \
+    python3-pip
+
+# Set up a new user
+RUN useradd -ms /bin/bash marsrover
+RUN usermod -aG sudo marsrover
+RUN usermod -aG dialout marsrover
+RUN echo 'marsrover:marsrover' | chpasswd
 USER marsrover
+WORKDIR /home/marsrover
+
+# Set up automatic sourcing
+RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+RUN /bin/bash -c "source ~/.bashrc"
 
 USER root
 RUN apt update && apt-get install -y \
@@ -80,7 +49,32 @@ USER root
 RUN chown -R marsrover: /usr/local
 USER marsrover
 
-# need to rollpack on numpy to v1.26.0 to avoid bug with the odometry package (transforms3d dependency)
-# Need to confirm this is still necessary?
-# RUN pip3 uninstall -y numpy
-# RUN pip3 install numpy==1.26.0
+# Add OpenCV dependency -- needed for aruco detect
+USER root
+RUN apt-get update && \
+    apt-get install -y libopencv-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set CMake prefix path for OpenCV and ROS
+# ENV CMAKE_PREFIX_PATH="/usr/local/share/OpenCV;/opt/ros/humble"
+USER marsrover
+
+# Install ROS2 dependencies for aruco_detect
+# USER root
+# RUN apt update && \
+#     apt install -y ros-humble-tf2-geometry-msgs ros-humble-visualization-msgs && \
+#     rm -rf /var/lib/apt/lists/*
+# USER marsrover
+
+RUN pip3 install numpy==1.26.0
+RUN pip3 install pydantic==1.10.9
+
+USER root
+RUN apt update && apt install -y \
+    libboost-dev \
+    ros-humble-rviz-common \
+    ros-humble-usb-cam \
+    tmux
+USER marsrover
+
+# Edit so it tries to build (YOU CAN REMOVE THIS)
