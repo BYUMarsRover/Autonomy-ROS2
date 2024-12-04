@@ -64,6 +64,7 @@ USER root
 RUN apt install libboost-dev
 RUN apt install ros-humble-rviz-common
 RUN apt install ros-humble-usb-cam
+RUN apt install tmux
 USER marsrover
 
 # Edit so it tries to build (YOU CAN REMOVE THIS)
