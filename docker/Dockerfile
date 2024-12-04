@@ -63,7 +63,7 @@ RUN pip3 install pydantic==1.10.9
 
 # Mapviz dependencies
 USER root
-RUN apt update && apt install -y \
+RUN sudo apt update && sudo apt install -y \
     ros-humble-mapviz \
     ros-humble-mapviz-plugins \
     ros-humble-tile-map \
