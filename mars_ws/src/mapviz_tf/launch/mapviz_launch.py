@@ -1,60 +1,23 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable, LogInfo
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable, LogInfo, ExecuteProcess
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
 import os
 
-def generate_launch_description():
-    config_path = os.path.join(
-        os.getenv('HOME', '/home/marsrover'),  # Fallback in case HOME is not set
-        'mars_ws/src/mapviz_tf/scripts/.mapviz_config'  # Removed leading slash
-    )
-    yaml_path = os.path.join(
-        os.getenv('HOME', '/home/marsrover'),
-        'mars_ws/src/mapviz_tf/params/mapviz_params.yaml'
-    )
 
-    # Define the dictionary of origins
-    local_xy_origins = {
-        'byu': {
-            'latitude': 40.2497218,
-            'longitude': -111.649276,
-            'altitude': 1376.0,
-            'heading': 0.0,
-        },
-        'rock_canyon': {
-            'latitude': 41.267147,
-            'longitude': -111.632455,
-            'altitude': 0.0,
-            'heading': 0.0,
-        },
-        'hanksville': {
-            'latitude': 38.406441,
-            'longitude': -110.791932,
-            'altitude': 1375.0,
-            'heading': 0.0,
-        },
-        'gravel_pit': {
-            'latitude': 40.322243,
-            'longitude': -111.644278,
-            'altitude': 1500.0,
-            'heading': 0.0,
-        },
-        'little_moab': {
-            'latitude': 40.057020,
-            'longitude': -112.012014,
-            'altitude': 1500.0,
-            'heading': 0.0,
-        },
-    }
+def generate_launch_description():
+    config_path = os.path.join(get_package_share_directory('mapviz_tf'), 'scripts', '.mapviz_config') # NOTE: change if .mapviz_config is moved
+    # os.environ['MAPVIZ_CONFIG_PATH'] = config_path
+
+    # yaml_path = os.path.join( # TODO: get the yaml working for info in 'local_xy_origins' NOTE: See mapviz_params.yaml
+    #     os.getenv('HOME', '/home/marsrover'),
+    #     'mars_ws/src/mapviz_tf/params/mapviz_params.yaml'
+    # )
 
     # Use a default location (or fetch the value dynamically in runtime scripts if necessary)
     current_location = 'byu'  # Change this default as needed
-
-    # Resolve the dictionary entry for the given location
-    resolved_origin = local_xy_origins.get(current_location, {})  # Default to an empty dictionary
-    manual_list = [resolved_origin.get('latitude'), resolved_origin.get('longitude'), resolved_origin.get('altitude'), resolved_origin.get('heading')]
-
+    
     return LaunchDescription([
         # Set environment variable
         SetEnvironmentVariable('ROSCONSOLE_FORMAT', '[${thread}] [${node}/${function}:${line}]: ${message}'),
@@ -72,8 +35,8 @@ def generate_launch_description():
             name='mapviz',
             parameters=[{
                 'print_profile_data': LaunchConfiguration('print_profile_data'),
+                'config': config_path,
             }],
-            arguments=['-d', config_path]
         ),
 
         # Node for initialize_origin
@@ -83,33 +46,33 @@ def generate_launch_description():
             name='initialize_origin',
             parameters=[{
                 'local_xy_frame': '/map',
-                'local_xy_origin': LaunchConfiguration('location'),   #DO THE THINGIMAJIG HERE
+                'local_xy_origin': LaunchConfiguration('location'),
                 'local_xy_origins': """- name: byu
-  latitude: 40.2497218
-  longitude: -111.649276
-  altitude: 1376.0
-  heading: 0.0
-- name: rock_canyon
-  latitude: 41.267147
-  longitude: -111.632455
-  altitude: 0.0
-  heading: 0.0
-- name: hanksville
-  latitude: 38.406441
-  longitude: -110.791932
-  altitude: 1375.0
-  heading: 0.0
-- name: gravel_pit
-  latitude: 40.322243
-  longitude: -111.644278
-  altitude: 1500.0
-  heading: 0.0
-- name: little_moab
-  latitude: 40.057020
-  longitude: -112.012014
-  altitude: 1500.0
-  heading: 0.0
-"""
+                                    latitude: 40.2497218
+                                    longitude: -111.649276
+                                    altitude: 1376.0
+                                    heading: 0.0
+                                    - name: rock_canyon
+                                    latitude: 41.267147
+                                    longitude: -111.632455
+                                    altitude: 0.0
+                                    heading: 0.0
+                                    - name: hanksville
+                                    latitude: 38.406441
+                                    longitude: -110.791932
+                                    altitude: 1375.0
+                                    heading: 0.0
+                                    - name: gravel_pit
+                                    latitude: 40.322243
+                                    longitude: -111.644278
+                                    altitude: 1500.0
+                                    heading: 0.0
+                                    - name: little_moab
+                                    latitude: 40.057020
+                                    longitude: -112.012014
+                                    altitude: 1500.0
+                                    heading: 0.0
+                                    """
             }]
         ),
 

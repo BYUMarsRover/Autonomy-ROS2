@@ -20,7 +20,8 @@ RUN apt update && apt install -y \
     ros-humble-rqt* \
     vim \
     docker.io \
-    ros-humble-robot-localization
+    ros-humble-robot-localization \
+    python3-pip
 
 # Set up a new user
 RUN useradd -ms /bin/bash marsrover
@@ -34,21 +35,17 @@ WORKDIR /home/marsrover
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 RUN /bin/bash -c "source ~/.bashrc"
 
+
 # Quick permissions fix (might be too heavy-handed)
 USER root
 RUN chown -R marsrover: /usr/local
 USER marsrover
 
-# need to rollpack on numpy to v1.26.0 to avoid bug with the odometry package (transforms3d dependency)
-# Need to confirm this is still necessary?
-# RUN pip3 uninstall -y numpy
-# RUN pip3 install numpy==1.26.0
-
 # Add OpenCV dependency -- needed for aruco detect
 USER root
 RUN apt-get update && \
-    apt-get install -y libopencv-dev && \
-    rm -rf /var/lib/apt/lists/*
+apt-get install -y libopencv-dev && \
+rm -rf /var/lib/apt/lists/*
 
 # Set CMake prefix path for OpenCV and ROS
 # ENV CMAKE_PREFIX_PATH="/usr/local/share/OpenCV;/opt/ros/humble"
@@ -60,5 +57,26 @@ USER marsrover
 #     apt install -y ros-humble-tf2-geometry-msgs ros-humble-visualization-msgs && \
 #     rm -rf /var/lib/apt/lists/*
 # USER marsrover
+
+RUN pip3 install numpy==1.26.0
+RUN pip3 install pydantic==1.10.9
+
+# Mapviz dependencies
+USER root
+RUN apt update && apt-get install -y \
+    ros-humble-mapviz \
+    ros-humble-mapviz-plugins \
+    ros-humble-tile-map \
+    ros-humble-multires-image \
+    ros-humble-rosapi
+USER marsrover
+
+USER root
+RUN apt update && apt install -y \
+    libboost-dev \
+    ros-humble-rviz-common \
+    ros-humble-usb-cam \
+    tmux
+USER marsrover
 
 # Edit so it tries to build (YOU CAN REMOVE THIS)
