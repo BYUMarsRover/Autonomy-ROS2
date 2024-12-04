@@ -61,22 +61,17 @@ USER marsrover
 RUN pip3 install numpy==1.26.0
 RUN pip3 install pydantic==1.10.9
 
-# Mapviz dependencies
-USER root
-RUN sudo apt update && sudo apt install -y \
-    ros-humble-mapviz \
-    ros-humble-mapviz-plugins \
-    ros-humble-tile-map \
-    ros-humble-multires-image \
-    ros-humble-rosapi
-USER marsrover
-
 USER root
 RUN apt update && apt install -y \
     libboost-dev \
     ros-humble-rviz-common \
     ros-humble-usb-cam \
     tmux
+RUN apt update && apt install -y ros-humble-mapviz
+RUN apt update && apt install -y ros-humble-mapviz-plugins
+RUN apt update && apt install -y ros-humble-tile-map
+RUN apt update && apt install -y ros-humble-multires-image
+RUN apt update && apt install -y ros-humble-rosapi
 USER marsrover
 
 # Edit so it tries to build (YOU CAN REMOVE THIS)
