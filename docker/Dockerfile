@@ -62,7 +62,7 @@ RUN pip3 install pydantic==1.10.9
 
 USER root
 RUN apt install libboost-dev
-RUN apt install ros-humble-rviz_common
+# RUN apt install ros-humble-rviz_common
 USER marsrover
 
 # Edit so it tries to build (YOU CAN REMOVE THIS)
