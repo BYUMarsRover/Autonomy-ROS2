@@ -18,12 +18,29 @@ SERIAL_CACHE_DOOR_OPEN = 0
 SERIAL_CACHE_DOOR_CLOSED = 1
 CACHE_ENGAGED = 1
 CACHE_DISENGAGED = 0
-COMMAND_PACKET_DELIMITER = 0x80
 
 TEMPERATURE_DIVISOR = -9.34579
 TEMPERATURE_CONSTANT = 80.3
 MOISTURE_DIVISOR = -6.5
 MOISTURE_CONSTANT = 154.0
+
+COMMAND_PACKET_HEADER = 0x53
+COMMAND_PACKET_FOOTER = 0x42
+
+MAXIMUM_PACKET_SIZE = 0xFF
+FULL_STEAM_FORWARD = 0x79
+FULL_STEAM_BACKWARD = 0x80
+
+UPDATE_PROBE_CONTROL_COMMAND_WORD = 0x85
+UPDATE_AUGER_CONTROL_COMMAND_WORD = 0x86
+UPDATE_DRILL_CONTROL_COMMAND_WORD = 0x8A
+
+UPDATE_PRIMARY_CACHE_DOOR_CONTROL_COMMAND_WORD = 0x87
+UPDATE_SECONDARY_CACHE_DOOR_CONTROL_COMMAND_WORD = 0x88
+UPDATE_SECONDARY_CACHE_CONTROL_COMMAND_WORD = 0x89
+
+PROBE_TOOL_INDEX = 0
+AUGER_TOOL_INDEX = 1
 
 def signed_to_unsigned(signed_value):
     if signed_value < 0:
@@ -77,25 +94,49 @@ class ScienceSerialInterface(Node):
 
 
     def auger_on_callback(self, msg: ScienceAugerOn):
-        self.auger_speed = msg.auger_speed
+        write_serial([UPDATE_DRILL_CONTROL_COMMAND_WORD, 0x01, msg.auger_speed])
     
     def linear_actuator_callback(self, msg: ScienceLinearActuatorDirection):
-        self.linear_actuator_speed = msg.direction
+        if current_tool_index == PROBE_TOOL_INDEX: # Update Probe
+            write_serial([UPDATE_PROBE_CONTROL_COMMAND_WORD, 0x01, msg.direction])
+        else if current_tool_index == AUGER_TOOL_INDEX: # Update Auger
+            write_serial([UPDATE_AUGER_CONTROL_COMMAND_WORD, 0x01, msg.direction])
 
     def primary_cache_door_callback(self, msg: ScienceCacheDoor):
-        self.primary_cache_door_position = msg.position
+        if msg.position == True: # Extend the trapdoor
+            write_serial([UPDATE_PRIMARY_CACHE_DOOR_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_FORWARD])
+        else: # Close the trapdoor
+            write_serial([UPDATE_PRIMARY_CACHE_DOOR_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_BACKWARD])
+
 
     def secondary_cache_door_callback(self, msg: ScienceCacheDoor):
-        self.secondary_cache_door_position = msg.position
+        if msg.position == True: # Extend the trapdoor
+            write_serial([UPDATE_SECONDARY_CACHE_DOOR_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_FORWARD])
+        else: # Close the trapdoor
+            write_serial([UPDATE_SECONDARY_CACHE_DOOR_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_BACKWARD])
 
     def tool_position_callback(self, msg: ScienceToolPosition):
         self.current_tool_index = msg.position
 
     def secondary_cache_position_callback(self, msg: ScienceSecondaryCachePosition):
-        self.secondary_cache_position = msg.secondary_cache_position
+        if msg.secondary_cache_position > 0: # Extend the cache
+            write_serial([UPDATE_SECONDARY_CACHE_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_FORWARD])
+        else: # Close the cache
+            write_serial([UPDATE_SECONDARY_CACHE_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_BACKWARD])
+
+    # Configure a payload with the overhead formatting and send to arduino
+    def write_serial(self, byte_array):
+        if len(byte_array) > MAXIMUM_PACKET_SIZE:
+            # todo proper error message
+            print(f"Provided command packet is of size {len(byte_array)}, maximum is {MAXIMUM_PACKET_SIZE}")
+        else if self.arduino:
+            byte_array.insert(0, COMMAND_PACKET_HEADER)
+            byte_array.append(COMMAND_PACKET_FOOTER)
+            self.arduino.write(struct.pack('B' * len(byte_array), *byte_array))
+
 
     # Callback function for when a science message gets published
-    def write_serial(self):
+    def write_serial_old(self):
         if self.arduino:
             message_bytes = [
                 COMMAND_PACKET_DELIMITER,
