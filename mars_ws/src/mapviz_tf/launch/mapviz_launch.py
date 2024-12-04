@@ -14,10 +14,7 @@ def generate_launch_description():
     #     os.getenv('HOME', '/home/marsrover'),
     #     'mars_ws/src/mapviz_tf/params/mapviz_params.yaml'
     # )
-
-    # Use a default location (or fetch the value dynamically in runtime scripts if necessary)
-    current_location = 'byu'  # Change this default as needed
-    
+  
     return LaunchDescription([
         # Set environment variable
         SetEnvironmentVariable('ROSCONSOLE_FORMAT', '[${thread}] [${node}/${function}:${line}]: ${message}'),
