@@ -23,12 +23,15 @@ class science_GUI(Node):
         # rospy.init_node("science_GUI")
         super().__init__('science_GUI')
         qt = QtWidgets.QWidget()
-        uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/science/science/gui/science_GUI.ui', self) # Load the .ui file
+        uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/science/science/gui/science_GUI.ui', qt) # Load the .ui file
         qt.show() # Show the GUI
 
-        self.base_ip = qt.get_base_ip()
-        self.camera_control = rclpy.ServiceProxy(
-            'camera_control', CameraControl)
+        self.base_ip = self.get_base_ip()
+        self.cli = self.create_client(CameraControl, 'camera_control')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Camera control not available, waiting...')
+        self.req = CameraControl.Request()
+        self.future = self.cli.call_async(self.req)
 
         self.temperature = 1
         self.moisture = 0
@@ -39,7 +42,10 @@ class science_GUI(Node):
         self.initialize_timers()
         self.task_launcher_init()
         self.sensor_saving = [False] * 3  # temp, moisture, fad
-        self.camera_control = rclpy.ServiceProxy('camera_control', CameraControl)
+        if self.future.result() is not None:
+            print(self.future.result())
+        else:
+            print('Service call failed %r' % (self.future.exception(),))
 
     def initialize_timers(self):
         self.save_interval = 10
