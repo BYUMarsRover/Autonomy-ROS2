@@ -2,11 +2,11 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2
 from std_msgs.msg import String
-from pcl_helper import *
+from .pcl_helper import *
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-class HazardDetectorNode(Node):
+class HazardDetector(Node):
     def __init__(self):
         super().__init__('hazard_detector')
         
@@ -96,7 +96,7 @@ class HazardDetectorNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = HazardDetectorNode()
+    node = HazardDetector()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
