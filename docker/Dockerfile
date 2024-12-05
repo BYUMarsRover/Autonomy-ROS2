@@ -57,6 +57,7 @@ USER marsrover
 # USER marsrover
 
 # "transforms3d" uses a function depreciated in numpy 2.0
+RUN pip3 uninstall -y numpy
 RUN pip3 install numpy==1.26.0
 # Install pydantic version 1.10.9; used by usb_cam launch file
 RUN pip3 install pydantic==1.10.9
@@ -70,7 +71,9 @@ RUN apt update && apt install -y \
 # Install USB Camera Package
 RUN apt update && apt install -y ros-humble-usb-cam
 # Tmux used for rinning the pipline
-RUN apt update && apt install -y tmux
+RUN apt update && apt install -y \
+    tmux \
+    mosh
 # Install mapviz and related packages
 RUN apt update && apt install -y \
     ros-humble-mapviz \
