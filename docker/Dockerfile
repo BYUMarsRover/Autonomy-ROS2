@@ -59,6 +59,8 @@ USER marsrover
 
 RUN pip3 install numpy==1.26.0
 RUN pip3 install pydantic==1.10.9
+RUN pip3 install odpslides
+RUN pip3 install pyserial
 
 USER root
 RUN apt update && apt install -y \
