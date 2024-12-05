@@ -64,15 +64,15 @@ RUN pip3 install numpy==1.26.0
 RUN pip3 install pydantic==1.10.9
 
 USER root
-RUN apt install -y \
+RUN apt update && apt install -y \
     libboost-dev \
     ros-humble-rviz-common
 # Install USB Camera Package
-RUN apt install -y ros-humble-usb-cam
+RUN apt update && apt install -y ros-humble-usb-cam
 # Tmux used for rinning the pipline
-RUN apt install -y tmux
+RUN apt update && apt install -y tmux
 # Install mapviz and related packages
-RUN apt install -y \
+RUN apt update && apt install -y \
     ros-humble-mapviz \
     ros-humble-mapviz-plugins \
     ros-humble-tile-map \
