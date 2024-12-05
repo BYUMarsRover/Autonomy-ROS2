@@ -35,6 +35,7 @@ WORKDIR /home/marsrover
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 RUN /bin/bash -c "source ~/.bashrc"
 
+
 # Quick permissions fix (might be too heavy-handed)
 USER root
 RUN chown -R marsrover: /usr/local
@@ -43,8 +44,8 @@ USER marsrover
 # Add OpenCV dependency -- needed for aruco detect
 USER root
 RUN apt-get update && \
-    apt-get install -y libopencv-dev && \
-    rm -rf /var/lib/apt/lists/*
+apt-get install -y libopencv-dev && \
+rm -rf /var/lib/apt/lists/*
 
 # Set CMake prefix path for OpenCV and ROS
 # ENV CMAKE_PREFIX_PATH="/usr/local/share/OpenCV;/opt/ros/humble"
@@ -57,7 +58,9 @@ USER marsrover
 #     rm -rf /var/lib/apt/lists/*
 # USER marsrover
 
+# "transforms3d" uses a function depreciated in numpy 2.0
 RUN pip3 install numpy==1.26.0
+# Install pydantic version 1.10.9; used by usb_cam launch file
 RUN pip3 install pydantic==1.10.9
 RUN pip3 install odpslides
 RUN pip3 install pyserial
@@ -65,9 +68,18 @@ RUN pip3 install pyserial
 USER root
 RUN apt update && apt install -y \
     libboost-dev \
-    ros-humble-rviz-common \
-    ros-humble-usb-cam \
-    tmux
+    ros-humble-rviz-common
+# Install USB Camera Package
+RUN apt update && apt install -y ros-humble-usb-cam
+# Tmux used for rinning the pipline
+RUN apt update && apt install -y tmux
+# Install mapviz and related packages
+RUN apt update && apt install -y \
+    ros-humble-mapviz \
+    ros-humble-mapviz-plugins \
+    ros-humble-tile-map \
+    ros-humble-multires-image \
+    ros-humble-rosapi
 USER marsrover
 
 # Edit so it tries to build (YOU CAN REMOVE THIS)
