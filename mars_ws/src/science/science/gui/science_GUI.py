@@ -116,7 +116,8 @@ class science_GUI(Node):
         Saves the current notes under the given site.
         """
         print('Saving notes.')
-        self.signals.notes_save_signal.emit(ScienceSaveNotes(int(self.textEdit_site.toPlainText()), self.textEdit_notes.toPlainText()))
+        self.save_notes_msg = ScienceSaveNotes()
+        self.signals.notes_save_signal.emit(self.save_notes_msg)
         print('Notes sent.')
 
     def update_sensor_values(self, msg):
