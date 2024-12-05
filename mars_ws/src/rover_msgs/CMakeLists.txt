@@ -25,6 +25,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ZedObstacles.msg"
   "msg/FiducialTransformArray.msg"
   "msg/FiducialTransform.msg"
+  "msg/MobilityDriveCommand.msg"
   "msg/MobilityAutopilotCommand.msg"
   "msg/MobilityArucoAutopilotCommand.msg"
   "msg/MobilityGPSWaypoint2Follow.msg"

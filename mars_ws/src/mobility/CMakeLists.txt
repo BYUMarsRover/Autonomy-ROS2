@@ -15,21 +15,28 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rover_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+# find_package(Serial REQUIRED)
 
+# include_directories("/usr/include/serial")
 include_directories(include/${PROJECT_NAME})
 
-add_executable(mega_comms src/mega_comms_node.cpp src/mega_comms_node.cpp)
-ament_target_dependencies(mega_comms rclcpp std_msgs rover_msgs)
+# add_executable(mega_comms src/mega_comms_node.cpp src/mega_comms_node.cpp)
+# ament_target_dependencies(mega_comms rclcpp std_msgs rover_msgs)
 
-target_link_libraries(mega_comms)
+# target_link_libraries(mega_comms serial)
 
 install(TARGETS
-  mega_comms
+  # mega_comms
   DESTINATION lib/${PROJECT_NAME})
 
 install(PROGRAMS
-  scripts/joystick_control.py
+  # scripts/joystick_control.py
   scripts/transition.py
+  scripts/drive_manager.py
+  scripts/aruco_autopilot_manager.py
+  scripts/autopilot_manager.py
+  scripts/path_manager.py
+  scripts/wheel_manager.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -44,5 +51,8 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+#Install Launch file
+install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
 ament_package()

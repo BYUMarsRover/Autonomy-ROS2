@@ -1,4 +1,4 @@
-gi#This message is used to set the speed and dir of each wheel independantly
+#This message is used to set the speed and dir of each wheel independantly
 #Each wheel will have a speed and direction
 #dir is a boolean where true means forward
 

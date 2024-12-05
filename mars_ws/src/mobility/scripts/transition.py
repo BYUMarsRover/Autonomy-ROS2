@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import IWCMotors
 # TODO: See if we can convert mobility drive enable to a service
-from std_msgs import Bool
+from std_msgs.msg import Bool
 from geometry_msgs.msg import Twist
 
 class Transition(Node):
