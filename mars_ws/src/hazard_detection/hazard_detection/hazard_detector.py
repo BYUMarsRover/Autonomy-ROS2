@@ -34,13 +34,13 @@ class HazardDetector(Node):
         #Subscribers
         self.subscriber = self.create_subscription(
             PointCloud2,
-            '/slam/point_cloud',
+            '/unilidar/cloud',
             self.point_cloud_callback,
             10
         )
         self.imu_subscriber = self.create_subscription(
             Imu,
-            '/imu/data',
+            '/unilidar/imu',
             self.imu_callback,
             10
         )
