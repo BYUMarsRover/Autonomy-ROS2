@@ -21,6 +21,7 @@ RUN apt update && apt install -y \
     vim \
     docker.io \
     ros-humble-robot-localization \
+    ros-humble-tf-transformations \
     python3-pip
 
 # Set up a new user
