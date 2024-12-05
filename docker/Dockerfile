@@ -1,5 +1,5 @@
 # Created by Nelson Durrant, Oct 2024
-FROM ros:humble-ros-base
+FROM osrf/ros:humble-desktop-full
 
 # Update and upgrade
 RUN apt update && apt upgrade -y
@@ -41,7 +41,8 @@ USER marsrover
 
 # Add OpenCV dependency -- needed for aruco detect
 USER root
-RUN apt update && apt install -y libopencv-dev && rm -rf /var/lib/apt/lists/*
+RUN apt update && apt install -y libopencv-dev 
+# && rm -rf /var/lib/apt/lists/*
 
 # Set CMake prefix path for OpenCV and ROS
 # ENV CMAKE_PREFIX_PATH="/usr/local/share/OpenCV;/opt/ros/humble"
