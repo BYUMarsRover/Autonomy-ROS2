@@ -88,3 +88,23 @@ def create_point_field(name, offset):
     field.datatype = PointField.FLOAT32
     field.count = 1
     return field
+
+
+def pcl_to_array(cloud):
+    """
+    Converts a PCL PointCloud object to a NumPy array.
+    Args:
+        cloud: pcl.PointCloud object
+    
+    Returns:
+        np.ndarray: A NumPy array of shape (N, 3), where N is the number of points.
+                    Each row represents (x, y, z) coordinates of a point.
+    """
+    # Extract points from the PCL point cloud
+    points = np.array(cloud.to_array())
+    
+    # Ensure it’s in the expected Nx3 format (x, y, z)
+    if points.shape[1] < 3:
+        raise ValueError("The input PCL point cloud does not have enough dimensions (x, y, z).")
+    
+    return points[:, :3]  # Return only x, y, z

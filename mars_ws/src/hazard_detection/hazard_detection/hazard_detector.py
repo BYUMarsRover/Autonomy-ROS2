@@ -5,16 +5,24 @@ from std_msgs.msg import String
 from .pcl_helper import *
 import numpy as np
 from scipy.spatial.transform import Rotation as R
+import open3d as o3d
 
 class HazardDetector(Node):
     def __init__(self):
         super().__init__('hazard_detector')
         
-        self.declare_parameter('height_threshold', 0.5)  # Example: 0.5 meters
-        self.declare_parameter('slope_threshold', 15.0) # Example: 15 degrees
-        
+        self.declare_parameter('height_threshold', 0.5)
+        self.declare_parameter('slope_threshold', 15.0)
+        self.declare_parameter('bounding_box_length', 3.0)  
+        self.declare_parameter('bounding_box_width', 1.5)  
+        self.declare_parameter('bounding_box_height', 1.0)  
+
         self.height_threshold = self.get_parameter('height_threshold').value
-        self.slope_threshold = np.radians(self.get_parameter('slope_threshold').value)  # Convert to radians
+        self.slope_threshold = np.radians(self.get_parameter('slope_threshold').value)
+        self.box_length = self.get_parameter('bounding_box_length').value
+        self.box_width = self.get_parameter('bounding_box_width').value
+        self.box_height = self.get_parameter('bounding_box_height').value
+                
         
         self.subscriber = self.create_subscription(
             PointCloud2,
@@ -79,13 +87,25 @@ class HazardDetector(Node):
         return False
 
     def cluster_point_cloud(self, cloud):
-        # Perform Euclidean Cluster Extraction
-        white_cloud = pcl_to_array(cloud)
+        # Convert PointCloud2 to a NumPy array
+        points = pcl_to_array(cloud)  # converts to Nx3 numpy array
+
+        # Create an Open3D PointCloud object
+        pc = o3d.geometry.PointCloud()
+        pc.points = o3d.utility.Vector3dVector(points)
+
+        # Perform DBSCAN clustering (density-based clustering)
+        labels = np.array(pc.cluster_dbscan(eps=0.05, min_points=10, print_progress=True))
+
+        # Extract clusters
         clusters = []
-        
-        # Use your clustering library of choice
-        # Here, manually separate clusters from white_cloud
-        
+        unique_labels = np.unique(labels)
+        for label in unique_labels:
+            if label == -1:  # Ignore noise
+                continue
+            cluster_points = points[labels == label]
+            clusters.append(cluster_points)
+
         return clusters
 
     def generate_hazard_message(self, high_points, steep_slopes):
