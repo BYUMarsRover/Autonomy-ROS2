@@ -89,36 +89,27 @@ class science_GUI(Node):
 
         print('Toggling Saving Sensor', p)
         self.sensor_saving[p] = not self.sensor_saving[p]
-        self.signals.sensor_save_signal.emit(ScienceSaveSensor(self.site_number, p, self.sensor_saving[p]))
-
-        if p == self.temperature:
-            if self.temp_radio.isChecked():
-                self.temp_timer.start()
-        elif p == self.moisture:
-            if self.moist_radio.isChecked():
-                self.moisture_timer.start()
-        else:  # fad radio button
-            if self.fad_radio.isChecked():
-                self.fad_timer.start()
+        self.sensor_message = ScienceSaveSensor()
+        self.signals.sensor_save_signal.emit(self.sensor_message)
 
     def stop_temp_saver(self):
         self.temp_timer.cancel()
-        self.temp_radio.setChecked(False)
+        self.qt.temp_radio.setChecked(False)
 
     def stop_moist_saver(self):
         self.moisture_timer.cancel()
-        self.moist_radio.setChecked(False)
+        self.qt.moist_radio.setChecked(False)
 
     def stop_fad_saver(self):
         self.fad_timer.cancel()
-        self.fad_radio.setChecked(False)
+        self.qt.fad_radio.setChecked(False)
 
     def increment_site_number(self):
         """
         Increments the site number
         """
         self.site_number += 1
-        self.lcd_site_num.display(self.site_number)
+        self.qt.lcd_site_num.display(self.site_number)
 
     def save_notes(self):
         """
