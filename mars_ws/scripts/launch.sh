@@ -303,7 +303,8 @@ SESSION_NAME='rover'
 BASE_CAMERA_SCRIPT_DIR=$BASE_STATION_REPO/scripts/camera
 ROVER_CAMERA_SCRIPT_DIR=$ROVER_REPO/scripts/camera
 
-# docker run -d -p 8080:8080 -t -v ~/mapproxy:/mapproxy danielsnider/mapproxy
+# For mapviz
+docker run -d -p 8080:8080 -t -v ~/mapproxy:/mapproxy danielsnider/mapproxy
 
 # Kill gstreamer processes that may be already open
 pkill gst

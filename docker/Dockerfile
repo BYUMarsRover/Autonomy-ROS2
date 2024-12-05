@@ -71,11 +71,12 @@ RUN apt update && apt install -y ros-humble-usb-cam
 # Tmux used for rinning the pipline
 RUN apt update && apt install -y tmux
 # Install mapviz and related packages
-RUN apt update && apt install -y ros-humble-mapviz
-RUN apt update && apt install -y ros-humble-mapviz-plugins
-RUN apt update && apt install -y ros-humble-tile-map
-RUN apt update && apt install -y ros-humble-multires-image
-RUN apt update && apt install -y ros-humble-rosapi
+RUN apt update && apt install -y \
+    ros-humble-mapviz \
+    ros-humble-mapviz-plugins \
+    ros-humble-tile-map \
+    ros-humble-multires-image \
+    ros-humble-rosapi
 USER marsrover
 
 # Edit so it tries to build (YOU CAN REMOVE THIS)
