@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import PointCloud2
+from sensor_msgs.msg import PointCloud2, Imu
 from std_msgs.msg import String
 from .pcl_helper import *
 import numpy as np
@@ -15,15 +15,15 @@ class HazardDetector(Node):
         self.declare_parameter('height_threshold', 0.5)
         self.declare_parameter('slope_threshold', 15.0)
         self.declare_parameter('voxel_grid_size', .1)
-        self.delcare_parameter('ground_distance_threshold', .05)
+        self.declare_parameter('ground_distance_threshold', .05)
         self.declare_parameter('bounding_box_length', 3.0)  
         self.declare_parameter('bounding_box_width', 1.5)  
         self.declare_parameter('bounding_box_height', 1.0)  
 
         self.height_threshold = self.get_parameter('height_threshold').value
         self.slope_threshold = np.radians(self.get_parameter('slope_threshold').value)
-        self.voxel_grid_size = self.get_parameter('voxel_grid_size').value()
-        self.ground_distance_threshold = self.get_parameter('ground_distance_threshold').value()
+        self.voxel_grid_size = self.get_parameter('voxel_grid_size').value
+        self.ground_distance_threshold = self.get_parameter('ground_distance_threshold').value
         self.box_length = self.get_parameter('bounding_box_length').value
         self.box_width = self.get_parameter('bounding_box_width').value
         self.box_height = self.get_parameter('bounding_box_height').value
@@ -34,13 +34,13 @@ class HazardDetector(Node):
         #Subscribers
         self.subscriber = self.create_subscription(
             PointCloud2,
-            '/slam/point_cloud',
+            '/unilidar/cloud',
             self.point_cloud_callback,
             10
         )
         self.imu_subscriber = self.create_subscription(
             Imu,
-            '/imu/data',
+            '/unilidar/imu',
             self.imu_callback,
             10
         )
