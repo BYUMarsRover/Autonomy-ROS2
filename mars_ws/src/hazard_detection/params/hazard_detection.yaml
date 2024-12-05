@@ -2,6 +2,8 @@
   ros__parameters:
     height_threshold: 0.5
     slope_threshold: 15.0
+    voxel_grid_size: .1
+    ground_distance_threshold: .05
     bounding_box_length: 3.0
     bounding_box_width: 1.5
     bounding_box_height: 1.0

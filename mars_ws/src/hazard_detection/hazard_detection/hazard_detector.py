@@ -11,26 +11,44 @@ class HazardDetector(Node):
     def __init__(self):
         super().__init__('hazard_detector')
         
+        #Parameters
         self.declare_parameter('height_threshold', 0.5)
         self.declare_parameter('slope_threshold', 15.0)
+        self.declare_parameter('voxel_grid_size', .1)
+        self.delcare_parameter('ground_distance_threshold', .05)
         self.declare_parameter('bounding_box_length', 3.0)  
         self.declare_parameter('bounding_box_width', 1.5)  
         self.declare_parameter('bounding_box_height', 1.0)  
 
         self.height_threshold = self.get_parameter('height_threshold').value
         self.slope_threshold = np.radians(self.get_parameter('slope_threshold').value)
+        self.voxel_grid_size = self.get_parameter('voxel_grid_size').value()
+        self.ground_distance_threshold = self.get_parameter('ground_distance_threshold').value()
         self.box_length = self.get_parameter('bounding_box_length').value
         self.box_width = self.get_parameter('bounding_box_width').value
         self.box_height = self.get_parameter('bounding_box_height').value
-                
-        
+
+        #Initialize other variables
+        self.orientation = None   
+
+        #Subscribers
         self.subscriber = self.create_subscription(
             PointCloud2,
             '/slam/point_cloud',
             self.point_cloud_callback,
             10
         )
+        self.imu_subscriber = self.create_subscription(
+            Imu,
+            '/imu/data',
+            self.imu_callback,
+            10
+        )
+
+        #Publishers
         self.publisher = self.create_publisher(String, '/hazard_zones', 10)
+
+
         self.get_logger().info('Hazard_detector initialized')
 
 
@@ -40,14 +58,14 @@ class HazardDetector(Node):
         
         # Downsample for efficiency
         voxel_filter = cloud.make_voxel_grid_filter()
-        voxel_filter.set_leaf_size(0.1, 0.1, 0.1)  # Example: 10 cm grid
+        voxel_filter.set_leaf_size(self.voxel_grid_size, self.voxel_grid_size,self.voxel_grid_size)
         cloud_filtered = voxel_filter.filter()
         
         # Segment ground plane
         seg = cloud_filtered.make_segmenter()
         seg.set_model_type(pcl.SACMODEL_PLANE)
         seg.set_method_type(pcl.SAC_RANSAC)
-        seg.set_distance_threshold(0.05)  # Example: 5 cm tolerance
+        seg.set_distance_threshold(self.ground_distance_threshold)  # Example: 5 cm tolerance
         
         inliers, coefficients = seg.segment()
         ground = cloud_filtered.extract(inliers, negative=False)
@@ -62,6 +80,9 @@ class HazardDetector(Node):
         # Publish hazards
         hazard_message = self.generate_hazard_message(high_points, steep_slopes)
         self.publisher.publish(hazard_message)
+
+    def imu_callback(self, msg):
+        self.orientation = msg.orientation
 
     def detect_high_obstacles(self, non_ground_cloud):
         # Find maximum height in each cluster
