@@ -80,4 +80,5 @@ RUN apt update && apt install -y \
     ros-humble-rosapi
 USER marsrover
 
-# Edit so it tries to build (YOU CAN REMOVE THIS)
+# Colorized ROS 2 logging output
+RUN echo "export RCUTILS_COLORIZED_OUTPUT=1" >> /home/${LABNAME}/.bashrc
