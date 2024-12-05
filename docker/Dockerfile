@@ -33,8 +33,6 @@ WORKDIR /home/marsrover
 
 # Set up automatic sourcing
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
-RUN /bin/bash -c "source ~/.bashrc"
-
 
 # Quick permissions fix (might be too heavy-handed)
 USER root
@@ -43,9 +41,7 @@ USER marsrover
 
 # Add OpenCV dependency -- needed for aruco detect
 USER root
-RUN apt-get update && \
-apt-get install -y libopencv-dev && \
-rm -rf /var/lib/apt/lists/*
+RUN apt update && apt install -y libopencv-dev && rm -rf /var/lib/apt/lists/*
 
 # Set CMake prefix path for OpenCV and ROS
 # ENV CMAKE_PREFIX_PATH="/usr/local/share/OpenCV;/opt/ros/humble"
@@ -74,12 +70,11 @@ RUN apt update && apt install -y ros-humble-usb-cam
 # Tmux used for rinning the pipline
 RUN apt update && apt install -y tmux
 # Install mapviz and related packages
-RUN apt update && apt install -y \
-    ros-humble-mapviz \
-    ros-humble-mapviz-plugins \
-    ros-humble-tile-map \
-    ros-humble-multires-image \
-    ros-humble-rosapi
+RUN apt update && apt install -y ros-humble-mapviz
+RUN apt update && apt install -y ros-humble-mapviz-plugins
+RUN apt update && apt install -y ros-humble-tile-map
+RUN apt update && apt install -y ros-humble-multires-image
+RUN apt update && apt install -y ros-humble-rosapi
 USER marsrover
 
 # Edit so it tries to build (YOU CAN REMOVE THIS)
