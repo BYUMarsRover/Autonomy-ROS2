@@ -1,5 +1,5 @@
 # Created by Nelson Durrant, Oct 2024
-FROM osrf/ros:humble-desktop-full
+FROM ros/ros-humble-base:latest
 
 # Update and upgrade
 RUN apt update && apt upgrade -y
