@@ -5,6 +5,7 @@ from cv_bridge import CvBridge
 import numpy as np
 import cv2
 from rover_msgs.msg import KeyboardHomography
+import time
 
 MIN_MATCH_COUNT = 10
 
@@ -42,7 +43,7 @@ class Feat2HomographyNode(Node):
         '''
 
         self.bridge = CvBridge()
-        self.keyboard_img = cv2.imread("/home/marsrover/mars_ws/src/keyboard_autonomy/images/keyboard_better.jpg")
+        self.keyboard_img = cv2.imread("/home/marsrover/mars_ws/src/keyboard_autonomy/images/undistorted_fisheye.png")
 
         self.get_logger().info("Feat2HomographyNode started")
 
@@ -80,19 +81,17 @@ class Feat2HomographyNode(Node):
         )
 
         # Undistort the image
-        undistorted_img = cv2.remap(camera_image, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+        undistorted_img = cv2.remap(camera_image, map1, map2, interpolation=cv2.INTER_LINEAR,
+                                    borderMode=cv2.BORDER_CONSTANT)
 
-        # Show and save the undistorted image TODO take this out after testing
-        cv2.imshow("Original", camera_image)
-        cv2.imshow("Undistorted", undistorted_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        cv2.imwrite("undistorted_img.png", undistorted_img)
-
+        # Show and save the undistorted image
+        # TODO: take out the image writing when this node is done
+        cv2.imwrite("undistorted_fisheye.png", undistorted_img)
+        self.get_logger().info('finished fisheye')
         # SIFT and FLANN
         # Initiate SIFT detector and find the keypoints and descriptors
-        sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, edgeThreshold=10)
-        kp1, des1 = sift.detectAndCompute(self.keyboard_image, None)
+        sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, edgeThreshold=5)
+        kp1, des1 = sift.detectAndCompute(self.keyboard_img, None)
         kp2, des2 = sift.detectAndCompute(undistorted_img, None)
 
         # Set FLANN parameters
@@ -125,6 +124,20 @@ class Feat2HomographyNode(Node):
         else:
             self.get_logger().warn("Insufficient # of matches found - %d/%d" % (len(good_matches), MIN_MATCH_COUNT))
 
+        matchesMask = mask.ravel().tolist()
+
+        # TODO: get rid of the drawn outline when this node is finished
+        h, w = self.keyboard_img.shape[0:2]
+        pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)  # get the corners
+        outline = cv2.perspectiveTransform(pts, M)  # transform the corners of the first image onto the second
+        img2 = cv2.polylines(undistorted_img, [np.int32(outline)], True, 255, 3, cv2.LINE_AA)  # draw the box
+
+        draw_params = dict(
+            singlePointColor=None,
+            matchesMask=matchesMask,
+            flags=2)
+        img3 = cv2.drawMatches(self.keyboard_img, kp1, img2, kp2, good_matches, None, **draw_params)
+        cv2.imwrite("matches.jpg", img3)
         keyboard_homography = KeyboardHomography()
         keyboard_homography.homography = M.flatten().tolist()
 
