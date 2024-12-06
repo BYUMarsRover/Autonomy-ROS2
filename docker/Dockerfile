@@ -1,5 +1,5 @@
 # Created by Nelson Durrant, Oct 2024
-FROM ros/humble-ros-base:latest
+FROM ros:humble-ros-base
 
 # Update and upgrade
 RUN apt update && apt upgrade -y
