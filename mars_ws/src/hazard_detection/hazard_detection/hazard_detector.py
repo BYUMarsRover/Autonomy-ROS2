@@ -50,6 +50,23 @@ class HazardDetector(Node):
 
         self.get_logger().info('Hazard_detector initialized')
 
+        # # Define 10 points as (x, y, z) tuples
+        # points = [
+        #     (1.0, 2.0, 3.0), (4.0, 5.0, 3.0), (7.0, 8.0, 4.0),
+        #     (10.0, 11.0, 9.0), (13.0, 14.0, 0.0),
+        #     (16.0, 17.0, 27.0), (19.0, 20.0, 21.0),
+        #     (22.0, 23.0, 11.0), (25.0, 26.0, 27.0), (28.0, 29.0, 30.0)
+        # ]
+
+        # # Convert points to a bytes-like object
+        # data = b''.join([struct.pack('<fff', *point) for point in points])
+
+        # # Convert bytes to a list of integers for readability
+        # data_as_list = list(data)
+
+        # # Log the byte array as a list of integers
+        # self.get_logger().info(f"Data (as integers): {data_as_list}")
+
 
     def point_cloud_callback(self, msg):
         # Convert PointCloud2 to Open3D format
@@ -112,8 +129,15 @@ class HazardDetector(Node):
 
     def detect_high_obstacles(self, non_ground_cloud):
         # Find maximum height in each cluster
+
+        if len(non_ground_cloud.points) == 0:
+            self.get_logger().warn("Non-ground cloud is empty!")
+            return []
+
         clusters = self.cluster_point_cloud(non_ground_cloud)
         high_points = []
+
+        self.get_logger().info(f"Detected {len(clusters)} clusters.")
         
         for cluster in clusters:
             z_max = max(cluster[:, 2])  # Extract Z (height) component
@@ -137,12 +161,24 @@ class HazardDetector(Node):
         # Convert PointCloud2 to a NumPy array
         points = pcl_to_array(cloud)  # converts to Nx3 numpy array
 
+        self.get_logger().info(f"Point cloud contains {points.shape[0]} points.")
+
+        if points.shape[0] == 0:
+            self.get_logger().warn("Point cloud is empty after conversion!")
+            return []
+
         # Create an Open3D PointCloud object
         pc = o3d.geometry.PointCloud()
         pc.points = o3d.utility.Vector3dVector(points)
 
+        if len(pc.points) == 0:
+            self.get_logger().warn("Open3D PointCloud is empty!")
+            return []
+
         # Perform DBSCAN clustering (density-based clustering)
-        labels = np.array(pc.cluster_dbscan(eps=0.05, min_points=10, print_progress=True))
+        labels = np.array(pc.cluster_dbscan(eps=1.0, min_points=10, print_progress=True))
+
+        self.get_logger().info(f"DBSCAN found {len(np.unique(labels))} unique labels (including noise).")
 
         # Extract clusters
         clusters = []
