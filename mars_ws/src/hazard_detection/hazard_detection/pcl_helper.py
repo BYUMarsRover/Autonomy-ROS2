@@ -2,22 +2,47 @@ import numpy as np
 import pcl
 from sensor_msgs.msg import PointCloud2
 import struct
+import open3d as o3d
+
 
 def ros_to_pcl(ros_cloud):
     """
-    Converts a ROS PointCloud2 message to a PCL PointCloud.
+    Converts a ROS PointCloud2 message to an Open3D PointCloud.
     
     :param ros_cloud: ROS PointCloud2 message
-    :return: PCL PointCloud
+    :return: Open3D PointCloud
     """
     points_list = []
 
+    # Extract points from ROS PointCloud2 message
     for point in read_points(ros_cloud, skip_nans=True):
-        points_list.append([point[0], point[1], point[2]])
+        points_list.append([point[0], point[1], point[2]])  # x, y, z
 
-    pcl_data = pcl.PointCloud(points_list, dtype=np.float32)
-    #pcl_data.from_array(np.array(points_list, dtype=np.float32))
+    # Convert to NumPy array
+    np_points = np.array(points_list, dtype=np.float32)
+
+    # Create Open3D PointCloud
+    pcl_data = o3d.geometry.PointCloud()
+    pcl_data.points = o3d.utility.Vector3dVector(np_points)
+    
     return pcl_data
+
+
+# def ros_to_pcl(ros_cloud):
+#     """
+#     Converts a ROS PointCloud2 message to a PCL PointCloud.
+    
+#     :param ros_cloud: ROS PointCloud2 message
+#     :return: PCL PointCloud
+#     """
+#     points_list = []
+
+#     for point in read_points(ros_cloud, skip_nans=True):
+#         points_list.append([point[0], point[1], point[2]])
+
+#     pcl_data = pcl.PointCloud(points_list, dtype=np.float32)
+#     #pcl_data.from_array(np.array(points_list, dtype=np.float32))
+#     return pcl_data
 
 def pcl_to_ros(pcl_cloud):
     """

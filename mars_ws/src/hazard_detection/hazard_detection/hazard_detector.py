@@ -52,33 +52,60 @@ class HazardDetector(Node):
 
 
     def point_cloud_callback(self, msg):
-        # Convert PointCloud2 to PCL format
+        # Convert PointCloud2 to Open3D format
         cloud = ros_to_pcl(msg)
-        
+
         # Downsample for efficiency
-        voxel_filter = cloud.make_voxel_grid_filter()
-        voxel_filter.set_leaf_size(self.voxel_grid_size, self.voxel_grid_size,self.voxel_grid_size)
-        cloud_filtered = voxel_filter.filter()
-        
+        cloud_filtered = cloud.voxel_down_sample(voxel_size=self.voxel_grid_size)
+
         # Segment ground plane
-        seg = cloud_filtered.make_segmenter()
-        seg.set_model_type(pcl.SACMODEL_PLANE)
-        seg.set_method_type(pcl.SAC_RANSAC)
-        seg.set_distance_threshold(self.ground_distance_threshold)  # Example: 5 cm tolerance
-        
-        inliers, coefficients = seg.segment()
-        ground = cloud_filtered.extract(inliers, negative=False)
-        non_ground = cloud_filtered.extract(inliers, negative=True)
-        
+        plane_model, inliers = cloud_filtered.segment_plane(
+            distance_threshold=self.ground_distance_threshold,
+            ransac_n=3,
+            num_iterations=1000
+        )
+        ground = cloud_filtered.select_by_index(inliers)
+        non_ground = cloud_filtered.select_by_index(inliers, invert=True)
+
         # Detect obstacles by height
         high_points = self.detect_high_obstacles(non_ground)
-        
+
         # Detect steep slopes
-        steep_slopes = self.detect_steep_slopes(ground, coefficients)
-        
+        steep_slopes = self.detect_steep_slopes(ground, plane_model)
+
         # Publish hazards
         hazard_message = self.generate_hazard_message(high_points, steep_slopes)
         self.publisher.publish(hazard_message)
+
+
+    # def point_cloud_callback(self, msg):
+    #     # Convert PointCloud2 to PCL format
+    #     cloud = ros_to_pcl(msg)
+        
+    #     # Downsample for efficiency
+    #     voxel_filter = cloud.make_voxel_grid_filter()
+    #     voxel_filter.set_leaf_size(self.voxel_grid_size, self.voxel_grid_size,self.voxel_grid_size)
+    #     cloud_filtered = voxel_filter.filter()
+        
+    #     # Segment ground plane
+    #     seg = cloud_filtered.make_segmenter()
+    #     seg.set_model_type(pcl.SACMODEL_PLANE)
+    #     seg.set_method_type(pcl.SAC_RANSAC)
+    #     seg.set_distance_threshold(self.ground_distance_threshold)  # Example: 5 cm tolerance
+        
+    #     inliers, coefficients = seg.segment()
+    #     ground = cloud_filtered.extract(inliers, negative=False)
+    #     non_ground = cloud_filtered.extract(inliers, negative=True)
+        
+    #     # Detect obstacles by height
+    #     high_points = self.detect_high_obstacles(non_ground)
+        
+    #     # Detect steep slopes
+    #     steep_slopes = self.detect_steep_slopes(ground, coefficients)
+        
+    #     # Publish hazards
+    #     hazard_message = self.generate_hazard_message(high_points, steep_slopes)
+    #     self.publisher.publish(hazard_message)
 
     def imu_callback(self, msg):
         self.orientation = msg.orientation
