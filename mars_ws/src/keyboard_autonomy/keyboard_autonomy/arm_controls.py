@@ -3,6 +3,9 @@ from rclpy.node import Node
 from control_msgs.msg import JointJog
 from rover_msgs.msg import KeyLocations, Elevator
 from rover_msgs.srv import KeyPress
+import numpy as np
+
+L = np.array([[0.31],[0.34],[0.08]]) # arm lengths (meters), upper segment to lower segment
 
 ### Controller Constants ###
 
@@ -18,7 +21,7 @@ ARM_KP = 0.01 # TODO: Tune kp value for arm
 
 class ArmControlsNode(Node):
     '''
-    :author: Nelson Durrant
+    :author: Nelson Durrant, Sarah Sanderson
     :date: November 2024
 
     ROS2 node that controls the arm and elevator of the rover as it interacts with the keyboard,
@@ -170,9 +173,8 @@ class ArmControlsNode(Node):
         # Arm control
         if not arm_set and ((DESIRED_POS[0] + CLOSE > self.key_locations[self.key][0]) or (DESIRED_POS[0] - CLOSE < self.key_locations[self.key][0])):
             # Simple proportional controller
-            arm_msg = JointJog() # TODO: Get these fields right
-            # arm_msg.position = ARM_BASE + ARM_KP * (DESIRED_POS[0] - self.key_locations[self.key][0])
-            # self.arm_publisher.publish(arm_msg)
+            arm_msg = JointJog()
+            # TODO: Add arm control
             arm_stability = 0
         else:
             # Ensure the arm position is stable
@@ -214,17 +216,77 @@ class ArmControlsNode(Node):
         response.success = True
         return response
     
+### Arm Forward and Inverse Kinematic Functions from Sarah ###
 
-def key_pos_to_arm_state(x, y):
-    '''
-    Converts the key position in the camera frame to the arm state.
+# Forward Kinematics (Joint Angles to Hand Position)
+# x = [x;
+#      y]
+def q2x(q):
+    x = np.zeros((2,np.size(q,1)))
 
-    :param x: The x-coordinate of the key in the camera frame.
-    :param y: The y-coordinate of the key in the camera frame.
-    :return: The arm state.
-    '''
+    if np.size(q,0) == 2:
+        x[0,:] = L[0]*np.cos(q[0,:]) + L[1]*np.cos(q[0,:]+q[1,:])
+        x[1,:] = L[0]*np.sin(q[0,:]) + L[1]*np.sin(q[0,:]+q[1,:])
+    else:
+        x[0,:] = L[0]*np.cos(q[0,:]) + L[1]*np.cos(q[0,:]+q[1,:]) + L[2]*np.cos(q[0,:]+q[1,:]+q[2,:])
+        x[1,:] = L[0]*np.sin(q[0,:]) + L[1]*np.sin(q[0,:]+q[1,:]) + L[2]*np.sin(q[0,:]+q[1,:]+q[2,:])
 
-    pass
+    return x
+
+
+# Inverse Kinematics (Hand Position to Joint Angles)
+# **MAKE SURE TO CONVERT Q TO RADS
+# q = [q_shoulder;
+#      q_elbow    ]
+def x2q(x):
+    if np.size(x) == 2:
+        q = np.zeros((np.size(x),1))
+        q[1] = np.arccos((x[0]**2 + x[1]**2 - L[0]**2 - L[1]**2) / (2*L[0]*L[1]))
+        beta = np.arccos((x[0]**2 + x[1]**2 + L[0]**2 - L[1]**2) / (2*L[0]*np.sqrt(x[0]**2 + x[1]**2)))
+        alpha = np.arctan2(x[1],x[0])
+        q[0] = alpha - beta
+    else:
+        q = np.zeros(np.size(x))
+        q[1,:] = np.arccos((x[0,:]**2 + x[1,:]**2 - L[0]**2 - L[1]**2) / (2*L[0]*L[1]))
+        beta = np.arccos((x[0,:]**2 + x[1,:]**2 + L[0]**2 - L[1]**2) / (2*L[0]*np.sqrt(x[0,:]**2 + x[1,:]**2)))
+        alpha = np.arctan2(x[1,:],x[0,:])
+        q[0,:] = alpha - beta
+
+    return q
+
+
+# Minimum Jerk Trajectory (Determines the smoothest path between two points)
+# w_i: initial position
+# w_f: final position
+# T: movement duration (scalar)
+# t: time vector (usually np.arange(0,T,0.001))
+# w: output trajectory
+# dw: output velocity
+# dw2: output acceleration
+# dw3: output jerk
+def min_jerk(w_i,w_f,T,t):
+    if type(t) == float:
+        w = np.zeros((len(w_i),1))
+        dw = np.zeros((len(w_i),1))
+        dw2 = np.zeros((len(w_i),1))
+        dw3 = np.zeros((len(w_i),1))
+    else:
+        w = np.zeros((len(w_i),len(t)))
+        dw = np.zeros((len(w_i),len(t)))
+        dw2 = np.zeros((len(w_i),len(t)))
+        dw3 = np.zeros((len(w_i),len(t)))
+
+    for i in range(len(w_i)):
+        # Position
+        w[i,:] = w_i[i] + (w_f[i] - w_i[i])*(10*(t/T)**3 - 15*(t/T)**4 + 6*(t/T)**5)
+        # Velocity
+        dw[i,:] = 30*(w_f[i] - w_i[i])*((t/T)**2 - 2*(t/T)**3 + (t/T)**4)*(1/T)
+        # Acceleration
+        dw2[i,:] = 60*(w_f[i] - w_i[i])*((t/T)-3*(t/T)**2+2*(t/T)**3)*T**(-2)
+        # Jerk
+        dw3[i,:] = 60*(w_f[i] - w_i[i])*(1 - 6*(t/T) + 6*(t/T)**2)*T**(-3)
+
+    return w, dw, dw2, dw3
 
 
 def main(args=None):
