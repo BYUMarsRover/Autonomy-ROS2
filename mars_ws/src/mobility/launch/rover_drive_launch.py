@@ -13,5 +13,12 @@ def generate_launch_description():
             output='screen',
             namespace=namespace,
         ),
+        Node(
+           package='mobility',
+           executable='mega_middleman',
+           name='mega_middleman',
+           output='screen',
+           namespace=namespace,
+        )
 
     ])

@@ -29,6 +29,7 @@ setup(
             'autopilot_manager = mobility.autopilot_manager:main',
             'path_manager = mobility.path_manager:main',
             'wheel_manager = mobility.wheel_manager:main',
+            'mega_middleman = mobility.mega_middleman:main',
         ],
     },
 )

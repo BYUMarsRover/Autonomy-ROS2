@@ -34,7 +34,7 @@ def generate_launch_description():
         # Xbox Drive Node in the "mobility" namespace
         Node(
             package='mobility',
-            executable='joystick_control.py',
+            executable='joystick_control',
             name='xbox_drive',
             namespace='mobility',
             output='screen',

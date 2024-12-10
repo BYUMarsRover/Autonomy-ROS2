@@ -41,16 +41,18 @@ def generate_launch_description():
         # Node for rover status listener TODO: Uncomment once created
         # Node(
         #     package='peripherals',
-        #     executable='wrapper.py',
+        #     executable='wrapper',
         #     name='rover_status_listener',
         #     output='screen'
         # ),
 
-        # Heartbeat launch file inclusion
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join(
-        #         heartbeat_dir, 'launch', 'heartbeat_rover_launch.py'))
-        # ),
+        # Heartbeat lrover node
+        Node(
+            package='heartbeat',
+            executable='heartbeat_rover',
+            name='heartbeat_rover',
+            output='screen',
+        ),
 
         # IncludeLaunchDescription(
         #     PythonLaunchDescriptionSource(os.path.join( 

@@ -19,10 +19,10 @@ def generate_launch_description():
     # )
 
     # Include other launch files TODO: Uncomment packages as they are created
-    # include_xbox_drive = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(os.path.join(
-    #         get_package_share_directory('mobility'), 'launch', 'xbox_drive.launch.py'))
-    # )
+    include_xbox_drive = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(
+            get_package_share_directory('mobility'), 'launch', 'xbox_drive_launch.py'))
+    )
 
     include_base_home_gui = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
@@ -47,7 +47,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         # set_rosconsole_format,
-        # include_xbox_drive,
+        include_xbox_drive,
         include_base_home_gui,
         include_heartbeat_base,
         include_mapviz,

@@ -23,6 +23,7 @@
   <exec_depend>ros2launch</exec_depend>
   <exec_depend>python3-utm</exec_depend>
   <exec_depend>numpy</exec_depend>
+  <exec_depend>python3-serial</exec_depend>
 
   <export>
     <build_type>ament_python</build_type>

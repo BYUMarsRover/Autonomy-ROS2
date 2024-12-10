@@ -11,13 +11,13 @@ class RoverHeartbeat(Node):
         super().__init__('rover_heartbeat')
         self.last_received = None
         self.sub_heartbeat = self.create_subscription(
-            Heartbeat, "/heartbeat_base", self.update_elapsed_time, 10
+            Heartbeat, "heartbeat_base", self.update_elapsed_time, 10
         )
         self.pub_heartbeat = self.create_publisher(
-            Heartbeat, "/heartbeat_rover", 10
+            Heartbeat, "heartbeat_rover", 10
         )
         self.pub_heartbeat_status = self.create_publisher(
-            HeartbeatStatusRover, "/heartbeat_status_rover", 10
+            HeartbeatStatusRover, "heartbeat_status_rover", 10
         )
         self.timer = self.create_timer(1.0 / p.RATE, self.ping_and_publish)
 
