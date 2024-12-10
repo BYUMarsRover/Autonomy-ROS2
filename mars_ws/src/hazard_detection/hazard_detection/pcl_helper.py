@@ -44,6 +44,22 @@ def generate_fake_point_cloud():
     ground_plane = np.random.uniform(-5, 5, (1000, 2))  # 1000 points on the ground plane
     ground_plane = np.hstack((ground_plane, np.zeros((ground_plane.shape[0], 1))))
 
+
+    #Uncomment to test a sloped plane
+    # # Generate 1000 points for the ground plane (x, y coordinates)
+    # ground_plane = np.random.uniform(-5, 5, (1000, 2))
+
+    # # Define the slope angle in degrees
+    # slope_angle_degrees = 17
+    # slope_angle_radians = np.radians(slope_angle_degrees)
+
+    # # Compute the z coordinate based on the slope (e.g., along the x-axis)
+    # # z = x * tan(slope_angle)
+    # z_coordinates = ground_plane[:, 0] * np.tan(slope_angle_radians)
+
+    # # Add the z coordinates to the points
+    # ground_plane = np.hstack((ground_plane, z_coordinates.reshape(-1, 1)))
+
     # Create non-ground points (random z values)
     non_ground = np.random.uniform(-5, -4, (200, 2))  # 200 non-ground points
     heights = np.random.uniform(1, 5, (non_ground.shape[0], 1))  # z values for non-ground
