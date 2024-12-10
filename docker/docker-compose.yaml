@@ -2,10 +2,7 @@
 
 services:
   autonomy_ros2:
-    build:
-      context: .
-      dockerfile: Dockerfile 
-    image: autonomy_ros2
+    image: byuawesomerover/autonomy_ros2:latest
     container_name: autonomy_ros2
     user: marsrover
     network_mode: host

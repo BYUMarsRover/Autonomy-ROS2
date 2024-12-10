@@ -61,10 +61,10 @@ def generate_launch_description():
             get_package_share_directory('heartbeat'), 'launch', 'heartbeat_base_launch.py'))
     )
 
-    # include_mapviz = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(os.path.join(
-    #         get_package_share_directory('mapviz_tf'), 'launch', 'mapviz.launch.py'))
-    # )
+    include_mapviz = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(
+            get_package_share_directory('mapviz_tf'), 'launch', 'mapviz_launch.py'))
+    )
 
     include_odometry_base = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
@@ -84,6 +84,6 @@ def generate_launch_description():
         # include_xbox_drive,
         include_base_home_gui,
         include_heartbeat_base,
-        # include_mapviz,
+        include_mapviz,
         include_odometry_base
     ])

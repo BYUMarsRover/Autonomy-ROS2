@@ -1,4 +1,3 @@
 int32 num_fiducials
-
 float64 dist_to_fiducial
 float64 angle_offset

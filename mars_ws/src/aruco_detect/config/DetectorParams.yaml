@@ -1,0 +1,23 @@
+aruco_detect:
+  ros__parameters:
+    adaptive_thresh_constant: 7.0  # Constant for adaptive thresholding before finding contours
+    adaptive_thresh_win_size_min: 3  # Minimum window size for adaptive thresholding
+    adaptive_thresh_win_size_max: 53  # Maximum window size for adaptive thresholding
+    adaptive_thresh_win_size_step: 4  # Increments from Min to Max window size
+    corner_refinement_max_iterations: 30  # Max iterations for corner refinement
+    corner_refinement_min_accuracy: 0.01  # Minimum error for corner refinement
+    corner_refinement_win_size: 5  # Window size for corner refinement (pixels)
+    do_corner_refinement: true  # Whether to do subpixel corner refinement
+    corner_refinement_subpix: true  # Subpixel corner refinement (true) or contour (false)
+    error_correction_rate: 0.6  # Error correction rate for dictionary
+    min_corner_distance_rate: 0.05  # Minimum distance between corners relative to perimeter
+    marker_border_bits: 1  # Bits for marker border width
+    max_erroneous_bits_in_border_rate: 0.04  # Max accepted erroneous bits in the border
+    min_distance_to_border: 3  # Minimum distance to image border for detected markers
+    min_marker_distance_rate: 0.1  # Minimum mean distance between corners for similar markers
+    min_marker_perimeter_rate: 0.03  # Minimum perimeter rate relative to image dimension
+    max_marker_perimeter_rate: 4.0  # Maximum perimeter rate relative to image dimension
+    min_otsu_std_dev: 5.0  # Min standard deviation for Otsu thresholding
+    perspective_remove_ignored_margin_per_cell: 0.13  # Margin width for cell determination
+    perspective_remove_pixel_per_cell: 8  # Pixels per cell when removing perspective
+    polygonal_approx_accuracy_rate: 0.01  # Minimum accuracy for polygonal approximation

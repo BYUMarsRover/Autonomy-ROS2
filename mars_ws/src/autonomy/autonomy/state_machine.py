@@ -62,6 +62,9 @@ class AutonomyStateMachine(Node):
         self.srv_switch_auto = self.create_service(SetBool, '/autonomy/enable_autonomy', self.enable)
         self.srv_switch_abort = self.create_service(AutonomyAbort, '/autonomy/abort_autonomy', self.abort)
         self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback) # TODO: Add this to the GUI buttons
+        self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
+        self.max_retries = 5
+        self.retry_count = 0
 
         # Declare Parameters
         self.declare_parameter('distance_tolerance', 1.0)
@@ -121,6 +124,7 @@ class AutonomyStateMachine(Node):
         self.curr_latitude = 0
         self.curr_longitude = 0
         self.curr_elevation = 0
+        self.curr_heading = 0
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)  
         self.tag_id = TagID.GPS_ONLY
         self.i = 0
@@ -200,6 +204,34 @@ class AutonomyStateMachine(Node):
             self.create_timer(10.0, self.wait_timer_callback)
             self.is_start_timer = False
 
+    def toggle_object_detection(self, data):
+        if self.object_detect_client.service_is_ready():  # Check if service is available
+            self.get_logger().info('Sending object detection request...')
+            self.send_request(data)
+            self.retry_count = 0  # Reset retry count
+        else:
+            if self.retry_count < self.max_retries:
+                self.get_logger().warn(f'Service not available. Retrying... ({self.retry_count + 1}/{self.max_retries})')
+                self.retry_count += 1
+                self.create_timer(1.0, lambda: self.toggle_object_detection(data))
+            else:
+                self.get_logger().error('Object detection service not available after maximum retries. Giving up.')
+
+    def send_request(self, data):
+        # Create and send a request
+        request = SetBool.Request()
+        request.data = data
+        future = self.object_detect_client.call_async(request)
+        future.add_done_callback(self.handle_response)
+
+    def handle_response(self, future):
+        try:
+            response = future.result()
+            self.get_logger().info(f'Response: Success={response.success}, Message="{response.message}"')
+        except Exception as e:
+            self.get_logger().error(f'Failed to call service: {str(e)}')
+    
+    
     def obj_detect_callback(self, msg: ObjectDetections):
         timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
         is_recent = lambda obj_ts: timestamp - obj_ts <= 0.1
@@ -240,7 +272,7 @@ class AutonomyStateMachine(Node):
 
     def ar_tag_callback(self, msg: FiducialTransformArray):
         # print("in ar_tag_callback")
-        if len(msg.transforms) == 1:
+        if len(msg.transforms) == 1: #TODO: if we happpen to see 2, this will not run
             # print("found 1 tag")
             if self.aruco_tag_distance is None:
                 self.aruco_tag_distance = np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2)

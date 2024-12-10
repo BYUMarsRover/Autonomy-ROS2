@@ -13,6 +13,7 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/AutonomyTaskInfo.msg"
@@ -48,6 +49,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CameraControlResponse.srv"
   "srv/AutonomyAbort.srv"
   "srv/AutonomyWaypoint.srv"
+  "srv/AutonomyWaypointResponse.srv"
   "srv/SetFloat32.srv"
   DEPENDENCIES std_msgs geometry_msgs sensor_msgs builtin_interfaces # Add packages that above messages depend on
 )
@@ -64,4 +66,5 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+ament_export_dependencies(rosidl_default_runtime)
 ament_package()
