@@ -15,7 +15,6 @@ import os
 
 def generate_launch_description():
 
-    # Get directories TODO: Uncomment packages as they are created
     odometry_dir = get_package_share_directory('odometry')
     peripherals_dir = get_package_share_directory('peripherals')
     home_gui_dir = get_package_share_directory('home_gui')
@@ -42,9 +41,9 @@ def generate_launch_description():
         # ),
 
         # Include other launch files TODO: Uncomment packages as they are created
-        # IncludeLaunchDescription( #TODO: needs to be different
+        # IncludeLaunchDescription( #TODO: uncomment when mobility is in ROS2
         #     PythonLaunchDescriptionSource([ThisLaunchFileDir(), '/rover_drive.launch.py'])
-        # ),
+        # ), 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join( 
                 peripherals_dir, 'launch', 'battery_info.launch.py'))

@@ -22,15 +22,15 @@ def generate_launch_description():
     )
 
     # Start launch files specific to the Autonomy Task on the base station
-    # include_base_autonomous = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource([
-    #         os.path.join(
-    #             get_package_share_directory('navigation'),
-    #             'launch',
-    #             'base_autonomous.launch.py'
-    #         )
-    #     ])
-    # )
+    include_base_autonomous = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            os.path.join(
+                get_package_share_directory('navigation'),
+                'launch',
+                'base_autonomous.launch.py'
+            )
+        ])
+    )
 
     # include_path_planning = IncludeLaunchDescription(
     #     PythonLaunchDescriptionSource([
@@ -44,6 +44,6 @@ def generate_launch_description():
 
     return LaunchDescription([
         include_base_common,
-        # include_base_autonomous,
+        include_base_autonomous,
         # include_path_planning
     ])
