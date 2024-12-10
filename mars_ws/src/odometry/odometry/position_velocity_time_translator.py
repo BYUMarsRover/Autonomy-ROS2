@@ -10,6 +10,8 @@ from ublox_read_2.msg import PositionVelocityTime
 class PositionVelocityTimeTranslator(Node):
     """
     Description: 
+    Node that takes in ublox PositionVelocityTime messages and sends out
+    NavSatFix messages that are used by the ukf navsat transform node.
     """
     def __init__(self):
         super().__init__('position_velocity_time_translator')
