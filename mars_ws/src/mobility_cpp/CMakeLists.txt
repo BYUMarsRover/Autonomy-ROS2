@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(mobility)
+project(mobility_cpp)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -29,6 +29,18 @@ install(TARGETS
   # mega_comms
   DESTINATION lib/${PROJECT_NAME})
 
+# Params files #TODO: move this to a locally stored place
+install(FILES
+  params/autopilot_params.yaml
+  DESTINATION share/${PROJECT_NAME}/params
+)
+
+# install(DIRECTORY
+#   utils
+#   controllers
+#   DESTINATION share/${PROJECT_NAME}
+# )
+
 install(PROGRAMS
   # scripts/joystick_control.py
   scripts/transition.py
@@ -37,6 +49,7 @@ install(PROGRAMS
   scripts/autopilot_manager.py
   scripts/path_manager.py
   scripts/wheel_manager.py
+  scripts/manager_interface.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

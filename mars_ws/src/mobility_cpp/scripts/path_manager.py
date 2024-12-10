@@ -15,9 +15,16 @@ from rover_msgs.msg import RoverStateSingleton, MobilityAutopilotCommand, Mobili
 from sensor_msgs.msg import NavSatFix
 from std_msgs.msg import String
 from std_srvs.srv import SetBool
-from utils.GPSTools import *
 import utm
 import numpy as np
+
+# Import GPSTools from utils
+import os
+import sys
+from ament_index_python.packages import get_package_share_directory
+utils_path = os.path.join(get_package_share_directory('mobility'),'utils')
+sys.path.append(utils_path)
+from GPSTools import *
 
 
 class PathManager(Node):
@@ -32,7 +39,8 @@ class PathManager(Node):
         self.manager_name = "Path Manager"
 
         # ROS 2 Services
-        self.enable_server = self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable)
+        # TODO: no attribute 'enable'
+        # self.enable_server = self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable)
         self.switch_hazard_avoidance = self.create_service(SetBool, '/mobility/hazard_avoidance/enabled', self.enable_hazard_avoidance)
 
         # ROS 2 Publishers

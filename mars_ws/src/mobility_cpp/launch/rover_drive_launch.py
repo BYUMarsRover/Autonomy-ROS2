@@ -7,8 +7,8 @@ def generate_launch_description():
     return LaunchDescription([
         # Wheel Manager Node
         Node(
-            package='mobility',
-            executable='transition',
+            package='mobility_cpp',
+            executable='transition.py',
             name='transition',
             output='screen',
             namespace=namespace,

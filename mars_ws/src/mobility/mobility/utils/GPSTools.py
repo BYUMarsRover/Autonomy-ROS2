@@ -4,7 +4,7 @@ BYU MARS ROVER 2023
 GPSTools.py -- This file was written in years previous to 
 convert latitude and longitude data to angles and distances 
 that are intelligible by the rover (i.e. in the map frame). I've done by best 
-to add betters comments to the file. The unedited version is also found in the autonomy_state machine 
+to add better comments to the file. The unedited version is also found in the autonomy_state machine 
 package.
 
     -- AW

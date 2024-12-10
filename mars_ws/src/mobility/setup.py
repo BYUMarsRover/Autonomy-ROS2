@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 from glob import glob
 
-package_name = 'autonomy'
+package_name = 'mobility'
 
 setup(
     name=package_name,
@@ -13,20 +13,22 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', glob('launch/*launch.py')),
         ('share/' + package_name + '/params', glob('params/*.yaml')),
-
     ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='marsrover',
     maintainer_email='marsrover@todo.todo',
-    description='The autonomous state machine package',
-    license='BYU YOU CANT HAVE IT',
+    description='TODO: Package description',
+    license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'fiducial_data = autonomy.fiducial_data:main', 
-            'drive_controller_api = autonomy.drive_controller_api:main',
-            'state_machine = autonomy.state_machine:main',
+            'transition = mobility.transition:main',
+            'drive_manager = mobility.drive_manager:main',
+            'aruco_autopilot_manager = mobility.aruco_autopilot_manager:main',
+            'autopilot_manager = mobility.autopilot_manager:main',
+            'path_manager = mobility.path_manager:main',
+            'wheel_manager = mobility.wheel_manager:main',
         ],
     },
 )

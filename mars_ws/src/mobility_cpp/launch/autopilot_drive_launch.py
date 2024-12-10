@@ -12,8 +12,8 @@ def generate_launch_description():
     return LaunchDescription([
         # Wheel Manager Node
         Node(
-            package='mobility',
-            executable='wheel_manager',
+            package='mobility_cpp',
+            executable='wheel_manager.py',
             name='wheel_manager',
             output='screen',
             namespace=namespace,
@@ -22,7 +22,7 @@ def generate_launch_description():
         # Drive Manager Node
         Node(
             package='mobility',
-            executable='drive_manager',
+            executable='drive_manager.py',
             name='drive_manager',
             output='screen',
             parameters=[mobility_params],
@@ -32,7 +32,7 @@ def generate_launch_description():
         # Autopilot Manager Node
         Node(
             package='mobility',
-            executable='autopilot_manager',
+            executable='autopilot_manager.py',
             name='autopilot_manager',
             output='screen',
             parameters=[mobility_params],
@@ -42,7 +42,7 @@ def generate_launch_description():
         # Aruco Autopilot Manager Node
         Node(
             package='mobility',
-            executable='aruco_autopilot_manager',
+            executable='aruco_autopilot_manager.py',
             name='aruco_autopilot_manager',
             output='screen',
             parameters=[mobility_params],
@@ -52,7 +52,7 @@ def generate_launch_description():
         # Path Manager Node
         Node(
             package='mobility',
-            executable='path_manager',
+            executable='path_manager.py',
             name='path_manager',
             output='screen',
             namespace=namespace,

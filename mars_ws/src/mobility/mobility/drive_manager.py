@@ -2,7 +2,7 @@
 
 import rclpy
 from rclpy.node import Node
-from rover_msgs.msg import MobilityDriveCommands, MobilityVelocityCommands
+from rover_msgs.msg import MobilityDriveCommand, MobilityVelocityCommands
 from std_srvs.srv import SetBool
 import numpy as np
 
@@ -20,7 +20,7 @@ class DriveManager(Node):
 
         # ROS 2 Publishers
         self.wheel_vel_cmds_pub = self.create_publisher(
-            MobilityDriveCommands, 
+            MobilityDriveCommand, 
             '/mobility/wheel_vel_cmds', 
             10
         )
@@ -43,7 +43,7 @@ class DriveManager(Node):
         self.r = 0.8382  # wheel radius (meters)
         self.B = 0.1335  # wheel base distance (meters)
         self.k = 0.5     # parameter for sigmoid function
-        self.rover_cmd = MobilityDriveCommands()
+        self.rover_cmd = MobilityDriveCommand()
         self.enabled = False
         self.manager_name = "Drive Manager"
 
@@ -70,7 +70,7 @@ class DriveManager(Node):
 
     def publish_rover_cmd(self):
         if not self.enabled:
-            self.rover_cmd = MobilityDriveCommands()
+            self.rover_cmd = MobilityDriveCommand()
 
         self.wheel_vel_cmds_pub.publish(self.rover_cmd)
 

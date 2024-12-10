@@ -2,9 +2,9 @@
 
 import rclpy
 from rclpy.node import Node
-from rover_msgs.msg import IWCMotors, MobilityDriveCommands
+from rover_msgs.msg import IWCMotors, MobilityDriveCommand
 from std_srvs.srv import SetBool
-from manager_interface import Manager
+# from manager_interface import Manager
 
 
 class WheelManager(Node):
@@ -17,7 +17,7 @@ class WheelManager(Node):
         self.manager_name = "Wheel Manager"
 
         self.wheel_vel_cmds_sub = self.create_subscription(
-            MobilityDriveCommands,
+            MobilityDriveCommand,
             '/mobility/wheel_vel_cmds',
             self.wheel_vel_cmds_callback,
             10

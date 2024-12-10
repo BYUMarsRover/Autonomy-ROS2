@@ -43,6 +43,7 @@ USER marsrover
 # Need to confirm this is still necessary?
 # RUN pip3 uninstall -y numpy
 # RUN pip3 install numpy==1.26.0
+RUN pip3 install utm
 
 # Add OpenCV dependency -- needed for aruco detect
 USER root

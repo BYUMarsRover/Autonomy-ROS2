@@ -19,8 +19,17 @@ from std_msgs.msg import Float32
 from geometry_msgs.msg import Twist
 from std_srvs.srv import SetBool
 
-from controllers.pid_control import PIDControl
-from utils.wrap import wrap
+# Import wrap from utils and PIDControl from controllers
+import os
+import sys
+from ament_index_python.packages import get_package_share_directory
+utils_path = os.path.join(get_package_share_directory('mobility'),'utils')
+controllers_path = os.path.join(get_package_share_directory('mobility'),'controllers')
+sys.path.append(utils_path)
+sys.path.append(controllers_path)
+from wrap import wrap
+from pid_control import PIDControl
+
 #TODO: implement the manager class
 from manager_interface import Manager
 
