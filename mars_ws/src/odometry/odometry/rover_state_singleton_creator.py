@@ -13,6 +13,9 @@ from tf_transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
 from rover_msgs.msg import RoverStateSingleton
 from sensor_msgs.msg import NavSatFix
+import numpy as np
+
+np.float = float # Bug fix hack
 
 class RoverStateSingletonCreator(Node):
     """
