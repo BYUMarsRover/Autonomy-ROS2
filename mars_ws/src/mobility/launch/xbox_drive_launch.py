@@ -36,7 +36,6 @@ def generate_launch_description():
             package='mobility',
             executable='joystick_control',
             name='xbox_drive',
-            namespace='mobility',
             output='screen',
             namespace=namespace,
         ),
