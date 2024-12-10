@@ -3,6 +3,11 @@
 import math
 import rclpy
 from rclpy.node import Node
+
+# Monkey patch (there is an bug in the transforms3d library within tf_transformations that uses np.float instead of float)
+import numpy as np
+np.float = float  # Temporary alias for compatibility
+
 from tf_transformations import euler_from_quaternion
 
 from nav_msgs.msg import Odometry
