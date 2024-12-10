@@ -39,7 +39,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_share_directory('mobility'),
                 'launch',
-                'autopilot_drive.launch.py'
+                'autopilot_drive_launch.py'
             )
         ])
     )

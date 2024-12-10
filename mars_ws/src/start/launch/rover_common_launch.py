@@ -60,7 +60,7 @@ def generate_launch_description():
         # Rover Translator node for mobility messages
         Node(
             package='mobility',
-            executable='transition.py',
+            executable='transition',
             name='transition',
             output='screen',
             namespace='mobility',
