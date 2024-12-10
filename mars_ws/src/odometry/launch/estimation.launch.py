@@ -54,6 +54,10 @@ def generate_launch_description():
             executable='imu_filter_madgwick_node',
             name='imu_filter_madgwick',
             output='screen',
+            remappings=[
+                ('/imu/data_raw', '/zed/imu/data'),
+                ('/imu/mag', '/zed/imu/mag')
+            ],
             parameters=[{
                 'fixed_frame': 'odom',
                 'use_mag': True,
