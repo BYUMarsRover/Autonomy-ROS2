@@ -18,6 +18,7 @@ def generate_launch_description():
             package='usb_cam',
             executable='usb_cam_node_exe',
             name='head_camera',
+            namespace ='head_camera',
             parameters=[cam_config_path],  # Update this path
             remappings=[
                 # ('/image_raw', '/head_camera/image_raw')  # Uncomment and adjust if remapping is needed

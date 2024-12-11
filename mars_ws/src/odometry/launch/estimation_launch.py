@@ -38,7 +38,9 @@ def generate_launch_description():
             output='screen',
             parameters=[config],
             remappings=[
-                ('odometry/filtered', 'odometry/filtered_map')
+                ('odometry/filtered', 'odometry/filtered_map'),
+                ('imu', 'imu/data'),
+                ('gps/fix', 'ins/lla'),
             ],
             emulate_tty=True
         ),
