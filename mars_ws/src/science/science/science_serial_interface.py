@@ -72,10 +72,9 @@ class ScienceSerialInterface(Node):
         # self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
         self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
 
-        hz = 10 # Rate of 10 Hz
-        # self.create_timer(1./hz, self.query_temperature)
-        # self.create_timer(1./hz, self.query_humidity)
-        self.create_timer(1./hz, self.read_serial)
+        self.create_timer(100e-3, self.read_serial) # 10 Hz
+        self.create_timer(1, self.query_temperature) # 1 Hz
+        self.create_timer(1, self.read_serial) # 1 Hz
 
         # Caches for control purposes
         self.current_tool_index = 0
@@ -142,7 +141,7 @@ class ScienceSerialInterface(Node):
         # Returns format information for a possible packet in the queue
         # Returns None, None if no possible packet in the queue
 
-        temp = ",".join([ hex(x) for x in self.read_queue])
+        temp = ",".join([ hex(x) for x in queue])
         print(f"Looking for packet in [{temp}]")
 
         if len(queue) > RESPONSE_ECHO_LEN_INDEX:
@@ -156,17 +155,17 @@ class ScienceSerialInterface(Node):
                 if (len(queue) > RESPONSE_FOOTER_BASE_INDEX + echo_length + error_length):
                     # The footer byte should now be present
                     print("Possible packet identified")
-                    return echo_length, error_length
+                    return (echo_length, error_length)
 
                 else:
                     print("Not long enough to contain footer length")
-                    return None, None
+                    return (None, None)
             else:
                 print("Not long enough to contain error length")
-                return None, None
+                return (None, None)
         else:
             print("Not long enough to contain echo length")
-            return None, None
+            return (None, None)
 
     def read_serial(self):
         # reads data off the buffer and trys to identify response packets
@@ -199,7 +198,8 @@ class ScienceSerialInterface(Node):
 
                 if self.read_queue[RESPONSE_FOOTER_BASE_INDEX + echo_length + error_length] == RESPONSE_PACKET_FOOTER:
                     # This is a valid packet
-                    self.process_packet(self.read_queue[0:(RESPONSE_FOOTER_BASE_INDEX + echo_length + error_length)])
+                    self.process_packet(self.read_queue[0:(RESPONSE_FOOTER_BASE_INDEX + echo_length + error_length) + 1], packet_formatting)
+                    self.read_queue = self.read_queue[(RESPONSE_FOOTER_BASE_INDEX + echo_length + error_length) + 1:]
 
                 else:
                     # Bad packet, pop bytes until a new header byte is reached
@@ -210,27 +210,28 @@ class ScienceSerialInterface(Node):
                             break
 
     def publish_sensors_value(self):
-        self.info_publisher.publish(ScienceSensorValues(self.temperature, self.humidity))
+        self.info_publisher.publish(ScienceSensorValues({ 'temperature': self.temperature, 'mositure': self.humidity}))
 
-    def process_packet(self, response_packet):
+    def process_packet(self, response_packet, formatting_data):
         # Process a valid response packet
-        echo_length, error_length = self.contains_possible_packet(response_packet)
-        print(echo_length)
-        print(error_length)
+        echo_length = formatting_data[0]
+        error_length = formatting_data[1]
 
         echo_message = response_packet[RESPONSE_ECHO_MESSAGE_START_INDEX : RESPONSE_ECHO_MESSAGE_START_INDEX + echo_length]
         error_code = response_packet[RESPONSE_ECHO_MESSAGE_START_INDEX + echo_length]
         error_message = response_packet[RESPONSE_ERROR_MESSAGE_START_BASE_INDEX + echo_length: RESPONSE_ERROR_MESSAGE_START_BASE_INDEX + echo_length + error_length]
 
-        print(f'Received Reponse Packet:\n\tEcho: {echo_message}\n\tError Code: {error_code}\n\tError Message: {error_message}')
+        print(f'Received Reponse Packet:\n\tEcho: [{",".join([ hex(x) for x in response_packet])}]\n\tError Code: {error_code}\n\tError Message: [{",".join([ hex(x) for x in error_message])}]')
 
         function_address = echo_message[1] & 0b11111
         if function_address == (GET_TEMP_COMMAND_WORD & 0b11111):
             # This packet contains temperature data as a float
-            self.temperature = struct.unpack('<f', error_message)
+            self.temperature = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))
+            self.publish_sensors_value()
         elif function_address == (GET_HUM_COMMAND_WORD & 0b11111):
             # This packet contains humidity data as a float
-            self.humidity = struct.unpack('<f', error_message)
+            self.humidity = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))
+            self.publish_sensors_value()
 
 def main(args=None):
     rclpy.init(args=args)
