@@ -6,6 +6,7 @@ import os
 def generate_launch_description():
 
     config = os.path.join(get_package_share_directory('odometry'), 'config', 'estimation.yaml'),
+    imu_config = os.path.join(get_package_share_directory('odometry'), 'config', 'imu_filter.yaml'),
 
     return LaunchDescription([
         # Load parameters for robot_localization
@@ -55,16 +56,9 @@ def generate_launch_description():
             name='imu_filter_madgwick',
             output='screen',
             remappings=[
-                ('/imu/data_raw', '/zed/imu/data'),
-                ('/imu/mag', '/zed/imu/mag')
+                ('imu/data', 'zed/imu/data'),
+                ('imuu/mag', 'zed/imu/mag')
             ],
-            parameters=[{
-                'fixed_frame': 'odom',
-                'use_mag': True,
-                'use_magnetic_field_msg': True,
-                'world_frame': 'nwu',
-                'publish_tf': False,
-                'publish_debug_topics': True
-            }]
+            parameters=[imu_config]
         ),
     ])

@@ -31,132 +31,134 @@ function printError {
 # Parse Command Line Options
 ###############################################################################
 
-function usage {
-echo -e \
-'usage: ./launch.sh [rover-address] [options]
-       ./launch.sh local [options]
+# function usage {
+# echo -e \
+# 'usage: ./launch.sh [rover-address] [options]
+#        ./launch.sh local [options]
 
-Launch all ROS nodes on the rover and base station.
+# Launch all ROS nodes on the rover and base station.
 
-This automatically generates all of the needed environment variables for
-both base station and rover, independent of .bashrc, .rosrc, .rosenv, etc.
+# This automatically generates all of the needed environment variables for
+# both base station and rover, independent of .bashrc, .rosrc, .rosenv, etc.
 
-If the rover-address is unspecified, the default 192.168.1.20 is used.
+# If the rover-address is unspecified, the default 192.168.1.20 is used.
 
-Default task to launch is equipment servicing.
+# Default task to launch is equipment servicing.
 
-Default location for mapviz is Hanksville.
+# Default location for mapviz is Hanksville.
 
-options:
-  -u, --user USER           user on rover computer [default=marsrover]
-  -t, --task TASK_NAME      task to launch (autonomy|retrieval|servicing|science)
-  -l, --location LOC_NAME   location for mapviz (hanksville|gravel_pit|rock_canyon|byu|little_moab)
-  -w, --wait SECONDS        number of seconds to wait for SSH to connect
-  -a, --attach true|false   automatically attach to tmux session [default=true]
-  --base-env                show base environment variables without launching
-  --rover-env               show rover environment variables without launching
-  -v, --verbose             show detailed logging output
+# options:
+#   -u, --user USER           user on rover computer [default=marsrover]
+#   -t, --task TASK_NAME      task to launch (autonomy|retrieval|servicing|science)
+#   -l, --location LOC_NAME   location for mapviz (hanksville|gravel_pit|rock_canyon|byu|little_moab)
+#   -w, --wait SECONDS        number of seconds to wait for SSH to connect
+#   -a, --attach true|false   automatically attach to tmux session [default=true]
+#   --base-env                show base environment variables without launching
+#   --rover-env               show rover environment variables without launching
+#   -v, --verbose             show detailed logging output
 
-examples:
-    ./launch.sh
-    ./launch.sh 192.168.1.20
-    ./launch.sh 192.168.1.20 -t autonomy
-    ./launch.sh 192.168.1.20 -t retrieval
-    ./launch.sh 192.168.1.20 -t retrieval -l byu
-    ./launch.sh 127.0.0.1 --user byumarsrover --attach=false
-    export $(./launch.sh --base-env | xargs)
-'
-exit
-}
+# examples:
+#     ./launch.sh
+#     ./launch.sh 192.168.1.20
+#     ./launch.sh 192.168.1.20 -t autonomy
+#     ./launch.sh 192.168.1.20 -t retrieval
+#     ./launch.sh 192.168.1.20 -t retrieval -l byu
+#     ./launch.sh 127.0.0.1 --user byumarsrover --attach=false
+#     export $(./launch.sh --base-env | xargs)
+# '
+# exit
+# }
 
-# Default settings
-TIMEOUT=5
-ATTACH='true'
-TASK_NAME="servicing"
+# # Default settings
+# TIMEOUT=5
+# ATTACH='true'
+# TASK_NAME="servicing"
 
-OPTIONS="$(getopt --name launch --options hvu:t:l:w:a: --longoptions help,verbose,base-env,rover-env,user:,task:,location:,wait:,attach: -- "$@")"
+# OPTIONS="$(getopt --name launch --options hvu:t:l:w:a: --longoptions help,verbose,base-env,rover-env,user:,task:,location:,wait:,attach: -- "$@")"
 
-if [ $? != 0 ]; then
-  # Incorrect options provided
-  usage
-  exit 1
-fi
+# if [ $? != 0 ]; then
+#   # Incorrect options provided
+#   usage
+#   exit 1
+# fi
 
-eval set -- "$OPTIONS"
-while true; do
-  case "$1" in
-  -h | --help)
-    usage
-    exit
-    ;;
-  -u | --user)
-    shift
-    ROVER_USER="$1"
-    ;;
-  -t | --task)
-    shift
-    # if [[ $1 =~ ^(autonomy)|(servicing)|(retrieval)|(science)$ ]]; then
-    #   TASK_NAME=$1
-    # else
-    #   echo "Invalid taskname '$1'"
-    #   usage
-    # fi
-    case "$1" in
-      autonomy | servicing | retrieval | science)
-        TASK_NAME=$1
-        ;;
-      *)
-        echo "Invalid taskname '$1'"
-        usage
-        exit
-        ;;
-    esac
-    ;;
-  -l | --location)
-    shift
-    case "$1" in
-      hanksville | gravel_pit | rock_canyon | byu | little_moab)
-        MAPVIZ_LOCATION=$1
-        ;;
-      *)
-        echo "Invalid MapViz location '$1'"
-        usage
-        exit
-        ;;
-    esac
-    ;;
-  -w | --wait)
-    shift
-    TIMEOUT="$1"
-    ;;
-  --base-env)
-    [ -z "$ROVER_ENV" ] || {
-      echo "Only specify one of --base-env or --rover-env"
-      exit 1
-    }
-    BASE_ENV=1
-    ;;
-  --rover-env)
-    [ -z "$BASE_ENV" ] || {
-      echo "Only specify one of --base-env or --rover-env"
-      exit 1
-    }
-    ROVER_ENV=1
-    ;;
-  -v | --verbose)
-    VERBOSE=1
-    ;;
-  -a | --attach)
-    shift
-    ATTACH="$1"
-    ;;
-  --)
-    shift
-    break
-    ;;
-  esac
-  shift
-done
+# eval set -- "$OPTIONS"
+# while true; do
+#   case "$1" in
+#   -h | --help)
+#     usage
+#     exit
+#     ;;
+#   -u | --user)
+#     shift
+#     ROVER_USER="$1"
+#     ;;
+#   -t | --task)
+#     shift
+#     # if [[ $1 =~ ^(autonomy)|(servicing)|(retrieval)|(science)$ ]]; then
+#     #   TASK_NAME=$1
+#     # else
+#     #   echo "Invalid taskname '$1'"
+#     #   usage
+#     # fi
+#     case "$1" in
+#       autonomy | servicing | retrieval | science)
+#         TASK_NAME=$1
+#         ;;
+#       *)
+#         echo "Invalid taskname '$1'"
+#         usage
+#         exit
+#         ;;
+#     esac
+#     ;;
+#   -l | --location)
+#     shift
+#     case "$1" in
+#       hanksville | gravel_pit | rock_canyon | byu | little_moab)
+#         MAPVIZ_LOCATION=$1
+#         ;;
+#       *)
+#         echo "Invalid MapViz location '$1'"
+#         usage
+#         exit
+#         ;;
+#     esac
+#     ;;
+#   -w | --wait)
+#     shift
+#     TIMEOUT="$1"
+#     ;;
+#   --base-env)
+#     [ -z "$ROVER_ENV" ] || {
+#       echo "Only specify one of --base-env or --rover-env"
+#       exit 1
+#     }
+#     BASE_ENV=1
+#     ;;
+#   --rover-env)
+#     [ -z "$BASE_ENV" ] || {
+#       echo "Only specify one of --base-env or --rover-env"
+#       exit 1
+#     }
+#     ROVER_ENV=1
+#     ;;
+#   -v | --verbose)
+#     VERBOSE=1
+#     ;;
+#   -a | --attach)
+#     shift
+#     ATTACH="$1"
+#     ;;
+#   --)
+#     shift
+#     break
+#     ;;
+#   esac
+#   shift
+# done
+
+################FIX ABOVE?###############
 
 # Non-option arguments
 ROVER_ADDRESS="$1"
@@ -245,6 +247,7 @@ export $(echo $BASE_ENVIRONMENT | xargs)
 #**Check
 BASE_REPO_SETUP="../install/setup.bash"
 
+###########FIX HERE
 # Run the ROS setup script
 if ! test -f "$BASE_REPO_SETUP"; then
     printWarning "The rover workspace has not been built, so it cannot be set up.
@@ -356,7 +359,7 @@ tmux select-pane -t 0 -T base-station-${TASK_NAME}-task
 # START BASE LAUNCH FILE
 ###############################################################################
 tmux send-keys "$SET_BASE_ENV_CMD && $LAUNCHER start \
-  base_task_${TASK_NAME}.launch.py" Enter
+  base_task_${TASK_NAME}_launch.py" Enter
 
 
 # Attach to the beautiful tmux session we have created

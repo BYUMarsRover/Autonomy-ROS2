@@ -16,7 +16,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_share_directory('start'),
                 'launch',
-                'rover_common.launch.py'
+                'rover_common_launch.py'
             )
         ])
     )
@@ -27,22 +27,22 @@ def generate_launch_description():
             os.path.join(
                 get_package_share_directory('autonomy'),
                 'launch',
-                'autonomy.launch.py'
+                'autonomy_launch.py'
             )
         ])
     )
 
     # TODO: Add when converted to ROS2
     # Start Mobility low level nodes
-    # include_autopilot_drive = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource([
-    #         os.path.join(
-    #             get_package_share_directory('mobility'),
-    #             'launch',
-    #             'autopilot_drive.launch.py'
-    #         )
-    #     ])
-    # )
+    include_autopilot_drive = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            os.path.join(
+                get_package_share_directory('mobility'),
+                'launch',
+                'autopilot_drive_launch.py'
+            )
+        ])
+    )
 
     # Start localization in odometry
     include_estimation = IncludeLaunchDescription(
@@ -50,7 +50,7 @@ def generate_launch_description():
             os.path.join(
                 get_package_share_directory('odometry'),
                 'launch',
-                'estimation.launch.py'
+                'estimation_launch.py'
             )
         ])
     )
@@ -58,6 +58,6 @@ def generate_launch_description():
     return LaunchDescription([
         include_rover_common,
         include_autonomy,
-        # include_autopilot_drive,
+        include_autopilot_drive,
         include_estimation
     ])

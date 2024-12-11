@@ -41,6 +41,7 @@ RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 USER root
 RUN chown -R marsrover: /usr/local
 USER marsrover
+RUN pip3 install utm
 
 # Add OpenCV dependency -- needed for aruco detect
 USER root
