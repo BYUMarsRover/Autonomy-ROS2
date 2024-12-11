@@ -23,8 +23,8 @@ class BaseHeartbeat(Node):
 
     def update_elapsed_time(self, msg):
         t = self.get_clock().now()
-        self.get_logger().info("Received heartbeat from rover: t=" + str(msg.current_time))
-        self.get_logger().debug("Base received heartbeat: t=" + str(msg.current_time))
+        self.get_logger().info("Received heartbeat from rover: t=" + str(msg.current_time), throttle_duration_sec=10)
+        self.get_logger().debug("Base received heartbeat: t=" + str(msg.current_time),throttle_duration_sec=1)
         self.last_received = t
 
     def ping_and_publish(self):
