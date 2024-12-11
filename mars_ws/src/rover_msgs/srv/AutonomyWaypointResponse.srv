@@ -1,0 +1,6 @@
+# Request part
+rover_msgs/AutonomyTaskInfo[] task_list
+---
+# Response part
+bool success
+string message
