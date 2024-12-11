@@ -54,7 +54,7 @@ class HazardDetector(Node):
         )
 
         #Publishers
-        self.publisher = self.create_publisher(String, '/hazard_zones', 10)
+        self.publisher = self.create_publisher(HazardArray, '/hazards', 10)
 
         self.get_logger().info('Hazard_detector initialized')
 
@@ -162,6 +162,7 @@ class HazardDetector(Node):
         return clusters
 
     def generate_hazard_message(self, high_points, steep_slopes):
+        #TODO Work on this next to have hazards published according to the custom msgs that we made
         message = f"Hazards detected: "
         if high_points:
             message += f"{len(high_points)} high obstacles. "
