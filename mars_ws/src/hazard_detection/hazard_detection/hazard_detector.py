@@ -6,6 +6,7 @@ from .pcl_helper import *
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 import open3d as o3d
+from rover_msgs.msg import Hazard, HazardArray
 
 class HazardDetector(Node):
     def __init__(self):
