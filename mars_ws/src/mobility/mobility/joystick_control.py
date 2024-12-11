@@ -3,8 +3,9 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Joy
-from rover_msgs.msg import IWC_motors, MobilityJoyDriveEnable
-from controllers.teleop_controllers import TankController, ArcadeController
+from std_msgs.msg import Bool
+from rover_msgs.msg import IWCMotors
+from mobility.controllers.teleop_controllers import TankController, ArcadeController
 
 # TODO: put these inside a yaml
 # Button and axis mappings
@@ -36,12 +37,12 @@ class XBOX(Node):
 
         # Publishers
         self.joy_drive_enabled_pub = self.create_publisher(
-            MobilityJoyDriveEnable,
+            Bool,
             '/mobility/joy_drive_enabled',
             10
         )
         self.teleop_drive_cmds_pub = self.create_publisher(
-            IWC_motors,
+            IWCMotors,
             '/mobility/teleop_drive_cmds',
             10
         )
@@ -55,7 +56,7 @@ class XBOX(Node):
         self.drivetrain_mode = 'tank'
 
     def joy_callback(self, msg: Joy):
-        IWC_cmd_msg = IWC_motors()
+        IWC_cmd_msg = IWCMotors()
 
         self._check_drive_enabled(msg)
 
@@ -120,8 +121,8 @@ class XBOX(Node):
             self.get_logger().info('Drive enabled')
 
     def _publish_drive_enable(self):
-        joy_drive_enable = MobilityJoyDriveEnable()
-        joy_drive_enable.enabled = self.drive_enabled
+        joy_drive_enable = Bool()
+        joy_drive_enable.data = self.drive_enabled
         self.joy_drive_enabled_pub.publish(joy_drive_enable)
 
     def _check_desired_drive_speed(self, msg: Joy):

@@ -24,9 +24,10 @@ def generate_launch_description():
 
         # Launch the xbox_drive node
         Node(
-            package='joysticks',
-            executable='xbox_drive.py',
+            package='mobility',
+            executable='joystick',
             name='xbox_drive',
+            namespace='mobility',
             output='screen'
         )
     ])
