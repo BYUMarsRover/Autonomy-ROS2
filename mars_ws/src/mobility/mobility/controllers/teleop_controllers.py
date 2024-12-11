@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-from rover_msgs.msg import IWC_motors
+from rover_msgs.msg import IWCMotors
 import numpy as np
 
 class TeleopController():
     def __init__(self):
         pass
 
-    def control(self) -> IWC_motors:
+    def control(self) -> IWCMotors:
         pass
 
     def _check_speed(self, val):
@@ -27,7 +27,7 @@ class TankController(TeleopController):
     def __init__(self):
         TeleopController.__init__(self)
 
-    def control(self, left_wheels: float, right_wheels: float) -> IWC_motors:
+    def control(self, left_wheels: float, right_wheels: float) -> IWCMotors:
         """
         Computes IWC commands given a left_wheels and right_wheels input
         left_wheels: float: a percentage of total speed for the left wheels (0-1)
@@ -40,7 +40,7 @@ class TankController(TeleopController):
         right_speed = self._check_speed(right_wheels)
 
         # Create IWC Message
-        IWC_cmd_msg = IWC_motors()
+        IWC_cmd_msg = IWCMotors()
         IWC_cmd_msg.right_front_speed = abs(right_speed)
         IWC_cmd_msg.right_front_dir = right_dir
 
@@ -71,7 +71,7 @@ class ArcadeController(TeleopController):
     def __init__(self):
         TeleopController.__init__(self)
         
-    def control(self, x: float, y: float) -> IWC_motors:
+    def control(self, x: float, y: float) -> IWCMotors:
         """
         x: float: x position of the joystick controller
         y: float: y position of the joystick controller
@@ -109,7 +109,7 @@ class ArcadeController(TeleopController):
         right_speed = self._check_speed(right_wheels)
 
         # Create IWC Message
-        IWC_cmd_msg = IWC_motors()
+        IWC_cmd_msg = IWCMotors()
         IWC_cmd_msg.right_front_speed = abs(right_speed)
         IWC_cmd_msg.right_front_dir = right_dir
 

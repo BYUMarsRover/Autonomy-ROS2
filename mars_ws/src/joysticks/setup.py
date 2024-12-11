@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 from glob import glob
 
-package_name = 'mobility'
+package_name = 'joysticks'
 
 setup(
     name=package_name,
@@ -23,14 +23,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'transition = mobility.transition:main',
-            'drive_manager = mobility.drive_manager:main',
-            'aruco_autopilot_manager = mobility.aruco_autopilot_manager:main',
-            'autopilot_manager = mobility.autopilot_manager:main',
-            'path_manager = mobility.path_manager:main',
-            'wheel_manager = mobility.wheel_manager:main',
-            'mega_middleman = mobility.mega_middleman:main',
-            'joystick = mobility.joystick_control:main',
+            'xbox_drive = joysticks.xbox_drive:main',
+            'joy_to_xbox = joysticks.joy_xbox_converter:main',
         ],
     },
 )
