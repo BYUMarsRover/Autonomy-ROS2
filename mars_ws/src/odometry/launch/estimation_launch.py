@@ -57,7 +57,7 @@ def generate_launch_description():
             output='screen',
             remappings=[
                 ('imu/data_raw', 'zed/imu/data'),
-                ('imuu/mag_raw', 'zed/imu/mag')
+                ('imu/mag', 'zed/imu/mag')
             ],
             parameters=[imu_config]
         ),
