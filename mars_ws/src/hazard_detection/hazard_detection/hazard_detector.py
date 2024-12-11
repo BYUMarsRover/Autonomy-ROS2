@@ -16,16 +16,19 @@ class HazardDetector(Node):
         self.declare_parameter('slope_threshold', 15.0) #Height of max slope of ground
         self.declare_parameter('voxel_grid_size', .1)
         self.declare_parameter('ground_distance_threshold', .05) #Increase if the ground is pretty rocky
+        self.declare_parameter('bounding_box_start_point', [-0.5, 0.0, 0.5]) #X, Y, Z- X is up the mast, Y is to the right from the rovers perspective, and Z is out away from the rover, all in the Lidars' orientation
         self.declare_parameter('bounding_box_length', 3.0)  
         self.declare_parameter('bounding_box_width', 1.5)  
         self.declare_parameter('bounding_box_height', 1.0)
         self.declare_parameter('epsilon_clustering_density', 1.0)  #Change if the density of the points is not large enough to detect hazards
         self.declare_parameter('min_points_to_cluster', 10) #Increase if we are getting false positives for hazard detection, decrease if we aren't detecting anything
+        
 
         self.height_threshold = self.get_parameter('height_threshold').value
         self.slope_threshold = np.radians(self.get_parameter('slope_threshold').value)
         self.voxel_grid_size = self.get_parameter('voxel_grid_size').value
         self.ground_distance_threshold = self.get_parameter('ground_distance_threshold').value
+        self.bounding_box_start_point = self.get_parameter('bounding_box_start_point').value
         self.box_length = self.get_parameter('bounding_box_length').value
         self.box_width = self.get_parameter('bounding_box_width').value
         self.box_height = self.get_parameter('bounding_box_height').value
@@ -55,21 +58,39 @@ class HazardDetector(Node):
         self.get_logger().info('Hazard_detector initialized')
 
 
+    def imu_callback(self, msg):
+        self.orientation = msg.orientation
+
     def point_cloud_callback(self, msg):
-        # Convert PointCloud2 to Open3D format
-        cloud = ros_to_pcl(msg)
+        # Convert PointCloud2 to Open3D format and transform to the bounding box frame
+        cloud = ros_to_pcl_and_transform(msg, self.bounding_box_start_point)
 
         # Downsample for efficiency
         cloud_filtered = cloud.voxel_down_sample(voxel_size=self.voxel_grid_size)
 
+        # Convert point cloud to numpy array
+        transformed_points = np.asarray(cloud_filtered.points)
+
+        #Creates an array of booleans of whether the point at that index is in the bounding box or not
+        bounding_mask = (
+            (0 <= transformed_points[:, 2]) & (transformed_points[:, 2] <= self.box_length) &  # Z-axis (length)
+            (-self.box_width / 2 <= transformed_points[:, 1]) & (transformed_points[:, 1] <= self.box_width / 2) &  # Y-axis (width)
+            (transformed_points[:, 0] <= self.box_height)  # X-axis (height)
+        )
+
+        #Get cloud of only points in the bounding box
+        cloud_bounded = cloud_filtered.select_by_index(np.where(bounding_mask)[0].tolist())
+
+        o3d.visualization.draw_geometries([cloud_bounded])
+
         # Segment ground plane
-        plane_model, inliers = cloud_filtered.segment_plane(
+        plane_model, inliers = cloud_bounded.segment_plane(
             distance_threshold=self.ground_distance_threshold,
             ransac_n=3,
             num_iterations=1000
         )
-        ground = cloud_filtered.select_by_index(inliers)
-        non_ground = cloud_filtered.select_by_index(inliers, invert=True)
+        ground = cloud_bounded.select_by_index(inliers)
+        non_ground = cloud_bounded.select_by_index(inliers, invert=True)
 
         # Detect obstacles by height
         high_points = self.detect_high_obstacles(non_ground)
@@ -80,9 +101,6 @@ class HazardDetector(Node):
         # Publish hazards
         hazard_message = self.generate_hazard_message(high_points, steep_slopes)
         self.publisher.publish(hazard_message)
-
-    def imu_callback(self, msg):
-        self.orientation = msg.orientation
 
     def detect_high_obstacles(self, non_ground_cloud):
         # Find maximum height in each cluster

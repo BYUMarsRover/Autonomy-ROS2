@@ -31,9 +31,39 @@ def ros_to_pcl(ros_cloud):
     # Visualize the point cloud
     visualize_point_cloud(fake_pc)
 
-
     #return pcl_data
     return fake_pc #Update when actually using a point cloud
+
+def ros_to_pcl_and_transform(ros_cloud, transformation_point):
+    """
+    Converts a ROS PointCloud2 message to an Open3D PointCloud and transforms the points.
+     
+    :param ros_cloud: ROS PointCloud2 message
+    :return: Open3D PointCloud
+    """
+    points_list = []
+
+    # Extract points from ROS PointCloud2 message
+    for point in read_points(ros_cloud, skip_nans=True):
+        points_list.append([point[0]-transformation_point[0], point[1]-transformation_point[1], point[2]-transformation_point[2]])  # x, y, z - transfromation point
+
+    # Convert to NumPy array
+    np_points = np.array(points_list, dtype=np.float32)
+
+    # Create Open3D PointCloud
+    pcl_data = o3d.geometry.PointCloud()
+    pcl_data.points = o3d.utility.Vector3dVector(np_points)
+
+    # Generate the fake point cloud
+    fake_pc = generate_fake_point_cloud()
+
+    # Visualize the point cloud
+    visualize_point_cloud(fake_pc)
+
+    return fake_pc
+    
+    return pcl_data
+
 
 def visualize_point_cloud(pc):
     # Visualize the point cloud
@@ -43,7 +73,6 @@ def generate_fake_point_cloud():
     # Create ground plane points (z = 0)
     ground_plane = np.random.uniform(-5, 5, (1000, 2))  # 1000 points on the ground plane
     ground_plane = np.hstack((ground_plane, np.zeros((ground_plane.shape[0], 1))))
-
 
     #Uncomment to test a sloped plane
     # # Generate 1000 points for the ground plane (x, y coordinates)
@@ -61,13 +90,13 @@ def generate_fake_point_cloud():
     # ground_plane = np.hstack((ground_plane, z_coordinates.reshape(-1, 1)))
 
     # Create non-ground points (random z values)
-    non_ground = np.random.uniform(-5, -4, (200, 2))  # 200 non-ground points
+    non_ground = np.random.uniform(-5, 5, (300, 2))  # 200 non-ground points
     heights = np.random.uniform(1, 5, (non_ground.shape[0], 1))  # z values for non-ground
     non_ground = np.hstack((non_ground, heights))
 
     #Extra non_ground
-    non_ground2 = np.random.uniform(4, 5, (200, 2))  # 200 non-ground points
-    heights2 = np.random.uniform(1, 3, (non_ground.shape[0], 1))  # z values for non-ground
+    non_ground2 = np.random.uniform(-1, 1, (300, 2))  # 200 non-ground points
+    heights2 = np.random.uniform(-.5, 3, (non_ground2.shape[0], 1))  # z values for non-ground
     non_ground2 = np.hstack((non_ground2, heights2))
 
     # Combine ground and non-ground points
