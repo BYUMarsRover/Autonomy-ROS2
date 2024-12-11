@@ -44,7 +44,7 @@ class BaseHeartbeat(Node):
         if (t - self.startup_time).nanoseconds / 1e9 < p.BASE_HEARTBEAT_WARMUP:
             return
         if (t - self.last_received).nanoseconds / 1e9 > p.BASE_WARNING_TOLERANCE:
-            self.get_logger().warn(p.BASE_WARNING_STRING)
+            self.get_logger().warn(p.BASE_WARNING_STRING, throttle_duration_sec=5)
 
 
 def main(args=None):
