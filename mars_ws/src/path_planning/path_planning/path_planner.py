@@ -10,6 +10,7 @@ from .AStar import *
 
 # TODO: make parameter file for importing different maps
 # map = os.path.join(get_package_share_directory('path_planning'), 'data', 'gravel_pits.asc')
+# TEST
 
 class PathPlanner(Node):
     def __init__(self):
