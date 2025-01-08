@@ -2,15 +2,14 @@ import rclpy
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 from rover_msgs.srv import PlanPath, PointList
+from nav_msgs.msg import Path
+from geometry_msgs.msg import Point, PoseStamped, Pose, Quaternion
+from std_msgs.msg import Header
 import os
 
 from .e_mapping import Mapper
 
 from .AStar import *
-
-# TODO: make parameter file for importing different maps
-# map = os.path.join(get_package_share_directory('path_planning'), 'data', 'gravel_pits.asc')
-# TEST
 
 class PathPlanner(Node):
     def __init__(self):
@@ -18,11 +17,13 @@ class PathPlanner(Node):
         self.get_logger().info("Path Planner Node Started")
 
         # Publishers
+        self.mapviz_path = self.create_publisher(Path, '/mapviz/path', 10)
         # TODO: path publisher
 
         # Subscribers
         # TODO: subscription to know the current lat lon position of the rover
         self.location = (40.3224, -111.6436) # NOTE: gravel pits placeholder
+        self.location = (38.4231, -110.7851) # NOTE: hanksville placeholder
 
         # Services
         # This service plans the order of waypoints to visit
@@ -35,12 +36,18 @@ class PathPlanner(Node):
         # Check Actions Needed
         self.timer = self.create_timer(0.1, self.loop)
 
-        # Initialize Mapper object with ascii file
-        if self.location[0] > -111.649553 and self.location[1] < -111.6369 and self.location[0] > 40.3166 and self.location[1] < 40.323302:
+        # Initialize Mapper object with asc file
+        # Gravel Pits Map
+        if self.location[0] > 40.3166 and self.location[0] < 40.323302 and self.location[1] > -111.649553 and self.location[1] < -111.6369:
             self.get_logger().info("Welcome to the gravel pits! Path Planning is ready.")
             file_path=os.path.join(get_package_share_directory('path_planning'), 'data', 'gravel_pits.asc')
             self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='N')
             self.eMapper.chop_map(200, 700, 0, 500)
+        # Hanksville Map
+        if self.location[0] > 38.392509 and self.location[0] < 38.450525 and self.location[1] > -110.804971 and self.location[1] <  -110.773991:
+            self.logger().info("Welcome to Hanksville! Path Planning is ready.")
+            file_path=os.path.join(get_package_share_directory('path_planning'), 'data', 'hanksville_full.asc')
+            self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='S')
         else:
             print("Current location not supported")
             self.get_logger().warn("Current location not supported for path planning")
@@ -64,6 +71,24 @@ class PathPlanner(Node):
             visualize_path(path, self.eMapper.grad_map, waypoints=waypoints, explored_nodes=explored_nodes)
 
             self.path_needed = False
+
+            # Publish path to mapviz
+            path_msg = Path()
+            path_msg.header.frame_id = 'map'
+            for n in path:
+                x, y = self.eMapper.xy_to_latlon(n)
+                path_msg.poses.append(
+                    PoseStamped(
+                        header=Header(frame_id='map'),
+                        pose=Pose(
+                            position=Point(x=x, y=y, z=0.0),
+                            orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+                        )
+                    )
+                )
+
+            self.mapviz_path.publish(path_msg)
+
 
     # Plan Waypoint Order Service Callback
     def plan_order(self, request, response):
