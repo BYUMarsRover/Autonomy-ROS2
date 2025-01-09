@@ -18,12 +18,11 @@ class PathPlanner(Node):
 
         # Publishers
         self.mapviz_path = self.create_publisher(Path, '/mapviz/path', 10)
-        # TODO: path publisher
 
         # Subscribers
         # TODO: subscription to know the current lat lon position of the rover
         self.location = (40.3224, -111.6436) # NOTE: gravel pits placeholder
-        self.location = (38.4231, -110.7851) # NOTE: hanksville placeholder
+        # self.location = (38.4231, -110.7851) # NOTE: hanksville placeholder
 
         # Services
         # This service plans the order of waypoints to visit
@@ -34,7 +33,7 @@ class PathPlanner(Node):
         # Clients
 
         # Check Actions Needed
-        self.timer = self.create_timer(0.1, self.loop)
+        self.timer = self.create_timer(0.1, self.loop) # Perform the loop function at 10Hz
 
         # Initialize Mapper object with asc file
         # Gravel Pits Map
@@ -44,8 +43,8 @@ class PathPlanner(Node):
             self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='N')
             self.eMapper.chop_map(200, 700, 0, 500)
         # Hanksville Map
-        if self.location[0] > 38.392509 and self.location[0] < 38.450525 and self.location[1] > -110.804971 and self.location[1] <  -110.773991:
-            self.logger().info("Welcome to Hanksville! Path Planning is ready.")
+        elif self.location[0] > 38.392509 and self.location[0] < 38.450525 and self.location[1] > -110.804971 and self.location[1] <  -110.773991:
+            self.get_logger().info("Welcome to Hanksville! Path Planning is ready.")
             file_path=os.path.join(get_package_share_directory('path_planning'), 'data', 'hanksville_full.asc')
             self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='S')
         else:
@@ -99,7 +98,7 @@ class PathPlanner(Node):
             NOTE: will take too long for more than 8 waypoints
         '''
         if len(request.points) > 8:
-            response.success = False
+            response.success = False #TODO: verify that "success" can be set to False
             self.get_logger().info("Too many waypoints") #TODO: get this message somewhere useful
             return response
         
@@ -125,8 +124,9 @@ class PathPlanner(Node):
     # Plan Path Service Callback
     def plan_path(self, request, response):
         '''
-        This Service sets a flag to plan a path which will get
-        published to the "path" topic when finished
+        This Service sets a flag for the loop function 
+        to plan a path which will get published to the 
+        "path" topic when finished
 
         Pass in: start and goal in lat/lon format
         '''
@@ -137,7 +137,7 @@ class PathPlanner(Node):
         self.goal = self.eMapper.latlon_to_xy(goal)
         self.path_needed = True
 
-        response.success = True
+        response.received = True
         return response
     
 def main(args=None):
