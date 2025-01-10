@@ -52,6 +52,7 @@ class AutonomyGUI(Node):
         
         # Create buttons
         buttons = [
+            ('Enable Autonomy', self.enable_autonomy),
             ('Send Waypoint', self.send_waypoint)
         ]
         
