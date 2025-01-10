@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout,
                            QLineEdit, QPushButton, QLabel)
 from PyQt5.QtCore import Qt
 from std_srvs.srv import SetBool
+from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
+from rover_msgs.msg import AutonomyTaskInfo
 
 class AutonomyGUI(Node):
     def __init__(self):
@@ -23,6 +25,8 @@ class AutonomyGUI(Node):
 
         # Clients
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
+        self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
+        self.abort_autonomy_client = self.creat_client(AutonomyAbort, '/autonomy/abort_autonomy')
 
         ################# GUI Creation #################
         
@@ -52,7 +56,8 @@ class AutonomyGUI(Node):
         # Create buttons
         buttons = [
             ('Enable Autonomy', self.enable_autonomy),
-            ('Send Waypoint', self.send_waypoint)
+            ('Send Waypoint', self.send_waypoint),
+            ('Abort', self.abort_autonomy)
         ]
         
         for button_text, callback in buttons:
@@ -67,7 +72,6 @@ class AutonomyGUI(Node):
         # Start Qt event loop
         self.app.exec_()
 
-    
 
     # Callback functions for buttons
     def enable_autonomy(self):
@@ -76,22 +80,60 @@ class AutonomyGUI(Node):
         req.data = True
         future = self.enable_autonomy_client.call_async(req)
         rclpy.spin_until_future_complete(self, future)
+        self.error_label.setText('Aborting Task')
+        
+        if future.result().success:
+            self.error_label.setText('Task aborted. Manual mode turned on.')
+        else:
+            self.error_label.setText('Failed to Abort Autonomy')
+        
+    def send_waypoint(self):
+        #logic for sending waypoint
+        req = AutonomyWaypoint.Request()
+        req.task_list = []
+
+        try:
+            lat = float(self.latitude_input.text())
+            lon = float(self.longitude_input.text())
+        except ValueError:
+            self.error_label.setText('Invalid latitude or longitude')
+            return
+
+        # Create a task and append to the task list
+        task = AutonomyTaskInfo()
+        task.latitude = lat
+        task.longitude = lon
+        task.tag_id = 'GPS_only'
+        req.task_list.append(task)
+
+        #send the Request
+        future = self.send_waypoint_client.call_async(req)
+        self.error_label.setText('Sending Waypoint')
+
+        #wait for response
+        rclpy.spin_until_future_complete(self, future)
+        if future.done() and future.result():
+            response = future.result()
+            if response.success:
+                self.error_label.setText('Waypoint Sent')
+            else:
+                self.error_label.setText(f'Failed to Send Waypoint: {response.message}')
+        else:
+            self.error_label.setText('Service call failed or did not complete')
+
+    def abort_autonomy(self):
+        #logic for aborting autonomy task
+        req = SetBool.Request()
+        req.data = True
+        future = self.abort_autonomy_client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
         self.error_label.setText('Enabling Autonomy')
         
         if future.result().success:
             self.error_label.setText('Autonomy Enabled')
         else:
             self.error_label.setText('Failed to Enable Autonomy')
-        
-    def send_waypoint(self):
-        try:
-            lat = float(self.latitude_input.text())
-            lon = float(self.longitude_input.text())
-            self.error_label.setText('Start position updated')
-        except ValueError:
-            self.error_label.setText('Invalid coordinates')
 
-    
 
 def main(args=None):
     # Initialize ROS2
