@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, 
+from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                            QLineEdit, QPushButton, QLabel)
 from PyQt5.QtCore import Qt
 from std_srvs.srv import SetBool
@@ -32,36 +32,44 @@ class AutonomyGUI(Node):
         self.window.setWindowTitle('Autonomy GUI')
         
         # Create main layout
-        layout = QVBoxLayout()
+        main_layout = QHBoxLayout()
+
+        # Add two columns to main layout
+        waypoint_column = QVBoxLayout()
+        dashboard_column = QVBoxLayout()
+        main_layout.addLayout(waypoint_column)
+        main_layout.addLayout(dashboard_column)
+
         
         # Create input fields (red in template)
         self.latitude_input = QLineEdit()
         self.latitude_input.setPlaceholderText('Enter Latitude')
-        layout.addWidget(self.latitude_input)
+        waypoint_column.addWidget(self.latitude_input)
         
         self.longitude_input = QLineEdit()
         self.longitude_input.setPlaceholderText('Enter Longitude')
-        layout.addWidget(self.longitude_input)
+        waypoint_column.addWidget(self.longitude_input)
         
         # Create error message label (blue in template)
         self.error_label = QLabel()
         self.error_label.setStyleSheet('color: red;')
         self.error_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.error_label)
+        dashboard_column.addWidget(self.error_label)
         
         # Create buttons
         buttons = [
             ('Enable Autonomy', self.enable_autonomy),
+            ('Disable Autonomy', self.disable_autonomy),
             ('Send Waypoint', self.send_waypoint)
         ]
         
         for button_text, callback in buttons:
             button = QPushButton(button_text)
             button.clicked.connect(callback)
-            layout.addWidget(button)
+            waypoint_column.addWidget(button)
         
         # Set layout and display window
-        self.window.setLayout(layout)
+        self.window.setLayout(main_layout)
         self.window.show()
         
         # Start Qt event loop
@@ -71,7 +79,6 @@ class AutonomyGUI(Node):
 
     # Callback functions for buttons
     def enable_autonomy(self):
-        #logic for enabling autonomy
         req = SetBool.Request()
         req.data = True
         future = self.enable_autonomy_client.call_async(req)
@@ -82,6 +89,18 @@ class AutonomyGUI(Node):
             self.error_label.setText('Autonomy Enabled')
         else:
             self.error_label.setText('Failed to Enable Autonomy')
+
+    def disable_autonomy(self):
+        req = SetBool.Request()
+        req.data = False
+        future = self.enable_autonomy_client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        self.error_label.setText('Disabling Autonomy')
+        
+        if future.result().success:
+            self.error_label.setText('Autonomy Disabled')
+        else:
+            self.error_label.setText('Failed to Disable Autonomy')
         
     def send_waypoint(self):
         try:
