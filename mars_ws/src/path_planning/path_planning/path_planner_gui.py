@@ -3,6 +3,10 @@ from rclpy.node import Node
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, 
                            QLineEdit, QPushButton, QLabel)
 from PyQt5.QtCore import Qt
+from rover_msgs.srv import PlanPath, PointList
+from nav_msgs.msg import Path
+from geometry_msgs.msg import Point, PoseStamped, Pose, Quaternion, PointStamped
+from std_msgs.msg import Header
 
 class PathPlannerGUI(Node):
     def __init__(self):
@@ -15,7 +19,7 @@ class PathPlannerGUI(Node):
         ################# ROS Communication #################
 
         # Publishers
-        self.mapviz_path = self.create_publisher(Path, '/mapviz/path', 10)
+        self.mapviz_point = self.create_publisher(Path, '/mapviz/path', 10)
 
         # Subscribers
 
@@ -75,6 +79,19 @@ class PathPlannerGUI(Node):
             lat = float(self.latitude_input.text())
             lon = float(self.longitude_input.text())
             self.error_label.setText('Start position updated')
+            # Show Start on Mapviz
+            point_msg = Path()
+            point_msg.header.frame_id = 'map'
+            point_msg.poses.append(
+                PoseStamped(
+                    header=Header(frame_id='map'),
+                    pose=Pose(
+                        position=Point(x=lat, y=lon, z=0.0),
+                        orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+                    )
+                )
+            )
+            self.mapviz_point.publish(point_msg)
         except ValueError:
             self.error_label.setText('Invalid coordinates')
 
@@ -83,6 +100,19 @@ class PathPlannerGUI(Node):
             lat = float(self.latitude_input.text())
             lon = float(self.longitude_input.text())
             self.error_label.setText('Goal position updated')
+            # Show Goal on Mapviz
+            point_msg = Path()
+            point_msg.header.frame_id = 'map'
+            point_msg.poses.append(
+                PoseStamped(
+                    header=Header(frame_id='map'),
+                    pose=Pose(
+                        position=Point(x=lat, y=lon, z=0.0),
+                        orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+                    )
+                )
+            )
+            self.mapviz_point.publish(point_msg)
         except ValueError:
             self.error_label.setText('Invalid coordinates')
 
@@ -93,7 +123,10 @@ class PathPlannerGUI(Node):
 
     def clear_mapviz(self):
         self.error_label.setText('Mapviz cleared')
-        # Add mapviz clearing logic here
+        point_msg = Path()
+        point_msg.header.frame_id = 'map'
+        # Publish Empty Path to clear mapviz
+        self.mapviz_point.publish(point_msg)
 
 def main(args=None):
     # Initialize ROS2
