@@ -57,42 +57,12 @@ class Feat2HomographyNode(Node):
         '''
         # Convert ROS Image to OpenCV
         camera_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-        # FISHEYE CONVERSION
-        h, w = camera_image.shape[:2]
 
-        # Camera matrix (K) from calibration
-        K = np.array([[240.0742270720785, 0.0, 303.87271958823317], [0.0, 240.2956790772891, 242.63742883611513],
-                      [0.0, 0.0, 1.0]], dtype=np.float32)
-
-        # Distortion coefficients (D) from calibration
-        D = np.array([[-0.032316597779098725],
-                      [-0.014192392170667197],
-                      [0.004485507618487958],
-                      [-0.0007679973472430706]], dtype=np.float32)
-
-        # Adjust K to prevent lots of zooming
-        scaled_K = K.copy()
-        scaled_K[0, 0] *= 0.8  # Reduce focal length in x-direction
-        scaled_K[1, 1] *= 0.8  # Reduce focal length in y-direction
-
-        # Undistortion map
-        map1, map2 = cv2.fisheye.initUndistortRectifyMap(
-            K, D, np.eye(3), scaled_K, (w, h), cv2.CV_16SC2
-        )
-
-        # Undistort the image
-        undistorted_img = cv2.remap(camera_image, map1, map2, interpolation=cv2.INTER_LINEAR,
-                                    borderMode=cv2.BORDER_CONSTANT)
-
-        # Show and save the undistorted image
-        # TODO: take out the image writing when this node is done
-        cv2.imwrite("undistorted_fisheye.png", undistorted_img)
-        self.get_logger().info('finished fisheye')
         # SIFT and FLANN
         # Initiate SIFT detector and find the keypoints and descriptors
         sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, edgeThreshold=5)
         kp1, des1 = sift.detectAndCompute(self.keyboard_img, None)
-        kp2, des2 = sift.detectAndCompute(undistorted_img, None)
+        kp2, des2 = sift.detectAndCompute(camera_image, None)
 
         # Set FLANN parameters
         FLANN_INDEX_KDTREE = 0
@@ -130,7 +100,7 @@ class Feat2HomographyNode(Node):
         h, w = self.keyboard_img.shape[0:2]
         pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)  # get the corners
         outline = cv2.perspectiveTransform(pts, M)  # transform the corners of the first image onto the second
-        img2 = cv2.polylines(undistorted_img, [np.int32(outline)], True, 255, 3, cv2.LINE_AA)  # draw the box
+        img2 = cv2.polylines(camera_image, [np.int32(outline)], True, 255, 3, cv2.LINE_AA)  # draw the box
 
         draw_params = dict(
             singlePointColor=None,
