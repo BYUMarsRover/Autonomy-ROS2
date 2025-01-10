@@ -16,7 +16,6 @@ class AutonomyGUI(Node):
         ################# ROS Communication #################
 
         # Publishers
-        self.mapviz_path = self.create_publisher(Path, '/mapviz/path', 10)
 
         # Subscribers
 
@@ -72,7 +71,16 @@ class AutonomyGUI(Node):
     # Callback functions for buttons
     def enable_autonomy(self):
         #logic for enabling autonomy
+        req = SetBool.Request()
+        req.data = True
+        future = self.enable_autonomy_client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
         self.error_label.setText('Enabling Autonomy')
+        
+        if future.result().success:
+            self.error_label.setText('Autonomy Enabled')
+        else:
+            self.error_label.setText('Failed to Enable Autonomy')
         
     def send_waypoint(self):
         try:
