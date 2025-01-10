@@ -26,7 +26,7 @@ class AutonomyGUI(Node):
         # Clients
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
         self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
-        self.abort_autonomy_client = self.creat_client(AutonomyAbort, '/autonomy/abort_autonomy')
+        self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
 
         ################# GUI Creation #################
         
@@ -152,15 +152,6 @@ class AutonomyGUI(Node):
             self.error_label.setText('Autonomy Disabled')
         else:
             self.error_label.setText('Failed to Disable Autonomy')
-        
-    def send_waypoint(self):
-        try:
-            lat = float(self.latitude_input.text())
-            lon = float(self.longitude_input.text())
-            self.error_label.setText('Start position updated')
-        except ValueError:
-            self.error_label.setText('Invalid coordinates')
-
     
 
 def main(args=None):
