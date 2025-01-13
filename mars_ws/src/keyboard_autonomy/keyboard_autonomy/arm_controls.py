@@ -1,9 +1,12 @@
 import rclpy
 from rclpy.node import Node
 from control_msgs.msg import JointJog
+from sensor_msgs.msg import JointState
+from roboticstoolbox import DHRobot
 from rover_msgs.msg import KeyLocations, Elevator
 from rover_msgs.srv import KeyPress
 import numpy as np
+import parameters as p
 
 L = np.array([[0.31],[0.34],[0.08]]) # arm lengths (meters), upper segment to lower segment
 
@@ -29,6 +32,7 @@ class ArmControlsNode(Node):
 
     Subscribes:
         - /key_locations (rovers_msgs/msg/KeyLocations)
+        - /arm_state (sensor_msgs/msg/JointState)
     Publishes:
         - /motor_commands (control_msgs/msg/JointJog)
         - /elevator (rovers_msgs/msg/Elevator)
@@ -81,6 +85,15 @@ class ArmControlsNode(Node):
         '''
         self.loc_subscription  # Prevent unused variable warning
 
+        self.arm_pos_subscription = self.create_subscription(JointState, "/arm_state", self.update_pos, 10)
+        '''
+        Subscription to the "/arm_state" topic with the message type JointState
+        '''
+        self.elevator_subsription = self.create_subscription(Elevator, "/elevator", self.update_elev, 10)
+        '''
+        Subscription to the "/elevator" topic with the message type Elevator
+        '''
+
         self.arm_publisher = self.create_publisher(JointJog, '/motor_commands', 10)
         '''
         Publisher to the "/motor_commands" topic with the message type JointJog.
@@ -103,7 +116,33 @@ class ArmControlsNode(Node):
         self.arm_stability = 0 # How many frames has the arm been stable?
         self.key = None # When this is not None, the controller runs
 
+        # Arm DH model for IK
+        self.arm_dh_model = DHRobot(p.dh_params, name="arm")
+
+        # Initial conditions
+        self.arm_dh_model.q = np.array(p.INITIAL_Q)
+
         self.get_logger().info("ArmControlsNode started")
+
+    def update_elev(self, elevator_cmd: Elevator):
+        """
+        Updates the elevator position. This is just a rough estiate based on relative position and speed
+        """
+        #TODO: Needs tunning
+        dir = 1 if elevator_cmd.elevator_direction else -1
+        speed = dir * elevator_cmd.elevator_speed
+        if (dir == 1 and self.arm_dh_model.q[0] + p.ELEV_PWM_TO_VEL * speed < p.TOP_ELEVATOR_LIM):
+            if (dir == -1 and self.arm_dh_model.q[0] + p.ELEV_PWM_TO_VEL * speed > p.BOTTOM_ELEVATOR_LIM):
+                self.arm_dh_model.q[0] += p.ELEV_PWM_TO_VEL * speed
+
+    def update_pos(self, measured_joint_pos: JointState):
+        """
+        Upon receiving a joint position measured by the Hall effect sensors
+        internal to the motors, uses this as new estimate of joint positions
+        Does not update for the elevator
+        """
+        # The indexing is just some defensive programming
+        self.arm_dh_model.q[1:] = np.array(measured_joint_pos.position[-(self.arm_dh_model.n-1) :]) ## still need to fix this for elevator
 
     def loc_listener_callback(self, msg):
         '''
@@ -174,7 +213,61 @@ class ArmControlsNode(Node):
         if not arm_set and ((DESIRED_POS[0] + CLOSE > self.key_locations[self.key][0]) or (DESIRED_POS[0] - CLOSE < self.key_locations[self.key][0])):
             # Simple proportional controller
             arm_msg = JointJog()
+            # TODO: needs to have the homography matrix passed in
+            H = np.array([[0, 0, 0],
+                         [0, 0, 0],
+                         [0, 0, 0]])
             # TODO: Add arm control
+
+            lambda_v = 1 
+            lambda_omega = 1
+
+            K = np.array([[240.0742270720785, 0.0, 303.87271958823317], 
+                          [0.0, 240.2956790772891, 242.63742883611513],
+                          [0.0, 0.0, 1.0]], dtype=np.float32)
+            # Calculate e_v and e_omega
+            p_star = np.array([K[0][2], K[1][2], 1])
+            m_star = np.linalg.inv(K) @ p_star
+
+            e_v = (H - np.eye(3)) @ m_star
+
+            e_omega_skew = H - H.transpose()
+            e_omega = np.array([e_omega_skew[2][1], e_omega_skew[0][2], e_omega_skew[1][0]])
+
+            # Compute the twist in the camera frame
+            # Twist is a 6x1 matrix that has [0:3] as the linear velocity and [3:end] being the rotation velocity needed to command the camera frame to match the desired homography
+            twist = -np.vstack(np.hstack(lambda_v*np.eye(3), np.zeros((3,3))), np.hstack(np.zeros((3,3)), lambda_omega*np.eye(3))) @ np.vstack(e_v.transpose(), e_omega.transpose())
+
+            # Tranform the twist from the camera frame into the base frame
+                #TODO: THIS NEEDS TO BE DONE!!!
+            # Find the jacobian and take the psuedo-inverse and multiply the new twist
+            J = self.arm_dh_model.jacob0(self.arm_dh_model.q)
+            J_dagger = J.T @ np.inv(J @ J.T + p.KD**2 * np.eye(len(J))) # pseudo-inverse IK method
+
+            qdot = J_dagger @ twist
+            qdot.flatten()
+
+            # Take the q_dot and send it to the coresponding motors
+            elevPWM = round(qdot[0] / p.ELEV_PWM_TO_VEL)
+
+            ## Publish the arm joint commands
+            cmd = JointJog()
+            cmd.velocities = [
+                qdot[1],
+                qdot[2],
+                qdot[3],
+                qdot[4],
+                qdot[5]
+            ]
+            # Publish joint commands
+            self.arm_publisher.publish(cmd)
+
+            # Handle elevator commands
+            elevator_cmd = Elevator()
+            elevator_cmd.elevator_speed = abs(elevPWM)
+            elevator_cmd.elevator_direction = 1 if elevPWM > 0 else 0
+            self.elevator_publisher.publish(elevator_cmd)
+    
             arm_stability = 0
         else:
             # Ensure the arm position is stable
