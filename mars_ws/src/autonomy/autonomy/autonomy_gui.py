@@ -130,16 +130,35 @@ class AutonomyGUI(Node):
 
     def abort_autonomy(self):
         #logic for aborting autonomy task
-        req = SetBool.Request()
-        req.data = True
+        req = AutonomyAbort.Request()
+        req.abort_status = True
+
+        try:
+            lat = float(self.latitude_input.text())
+            lon = float(self.longitude_input.text())
+        except ValueError:
+            self.error_label.setText('Invalid latitude or longitude')
+            return
+
+        # Create a task and append to the task list
+        task = AutonomyTaskInfo()
+        req.lat = lat
+        req.lon = lon
+
+        #send the Request
         future = self.abort_autonomy_client.call_async(req)
+        self.error_label.setText('Attempting Abort')
+
+        #wait for response
         rclpy.spin_until_future_complete(self, future)
-        self.error_label.setText('Enabling Autonomy')
-        
-        if future.result().success:
-            self.error_label.setText('Autonomy Enabled')
+        if future.done() and future.result():
+            response = future.result()
+            if response.success:
+                self.error_label.setText('Aborting task. Returning to given coordinates')
+            else:
+                self.error_label.setText(f'Failed to Abort: {response.message}')
         else:
-            self.error_label.setText('Failed to Enable Autonomy')
+            self.error_label.setText('Service call failed or did not complete')
 
     def disable_autonomy(self):
         req = SetBool.Request()
