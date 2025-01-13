@@ -74,7 +74,7 @@ find_package(catkin REQUIRED std_msgs message_generation sensor_msgs)
    MobilityIWCFeedback.msg
    MobilityDriveCommands.msg
    IWC_feedback.msg
-   IWC_motors.msg
+   IWCMotors.msg
    MobilityJoyDriveEnable.msg
    MobilityVelocityCommands.msg
    MobilityWaypoint2Follow.msg
