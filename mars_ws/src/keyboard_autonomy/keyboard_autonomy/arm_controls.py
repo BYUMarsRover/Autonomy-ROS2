@@ -239,13 +239,21 @@ class ArmControlsNode(Node):
             twist = -np.vstack(np.hstack(lambda_v*np.eye(3), np.zeros((3,3))), np.hstack(np.zeros((3,3)), lambda_omega*np.eye(3))) @ np.vstack(e_v.transpose(), e_omega.transpose())
 
             # Tranform the twist from the camera frame into the base frame
-                #TODO: THIS NEEDS TO BE DONE!!!
+            transform_matrix = self.arm_dh_model.fkine(self.arm_dh_model.q)
+            rotation_matrix = np.array([transform_matrix[0][:3], transform_matrix[1][:3], transform_matrix[2][:3]])
+            translation = np.array(transform_matrix[:3][3])
+            translation = translation.flatten()
+            skew = np.array([[0, -translation[2], translation[1]],
+                             [translation[2], 0, -translation[0]],
+                             [-translation[1], translation[0], 0]])
+            Z_shift = np.vstack(np.hstack(np.eye(3), -skew), np.hstack(np.zeros((3, 3)), np.eye(3))) @ np.vstack(np.hstack(rotation_matrix, np.zeros((3,3))), np.hstack(np.zeros((3,3)), rotation_matrix))
+            twist = Z_shift @ twist
             # Find the jacobian and take the psuedo-inverse and multiply the new twist
             J = self.arm_dh_model.jacob0(self.arm_dh_model.q)
             J_dagger = J.T @ np.inv(J @ J.T + p.KD**2 * np.eye(len(J))) # pseudo-inverse IK method
 
             qdot = J_dagger @ twist
-            qdot.flatten()
+            qdot = qdot.flatten()
 
             # Take the q_dot and send it to the coresponding motors
             elevPWM = round(qdot[0] / p.ELEV_PWM_TO_VEL)
