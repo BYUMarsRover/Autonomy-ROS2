@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt
 from std_srvs.srv import SetBool
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from rover_msgs.msg import AutonomyTaskInfo
+from ublox_read_2.msg import PositionVelocityTime
 
 class AutonomyGUI(Node):
     def __init__(self):
@@ -14,12 +15,16 @@ class AutonomyGUI(Node):
 
         self.start = None
         self.goal = None
+        self.base_date_time = f'Base Station Date:  Time:'
+        self.rover_date_time = f'Rover Date:  Time:'
 
         ################# ROS Communication #################
 
         # Publishers
 
         # Subscribers
+        self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info, 10)
+        self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info, 10)
 
         # Services
 
@@ -80,6 +85,29 @@ class AutonomyGUI(Node):
         # Start Qt event loop
         self.app.exec_()
 
+    #Callbacks for Publishers
+    def base_GPS_info(self, msg):
+        self.base_numSV = msg.numSV
+        base_year = msg.year
+        base_month = msg.month
+        base_day = msg.day
+        base_hour = msg.hour
+        base_min = msg.min
+        base_sec = msg.sec
+        self.base_date_time = f'Base Station Date: {base_month}/{base_day}/{base_year}/  Time: {base_hour}:{base_min}:{base_sec}'
+        return
+    
+    def rover_GPS_info(self, msg):
+        self.rover_numSV = msg.numSV
+        rover_year = msg.year
+        rover_month = msg.month
+        rover_day = msg.day
+        rover_hour = msg.hour
+        rover_min = msg.min
+        rover_sec = msg.sec
+        self.rover_date_time = f'Rover Date: {rover_month}/{rover_day}/{rover_year}/  Time: {rover_hour}:{rover_min}:{rover_sec}'
+        return
+
 
     # Callback functions for buttons
     def enable_autonomy(self):
@@ -93,6 +121,18 @@ class AutonomyGUI(Node):
             self.error_label.setText('Task aborted. Manual mode turned on.')
         else:
             self.error_label.setText('Failed to Abort Autonomy')
+
+    def disable_autonomy(self):
+        req = SetBool.Request()
+        req.data = False
+        future = self.enable_autonomy_client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        self.error_label.setText('Disabling Autonomy')
+        
+        if future.result().success:
+            self.error_label.setText('Autonomy Disabled')
+        else:
+            self.error_label.setText('Failed to Disable Autonomy')
         
     def send_waypoint(self):
         #logic for sending waypoint
@@ -159,19 +199,7 @@ class AutonomyGUI(Node):
                 self.error_label.setText(f'Failed to Abort: {response.message}')
         else:
             self.error_label.setText('Service call failed or did not complete')
-
-    def disable_autonomy(self):
-        req = SetBool.Request()
-        req.data = False
-        future = self.enable_autonomy_client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
-        self.error_label.setText('Disabling Autonomy')
-        
-        if future.result().success:
-            self.error_label.setText('Autonomy Disabled')
-        else:
-            self.error_label.setText('Failed to Disable Autonomy')
-    
+   
 
 def main(args=None):
     # Initialize ROS2
