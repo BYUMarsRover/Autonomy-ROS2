@@ -43,7 +43,7 @@ class Feat2HomographyNode(Node):
         '''
 
         self.bridge = CvBridge()
-        self.keyboard_img = cv2.imread("/home/marsrover/mars_ws/src/keyboard_autonomy/images/undistorted_fisheye.png")
+        self.keyboard_img = cv2.imread("/home/marsrover/mars_ws/src/keyboard_autonomy/images/2024-12-03-085842.jpg")
 
         self.get_logger().info("Feat2HomographyNode started")
 
