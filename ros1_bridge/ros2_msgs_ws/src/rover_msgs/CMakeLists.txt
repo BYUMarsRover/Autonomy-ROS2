@@ -29,6 +29,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MobilityArucoAutopilotCommand.msg"
   "msg/MobilityGPSWaypoint2Follow.msg"
   "msg/MobilityVelocityCommands.msg"
+  "IWCMotors.msg"
   "msg/AutonomyTaskInfo.msg"
   "msg/NavStatus.msg"
   "msg/RoverState.msg"
