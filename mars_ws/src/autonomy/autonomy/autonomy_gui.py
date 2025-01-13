@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt5.QtCore import Qt
 from std_srvs.srv import SetBool
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
-from rover_msgs.msg import AutonomyTaskInfo
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
 from ublox_read_2.msg import PositionVelocityTime
 
 class AutonomyGUI(Node):
@@ -13,18 +13,23 @@ class AutonomyGUI(Node):
         # Initialize ROS2 node
         super().__init__('autonomy_gui')
 
+        #Initialize variables
         self.start = None
         self.goal = None
-        self.base_date_time = f'Base Station Date:  Time:'
-        self.rover_date_time = f'Rover Date:  Time:'
+        self.base_date_time = 'Base Station Date:  Time:'
+        self.rover_date_time = 'Rover Date:  Time:'
+        self.rover_state = 'Speed: m/s\nDirection: degrees\nNavigation State: '
+        self.nav_status = 'State Machine State: \n State Machine: '
 
         ################# ROS Communication #################
 
         # Publishers
 
         # Subscribers
-        self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info, 10)
-        self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info, 10)
+        self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
+        self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
+        self.create_subscription(RoverState, "/rover_status", self.rover_state_callback, 10) #Rover state (speed, direction, navigation state)
+        self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
 
         # Services
 
@@ -64,6 +69,7 @@ class AutonomyGUI(Node):
         self.error_label.setStyleSheet('color: red;')
         self.error_label.setAlignment(Qt.AlignCenter)
         dashboard_column.addWidget(self.error_label)
+        dashboard_column.addWidget(self.state_machine_label)
         
         # Create buttons
         buttons = [
@@ -85,8 +91,8 @@ class AutonomyGUI(Node):
         # Start Qt event loop
         self.app.exec_()
 
-    #Callbacks for Publishers
-    def base_GPS_info(self, msg):
+    #Callbacks for Subscribers
+    def base_GPS_info_callback(self, msg):
         self.base_numSV = msg.numSV
         base_year = msg.year
         base_month = msg.month
@@ -97,7 +103,7 @@ class AutonomyGUI(Node):
         self.base_date_time = f'Base Station Date: {base_month}/{base_day}/{base_year}/  Time: {base_hour}:{base_min}:{base_sec}'
         return
     
-    def rover_GPS_info(self, msg):
+    def rover_GPS_info_callback(self, msg):
         self.rover_numSV = msg.numSV
         rover_year = msg.year
         rover_month = msg.month
@@ -108,6 +114,33 @@ class AutonomyGUI(Node):
         self.rover_date_time = f'Rover Date: {rover_month}/{rover_day}/{rover_year}/  Time: {rover_hour}:{rover_min}:{rover_sec}'
         return
 
+    def rover_state_callback(self, msg):
+        self.speed = msg.speed
+        self.direction = msg.direction
+        navigation_state = msg.navigation_state
+        if navigation_state == 0:
+            self.navigation_state = 'AUTONOMOUS_STATE'
+        elif navigation_state == 1:
+            self.navigation_state = 'TELEOPERATION_STATE'
+        elif navigation_state == 2:
+            self.navigation_state = 'ARRIVAL_STATE'
+        else:
+            self.navigation_state = 'UNKNOWN_STATE'
+        
+        self.rover_state = f'Speed: {self.speed} m/s\nDirection: {self.direction} degrees\nNavigation State: {self.navigation_state}'
+
+        return
+    
+    def rover_nav_status_callback(self, msg):
+        self.state_machine_state = msg.state
+        autonomous_enable = msg.auto_enable
+        if autonomous_enable:
+            self.autonomous_enable = 'Enabled'
+        else:
+            self.autonomous_enable = 'Disabled'
+        self.nav_status = f'State Machine State: {self.state_machine_state}\n State Machine: {self.autonomous_enable}'
+
+        return
 
     # Callback functions for buttons
     def enable_autonomy(self):
@@ -200,7 +233,6 @@ class AutonomyGUI(Node):
         else:
             self.error_label.setText('Service call failed or did not complete')
    
-
 def main(args=None):
     # Initialize ROS2
     rclpy.init(args=args)
