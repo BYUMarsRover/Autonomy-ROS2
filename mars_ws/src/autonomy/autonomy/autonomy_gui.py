@@ -1,8 +1,13 @@
 import rclpy
 from rclpy.node import Node
-from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
-                           QLineEdit, QPushButton, QLabel)
-from PyQt5.QtCore import Qt
+
+from PyQt5 import uic
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+
+import os
+
 from std_srvs.srv import SetBool
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
@@ -39,57 +44,12 @@ class AutonomyGUI(Node):
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
 
         ################# GUI Creation #################
-        
-        # Create Qt application and main window
-        self.app = QApplication([])
-        self.window = QWidget()
-        self.window.setWindowTitle('Autonomy GUI')
-        
-        # Create main layout
-        main_layout = QHBoxLayout()
 
-        # Add two columns to main layout
-        waypoint_column = QVBoxLayout()
-        dashboard_column = QVBoxLayout()
-        main_layout.addLayout(waypoint_column)
-        main_layout.addLayout(dashboard_column)
-
-        
-        # Create input fields (red in template)
-        self.latitude_input = QLineEdit()
-        self.latitude_input.setPlaceholderText('Enter Latitude')
-        waypoint_column.addWidget(self.latitude_input)
-        
-        self.longitude_input = QLineEdit()
-        self.longitude_input.setPlaceholderText('Enter Longitude')
-        waypoint_column.addWidget(self.longitude_input)
-        
-        # Create error message label (blue in template)
-        self.error_label = QLabel()
-        self.error_label.setStyleSheet('color: red;')
-        self.error_label.setAlignment(Qt.AlignCenter)
-        dashboard_column.addWidget(self.error_label)
-        dashboard_column.addWidget(self.state_machine_label)
-        
-        # Create buttons
-        buttons = [
-            ('Enable Autonomy', self.enable_autonomy),
-            ('Disable Autonomy', self.disable_autonomy),
-            ('Send Waypoint', self.send_waypoint),
-            ('Abort', self.abort_autonomy)
-        ]
-        
-        for button_text, callback in buttons:
-            button = QPushButton(button_text)
-            button.clicked.connect(callback)
-            waypoint_column.addWidget(button)
-        
-        # Set layout and display window
-        self.window.setLayout(main_layout)
-        self.window.show()
-        
-        # Start Qt event loop
-        self.app.exec_()
+        # Load the .ui
+        # file
+        uic.loadUi(
+            os.path.expanduser('~') + '/mars_ws/src/autonomy/autonomy_gui.ui', self)
+        self.show()  # Show the GUI
 
     #Callbacks for Subscribers
     def base_GPS_info_callback(self, msg):

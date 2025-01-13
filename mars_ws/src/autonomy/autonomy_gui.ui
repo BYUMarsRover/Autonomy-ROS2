@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>Home_GUI</class>
- <widget class="QWidget" name="Home_GUI">
+ <!-- Main Widget -->
+ <widget class="QWidget" name="Autonomy_GUI">
+  <!-- Widget Properties -->
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -17,11 +19,14 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Master Controls</string>
+   <string>Autonomy Controls</string>
   </property>
+  <!-- Main Widget Layout -->
   <layout class="QHBoxLayout" name="horizontalLayout_17">
    <item>
+    <!-- Everything Widget -->
     <widget class="QWidget" name="everything" native="true">
+     <!-- Everything Widget Properties -->
      <property name="minimumSize">
       <size>
        <width>1000</width>
@@ -34,7 +39,9 @@
        <height>400</height>
       </size>
      </property>
+     <!-- Layout Widget -->
      <widget class="QWidget" name="layoutWidget">
+      <!-- Layout Widget Properties -->
       <property name="geometry">
        <rect>
         <x>11</x>
@@ -43,17 +50,20 @@
         <height>335</height>
        </rect>
       </property>
+      <!-- Layout Widget Layout -->
       <layout class="QVBoxLayout" name="verticalLayout_17">
+       <!-- Gui Title (first item in column)-->
        <item>
         <widget class="QLabel" name="guiTitle">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:28pt;&quot;&gt;Home GUI&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:28pt;&quot;&gt;Autonomy GUI&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="scaledContents">
           <bool>false</bool>
          </property>
         </widget>
        </item>
+       <!-- Horizontal Dividing Line (second item in column) -->
        <item>
         <widget class="Line" name="line_2">
          <property name="orientation">
@@ -61,10 +71,25 @@
          </property>
         </widget>
        </item>
+       <!-- All Gui Functions are included below -->
        <item>
+        <!-- Row (with X columns) -->
         <layout class="QHBoxLayout" name="horizontalLayout_16">
+         <!-- Column 1 Item -->
          <item>
+          <!-- Column 1 Layout -->
           <layout class="QVBoxLayout" name="verticalLayout_8">
+           <!-- Column 1 Label -->
+           <item>
+            <widget class="QLabel" name="guiTitle">
+             <property name="text">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Leg Info&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="scaledContents">
+              <bool>false</bool>
+             </property>
+            </widget>
+           <!-- </item>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_3">
              <item>
@@ -333,9 +358,10 @@
               </spacer>
              </item>
             </layout>
-           </item>
+           </item> -->
           </layout>
          </item>
+         <!-- Vertical Dividing Line -->
          <item>
           <widget class="Line" name="line">
            <property name="orientation">
