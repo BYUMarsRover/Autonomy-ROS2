@@ -125,11 +125,6 @@ class ScienceSerialInterface(Node):
 def main(args=None):
     rclpy.init(args=args)
     science_serial_interface = ScienceSerialInterface()
-    # set loop rate
-    # rate = science_serial_interface.create_rate(10) #Rate of 10 Hz
-    
-    # while not science_serial_interface.arduino:
-    #     pass
 
     science_serial_interface.get_logger().info('Science Serial Online')
     rclpy.spin(science_serial_interface)

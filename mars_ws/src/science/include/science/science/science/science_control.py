@@ -205,9 +205,6 @@ class ScienceControl(Node):
         self.tool_position_publisher.publish(msg)
 
         # Secondary Cache Door
-        
-        # Sarah - This calls from the same message as the primary cache door. Make sure that this is correct, or if there 
-        # should be a separate rover message for each cache's door position.
         msg = ScienceCacheDoor()
         msg.position = self.secondary_cache_door_position
         self.secondary_cache_door_publisher.publish(msg)
