@@ -38,10 +38,6 @@ def generate_launch_description():
         ),
         launch_ros.actions.Node(
             package='keyboard_autonomy',
-            executable='homography2keys',
-        ),
-        launch_ros.actions.Node(
-            package='keyboard_autonomy',
             executable='arm_controls',
         ),
         launch_ros.actions.Node(
