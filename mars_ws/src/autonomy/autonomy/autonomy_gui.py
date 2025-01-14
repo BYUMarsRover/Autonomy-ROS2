@@ -5,6 +5,8 @@ from PyQt5 import uic
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from subprocess import Popen, PIPE
+import sys
 
 import os
 
@@ -13,10 +15,23 @@ from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
 from ublox_read_2.msg import PositionVelocityTime
 
-class AutonomyGUI(Node):
+class AutonomyGUI(Node, QWidget):
     def __init__(self):
         # Initialize ROS2 node
-        super().__init__('autonomy_gui')
+        Node.__init__(self, 'autonomy_gui')
+
+        # Initialize QWidget
+        QWidget.__init__(self)
+        # Load the .ui file
+        uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/autonomy/autonomy_gui.ui', self)
+        self.show()  # Show the GUI
+
+        self.GNSSRadioButton.toggled.connect(self.update_leg_subselection)
+        self.ArUcoRadioButton.toggled.connect(self.update_leg_subselection)
+        self.ObjectRadioButton.toggled.connect(self.update_leg_subselection)
+
+        # Set initial page
+        self.legsubselectionStackedWidget.setCurrentIndex(0)
 
         #Initialize variables
         self.start = None
@@ -31,25 +46,18 @@ class AutonomyGUI(Node):
         # Publishers
 
         # Subscribers
-        self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
-        self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
-        self.create_subscription(RoverState, "/rover_status", self.rover_state_callback, 10) #Rover state (speed, direction, navigation state)
-        self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
+        # self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
+        # self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
+        # self.create_subscription(RoverState, "/rover_status", self.rover_state_callback, 10) #Rover state (speed, direction, navigation state)
+        # self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
 
         # Services
 
         # Clients
-        self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
-        self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
-        self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
+        # self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
+        # self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
+        # self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
 
-        ################# GUI Creation #################
-
-        # Load the .ui
-        # file
-        uic.loadUi(
-            os.path.expanduser('~') + '/mars_ws/src/autonomy/autonomy_gui.ui', self)
-        self.show()  # Show the GUI
 
     #Callbacks for Subscribers
     def base_GPS_info_callback(self, msg):
@@ -108,7 +116,7 @@ class AutonomyGUI(Node):
         req.data = True
         future = self.enable_autonomy_client.call_async(req)
         rclpy.spin_until_future_complete(self, future)
-        self.error_label.setText('Aborting Task')
+        self.error_label.setText('Enabling Autonomy')
         
         if future.result().success:
             self.error_label.setText('Task aborted. Manual mode turned on.')
@@ -193,18 +201,27 @@ class AutonomyGUI(Node):
         else:
             self.error_label.setText('Service call failed or did not complete')
    
+    # Gui Functions
+    def update_leg_subselection(self):
+        if self.GNSSRadioButton.isChecked():
+            self.legsubselectionStackedWidget.setCurrentIndex(0)
+        elif self.ArUcoRadioButton.isChecked():
+            self.legsubselectionStackedWidget.setCurrentIndex(1)
+        elif self.ObjectRadioButton.isChecked():
+            self.legsubselectionStackedWidget.setCurrentIndex(2)
+        
+
 def main(args=None):
     # Initialize ROS2
     rclpy.init(args=args)
-    
-    # Create and run GUI
+
+    Popen("pkill gst", shell=True, preexec_fn=os.setsid, stderr=PIPE)
+    # Create QApplication
+    app = QApplication(sys.argv)
+    # Create GUI
     gui = AutonomyGUI()
-    
-    # Spin ROS2 node
-    rclpy.spin(gui)
-    
-    # Cleanup
-    gui.destroy_node()
+    # Start GUI
+    app.exec_()
     rclpy.shutdown()
 
 if __name__ == '__main__':

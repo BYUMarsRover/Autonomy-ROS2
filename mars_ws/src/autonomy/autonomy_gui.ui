@@ -73,14 +73,15 @@
        </item>
        <!-- All Gui Functions are included below -->
        <item>
-        <!-- Row (with X columns) -->
+        <!-- Row (with 2 columns) -->
         <layout class="QHBoxLayout" name="horizontalLayout_16">
          <!-- Column 1 Item -->
          <item>
-          <!-- Column 1 Layout -->
+          <!-- Column 1 Layout (Leg Info Column) -->
           <layout class="QVBoxLayout" name="verticalLayout_8">
-           <!-- Column 1 Label -->
+           <!-- Left Column Label Item -->
            <item>
+            <!-- Left Column Label Widget (Leg Info) -->
             <widget class="QLabel" name="guiTitle">
              <property name="text">
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Leg Info&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -89,276 +90,188 @@
               <bool>false</bool>
              </property>
             </widget>
-           <!-- </item>
+           </item>
+           <!-- lattitude entry item -->
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <!-- lattitude label "lat" -->
              <item>
-              <widget class="QComboBox" name="cameraSelector"/>
-             </item>
-             <item>
-              <widget class="QPushButton" name="cameraLaunchSingleButton">
+              <widget class="QLabel" name="label_7">
                <property name="text">
-                <string>Launch Camera</string>
+                <string>Lattitude</string>
                </property>
               </widget>
              </item>
+             <!-- lattitude text input area item -->
              <item>
-              <widget class="QPushButton" name="cameraCloseSingleButton">
-               <property name="text">
-                <string>Close Camera</string>
+              <widget class="QLineEdit" name="label_6">
+               <property name="placeholderText">
+                <string>enter latitude here</string>
                </property>
               </widget>
              </item>
             </layout>
            </item>
+           <!-- longitude entry item -->
            <item>
-            <layout class="QVBoxLayout" name="verticalLayout_7">
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <!-- longitude label "lat" -->
              <item>
-              <widget class="QLabel" name="label_5">
+              <widget class="QLabel" name="label_7">
                <property name="text">
-                <string>Screenshot Name</string>
+                <string>Longitude</string>
                </property>
               </widget>
              </item>
+             <!-- longitude text input area item -->
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <widget class="QLineEdit" name="label_6">
+               <property name="placeholderText">
+                <string>enter longitude here</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <!-- Horizontal box for the leg type entry -->
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <!-- leg type selection item  -->
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout_9">
+               <!-- GNSS Radio Button Item -->
                <item>
-                <widget class="QLineEdit" name="screenshotLineEdit"/>
-               </item>
-               <item>
-                <widget class="QPushButton" name="cameraScreenshotButton">
+                <widget class="QRadioButton" name="GNSSRadioButton">
                  <property name="text">
-                  <string>Take Screenshot</string>
+                  <string>GNSS</string>
+                 </property>
+                </widget>
+               </item>
+               <!-- ArUco Radio Button Item -->
+               <item>
+                <widget class="QRadioButton" name="ArUcoRadioButton">
+                 <property name="text">
+                  <string>ArUco</string>
+                 </property>
+                </widget>
+               </item>
+               <!-- Object Radio Button Item -->
+               <item>
+                <widget class="QRadioButton" name="ObjectRadioButton">
+                 <property name="text">
+                  <string>Object</string>
                  </property>
                 </widget>
                </item>
               </layout>
              </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_8">
+             <!-- leg sub-selection options item  -->
              <item>
-              <layout class="QVBoxLayout" name="verticalLayout">
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_7">
+              <widget class="QStackedWidget" name="legsubselectionStackedWidget">
+               <!-- GNSS Subselection Options -->
+               <widget class="QWidget" name="GNSSPage">
+                <layout class="QVBoxLayout" name="verticalLayout_GNSSPage">
                  <item>
-                  <widget class="QLabel" name="label_3">
-                   <property name="maximumSize">
-                    <size>
-                     <width>16777215</width>
-                     <height>20</height>
-                    </size>
-                   </property>
+                  <widget class="QLabel" name="labelGNSSPage">
                    <property name="text">
-                    <string>Brightness</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLabel" name="brightnessLabel">
-                   <property name="maximumSize">
-                    <size>
-                     <width>16777215</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>100%</string>
+                    <!-- Nothing needed for GNSS -->
+                    <string></string>
                    </property>
                   </widget>
                  </item>
                 </layout>
-               </item>
-               <item>
-                <widget class="QSlider" name="brightnessSlider">
-                 <property name="minimum">
-                  <number>1</number>
-                 </property>
-                 <property name="maximum">
-                  <number>200</number>
-                 </property>
-                 <property name="singleStep">
-                  <number>5</number>
-                 </property>
-                 <property name="value">
-                  <number>100</number>
-                 </property>
-                 <property name="sliderPosition">
-                  <number>100</number>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <layout class="QVBoxLayout" name="verticalLayout_6">
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_5">
+               </widget>
+               <!-- ArUco Tag Subselection Options (Tag IDs) -->
+               <widget class="QWidget" name="ArUcoPage">
+                <layout class="QVBoxLayout" name="verticalLayout_9">
+                 <!-- Tag 1 Radio Button Item -->
                  <item>
-                  <widget class="QLabel" name="label_4">
-                   <property name="maximumSize">
-                    <size>
-                     <width>16777215</width>
-                     <height>20</height>
-                    </size>
-                   </property>
+                  <widget class="QRadioButton" name="Tag1RadioButton">
                    <property name="text">
-                    <string>Contrast</string>
+                    <string>Tag ID 1</string>
                    </property>
                   </widget>
                  </item>
+                 <!-- Tag 2 Radio Button Item -->
                  <item>
-                  <widget class="QLabel" name="contrastLabel">
-                   <property name="maximumSize">
-                    <size>
-                     <width>16777215</width>
-                     <height>20</height>
-                    </size>
-                   </property>
+                  <widget class="QRadioButton" name="Tag2RadioButton">
                    <property name="text">
-                    <string>100%</string>
+                    <string>Tag ID 2</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <!-- Tag 3 Radio Button Item -->
+                 <item>
+                  <widget class="QRadioButton" name="Tag3RadioButton">
+                   <property name="text">
+                    <string>Tag ID 3</string>
                    </property>
                   </widget>
                  </item>
                 </layout>
-               </item>
-               <item>
-                <widget class="QSlider" name="contrastSlider">
-                 <property name="minimum">
-                  <number>1</number>
-                 </property>
-                 <property name="maximum">
-                  <number>200</number>
-                 </property>
-                 <property name="singleStep">
-                  <number>5</number>
-                 </property>
-                 <property name="value">
-                  <number>100</number>
-                 </property>
-                 <property name="sliderPosition">
-                  <number>100</number>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <widget class="Line" name="line_8">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout">
-             <item>
-              <widget class="QComboBox" name="cameraViewSelector">
-               <item>
-                <property name="text">
-                 <string>navView</string>
-                </property>
-               </item>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="cameraLaunchViewButton">
-               <property name="text">
-                <string>Launch View</string>
-               </property>
+               </widget>
+               <!-- Object Detection Subselection Options -->
+               <widget class="QWidget" name="ObjectPage">
+                <layout class="QVBoxLayout" name="verticalLayout_9">
+                 <!-- Watter Bottle Radio Button Item -->
+                 <item>
+                  <widget class="QRadioButton" name="WaterBottleRadioButton">
+                   <property name="text">
+                    <string>Watter Bottle</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <!-- Hammer Radio Button Item -->
+                 <item>
+                  <widget class="QRadioButton" name="HammerRadioButton">
+                   <property name="text">
+                    <string>Hammer</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
               </widget>
              </item>
             </layout>
            </item>
+           <!-- Send Waypoint Button -->
            <item>
-            <widget class="Line" name="line_7">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="cameraCloseAllButton">
+            <widget class="QPushButton" name="SendWaypointButton">
              <property name="text">
-              <string>Close All Cameras</string>
+              <string>Send Waypoint</string>
              </property>
             </widget>
            </item>
+           <!-- Enable and Disable Autonomy Buttons -->
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_9">
+             <!-- Enable Autonomy Button  -->
              <item>
-              <spacer name="horizontalSpacer_4">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>30</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="QLabel" name="left_ir_label">
+              <widget class="QPushButton" name="EnableAutonomyButton">
                <property name="text">
-                <string>Left IR: NA</string>
+                <string>Enable Autonomy</string>
                </property>
               </widget>
              </item>
+             <!-- Disable Autonomy Button  -->
              <item>
-              <spacer name="horizontalSpacer_3">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Minimum</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>30</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="QLabel" name="right_ir_label">
-               <property name="text">
-                <string>Right IR: NA</string>
-               </property>
+              <widget class="QPushButton" name="DisableAutonomyButton">
+              <property name="text">
+               <string>Disable Autonomy</string>
+              </property>
               </widget>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer_2">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>30</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
              </item>
             </layout>
-           </item> -->
+           </item>
+           <!-- Abort Button -->
+           <item>
+            <widget class="QPushButton" name="AbortButton">
+             <property name="text">
+              <string>Abort</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
          <!-- Vertical Dividing Line -->
@@ -369,6 +282,26 @@
            </property>
           </widget>
          </item>
+         <!-- Column 2 Item -->
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_10">
+           <item>
+              <widget class="QLabel" name="rightColumnLabel">
+               <property name="text">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Right Column&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+           </item>
+           <item>
+              <widget class="QPushButton" name="rightColumnButton1">
+               <property name="text">
+                  <string>Button 1</string>
+               </property>
+              </widget>
+           </item>
+          </layout>
+         </item>
+         <!-- Commenting out the right side of the GUI for now
          <item>
           <widget class="QWidget" name="baseStatusList" native="true">
            <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -523,6 +456,7 @@
            </layout>
           </widget>
          </item>
+         -->
         </layout>
        </item>
       </layout>
