@@ -19,8 +19,7 @@ class Signals(QObject):
 
 class science_GUI(Node):
     def __init__(self):
-
-        # rospy.init_node("science_GUI")
+        
         super().__init__('science_GUI')
         self.qt = QtWidgets.QWidget()
         uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/science/science/gui/science_GUI.ui', self.qt) # Load the .ui file
@@ -43,9 +42,9 @@ class science_GUI(Node):
         self.task_launcher_init()
         self.sensor_saving = [False] * 3  # temp, moisture, fad
         if self.future.result() is not None:
-            print(self.future.result())
+            self.get_logger().info(f"{self.future.result()}")
         else:
-            print('Service call failed %r' % (self.future.exception(),))
+            self.get_logger().error(f"Service call failed {self.future.exception()}")
 
     def initialize_timers(self):
         self.save_interval = 10
