@@ -1,3 +1,0 @@
-# Srv file to add debug statements to the GUI window, robust to disconnection
----
-string[] messages

@@ -42,90 +42,28 @@ find_package(catkin REQUIRED std_msgs message_generation sensor_msgs)
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
-   AntennaStatus.msg
-   Arm.msg
-   ArmFeedback.msg
-   ArmHardware.msg
-   ArmHardwareFeedback.msg
-   ArmPosition.msg
-   ArmSetPosition.msg
-   ArmState.msg
-   AutonomyTaskInfo.msg
-   Battery.msg
-   BatStatGripElevArduino.msg
-   Camera.msg
-   CameraSetValues.msg
-   CameraValue.msg
-   Clicker.msg
-   Laser.msg
-   ConnectionInfo.msg
-   DeviceList.msg
-   DynamixelState.msg
-   Feedback.msg
-   FiducialData.msg
-   Heading.msg
-   Heartbeat.msg
-   HeartbeatStatusBase.msg
-   HeartbeatStatusRover.msg
-   MobilityArucoAutopilotCommand.msg
-   MobilityAutopilotCommand.msg
-   MobilityDriveControl.msg
-   MobilityDriveState.msg
-   MobilityIWCFeedback.msg
-   MobilityDriveCommands.msg
-   IWC_feedback.msg
    IWCMotors.msg
-   MobilityJoyDriveEnable.msg
-   MobilityVelocityCommands.msg
-   MobilityWaypoint2Follow.msg
-   MobilityGPSWaypoint2Follow.msg
-   NavStatus.msg
-   ObstacleInfo.msg
-   PathPlanningWaypoints.msg
-   RawBattery.msg
-   RoverState.msg
-   ScienceAugerOn.msg
-   ScienceCacheDoor.msg
-   ScienceFADIntensity.msg
-   ScienceLinearActuatorDirection.msg
-   ScienceSaveNotes.msg
-   ScienceSaveSecondaryCache.msg
-   ScienceSaveSensor.msg
-   ScienceSecondaryCachePosition.msg
-   ScienceSensorValues.msg
-   ScienceSwitchTool.msg
-   ScienceToolPosition.msg
-   Temperature.msg
-   WallObstacles.msg
-   WaypointNav.msg
-   Xbox.msg
-   ZedObstacles.msg
-   Gripper.msg
-   Elevator.msg
-   ArmPosition.msg
-   Orientation.msg
-   RoverStateSingleton.msg
  )
 
 ## Generate services in the 'srv' folder
-add_service_files(
-   FILES
-   AutonomyAbort.srv
-   AutonomyWaypoint.srv
-   CameraObjectList.srv
-   CameraNamesList.srv
-   DebugMessages.srv
-   DistHeadingConv.srv
-   GimbalCommand.srv
-   GuiCommand.srv
-   LaunchCamera.srv
-   CameraControl.srv
-   LLToNE.srv
-   PositionReturn.srv
-   Screenshot.srv
-   WaypointSend.srv
-   SetFloat32.srv
-)
+# add_service_files(
+#    FILES
+#    AutonomyAbort.srv
+#    AutonomyWaypoint.srv
+#    CameraObjectList.srv
+#    CameraNamesList.srv
+#    DebugMessages.srv
+#    DistHeadingConv.srv
+#    GimbalCommand.srv
+#    GuiCommand.srv
+#    LaunchCamera.srv
+#    CameraControl.srv
+#    LLToNE.srv
+#    PositionReturn.srv
+#    Screenshot.srv
+#    WaypointSend.srv
+#    SetFloat32.srv
+# )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
