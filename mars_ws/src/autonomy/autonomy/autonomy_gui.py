@@ -11,7 +11,7 @@ import os
 from std_srvs.srv import SetBool
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
-from ublox_read_2.msg import PositionVelocityTime
+#from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
 
 class AutonomyGUI(Node):
     def __init__(self):
@@ -25,14 +25,16 @@ class AutonomyGUI(Node):
         self.rover_date_time = 'Rover Date:  Time:'
         self.rover_state = 'Speed: m/s\nDirection: degrees\nNavigation State: '
         self.nav_status = 'State Machine State: \n State Machine: '
+        self.base_numSV = 0
+        self.rover_numSV = 0
 
         ################# ROS Communication #################
 
         # Publishers
 
         # Subscribers
-        self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
-        self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
+        #self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
+        #self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
         self.create_subscription(RoverState, "/rover_status", self.rover_state_callback, 10) #Rover state (speed, direction, navigation state)
         self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
 
@@ -53,6 +55,7 @@ class AutonomyGUI(Node):
 
     #Callbacks for Subscribers
     def base_GPS_info_callback(self, msg):
+        self.base_GPS_info = msg
         self.base_numSV = msg.numSV
         base_year = msg.year
         base_month = msg.month
@@ -64,6 +67,7 @@ class AutonomyGUI(Node):
         return
     
     def rover_GPS_info_callback(self, msg):
+        self.rover_GPS_info = msg
         self.rover_numSV = msg.numSV
         rover_year = msg.year
         rover_month = msg.month
@@ -75,6 +79,7 @@ class AutonomyGUI(Node):
         return
 
     def rover_state_callback(self, msg):
+        self.rover_state_msg = msg
         self.speed = msg.speed
         self.direction = msg.direction
         navigation_state = msg.navigation_state
@@ -92,6 +97,7 @@ class AutonomyGUI(Node):
         return
     
     def rover_nav_status_callback(self, msg):
+        self.rover_nav_status = msg
         self.state_machine_state = msg.state
         autonomous_enable = msg.auto_enable
         if autonomous_enable:
