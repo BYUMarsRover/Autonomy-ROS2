@@ -31,7 +31,6 @@ class Feat2HomographyNode(Node):
         '''
         super().__init__('feat2homography')
 
-        # TODO: find the name of what we need to subscribe to (usb_cam?)
         self.subscription = self.create_subscription(Image, '/image_raw', self.listener_callback, 10)
         '''
         Subscription to the "/image_raw" topic with the message type sensor_msgs/msg/Image.
