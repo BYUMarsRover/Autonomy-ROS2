@@ -53,7 +53,7 @@ class Feat2HomographyNode(Node):
         Uses the SIFT and FLANN algorithms to find the homography between the keyboard image and the
         received image.
 
-        :param msg: The Image message received from the "TODO: Add here" topic.
+        :param msg: The Image message received from the Image topic.
         '''
         # Convert ROS Image to OpenCV
         camera_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
