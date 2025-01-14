@@ -3,7 +3,7 @@ from rclpy.node import Node
 from control_msgs.msg import JointJog
 from sensor_msgs.msg import JointState
 from roboticstoolbox import DHRobot
-from rover_msgs.msg import KeyLocations, Elevator
+from rover_msgs.msg import KeyLocations, Elevator, KeyboardHomography
 from rover_msgs.srv import KeyPress
 import numpy as np
 import parameters as p
@@ -15,6 +15,7 @@ L = np.array([[0.31],[0.34],[0.08]]) # arm lengths (meters), upper segment to lo
 DESIRED_POS = [0, 0] # TODO: Add desired key position in the camera frame
 CLOSE = 5 # TODO: Add buffer for how close the key needs to be to the desired position
 STABLE_REQ = 3 # TODO: Add number of frames the key needs to be in the desired position
+ERROR_THRESHOLD = 0.1
 
 ARM_BASE = 0.0 # TODO: Add base position of arm, do we need this?
 
@@ -31,13 +32,15 @@ class ArmControlsNode(Node):
     using the detected and desired key locations.
 
     Subscribes:
-        - /key_locations (rovers_msgs/msg/KeyLocations)
+        - /key_locations (roversmsgs/msg/KeyLocations)
         - /arm_state (sensor_msgs/msg/JointState)
+        - /elevator (rover_msgs/msg/Elevator)
+        - /keyboard_homography (rover_msgs/msg/KeyboardHomography)
     Publishes:
         - /motor_commands (control_msgs/msg/JointJog)
-        - /elevator (rovers_msgs/msg/Elevator)
+        - /elevator (rover_msgs/msg/Elevator)
     Services:
-        - /key_press (rovers_msgs/srv/KeyPress)
+        - /key_press (rover_msgs/srv/KeyPress)
     '''
 
     def __init__(self):
@@ -89,11 +92,14 @@ class ArmControlsNode(Node):
         '''
         Subscription to the "/arm_state" topic with the message type JointState
         '''
-        self.elevator_subsription = self.create_subscription(Elevator, "/elevator", self.update_elev, 10)
+        self.elevator_subscription = self.create_subscription(Elevator, "/elevator", self.update_elev, 10)
         '''
         Subscription to the "/elevator" topic with the message type Elevator
         '''
-
+        self.homography_subscription = self.create_subscription(KeyboardHomography, '/keyboard_homography', self.update_homography, 10)
+        '''
+        Subscription to the "/keyboard_homography" topic with the message type KeyboardHomography
+        '''
         self.arm_publisher = self.create_publisher(JointJog, '/motor_commands', 10)
         '''
         Publisher to the "/motor_commands" topic with the message type JointJog.
@@ -115,7 +121,7 @@ class ArmControlsNode(Node):
         self.elev_stability = 0 # How many frames has the elevator been stable?
         self.arm_stability = 0 # How many frames has the arm been stable?
         self.key = None # When this is not None, the controller runs
-
+        self.homography_matrix = np.eye(3) # Starting value for homography matrix
         # Arm DH model for IK
         self.arm_dh_model = DHRobot(p.dh_params, name="arm")
 
@@ -144,6 +150,13 @@ class ArmControlsNode(Node):
         # The indexing is just some defensive programming
         self.arm_dh_model.q[1:] = np.array(measured_joint_pos.position[-(self.arm_dh_model.n-1) :]) ## still need to fix this for elevator
 
+    def update_homography(self, homography: KeyboardHomography):
+        """
+        Upon receive a message it updates the homography matrix stored
+        """
+        self.homography_matrix = homography.homography
+        self.control()
+        
     def loc_listener_callback(self, msg):
         '''
         Callback function for the "/key_locations" topic subscription.
@@ -191,34 +204,9 @@ class ArmControlsNode(Node):
             self.control()
 
     def control(self):
-
-        # Elevator control
-        if not elev_set and ((DESIRED_POS[1] + CLOSE > self.key_locations[self.key][1]) or (DESIRED_POS[1] - CLOSE < self.key_locations[self.key][1])):
-            # Simple proportional controller
-            elev_msg = Elevator()
-            # There doesn't seem to be a way to get current elevator position
-            elev_msg.elevator_speed = abs(ELEV_KP * (DESIRED_POS[1] - self.key_locations[self.key][1]))
-            # 1 to move up, 0 to move down
-            elev_msg.elevator_direction = 1 if DESIRED_POS[1] > self.key_locations[self.key][1] else 0
-            self.elevator_publisher.publish(elev_msg)
-            elev_stability = 0
-        else:
-            # Ensure the elevator position is stable
-            elev_stability += 1
-            if elev_stability >= STABLE_REQ:
-                elev_set = True
-                self.get_logger().info('Elevator stability achieved')
-
         # Arm control
-        if not arm_set and ((DESIRED_POS[0] + CLOSE > self.key_locations[self.key][0]) or (DESIRED_POS[0] - CLOSE < self.key_locations[self.key][0])):
-            # Simple proportional controller
-            arm_msg = JointJog()
-            # TODO: needs to have the homography matrix passed in
-            H = np.array([[0, 0, 0],
-                         [0, 0, 0],
-                         [0, 0, 0]])
-            # TODO: Add arm control
-
+        error = np.linalg.norm(self.homography_matrix - np.eye(3), "fro")
+        if not arm_set and error > ERROR_THRESHOLD:
             lambda_v = 1 
             lambda_omega = 1
 
@@ -229,9 +217,9 @@ class ArmControlsNode(Node):
             p_star = np.array([K[0][2], K[1][2], 1])
             m_star = np.linalg.inv(K) @ p_star
 
-            e_v = (H - np.eye(3)) @ m_star
+            e_v = (self.homography_matrix - np.eye(3)) @ m_star
 
-            e_omega_skew = H - H.transpose()
+            e_omega_skew = self.homography_matrix - self.homography_matrix.transpose()
             e_omega = np.array([e_omega_skew[2][1], e_omega_skew[0][2], e_omega_skew[1][0]])
 
             # Compute the twist in the camera frame
@@ -284,7 +272,7 @@ class ArmControlsNode(Node):
                 arm_set = True
                 self.get_logger().info('Arm stability achieved')
 
-        if elev_set and arm_set:
+        if arm_set:
 
             # TODO: Press the button
 
@@ -316,78 +304,7 @@ class ArmControlsNode(Node):
         self.get_logger().info(f"Attempting to press key {self.key}")
         response.success = True
         return response
-    
-### Arm Forward and Inverse Kinematic Functions from Sarah ###
 
-# Forward Kinematics (Joint Angles to Hand Position)
-# x = [x;
-#      y]
-def q2x(q):
-    x = np.zeros((2,np.size(q,1)))
-
-    if np.size(q,0) == 2:
-        x[0,:] = L[0]*np.cos(q[0,:]) + L[1]*np.cos(q[0,:]+q[1,:])
-        x[1,:] = L[0]*np.sin(q[0,:]) + L[1]*np.sin(q[0,:]+q[1,:])
-    else:
-        x[0,:] = L[0]*np.cos(q[0,:]) + L[1]*np.cos(q[0,:]+q[1,:]) + L[2]*np.cos(q[0,:]+q[1,:]+q[2,:])
-        x[1,:] = L[0]*np.sin(q[0,:]) + L[1]*np.sin(q[0,:]+q[1,:]) + L[2]*np.sin(q[0,:]+q[1,:]+q[2,:])
-
-    return x
-
-
-# Inverse Kinematics (Hand Position to Joint Angles)
-# **MAKE SURE TO CONVERT Q TO RADS
-# q = [q_shoulder;
-#      q_elbow    ]
-def x2q(x):
-    if np.size(x) == 2:
-        q = np.zeros((np.size(x),1))
-        q[1] = np.arccos((x[0]**2 + x[1]**2 - L[0]**2 - L[1]**2) / (2*L[0]*L[1]))
-        beta = np.arccos((x[0]**2 + x[1]**2 + L[0]**2 - L[1]**2) / (2*L[0]*np.sqrt(x[0]**2 + x[1]**2)))
-        alpha = np.arctan2(x[1],x[0])
-        q[0] = alpha - beta
-    else:
-        q = np.zeros(np.size(x))
-        q[1,:] = np.arccos((x[0,:]**2 + x[1,:]**2 - L[0]**2 - L[1]**2) / (2*L[0]*L[1]))
-        beta = np.arccos((x[0,:]**2 + x[1,:]**2 + L[0]**2 - L[1]**2) / (2*L[0]*np.sqrt(x[0,:]**2 + x[1,:]**2)))
-        alpha = np.arctan2(x[1,:],x[0,:])
-        q[0,:] = alpha - beta
-
-    return q
-
-
-# Minimum Jerk Trajectory (Determines the smoothest path between two points)
-# w_i: initial position
-# w_f: final position
-# T: movement duration (scalar)
-# t: time vector (usually np.arange(0,T,0.001))
-# w: output trajectory
-# dw: output velocity
-# dw2: output acceleration
-# dw3: output jerk
-def min_jerk(w_i,w_f,T,t):
-    if type(t) == float:
-        w = np.zeros((len(w_i),1))
-        dw = np.zeros((len(w_i),1))
-        dw2 = np.zeros((len(w_i),1))
-        dw3 = np.zeros((len(w_i),1))
-    else:
-        w = np.zeros((len(w_i),len(t)))
-        dw = np.zeros((len(w_i),len(t)))
-        dw2 = np.zeros((len(w_i),len(t)))
-        dw3 = np.zeros((len(w_i),len(t)))
-
-    for i in range(len(w_i)):
-        # Position
-        w[i,:] = w_i[i] + (w_f[i] - w_i[i])*(10*(t/T)**3 - 15*(t/T)**4 + 6*(t/T)**5)
-        # Velocity
-        dw[i,:] = 30*(w_f[i] - w_i[i])*((t/T)**2 - 2*(t/T)**3 + (t/T)**4)*(1/T)
-        # Acceleration
-        dw2[i,:] = 60*(w_f[i] - w_i[i])*((t/T)-3*(t/T)**2+2*(t/T)**3)*T**(-2)
-        # Jerk
-        dw3[i,:] = 60*(w_f[i] - w_i[i])*(1 - 6*(t/T) + 6*(t/T)**2)*T**(-3)
-
-    return w, dw, dw2, dw3
 
 
 def main(args=None):
