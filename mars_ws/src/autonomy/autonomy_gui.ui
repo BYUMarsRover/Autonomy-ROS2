@@ -379,6 +379,22 @@
                   </property>
                  </widget>
                 </item>
+                <!-- Base Lattitude Item -->
+                <item>
+                 <widget class="QLabel" name="BaseLat">
+                  <property name="text">
+                   <string>Lattitude: ...</string>
+                  </property>
+                 </widget>
+                </item>
+                <!-- Base Longitude Item -->
+                <item>
+                 <widget class="QLabel" name="BaseLon">
+                  <property name="text">
+                   <string>Longitude: ...</string>
+                  </property>
+                 </widget>
+                </item>
                 <!-- Base Date and Time Items -->
                 <item>
                  <widget class="QLabel" name="BaseDate">
@@ -420,6 +436,22 @@
                  <widget class="QLabel" name="RoverSats">
                   <property name="text">
                    <string>Satellites: ...</string>
+                  </property>
+                 </widget>
+                </item>
+                <!-- Rover Lattitude Item -->
+                <item>
+                 <widget class="QLabel" name="RoverLat">
+                  <property name="text">
+                   <string>Lattitude: ...</string>
+                  </property>
+                 </widget>
+                </item>
+                <!-- Rover Longitude Item -->
+                <item>
+                 <widget class="QLabel" name="RoverLon">
+                  <property name="text">
+                   <string>Longitude: ...</string>
                   </property>
                  </widget>
                 </item>
