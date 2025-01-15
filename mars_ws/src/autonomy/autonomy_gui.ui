@@ -8,8 +8,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1102</width>
-    <height>386</height>
+    <width>640</width>
+    <height>375</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -29,14 +29,14 @@
      <!-- Everything Widget Properties -->
      <property name="minimumSize">
       <size>
-       <width>1000</width>
-       <height>300</height>
+       <width>620</width>
+       <height>355</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>1000</width>
-       <height>400</height>
+       <width>620</width>
+       <height>355</height>
       </size>
      </property>
      <!-- Layout Widget -->
@@ -46,7 +46,7 @@
        <rect>
         <x>11</x>
         <y>11</y>
-        <width>941</width>
+        <width>600</width>
         <height>335</height>
        </rect>
       </property>
@@ -73,7 +73,7 @@
        </item>
        <!-- All Gui Functions are included below -->
        <item>
-        <!-- Row (with 2 columns) -->
+        <!-- Main Row (with 2 columns) -->
         <layout class="QHBoxLayout" name="horizontalLayout_16">
          <!-- Column 1 Item -->
          <item>
@@ -82,7 +82,7 @@
            <!-- Left Column Label Item -->
            <item>
             <!-- Left Column Label Widget (Leg Info) -->
-            <widget class="QLabel" name="guiTitle">
+            <widget class="QLabel" name="LegInfoLabel">
              <property name="text">
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Leg Info&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
@@ -143,7 +143,7 @@
                <item>
                 <widget class="QRadioButton" name="GNSSRadioButton">
                  <property name="text">
-                  <string>GNSS</string>
+                  <string>GNSS Only</string>
                  </property>
                 </widget>
                </item>
@@ -151,7 +151,7 @@
                <item>
                 <widget class="QRadioButton" name="ArUcoRadioButton">
                  <property name="text">
-                  <string>ArUco</string>
+                  <string>ArUco Tag</string>
                  </property>
                 </widget>
                </item>
@@ -159,7 +159,7 @@
                <item>
                 <widget class="QRadioButton" name="ObjectRadioButton">
                  <property name="text">
-                  <string>Object</string>
+                  <string>Object Detection</string>
                  </property>
                 </widget>
                </item>
@@ -272,9 +272,26 @@
              </property>
             </widget>
            </item>
+           <!-- Error/Success Messages Item -->
+           <item>
+            <widget class="QLabel" name="error_label">
+             <property name="text">
+              <string>Standby</string>
+             </property>
+             <property name="styleSheet">
+              <string>color:rgb(190, 190, 190);</string>
+             </property>
+             <property name="scaledContents">
+              <bool>false</bool>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
-         <!-- Vertical Dividing Line -->
+         <!-- Vertical Dividing Line (divides the 2 columns)-->
          <item>
           <widget class="Line" name="line">
            <property name="orientation">
@@ -284,179 +301,238 @@
          </item>
          <!-- Column 2 Item -->
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout_10">
-           <item>
-              <widget class="QLabel" name="rightColumnLabel">
-               <property name="text">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Right Column&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-           </item>
-           <item>
-              <widget class="QPushButton" name="rightColumnButton1">
-               <property name="text">
-                  <string>Button 1</string>
-               </property>
-              </widget>
-           </item>
-          </layout>
-         </item>
-         <!-- Commenting out the right side of the GUI for now
-         <item>
-          <widget class="QWidget" name="baseStatusList" native="true">
-           <layout class="QVBoxLayout" name="verticalLayout_2">
+          <widget class="QWidget" name="layoutWidget_1">
+           <!-- Sizing Properties of the right column -->
+           <property name="minimumSize">
+            <size>
+             <width>280</width>
+             <height>355</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>280</width>
+             <height>355</height>
+            </size>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_10">
+            <property name="alignment">
+             <set>Qt::AlignTop</set>
+            </property>
+            <!-- Right Column Label (Dashboard) Item -->
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_4">
-              <item>
-               <widget class="QLabel" name="label">
-                <property name="text">
-                 <string>Base Devices</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="baseLastUpdate">
-                <property name="text">
-                 <string> (Last updated 9:16:58 AM)</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
+             <!-- Right Column Label Widget (Dashboard) -->
+             <widget class="QLabel" name="DashboardLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Dashboard&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
             </item>
+            <!-- Horizontal Dividing Line -->
             <item>
-             <widget class="QScrollArea" name="scrollArea">
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
+             <widget class="Line" name="line_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
               </property>
-              <property name="widgetResizable">
-               <bool>true</bool>
+             </widget>
+            </item>
+            <!-- GPS Dash Section Label Item -->
+            <item>
+             <!-- GPS Dash Section Label -->
+             <widget class="QLabel" name="GPSLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;GPS&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
-              <widget class="QWidget" name="scrollAreaWidgetContents">
-               <property name="geometry">
-                <rect>
-                 <x>0</x>
-                 <y>0</y>
-                 <width>277</width>
-                 <height>228</height>
-                </rect>
-               </property>
-               <layout class="QVBoxLayout" name="verticalLayout_4">
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <!-- GPS Base and Rover Horizontal Box -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
+              <!-- Vertical Box that has the Base GPS Information -->
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_11">
+                <!-- Base Side Label Item -->
                 <item>
-                 <widget class="QLabel" name="baseDeviceList">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>0</width>
-                    <height>0</height>
-                   </size>
-                  </property>
+                 <widget class="QLabel" name="BaseSideLabel">
                   <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pinging base devices . . .&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>Base</string>
                   </property>
-                  <property name="scaledContents">
-                   <bool>false</bool>
+                 </widget>
+                </item>
+                <!-- Base Satellite Count Item -->
+                <item>
+                 <widget class="QLabel" name="BaseSats">
+                  <property name="text">
+                   <string>Satellites: ...</string>
                   </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                 </widget>
+                </item>
+                <!-- Base Date and Time Items -->
+                <item>
+                 <widget class="QLabel" name="BaseDate">
+                  <property name="text">
+                   <string>Date: ...</string>
                   </property>
-                  <property name="wordWrap">
-                   <bool>false</bool>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="BaseTime">
+                  <property name="text">
+                   <string>Time: ...</string>
                   </property>
                  </widget>
                 </item>
                </layout>
-              </widget>
+              </item>
+              <!-- Vertical Dividing Line (divides base and rover GPS info) -->
+              <item>
+               <widget class="Line" name="line">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+               </widget>
+              </item>
+              <!-- Vertical Box that has the Rover GPS Information -->
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_11">
+                <!-- Rover Side Label Item -->
+                <item>
+                 <widget class="QLabel" name="RoverDateTimeHeader">
+                  <property name="text">
+                   <string>Rover</string>
+                  </property>
+                 </widget>
+                </item>
+                <!-- Rover Satellite Count Item -->
+                <item>
+                 <widget class="QLabel" name="RoverSats">
+                  <property name="text">
+                   <string>Satellites: ...</string>
+                  </property>
+                 </widget>
+                </item>
+                <!-- Rover Date and Time Items -->
+                <item>
+                 <widget class="QLabel" name="RoverDate">
+                  <property name="text">
+                   <string>Date: ...</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="RoverTime">
+                  <property name="text">
+                   <string>Time: ...</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </item>
+            <!-- Horizontal Dividing Line -->
+            <item>
+             <widget class="Line" name="line_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <!-- State Machine Dash Section Label Item -->
+            <item>
+             <!-- State Machine Dash Section Label -->
+             <widget class="QLabel" name="StateMachineLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;State Machine&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <!-- State Machine previous and current states Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
+              <!-- Vertical Box that has the PREVIOUS state -->
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_11">
+                <item>
+                 <widget class="QLabel" name="PreviousStateLabel">
+                  <property name="text">
+                   <string>Previous State</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="PreviousStateDisplay">
+                  <property name="text">
+                   <string>None</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <!-- Vertical Dividing Line (divides previous and current state columns) -->
+              <item>
+               <widget class="Line" name="line">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+               </widget>
+              </item>
+              <!-- Vertical Box that has the CURRENT state -->
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_11">
+                <item>
+                 <widget class="QLabel" name="CurrentStateLabel">
+                  <property name="text">
+                   <string>Current State</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="CurrentStateDisplay">
+                  <property name="text">
+                   <string>None</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </item>
+            <!-- Horizontal Dividing Line -->
+            <item>
+             <widget class="Line" name="line_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
              </widget>
             </item>
            </layout>
           </widget>
          </item>
-         <item>
-          <widget class="QWidget" name="roverStatusList" native="true">
-           <layout class="QVBoxLayout" name="verticalLayout_3">
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_6">
-              <item>
-               <widget class="QLabel" name="label_2">
-                <property name="text">
-                 <string>Rover Devices</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="roverLastUpdate">
-                <property name="text">
-                 <string> (Last updated 9:16:58 AM)</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="QScrollArea" name="scrollArea_2">
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="widgetResizable">
-               <bool>true</bool>
-              </property>
-              <widget class="QWidget" name="scrollAreaWidgetContents_2">
-               <property name="geometry">
-                <rect>
-                 <x>0</x>
-                 <y>0</y>
-                 <width>284</width>
-                 <height>228</height>
-                </rect>
-               </property>
-               <layout class="QVBoxLayout" name="verticalLayout_5">
-                <item>
-                 <widget class="QLabel" name="roverDeviceList">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>0</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Waiting for rover to publish . . .&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="scaledContents">
-                   <bool>false</bool>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                  </property>
-                  <property name="wordWrap">
-                   <bool>false</bool>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         -->
         </layout>
        </item>
       </layout>

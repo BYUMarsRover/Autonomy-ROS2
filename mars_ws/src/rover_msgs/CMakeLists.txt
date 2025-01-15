@@ -35,6 +35,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ObjectDetection.msg"
   "msg/ObjectDetections.msg"
   "msg/ObstacleInfo.msg"
+  "msg/PositionVelocityTime.msg"
   "msg/RawBattery.msg"
   "msg/RoverState.msg"
   "msg/RoverStateSingleton.msg"
