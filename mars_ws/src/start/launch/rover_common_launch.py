@@ -4,6 +4,11 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import os
+#(imports below needed for running the Dummy Publisher at the end of the file)
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration
+
 
 # Rover Common Launch
 
@@ -15,9 +20,10 @@ def generate_launch_description():
     # Get directories TODO: Uncomment packages as they are created
     # peripherals_dir = get_package_share_directory('peripherals')
     odometry_dir = get_package_share_directory('odometry')
-    mobilility_dir = get_package_share_directory('mobility')
+    mobility_dir = get_package_share_directory('mobility')
     home_gui_dir = get_package_share_directory('home_gui')
     heartbeat_dir = get_package_share_directory('heartbeat')
+    peripherals_dir = get_package_share_directory('peripherals')
 
     return LaunchDescription([
         # Environment variable for ROS console output format
@@ -27,51 +33,60 @@ def generate_launch_description():
             description='Console output format'
         ),
 
-        # Dummy publisher for rover state data when running locally
-        # TODO: add code
+        # Peripherals 
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join( 
+                peripherals_dir, 'launch', 'peripherals_launch.py'))
+        ),
 
-        # Node for drive serial communication
+        # Heartbeat
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join( 
+                heartbeat_dir, 'launch', 'heartbeat_rover_launch.py'))
+        ),
+
+        # Rover Home GUI
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join( 
+                home_gui_dir, 'launch', 'rover_home_gui.launch.py'))
+        ),
+
+         # Node for drive serial communication
+        # serial communication = IWC_motors -> subscribes to the end of the mobility module (transisiton node?) and
+        # we are going to use a ros2 bridge to go back and forth between the ros2 mobility and motors
         # TODO: needs to be different because of the bridge
-        # Serial communcication with the Mega Arduino
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join( 
-        #         peripherals_dir, 'launch', 'battery_info.launch.py'))
-        # ),
-
-        # Node for rover status listener TODO: Uncomment once created
-        # Node(
-        #     package='peripherals',
-        #     executable='wrapper',
-        #     name='rover_status_listener',
-        #     output='screen'
-        # ),
-
-        # Heartbeat lrover node
-        Node(
-            package='heartbeat',
-            executable='heartbeat_rover',
-            name='heartbeat_rover',
-            output='screen',
+        # Serial communcication with the Mega Arduino (tells what the motors need to do)
+        # Launch Mobility Package - Rover Translator node for mobility messages
+        # We aren't sure if this will work in ROS2, we might need to make the Arduino & Computer communication ros indepenent 
+        # before we can get mobility working in ROS2. Or maybe we can add something to make the bridge. 
+        # Mobility
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(
+                mobility_dir, 'launch', 'rover_drive_launch.py')),
         ),
 
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join( 
-        #         home_gui_dir, 'launch', 'rover_home_gui.launch.py'))
-        # ),
-
-        # Rover Translator node for mobility messages
-        Node(
-            package='mobility',
-            executable='transition',
-            name='transition',
-            output='screen',
-            namespace='mobility',
-        ),
-
-        # Include GPS related launch file
+        # GPS
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(
                 odometry_dir, 'launch', 'rover_launch.py')),
         ),
+
+        # Dummy publisher for rover state data when running locally---------------
+        # This is only needed if the os.getenv is http://127.0.0.1:11311
+        GroupAction(
+            actions=[
+                IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource(
+                        os.path.join(odometry_dir, 'launch', 'dummy_singleton_publisher.launch.py')
+                    )
+                )
+            ],
+            condition=IfCondition( #if that condition is met
+                LaunchConfiguration(
+                    'ros_master_uri', default=os.getenv('ROS_MASTER_URI', '')
+                ) == 'http://127.0.0.1:11311'
+            )
+        ),
+        #-----------------------------------------
 
     ])
