@@ -31,6 +31,7 @@ class Feat2HomographyNode(Node):
         '''
         super().__init__('feat2homography')
 
+        self.keyboard_img = None
         self.subscription = self.create_subscription(Image, '/image_raw', self.listener_callback, 10)
         '''
         Subscription to the "/image_raw" topic with the message type sensor_msgs/msg/Image.
@@ -45,7 +46,6 @@ class Feat2HomographyNode(Node):
         '''
 
         self.bridge = CvBridge()
-        self.keyboard_img
         self.image_prefix = "/home/marsrover/mars_ws/src/keyboard_autonomy/images/"
 
         self.get_logger().info("Feat2HomographyNode started")
