@@ -38,7 +38,9 @@ def generate_launch_description():
             output='screen',
             parameters=[config],
             remappings=[
-                ('odometry/filtered', 'odometry/filtered_map')
+                ('odometry/filtered', 'odometry/filtered_map'),
+                ('imu', 'imu/data'),
+                ('gps/fix', 'ins/lla'),
             ],
             emulate_tty=True
         ),
@@ -56,8 +58,8 @@ def generate_launch_description():
             name='imu_filter_madgwick',
             output='screen',
             remappings=[
-                ('imu/data', 'zed/imu/data'),
-                ('imuu/mag', 'zed/imu/mag')
+                ('imu/data_raw', 'zed/imu/data'),
+                ('imu/mag', 'zed/imu/mag')
             ],
             parameters=[imu_config]
         ),

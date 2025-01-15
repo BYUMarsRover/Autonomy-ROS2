@@ -6,6 +6,8 @@ from std_msgs.msg import Bool, String, UInt16MultiArray
 from rover_msgs.msg import IWC_motors, Elevator, HeartbeatStatusRover, FPVServo
 import serial
 import time
+import queue
+import threading
 
 class MegaMiddleman(Node):
     def __init__(self):
@@ -23,6 +25,8 @@ class MegaMiddleman(Node):
         self.pub_IR = self.create_publisher(UInt16MultiArray, '/IR', 1)
         self.pub_Debug = self.create_publisher(String, '/ArduinoDebug', 25)
 
+        self.serial_queue = queue.Queue()
+        self.lock = threading.Lock()
         # Connect to Arduino
         self.disconnected = True
         self.connect()
@@ -35,12 +39,12 @@ class MegaMiddleman(Node):
         while failure_count < 10:
             try:
                 arduino_port = "/dev/rover/onBoardMega"
-                self.ser = serial.Serial(arduino_port, 115200, timeout=3.0)
+                self.ser = serial.Serial(arduino_port, 115200, timeout=4.0)
                 break
             except serial.SerialException as e:
                 self.get_logger().warn(f"Could not open serial port {arduino_port}: {e}")
                 failure_count += 1
-            time.sleep(1)
+            time.sleep(1) #TODO
         if failure_count >= 10:
             self.get_logger().warn(f"Could not open serial port {arduino_port} after {failure_count} attempts.")
             self.write_debug("Orin: Could not establish connection to Arduino.")
@@ -52,11 +56,15 @@ class MegaMiddleman(Node):
     def serial_write(self, msg):
         if not self.disconnected:
             try:
-                self.ser.write(msg.encode('ascii'))
+                with self.lock:
+                    self.serial_queue.put(msg)
+                    while not self.serial_queue.empty():
+                        message = self.serial_queue.get()
+                        self.ser.write(message.encode('ascii'))
+
             except serial.SerialException as e:
-                self.get_logger().warn(f"Failed to write to serial: {e}")
                 self.write_debug("Orin: Failed to send message to Arduino.")
-                self.disconnected = True
+                self.disconnected = True # Not necessarily disconnected, but could be
         else:
             self.write_debug("Orin: Not connected to Arduino; ignoring message.")
 
@@ -103,10 +111,10 @@ class MegaMiddleman(Node):
             if not x:
                 self.write_debug("Orin: Nothing to read")
                 return 0, ""
-        except serial.SerialException:
+        except:
             self.write_debug("WARNING: Read failure")
             self.ser.reset_input_buffer()
-            return
+            return -1, ""
 
         self.write_debug("Orin: Reading a new message from the Arduino starting with " + x)
         if x != '$':
@@ -115,7 +123,7 @@ class MegaMiddleman(Node):
 
         try:
             mega_msg = self.ser.read_until(b'*').decode('ascii').strip()
-        except serial.SerialException:
+        except:
             self.write_debug("WARNING: Read failure")
             self.ser.reset_input_buffer()
             return
