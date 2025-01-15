@@ -13,7 +13,7 @@ import struct
 class TestScienceSerial:
 
     def __init__(self):
-        # 
+
         self.arduino = serial.Serial("/dev/ttyUSB0", 9600)
         
         # packet values
@@ -50,9 +50,7 @@ class TestScienceSerial:
     def read_serial(self) -> list[int]:
         # only attempt reads when there are available bytes on the Serial input buffer
         if (self.arduino.in_waiting > 0):
-            # discard a line to reset to correct position
             self.arduino.readline()
-            # make sure there's data??
             # get data until a '\n' character (blocking), decode it, strip off the \n, then split it by :
             data = self.arduino.readline()
             data = data.decode('utf-8').strip().split(':')
@@ -68,8 +66,6 @@ if __name__ == '__main__':
     while not test.arduino:
         pass
     print("Science Serial Online\n")
-
-    # print("# AUGER TESTS ####################\n")
 
     # test.current_auger_index = 1
 

@@ -5,6 +5,9 @@ Test Controller Setup for Science Arduino
 NOTE: This is the most up to date off-rover science module test.
 Requires a USB connection to the science module Arduino, and
 a USB connection the science module Xbox controller.
+
+Last Updated: January 2025
+
 """
 
 import time

@@ -1,4 +1,3 @@
-# pip install odpslides
 from odpslides.presentation import Presentation
 import os
 from matplotlib import pyplot as plt
@@ -37,11 +36,6 @@ for filename in filenames:
         # Plot values
         plt.ylim(0, max(max(values) + 10, 120))
         plt.plot(values)
-
-        # Plot threshold lines
-        # plt.axhline(y=50, color='r', linestyle='--', label='No Life Threshold')
-        # plt.axhline(y=100, color='g', linestyle='--')
-        # plt.axhline(y=20, color='sienna', linestyle='--')
 
         # Labels
         plt.ylabel('Photoresistor Values')
