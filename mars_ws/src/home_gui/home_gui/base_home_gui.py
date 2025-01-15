@@ -18,6 +18,13 @@ from rover_msgs.srv import CameraControl
 from subprocess import Popen, PIPE
 from .html_templates import *
 from .dev_name_map import BASE_DEV_NAME_MAP, ROVER_DEV_NAME_MAP
+from launch import LaunchService
+from launch_ros.actions import Node
+import os
+import launch
+import launch.actions
+import launch_ros.actions
+from ament_index_python.packages import get_package_share_directory
 
 import sys
 import atexit
@@ -51,7 +58,7 @@ class HomeGuiUI(Node, QWidget):
 
     def __init__(self):
         # Call the inherited classes __init__ method
-        Node.__init__(self, 'base_home_gui')
+        Node.__init__(self, executable='base_home_gui')
         QWidget.__init__(self)
         # Load the .ui file
         uic.loadUi(
@@ -126,6 +133,21 @@ class HomeGuiUI(Node, QWidget):
 
     def error(self, message, title='Error'):
         self.get_logger().error(message)
+
+    def start_keyboard_autonomy(self):
+        launch_file_path = os.path.join(
+            get_package_share_directory('keyboard_autonomy'), 'launch', 'keyboard_autonomy_launch.py'
+        )
+
+        launch_description = launch.LaunchDescription([
+            launch.actions.IncludeLaunchDescription(
+                launch.launch_description_sources.PythonLaunchDescriptionSource(launch_file_path)
+            )
+        ])
+
+        launch_service = launch.LaunchService()
+        launch_service.include_launch_description(launch_description)
+        launch_service.run()
 
     def popup(self, title, message):
         QMessageBox.about(self, title, message)

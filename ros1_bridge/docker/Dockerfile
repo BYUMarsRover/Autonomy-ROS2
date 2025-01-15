@@ -79,4 +79,6 @@ USER root
 RUN apt update && apt install -y tmux
 USER ${NAME}
 
-WORKDIR /home/${NAME} 
+WORKDIR /home/${NAME}
+
+RUN echo "RCUTILS_COLORIZED_OUTPUT=1" >> /home/${NAME}/.bashrc

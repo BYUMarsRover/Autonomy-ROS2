@@ -1,0 +1,3 @@
+# Keyboard webcam
+# TODO: Change serial number to match whichever camera we end up using
+KERNEL=="video*", ATTRS{product}=="HD Pro Webcam C920", ATTRS{serial}=="BBEFDF4G", ATTR{index}=="0", SYMLINK+="rover/cameras/keyboardWebCam"

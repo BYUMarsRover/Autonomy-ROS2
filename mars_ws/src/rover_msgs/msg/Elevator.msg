@@ -1,0 +1,2 @@
+int32 elevator_speed
+int32 elevator_direction

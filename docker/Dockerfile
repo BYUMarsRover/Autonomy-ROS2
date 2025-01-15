@@ -44,21 +44,4 @@ USER marsrover
 # RUN pip3 uninstall -y numpy
 # RUN pip3 install numpy==1.26.0
 
-# Add OpenCV dependency -- needed for aruco detect
-USER root
-RUN apt-get update && \
-    apt-get install -y libopencv-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-# Set CMake prefix path for OpenCV and ROS
-# ENV CMAKE_PREFIX_PATH="/usr/local/share/OpenCV;/opt/ros/humble"
-USER marsrover
-
-# Install ROS2 dependencies for aruco_detect
-# USER root
-# RUN apt update && \
-#     apt install -y ros-humble-tf2-geometry-msgs ros-humble-visualization-msgs && \
-#     rm -rf /var/lib/apt/lists/*
-# USER marsrover
-
-# Edit so it tries to build (YOU CAN REMOVE THIS)
+RUN echo "export RCUTILS_COLORIZED_OUTPUT=1" >> ~/.bashrc
