@@ -48,21 +48,8 @@ find_package(catkin REQUIRED std_msgs message_generation sensor_msgs)
 ## Generate services in the 'srv' folder
 # add_service_files(
 #    FILES
-#    AutonomyAbort.srv
-#    AutonomyWaypoint.srv
-#    CameraObjectList.srv
-#    CameraNamesList.srv
-#    DebugMessages.srv
-#    DistHeadingConv.srv
-#    GimbalCommand.srv
-#    GuiCommand.srv
-#    LaunchCamera.srv
-#    CameraControl.srv
-#    LLToNE.srv
-#    PositionReturn.srv
-#    Screenshot.srv
-#    WaypointSend.srv
-#    SetFloat32.srv
+#    Service1.srv
+#    Service2.srv
 # )
 
 ## Generate actions in the 'action' folder

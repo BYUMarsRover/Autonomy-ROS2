@@ -17,7 +17,7 @@ find_package(sensor_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/IWCMotors.msg"
-  DEPENDENCIES std_msgs geometry_msgs sensor_msgs builtin_interfaces # Add packages that above messages depend on
+  DEPENDENCIES std_msgs sensor_msgs # Add packages that above messages depend on
 )
 
 if(BUILD_TESTING)
