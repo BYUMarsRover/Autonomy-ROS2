@@ -8,7 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 Created by: Daniel Webb
 Date: 11/24/2024
 
-This class is takes a map and then converts from UTM to Lat/Lon coordinates.
+This class takes a map (asc file) and then converts from UTM to Lat/Lon coordinates.
 
 It is initialized with either a map (2D array) with its lower left corner UTM coordinates and resolution
 OR
@@ -49,7 +49,7 @@ class Mapper:
 
     def chop_map(self, x1, x2, y1, y2):
         '''
-        Crops the map to the specified coordinates
+        Crops the map to the specified coordinates #TODO: add some capability to figure out how to chop the map at the competition or add full map
         '''
         self.map = self.map[y1:y2, x1:x2]
         self.grad_map = self.grad_map[y1:y2, x1:x2]

@@ -40,7 +40,7 @@ class PathPlanner(Node):
         if self.location[0] > 40.3166 and self.location[0] < 40.323302 and self.location[1] > -111.649553 and self.location[1] < -111.6369:
             self.get_logger().info("Welcome to the gravel pits! Path Planning is ready.")
             file_path=os.path.join(get_package_share_directory('path_planning'), 'data', 'gravel_pits.asc')
-            self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='N')
+            self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='T') # TODO: verify zone and zone_letter
             self.eMapper.chop_map(200, 700, 0, 500)
         # Hanksville Map
         elif self.location[0] > 38.392509 and self.location[0] < 38.450525 and self.location[1] > -110.804971 and self.location[1] <  -110.773991:
@@ -86,7 +86,7 @@ class PathPlanner(Node):
                     )
                 )
 
-            self.mapviz_path.publish(path_msg)
+            self.mapviz_path.publish(path_msg) #TODO: verify that the path pops up on mapviz **Current Task
 
 
     # Plan Waypoint Order Service Callback

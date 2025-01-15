@@ -20,7 +20,7 @@ AStarPlanner class for path planning using the A* algorithm
 class AStarPlanner:
     def __init__(self, cost_map=None, gw=1., hw=1., ew=1., e_thresh=np.inf, animate=False):
 
-        self.cost_map = cost_map
+        self.cost_map = cost_map # Expects and elevation map
 
         # Initialize path list - will contain tuples of (x, y) coordinates for each waypoint
         self.path = []
