@@ -5,7 +5,7 @@ from cv_bridge import CvBridge
 import numpy as np
 import cv2
 from rover_msgs.msg import KeyboardHomography
-import time
+from mars_ws.build.rover_msgs.rosidl_generator_py.rover_msgs.srv._key_press import KeyPress
 
 MIN_MATCH_COUNT = 10
 
@@ -35,17 +35,73 @@ class Feat2HomographyNode(Node):
         '''
         Subscription to the "/image_raw" topic with the message type sensor_msgs/msg/Image.
         '''
-        self.subscription  # Prevent unused variable warning
-
+        self.srv = self.create_service(KeyPress, '/key_press', self.key_press_callback, 10)
+        '''
+        Service that attempts to press a certain key based on the KeyPress request.
+        '''
         self.publisher = self.create_publisher(KeyboardHomography, '/keyboard_homography', 10)
         '''
         Publisher to the "/keyboard_homography" topic with the message type KeyboardHomography.
         '''
 
         self.bridge = CvBridge()
-        self.keyboard_img = cv2.imread("/home/marsrover/mars_ws/src/keyboard_autonomy/images/2024-12-03-085842.jpg")
+        self.keyboard_img
+        self.image_prefix = "/home/marsrover/mars_ws/src/keyboard_autonomy/images/"
 
         self.get_logger().info("Feat2HomographyNode started")
+
+    def key_press_callback(self, request, response):
+        '''
+        Callback function for the "/key_press" service.
+        Attempts to press the key requested in the KeyPress request.
+
+        :param request: The KeyPress request.
+        :param response: The KeyPress response.
+        '''
+
+        self.get_logger().info('Received key locations')
+        # TODO: change these to the actual images we get of the clicker pressing each key
+        match request.key:
+            case 'a': key_picture_file = 'a_file.jpg',
+            case 'b': key_picture_file = 'a_file.jpg',
+            case 'c': key_picture_file = 'a_file.jpg',
+            case 'd': key_picture_file = 'a_file.jpg',
+            case 'e': key_picture_file = 'a_file.jpg',
+            case 'f': key_picture_file = 'a_file.jpg',
+            case 'g': key_picture_file = 'a_file.jpg',
+            case 'h': key_picture_file = 'a_file.jpg',
+            case 'i': key_picture_file = 'a_file.jpg',
+            case 'j': key_picture_file = 'a_file.jpg',
+            case 'k': key_picture_file = 'a_file.jpg',
+            case 'l': key_picture_file = 'a_file.jpg',
+            case 'm': key_picture_file = 'a_file.jpg',
+            case 'n': key_picture_file = 'a_file.jpg',
+            case 'o': key_picture_file = 'a_file.jpg',
+            case 'p': key_picture_file = 'a_file.jpg',
+            case 'q': key_picture_file = 'a_file.jpg',
+            case 'r': key_picture_file = 'a_file.jpg',
+            case 's': key_picture_file = 'a_file.jpg',
+            case 't': key_picture_file = 'a_file.jpg',
+            case 'u': key_picture_file = 'a_file.jpg',
+            case 'v': key_picture_file = 'a_file.jpg',
+            case 'w': key_picture_file = 'a_file.jpg',
+            case 'x': key_picture_file = 'a_file.jpg',
+            case 'y': key_picture_file = 'a_file.jpg',
+            case 'z': key_picture_file = 'a_file.jpg',
+            case 'enter': key_picture_file = 'a_file.jpg',
+            case 'caps_lock': key_picture_file = 'a_file.jpg',
+            case 'delete_key': key_picture_file = 'a_file.jpg',
+            case 'space': key_picture_file = 'a_file.jpg',
+
+        full_file_name = self.image_prefix + key_picture_file
+        self.keyboard_img = cv2.imread(full_file_name)
+
+        # Run the controller on receiving new key locations
+        if self.key is not None:
+            self.control()
+        self.get_logger().info(f"Attempting to press key {self.key}")
+        response.success = True
+        return response
 
     def listener_callback(self, msg):
         '''
