@@ -91,6 +91,10 @@ class HomeGuiUI(Node, QWidget):
         self.cameraScreenshotButton.clicked.connect(
             self.take_screenshot)
 
+        self.autonomousKeyboardButton.clicked.connect(
+            self.launch_autonomous_keyboard
+        )
+
         self.cameraLaunchViewButton.clicked.connect(self.launch_view)
         # self.clickerButton.clicked.connect(self.activate_clicker)
 
@@ -281,6 +285,15 @@ class HomeGuiUI(Node, QWidget):
         camera.camera_name = camera_name
         # In ROS 1 services are synchronous so this will block until the service finishes
         self.camera_control(camera=camera, site_name=site_name, screenshot=True)
+
+    def launch_autonomous_keyboard(self):
+        word = self.autonomousKeyboardLineEdit.text()
+        print(word)
+        self.get_logger().info(word)
+
+        rclpy.init(args=word)
+        node = KeyboardFSMNode()
+        rclpy.spin(node)
 
     def launch_view(self):
         channel = self.get_available_channel()
