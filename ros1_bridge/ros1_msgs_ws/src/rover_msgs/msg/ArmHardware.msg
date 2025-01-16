@@ -1,6 +1,0 @@
-bool grip_elev_nano
-string epos_1_control
-string epos_2_control
-string epos_3_control
-string epos_4_control
-string epos_5_control

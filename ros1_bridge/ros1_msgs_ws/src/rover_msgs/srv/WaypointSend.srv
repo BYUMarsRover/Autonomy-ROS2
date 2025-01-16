@@ -1,7 +1,0 @@
-# Sends waypoints from CoordinateInput GUI to waypoint_manager and
-# returns the waypoints in distances north and east from rover location.
-float32[] wp_lat
-float32[] wp_lon
----
-float32[] wp_N
-float32[] wp_E

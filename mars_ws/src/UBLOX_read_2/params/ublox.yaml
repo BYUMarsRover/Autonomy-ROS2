@@ -30,3 +30,26 @@
     #These values are just for the base.
     #They need to be changed in the launch file for the rover
     rover_quantity: 1    #number of rovers
+
+rover:
+  f9p_rover:
+    ros__parameters:
+      ############# PARAMS taken from for rover ###########
+      base_port: 16140
+      base_host: '192.168.1.111'
+      local_port: 16140
+      local_host: '192.168.1.120'
+      serial_port: '/dev/rover/rtk'
+      rover_quantity: 0
+
+base:
+  f9p_base:
+    ros__parameters:
+      ############# PARAMS taken from base ###########
+      local_port: 16140
+      local_host: '192.168.1.111'
+      rover_port: 16140
+      rover_host: '192.168.1.120'
+      rover_quantity: 1
+      serial_port:  '/dev/rover/rtk'
+

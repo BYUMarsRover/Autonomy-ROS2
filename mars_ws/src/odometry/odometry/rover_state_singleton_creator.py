@@ -3,11 +3,19 @@
 import math
 import rclpy
 from rclpy.node import Node
+
+# Monkey patch (there is an bug in the transforms3d library within tf_transformations that uses np.float instead of float)
+import numpy as np
+np.float = float  # Temporary alias for compatibility
+
 from tf_transformations import euler_from_quaternion
 
 from nav_msgs.msg import Odometry
 from rover_msgs.msg import RoverStateSingleton
 from sensor_msgs.msg import NavSatFix
+import numpy as np
+
+np.float = float # Bug fix hack
 
 class RoverStateSingletonCreator(Node):
     """
@@ -26,37 +34,37 @@ class RoverStateSingletonCreator(Node):
         # Publishers
         self.singleton_publisher = self.create_publisher(RoverStateSingleton, '/odometry/rover_state_singleton', 10) # Publishes the singleton message
 
-        self.map_roll = 0
-        self.map_pitch = 0
-        self.map_yaw = 0
+        self.map_roll = 0.0
+        self.map_pitch = 0.0
+        self.map_yaw = 0.0
 
-        self.odom_roll = 0
-        self.odom_pitch = 0
-        self.odom_yaw = 0
+        self.odom_roll = 0.0
+        self.odom_pitch = 0.0
+        self.odom_yaw = 0.0
 
-        self.map_x = 0
-        self.map_y = 0
-        self.map_z = 0
+        self.map_x = 0.0
+        self.map_y = 0.0
+        self.map_z = 0.0
 
-        self.odom_x = 0
-        self.odom_y = 0
-        self.odom_z = 0
+        self.odom_x = 0.0
+        self.odom_y = 0.0
+        self.odom_z = 0.0
 
-        self.map_x_dot = 0
-        self.map_y_dot = 0
-        self.map_z_dot = 0
+        self.map_x_dot = 0.0
+        self.map_y_dot = 0.0
+        self.map_z_dot = 0.0
 
-        self.odom_x_dot = 0
-        self.odom_y_dot = 0
-        self.odom_z_dot = 0
+        self.odom_x_dot = 0.0
+        self.odom_y_dot = 0.0
+        self.odom_z_dot = 0.0
 
-        self.map_roll_dot = 0
-        self.map_pitch_dot = 0
-        self.map_yaw_dot = 0
+        self.map_roll_dot = 0.0
+        self.map_pitch_dot = 0.0
+        self.map_yaw_dot = 0.0
 
-        self.odom_roll_dot = 0
-        self.odom_pitch_dot = 0
-        self.odom_yaw_dot = 0
+        self.odom_roll_dot = 0.0
+        self.odom_pitch_dot = 0.0
+        self.odom_yaw_dot = 0.0
 
         self.gps = NavSatFix()
         self.filter_gps = NavSatFix()

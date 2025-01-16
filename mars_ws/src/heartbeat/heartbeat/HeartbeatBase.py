@@ -23,8 +23,8 @@ class BaseHeartbeat(Node):
 
     def update_elapsed_time(self, msg):
         t = self.get_clock().now()
-        self.get_logger().info("Received heartbeat from rover: t=" + str(msg.current_time))
-        self.get_logger().debug("Base received heartbeat: t=" + str(msg.current_time))
+        self.get_logger().info("Received heartbeat from rover: t=" + str(msg.current_time), throttle_duration_sec=10)
+        self.get_logger().debug("Base received heartbeat: t=" + str(msg.current_time),throttle_duration_sec=1)
         self.last_received = t
 
     def ping_and_publish(self):
@@ -44,7 +44,7 @@ class BaseHeartbeat(Node):
         if (t - self.startup_time).nanoseconds / 1e9 < p.BASE_HEARTBEAT_WARMUP:
             return
         if (t - self.last_received).nanoseconds / 1e9 > p.BASE_WARNING_TOLERANCE:
-            self.get_logger().warn(p.BASE_WARNING_STRING)
+            self.get_logger().warn(p.BASE_WARNING_STRING, throttle_duration_sec=5)
 
 
 def main(args=None):

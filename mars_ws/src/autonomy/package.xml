@@ -33,6 +33,7 @@
   <exec_depend>fiducial_vlam</exec_depend> <!-- For fiducial marker handling -->
   <exec_depend>fiducial_msgs</exec_depend>  <!-- Added for FiducialTransformArray -->
   <exec_depend>image_tools</exec_depend>
+  <exec_depend>usb-cam</exec_depend>
 
   <depend>std_msgs</depend>
 
