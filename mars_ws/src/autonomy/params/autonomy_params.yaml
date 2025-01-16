@@ -14,3 +14,8 @@
     wrong_aruco_backup_distance: 7.0
     aruco_gate_approach_distance: 6.0
     hex_seach_angle_difference: 50.0
+
+fiducial_data:
+  ros__parameters:
+    simulation: false     #Run in simulation mode
+    target_ar_tag_id: -1  #Target AR Tag ID

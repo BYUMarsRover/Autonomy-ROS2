@@ -5,6 +5,7 @@ from cv_bridge import CvBridge
 import numpy as np
 import cv2
 from rover_msgs.msg import KeyboardHomography
+from mars_ws.build.rover_msgs.rosidl_generator_py.rover_msgs.srv._key_press import KeyPress
 
 MIN_MATCH_COUNT = 10
 
@@ -30,21 +31,77 @@ class Feat2HomographyNode(Node):
         '''
         super().__init__('feat2homography')
 
+        self.keyboard_img = None
         self.subscription = self.create_subscription(Image, '/image_raw', self.listener_callback, 10)
         '''
         Subscription to the "/image_raw" topic with the message type sensor_msgs/msg/Image.
         '''
-        self.subscription  # Prevent unused variable warning
-
+        self.srv = self.create_service(KeyPress, '/key_press', self.key_press_callback, 10)
+        '''
+        Service that attempts to press a certain key based on the KeyPress request.
+        '''
         self.publisher = self.create_publisher(KeyboardHomography, '/keyboard_homography', 10)
         '''
         Publisher to the "/keyboard_homography" topic with the message type KeyboardHomography.
         '''
 
         self.bridge = CvBridge()
-        self.keyboard_img = cv2.imread("/home/marsrover/mars_ws/src/keyboard_autonomy/images/keyboard_better.jpg")
+        self.image_prefix = "/home/marsrover/mars_ws/src/keyboard_autonomy/images/"
 
         self.get_logger().info("Feat2HomographyNode started")
+
+    def key_press_callback(self, request, response):
+        '''
+        Callback function for the "/key_press" service.
+        Attempts to press the key requested in the KeyPress request.
+
+        :param request: The KeyPress request.
+        :param response: The KeyPress response.
+        '''
+
+        self.get_logger().info('Received key locations')
+        # TODO: change these to the actual images we get of the clicker pressing each key
+        match request.key:
+            case 'a': key_picture_file = 'a_file.jpg',
+            case 'b': key_picture_file = 'a_file.jpg',
+            case 'c': key_picture_file = 'a_file.jpg',
+            case 'd': key_picture_file = 'a_file.jpg',
+            case 'e': key_picture_file = 'a_file.jpg',
+            case 'f': key_picture_file = 'a_file.jpg',
+            case 'g': key_picture_file = 'a_file.jpg',
+            case 'h': key_picture_file = 'a_file.jpg',
+            case 'i': key_picture_file = 'a_file.jpg',
+            case 'j': key_picture_file = 'a_file.jpg',
+            case 'k': key_picture_file = 'a_file.jpg',
+            case 'l': key_picture_file = 'a_file.jpg',
+            case 'm': key_picture_file = 'a_file.jpg',
+            case 'n': key_picture_file = 'a_file.jpg',
+            case 'o': key_picture_file = 'a_file.jpg',
+            case 'p': key_picture_file = 'a_file.jpg',
+            case 'q': key_picture_file = 'a_file.jpg',
+            case 'r': key_picture_file = 'a_file.jpg',
+            case 's': key_picture_file = 'a_file.jpg',
+            case 't': key_picture_file = 'a_file.jpg',
+            case 'u': key_picture_file = 'a_file.jpg',
+            case 'v': key_picture_file = 'a_file.jpg',
+            case 'w': key_picture_file = 'a_file.jpg',
+            case 'x': key_picture_file = 'a_file.jpg',
+            case 'y': key_picture_file = 'a_file.jpg',
+            case 'z': key_picture_file = 'a_file.jpg',
+            case 'enter': key_picture_file = 'a_file.jpg',
+            case 'caps_lock': key_picture_file = 'a_file.jpg',
+            case 'delete_key': key_picture_file = 'a_file.jpg',
+            case 'space': key_picture_file = 'a_file.jpg',
+
+        full_file_name = self.image_prefix + key_picture_file
+        self.keyboard_img = cv2.imread(full_file_name)
+
+        # Run the controller on receiving new key locations
+        if self.key is not None:
+            self.control()
+        self.get_logger().info(f"Attempting to press key {self.key}")
+        response.success = True
+        return response
 
     def listener_callback(self, msg):
         '''
@@ -52,48 +109,16 @@ class Feat2HomographyNode(Node):
         Uses the SIFT and FLANN algorithms to find the homography between the keyboard image and the
         received image.
 
-        :param msg: The Image message received from the "TODO: Add here" topic.
+        :param msg: The Image message received from the Image topic.
         '''
         # Convert ROS Image to OpenCV
         camera_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-        # FISHEYE CONVERSION
-        h, w = camera_image.shape[:2]
-
-        # Camera matrix (K) from calibration
-        K = np.array([[240.0742270720785, 0.0, 303.87271958823317], [0.0, 240.2956790772891, 242.63742883611513],
-                      [0.0, 0.0, 1.0]], dtype=np.float32)
-
-        # Distortion coefficients (D) from calibration
-        D = np.array([[-0.032316597779098725],
-                      [-0.014192392170667197],
-                      [0.004485507618487958],
-                      [-0.0007679973472430706]], dtype=np.float32)
-
-        # Adjust K to prevent lots of zooming
-        scaled_K = K.copy()
-        scaled_K[0, 0] *= 0.8  # Reduce focal length in x-direction
-        scaled_K[1, 1] *= 0.8  # Reduce focal length in y-direction
-
-        # Undistortion map
-        map1, map2 = cv2.fisheye.initUndistortRectifyMap(
-            K, D, np.eye(3), scaled_K, (w, h), cv2.CV_16SC2
-        )
-
-        # Undistort the image
-        undistorted_img = cv2.remap(camera_image, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-
-        # Show and save the undistorted image TODO take this out after testing
-        cv2.imshow("Original", camera_image)
-        cv2.imshow("Undistorted", undistorted_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        cv2.imwrite("undistorted_img.png", undistorted_img)
 
         # SIFT and FLANN
         # Initiate SIFT detector and find the keypoints and descriptors
-        sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, edgeThreshold=10)
-        kp1, des1 = sift.detectAndCompute(self.keyboard_image, None)
-        kp2, des2 = sift.detectAndCompute(undistorted_img, None)
+        sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, edgeThreshold=5)
+        kp1, des1 = sift.detectAndCompute(self.keyboard_img, None)
+        kp2, des2 = sift.detectAndCompute(camera_image, None)
 
         # Set FLANN parameters
         FLANN_INDEX_KDTREE = 0
@@ -125,6 +150,20 @@ class Feat2HomographyNode(Node):
         else:
             self.get_logger().warn("Insufficient # of matches found - %d/%d" % (len(good_matches), MIN_MATCH_COUNT))
 
+        matchesMask = mask.ravel().tolist()
+
+        # TODO: get rid of the drawn outline when this node is finished
+        h, w = self.keyboard_img.shape[0:2]
+        pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)  # get the corners
+        outline = cv2.perspectiveTransform(pts, M)  # transform the corners of the first image onto the second
+        img2 = cv2.polylines(camera_image, [np.int32(outline)], True, 255, 3, cv2.LINE_AA)  # draw the box
+
+        draw_params = dict(
+            singlePointColor=None,
+            matchesMask=matchesMask,
+            flags=2)
+        img3 = cv2.drawMatches(self.keyboard_img, kp1, img2, kp2, good_matches, None, **draw_params)
+        cv2.imwrite("matches.jpg", img3)
         keyboard_homography = KeyboardHomography()
         keyboard_homography.homography = M.flatten().tolist()
 

@@ -1,4 +1,4 @@
-aruco_detect:
+aruco_detect_logi:
   ros__parameters:
     adaptive_thresh_constant: 7.0  # Constant for adaptive thresholding before finding contours
     adaptive_thresh_win_size_min: 3  # Minimum window size for adaptive thresholding
@@ -21,3 +21,14 @@ aruco_detect:
     perspective_remove_ignored_margin_per_cell: 0.13  # Margin width for cell determination
     perspective_remove_pixel_per_cell: 8  # Pixels per cell when removing perspective
     polygonal_approx_accuracy_rate: 0.01  # Minimum accuracy for polygonal approximation
+
+    #from launch file
+    image_transport: compressed     #Image transport type
+    publish_images: true             
+    fiducial_len: 0.2               #Fiducial length in meters
+    dictionary: 'DICT_4X4_50'       #Dictionary ID for ArUco detection
+    do_pose_estimation: true        #Enable pose estimation
+    vis_msgs: false                 #Use ROS standard vision_msgs for pose estimation
+    ignore_fiducials: ''            #List of fiducials to ignore
+    fiducial_len_override: ''       #Override fiducial length
+    verbose: false                  #Enable verbose output
