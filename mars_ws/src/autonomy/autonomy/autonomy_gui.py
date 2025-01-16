@@ -25,7 +25,7 @@ from std_srvs.srv import SetBool
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from rover_msgs.msg import AutonomyTaskInfo, PositionVelocityTime, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
-from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
+#from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
 
 class AutonomyGUI(Node, QWidget):
     def __init__(self):
@@ -49,6 +49,11 @@ class AutonomyGUI(Node, QWidget):
         self.ArUcoRadioButton.toggled.connect(self.update_leg_subselection)
         self.ObjectRadioButton.toggled.connect(self.update_leg_subselection)
 
+        self.Tag1RadioButton.toggled.connect(self.update_tag_selection)
+        self.Tag2RadioButton.toggled.connect(self.update_tag_selection)
+        self.Tag3RadioButton.toggled.connect(self.update_tag_selection)
+        self.WaterBottleRadioButton.toggled.connect(self.update_tag_selection)
+
         self.EnableAutonomyButton.clicked.connect(self.enable_autonomy)
         self.DisableAutonomyButton.clicked.connect(self.disable_autonomy)
         self.AbortButton.clicked.connect(self.abort_autonomy)
@@ -65,14 +70,15 @@ class AutonomyGUI(Node, QWidget):
         self.nav_status = 'State Machine State: \n State Machine: '
         self.base_numSV = 0
         self.rover_numSV = 0
+        self.state_machine_state = None
 
         ################# ROS Communication #################
 
         # Publishers
 
         # Subscribers
-        self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
-        self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
+        #self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
+        #self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
         self.create_subscription(RoverState, "/rover_status", self.rover_state_callback, 10) #Rover state (speed, direction, navigation state)
         self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
 
@@ -100,7 +106,6 @@ class AutonomyGUI(Node, QWidget):
         self.BaseSats.setText(f'Satellites: {self.base_numSV}')
         self.BaseDate.setText(f'Date: {base_month}/{base_day}/{base_year}')
         self.BaseTime.setText(f'Time: {base_hour}:{base_min}:{base_sec}')
-        # self.base_date_time = f'Base Station Date: {base_month}/{base_day}/{base_year}/  Time: {base_hour}:{base_min}:{base_sec}'
 
     def rover_GPS_info_callback(self, msg):
         self.rover_GPS_info = msg
@@ -115,10 +120,9 @@ class AutonomyGUI(Node, QWidget):
         self.RoverSats.setText(f'Satellites: {self.rover_numSV}')
         self.RoverDate.setText(f'Date: {rover_month}/{rover_day}/{rover_year}')
         self.RoverTime.setText(f'Time: {rover_hour}:{rover_min}:{rover_sec}')
-        # self.rover_date_time = f'Rover Date: {rover_month}/{rover_day}/{rover_year}/  Time: {rover_hour}:{rover_min}:{rover_sec}'
         return
 
-    def rover_state_callback(self, msg):
+    def rover_state_callback(self, msg): #rover status (speed, direction, navigation state)
         self.rover_state_msg = msg
         self.speed = msg.speed
         self.direction = msg.direction
@@ -131,20 +135,26 @@ class AutonomyGUI(Node, QWidget):
             self.navigation_state = 'ARRIVAL'
         else:
             self.navigation_state = 'UNKNOWN'
-        
-        self.rover_state = f'Speed: {self.speed} m/s\nDirection: {self.direction} degrees\nNavigation State: {self.navigation_state}'
-        self.CurrentStateDisplay.setText(self.navigation_state)
+        #update gui fields
+        #self.RoverState.setText(self.navigation_state)
+        #self.RoverSpeed.setText(self.speed)
+        #self.RoverDirection.setText(self.direction)
         return
 
-    def rover_nav_status_callback(self, msg):
+    def rover_nav_status_callback(self, msg): #State machine status (state, auto_enable)
         self.rover_nav_status = msg
+        if self.state_machine_state == None:
+            self.prev_state_machine_state = self.state_machine_state
+            self.PreviousStateDisplay.setText(self.prev_state_machine_state)
         self.state_machine_state = msg.state
         autonomous_enable = msg.auto_enable
         if autonomous_enable:
             self.autonomous_enable = 'Enabled'
         else:
             self.autonomous_enable = 'Disabled'
-        self.nav_status = f'State Machine State: {self.state_machine_state}\n State Machine: {self.autonomous_enable}'
+
+        self.CurrentStateDisplay.setText(self.state_machine_state)
+        
         return
 
     # Callback functions for buttons
@@ -189,7 +199,7 @@ class AutonomyGUI(Node, QWidget):
         task = AutonomyTaskInfo()
         task.latitude = lat
         task.longitude = lon
-        task.tag_id = 'GPS_only'
+        task.tag_id = 'GPS_only' #TODO: Change this to be based on the selected leg subselection
         req.task_list.append(task)
 
         #send the Request
@@ -244,11 +254,17 @@ class AutonomyGUI(Node, QWidget):
     # Gui Functions
     def update_leg_subselection(self):
         if self.GNSSRadioButton.isChecked():
+            self.leg_type = 'GNSS'
             self.legsubselectionStackedWidget.setCurrentIndex(0)
         elif self.ArUcoRadioButton.isChecked():
+            self.leg_type = 'ArUco'
             self.legsubselectionStackedWidget.setCurrentIndex(1)
         elif self.ObjectRadioButton.isChecked():
+            self.leg_type = 'Object'
             self.legsubselectionStackedWidget.setCurrentIndex(2)
+        return
+
+    def update_tag_selection(self):
         return
         
 def gui_ros_spin_thread(node):
