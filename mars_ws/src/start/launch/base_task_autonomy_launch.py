@@ -22,6 +22,7 @@ def generate_launch_description():
     )
 
     # Start launch files specific to the Autonomy Task on the base station
+    # (The only thing this does is launch the rqt gui)
     # include_base_autonomous = IncludeLaunchDescription(
     #     PythonLaunchDescriptionSource([
     #         os.path.join(
@@ -32,18 +33,10 @@ def generate_launch_description():
     #     ])
     # )
 
-    # include_path_planning = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource([
-    #         os.path.join(
-    #             get_package_share_directory('path_planning'),
-    #             'launch',
-    #             'path_planning_state_machine.launch.py'
-    #         )
-    #     ])
-    # )
-
+    #TODO: in the future, when we have built out path planning, include the launch file here
+    
     return LaunchDescription([
         include_base_common,
         # include_base_autonomous,
-        # include_path_planning
+        # include_path_planning #TODO: uncomment out this when we build out and include path planning
     ])
