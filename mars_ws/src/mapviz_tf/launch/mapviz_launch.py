@@ -21,7 +21,7 @@ def generate_launch_description():
 
         # Declare launch arguments
         DeclareLaunchArgument('print_profile_data', default_value='false'),
-        DeclareLaunchArgument('location', default_value=LaunchConfiguration('MAPVIZ_LOCATION', default='hanksville')),
+        DeclareLaunchArgument('location', default_value='hanksville'),
 
         LogInfo(msg=['Config file path: ', config_path]),
 

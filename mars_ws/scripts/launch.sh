@@ -273,7 +273,7 @@ function rover_cmd {
 
 # Show the settings we are using
 printInfo "Using rover address: $ROVER_ADDRESS"
-printInfo "Using rover user: $ROVER_USER" 
+printInfo "Using rover user: $ROVER_USER"
 printInfo "Using base address: $BASE_ADDRESS"
 
 ###############################################################################
@@ -303,7 +303,7 @@ SESSION_NAME='rover'
 BASE_CAMERA_SCRIPT_DIR=$BASE_STATION_REPO/scripts/camera
 ROVER_CAMERA_SCRIPT_DIR=$ROVER_REPO/scripts/camera
 
-# docker run -d -p 8080:8080 -t -v ~/mapproxy:/mapproxy danielsnider/mapproxy
+docker run -d -p 8080:8080 -t -v ~/mapproxy:/mapproxy danielsnider/mapproxy
 
 # Kill gstreamer processes that may be already open
 pkill gst

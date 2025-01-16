@@ -40,6 +40,12 @@ def generate_launch_description():
         description='Base serial port'
     )
 
+    mapviz_location_arg = DeclareLaunchArgument(
+        'MAPVIZ_LOCATION',
+        default_value=EnvironmentVariable('MAPVIZ_LOCATION', default_value=''),
+        description='MapViz location'
+    )
+
     # Set environment variable TODO: Is this needed?
     # set_rosconsole_format = SetEnvironmentVariable(
     #     'ROSCONSOLE_FORMAT', '(${node})[${severity}]: ${message}'
@@ -63,7 +69,10 @@ def generate_launch_description():
 
     include_mapviz = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
-            get_package_share_directory('mapviz_tf'), 'launch', 'mapviz_launch.py'))
+            get_package_share_directory('mapviz_tf'), 'launch', 'mapviz_launch.py')),
+            launch_arguments={
+                'location': LaunchConfiguration('MAPVIZ_LOCATION')
+            }.items()
     )
 
     include_odometry_base = IncludeLaunchDescription(
@@ -80,6 +89,7 @@ def generate_launch_description():
         rover_host_arg,
         base_host_arg,
         base_serial_port_arg,
+        mapviz_location_arg,
         # set_rosconsole_format,
         # include_xbox_drive,
         include_base_home_gui,
