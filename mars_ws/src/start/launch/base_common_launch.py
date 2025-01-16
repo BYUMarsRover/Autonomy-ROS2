@@ -13,10 +13,10 @@ import os
 def generate_launch_description():
     # Define launch arguments
 
-    # Set environment variable TODO: Is this needed?
-    # set_rosconsole_format = SetEnvironmentVariable(
-    #     'ROSCONSOLE_FORMAT', '(${node})[${severity}]: ${message}'
-    # )
+    # Set Log Info for Debugging
+    set_rosconsole_format = SetEnvironmentVariable(
+        'ROSCONSOLE_FORMAT', '(${node})[${severity}]: ${message}'
+    )
 
     # Include other launch files TODO: Uncomment packages as they are created
     include_xbox_drive = IncludeLaunchDescription(
@@ -46,10 +46,10 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        # set_rosconsole_format,
+        set_rosconsole_format,
         include_xbox_drive,
-        # include_base_home_gui,
+        include_base_home_gui,
         include_heartbeat_base,
-        # include_mapviz,
+        include_mapviz,
         include_odometry_base
     ])

@@ -16,7 +16,7 @@ setup(
         ('share/' + package_name + '/launch', glob('launch/*launch.py')),
 
         # Install config files
-        ('share/' + package_name + '/config', ['config/estimation.yaml']),
+        ('share/' + package_name + '/config', glob('config/*.yaml')),
 
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         

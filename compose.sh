@@ -20,9 +20,13 @@ case $1 in
     printInfo "Stopping the Autonomy ROS2 image..."
     docker compose -f docker/docker-compose.yaml down
     ;;
-  *)
+  "build")
     printInfo "Loading the Autonomy ROS2 image..."
     docker compose -f docker/docker-compose.yaml up -d
+    docker exec -it autonomy_ros2 bash
+    ;;
+  *)
+    printInfo "Entering Container... (run "bash compose.sh build" to build or create the container)"
     docker exec -it autonomy_ros2 bash
     ;;
 esac
