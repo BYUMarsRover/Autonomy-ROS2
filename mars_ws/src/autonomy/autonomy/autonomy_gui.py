@@ -58,6 +58,11 @@ class AutonomyGUI(Node, QWidget):
         self.EnableAutonomyButton.clicked.connect(self.enable_autonomy)
         self.DisableAutonomyButton.clicked.connect(self.disable_autonomy)
         self.AbortButton.clicked.connect(self.abort_autonomy)
+        self.SendWaypointButton.clicked.connect(self.send_waypoint)
+
+        # GUI Input Fields
+        self.latitude_input = self.LatitudeInput
+        self.longitude_input = self.LongitudeInput
 
         # Set initial leg subselection options page to GNSS Page (0)
         self.legsubselectionStackedWidget.setCurrentIndex(0)
@@ -88,7 +93,7 @@ class AutonomyGUI(Node, QWidget):
 
         # Clients
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
-        # self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
+        self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
 
     def spin_ros(self):
@@ -191,6 +196,9 @@ class AutonomyGUI(Node, QWidget):
         req.task_list = []
 
         try:
+            self.get_logger().info(f'Latitude: {self.latitude_input.text()}')
+            self.get_logger().info(f'Longitude: {self.longitude_input.text()}')
+            self.get_logger().info('in init AutonomyStateMachine')
             lat = float(self.latitude_input.text())
             lon = float(self.longitude_input.text())
         except ValueError:
@@ -207,6 +215,7 @@ class AutonomyGUI(Node, QWidget):
         else:
             task.tag_id = self.tag_id
 
+        req.task_list.append(task)
         #send the Request
         future = self.send_waypoint_client.call_async(req)
         self.error_label.setText('Sending Waypoint')

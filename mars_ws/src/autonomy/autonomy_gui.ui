@@ -96,7 +96,7 @@
             <layout class="QHBoxLayout" name="horizontalLayout_3">
              <!-- lattitude label "lat" -->
              <item>
-              <widget class="QLabel" name="label_7">
+              <widget class="QLabel" name="LatitudeLabel">
                <property name="text">
                 <string>Lattitude</string>
                </property>
@@ -104,7 +104,7 @@
              </item>
              <!-- lattitude text input area item -->
              <item>
-              <widget class="QLineEdit" name="label_6">
+              <widget class="QLineEdit" name="LatitudeInput">
                <property name="placeholderText">
                 <string>enter latitude here</string>
                </property>
@@ -125,7 +125,7 @@
              </item>
              <!-- longitude text input area item -->
              <item>
-              <widget class="QLineEdit" name="label_6">
+              <widget class="QLineEdit" name="LongitudeInput">
                <property name="placeholderText">
                 <string>enter longitude here</string>
                </property>
