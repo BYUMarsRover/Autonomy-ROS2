@@ -34,37 +34,37 @@ class RoverStateSingletonCreator(Node):
         # Publishers
         self.singleton_publisher = self.create_publisher(RoverStateSingleton, '/odometry/rover_state_singleton', 10) # Publishes the singleton message
 
-        self.map_roll = 0
-        self.map_pitch = 0
-        self.map_yaw = 0
+        self.map_roll = 0.0
+        self.map_pitch = 0.0
+        self.map_yaw = 0.0
 
-        self.odom_roll = 0
-        self.odom_pitch = 0
-        self.odom_yaw = 0
+        self.odom_roll = 0.0
+        self.odom_pitch = 0.0
+        self.odom_yaw = 0.0
 
-        self.map_x = 0
-        self.map_y = 0
-        self.map_z = 0
+        self.map_x = 0.0
+        self.map_y = 0.0
+        self.map_z = 0.0
 
-        self.odom_x = 0
-        self.odom_y = 0
-        self.odom_z = 0
+        self.odom_x = 0.0
+        self.odom_y = 0.0
+        self.odom_z = 0.0
 
-        self.map_x_dot = 0
-        self.map_y_dot = 0
-        self.map_z_dot = 0
+        self.map_x_dot = 0.0
+        self.map_y_dot = 0.0
+        self.map_z_dot = 0.0
 
-        self.odom_x_dot = 0
-        self.odom_y_dot = 0
-        self.odom_z_dot = 0
+        self.odom_x_dot = 0.0
+        self.odom_y_dot = 0.0
+        self.odom_z_dot = 0.0
 
-        self.map_roll_dot = 0
-        self.map_pitch_dot = 0
-        self.map_yaw_dot = 0
+        self.map_roll_dot = 0.0
+        self.map_pitch_dot = 0.0
+        self.map_yaw_dot = 0.0
 
-        self.odom_roll_dot = 0
-        self.odom_pitch_dot = 0
-        self.odom_yaw_dot = 0
+        self.odom_roll_dot = 0.0
+        self.odom_pitch_dot = 0.0
+        self.odom_yaw_dot = 0.0
 
         self.gps = NavSatFix()
         self.filter_gps = NavSatFix()
