@@ -53,6 +53,7 @@ class AutonomyGUI(Node, QWidget):
         self.Tag2RadioButton.toggled.connect(self.update_tag_selection)
         self.Tag3RadioButton.toggled.connect(self.update_tag_selection)
         self.WaterBottleRadioButton.toggled.connect(self.update_tag_selection)
+        self.HammerRadioButton.toggled.connect(self.update_tag_selection)
 
         self.EnableAutonomyButton.clicked.connect(self.enable_autonomy)
         self.DisableAutonomyButton.clicked.connect(self.disable_autonomy)
@@ -71,6 +72,7 @@ class AutonomyGUI(Node, QWidget):
         self.base_numSV = 0
         self.rover_numSV = 0
         self.state_machine_state = None
+        self.tag_id = None
 
         ################# ROS Communication #################
 
@@ -199,8 +201,11 @@ class AutonomyGUI(Node, QWidget):
         task = AutonomyTaskInfo()
         task.latitude = lat
         task.longitude = lon
-        task.tag_id = 'GPS_only' #TODO: Change this to be based on the selected leg subselection
-        req.task_list.append(task)
+        if self.tag_id == None:
+            self.error_label.setText('No tag selected')
+            return
+        else:
+            task.tag_id = self.tag_id
 
         #send the Request
         future = self.send_waypoint_client.call_async(req)
@@ -255,16 +260,31 @@ class AutonomyGUI(Node, QWidget):
     def update_leg_subselection(self):
         if self.GNSSRadioButton.isChecked():
             self.leg_type = 'GNSS'
+            self.tag_id = 'GPS_only'
             self.legsubselectionStackedWidget.setCurrentIndex(0)
         elif self.ArUcoRadioButton.isChecked():
             self.leg_type = 'ArUco'
+            self.tag_id = None
             self.legsubselectionStackedWidget.setCurrentIndex(1)
         elif self.ObjectRadioButton.isChecked():
             self.leg_type = 'Object'
+            self.tag_id = None
             self.legsubselectionStackedWidget.setCurrentIndex(2)
         return
 
     def update_tag_selection(self):
+        if self.Tag1RadioButton.isChecked():
+            self.tag_id = '1'
+        elif self.Tag2RadioButton.isChecked():
+            self.tag_id = '2'
+        elif self.Tag3RadioButton.isChecked():
+            self.tag_id = '3'
+        elif self.WaterBottleRadioButton.isChecked():
+            self.tag_id = 'bottle'
+        elif self.HammerRadioButton.isChecked():
+            self.tag_id = 'mallet'
+        else:
+            self.tag_id = None
         return
         
 def gui_ros_spin_thread(node):
