@@ -16,6 +16,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/KeyboardHomography.msg"
+  "msg/KeyLocations.msg"
   "msg/AutonomyTaskInfo.msg"
   "msg/Battery.msg"
   "msg/Clicker.msg"
@@ -48,6 +50,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HeartbeatStatusBase.msg"
   "msg/IWCMotors.msg"
   "msg/Elevator.msg"
+  "srv/KeyPress.srv"
   "srv/CameraControl.srv"
   "srv/CameraControlResponse.srv"
   "srv/AutonomyAbort.srv"
