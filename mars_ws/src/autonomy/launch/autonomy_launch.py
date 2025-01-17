@@ -1,5 +1,6 @@
 from launch import LaunchDescription
-from launch.actions import GroupAction
+from launch.actions import GroupAction, DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
 import os
@@ -11,6 +12,8 @@ def generate_launch_description():
     autonomy_params_file = os.path.join(get_package_share_directory('autonomy'), 'params', 'autonomy_params.yaml')
 
     return LaunchDescription([
+        # Declare launch arguments
+        DeclareLaunchArgument('location', default_value='hanksville'),
         
         # USB cam node for the autonomy webcam 
         # Include autonomy camera launch file (autonomy) Don't run this on a PC docker computer
@@ -57,7 +60,7 @@ def generate_launch_description():
         # Launch state machine with autonomy namespace
         # What is group action and what does it do?
         GroupAction([
-               Node(
+            Node(
                 package='autonomy',
                 executable='state_machine',
                 name='state_machine',
@@ -70,7 +73,10 @@ def generate_launch_description():
                 executable='autonomy_gui',
                 name='autonomy_gui',
                 namespace='autonomy',
-                output='screen'
+                output='screen',
+                parameters=[
+                    {'location': LaunchConfiguration('location')}
+                ]
             )
         ])
 

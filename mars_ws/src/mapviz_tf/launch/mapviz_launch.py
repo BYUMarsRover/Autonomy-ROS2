@@ -41,10 +41,11 @@ def generate_launch_description():
             package='swri_transform_util',
             executable='initialize_origin.py',
             name='initialize_origin',
-            parameters=[{
+            parameters=[
+              {
                 'local_xy_frame': '/map',
                 'local_xy_origin': LaunchConfiguration('location'),
-'local_xy_origins': """- name: byu
+                'local_xy_origins': """- name: byu
   latitude: 40.2497218
   longitude: -111.649276
   altitude: 1376.0
@@ -70,7 +71,8 @@ def generate_launch_description():
   altitude: 1500.0
   heading: 0.0
 """
-            }]
+              }
+            ]
         ),
 
         Node(

@@ -17,15 +17,19 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from subprocess import Popen, PIPE
 import sys
-
-import threading
 import os
+
+# For Mapviz Usage
+import yaml
+import utm
 
 from std_srvs.srv import SetBool
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from rover_msgs.msg import AutonomyTaskInfo, PositionVelocityTime, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
 #from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
+
+from ament_index_python.packages import get_package_share_directory
 
 class AutonomyGUI(Node, QWidget):
     def __init__(self):
@@ -82,6 +86,7 @@ class AutonomyGUI(Node, QWidget):
         ################# ROS Communication #################
 
         # Publishers
+        self.path_publisher = self.create_publisher(PositionVelocityTime, '/mapviz/path', 10)
 
         # Subscribers
         #self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
@@ -95,6 +100,23 @@ class AutonomyGUI(Node, QWidget):
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
         self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
+
+        ################# Mapviz Communication Setup #################
+
+        # Retrieve Mapviz Location
+        self.declare_parameter('location', '')
+        location = self.get_parameter('location').value
+
+        # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
+        mapviz_params_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_params.yaml')
+        lat, lon = get_coordinates(mapviz_params_path, location)
+
+        # Convert lat/lon to UTM coordinates
+        utm_coords = utm.from_latlon(lat, lon)
+        self.utm_easting_zero = utm_coords[0]
+        self.utm_northing_zero = utm_coords[1]
+        self.utm_zone_number = utm_coords[2]
+        self.utm_zone_letter = utm_coords[3]
 
     def spin_ros(self):
         rclpy.spin_once(self)
@@ -189,6 +211,11 @@ class AutonomyGUI(Node, QWidget):
             self.error_label.setText('Autonomy Disabled')
         else:
             self.error_label.setText('Failed to Disable Autonomy')
+
+    def preview_waypoint(self):
+        msg = PositionVelocityTime()
+
+
         
     def send_waypoint(self):
         #logic for sending waypoint
@@ -295,6 +322,22 @@ class AutonomyGUI(Node, QWidget):
         else:
             self.tag_id = None
         return
+
+def get_coordinates(file_path, location):
+    # Read the YAML file
+    with open(file_path, 'r') as file:
+        data = yaml.safe_load(file)
+    
+    # Navigate to the locations data
+    locations = data['/**']['ros__parameters']['locations']
+    
+    # Check if the location exists
+    if location in locations:
+        lat = locations[location]['latitude']
+        lon = locations[location]['longitude']
+        return lat, lon
+    else:
+        return None
         
 def gui_ros_spin_thread(node):
     rclpy.spin(node)
