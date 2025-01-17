@@ -12,6 +12,7 @@ import os
 def generate_launch_description():
     # import environment variables
     mapviz_location=os.environ.get('MAPVIZ_LOCATION', '')
+    mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value=mapviz_location)
 
     # Start all common launch files on the base station
     include_base_common = IncludeLaunchDescription(
@@ -39,7 +40,7 @@ def generate_launch_description():
     #TODO: in the future, when we have built out path planning, include the launch file here
     
     return LaunchDescription([
-        DeclareLaunchArgument('MAPVIZ_LOCATION', default_value=mapviz_location),
+        mapviz_location_arg,
         include_base_common,
         # include_base_autonomous,
         # include_path_planning #TODO: uncomment out this when we build out and include path planning
