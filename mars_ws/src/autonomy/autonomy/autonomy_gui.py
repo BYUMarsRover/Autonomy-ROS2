@@ -41,7 +41,7 @@ class AutonomyGUI(Node, QWidget):
         # Timer to periodically spin the ROS node
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.spin_ros)
-        self.timer.start(1)  # 1 second interval for spinning ROS
+        self.timer.start(5)  # 5 millisecond interval for spinning ROS
 
 
         # Gui Buttons
