@@ -26,8 +26,8 @@ import utm
 from std_srvs.srv import SetBool
 from std_msgs.msg import Header
 from nav_msgs.msg import Path
-from geometry_msgs.msg import PoseStamped
-from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
+from geometry_msgs.msg import PoseStamped, Pose, Point
+from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath
 from rover_msgs.msg import AutonomyTaskInfo, PositionVelocityTime, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
 #from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
@@ -68,6 +68,7 @@ class AutonomyGUI(Node, QWidget):
         self.SendWaypointButton.clicked.connect(self.send_waypoint)
 
         self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
+        self.PlanOrderButton.clicked.connect(self.plan_order_service_call)
         self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
 
         # GUI Input Fields
@@ -103,6 +104,7 @@ class AutonomyGUI(Node, QWidget):
         # Services
 
         # Clients
+        self.plan_order_client = self.create_client(OrderPath, '/plan_order')
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
         self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
@@ -124,6 +126,8 @@ class AutonomyGUI(Node, QWidget):
         self.utm_zone_number = utm_coords[2]
         self.utm_zone_letter = utm_coords[3]
 
+        # Initialize the current previewed waypoints
+        # Stored in lat/lon format
         self.current_previewed_waypoints = Path()
 
     def spin_ros(self):
@@ -224,9 +228,6 @@ class AutonomyGUI(Node, QWidget):
         # Find the x and y to be sent to mapviz
         lat = float(self.latitude_input.text())
         lon = float(self.longitude_input.text())
-        utm_coords = utm.from_latlon(lat, lon)
-        x = utm_coords[0] - self.utm_easting_zero
-        y = utm_coords[1] - self.utm_northing_zero
 
         current_time = self.get_clock().now().to_msg()
         self.current_previewed_waypoints.header = Header()
@@ -237,8 +238,8 @@ class AutonomyGUI(Node, QWidget):
         pose_stamped.header.stamp = current_time
         pose_stamped.header.frame_id = "map"
 
-        pose_stamped.pose.position.x = x
-        pose_stamped.pose.position.y = y
+        pose_stamped.pose.position.x = lat
+        pose_stamped.pose.position.y = lon
         pose_stamped.pose.position.z = 0.0
 
         pose_stamped.pose.orientation.x = 0.0
@@ -248,8 +249,37 @@ class AutonomyGUI(Node, QWidget):
         
         self.current_previewed_waypoints.poses.append(pose_stamped)
 
-        self.path_publisher.publish(self.current_previewed_waypoints)
+        self.path_publisher.publish(
+            path_to_utm(self.current_previewed_waypoints, 
+                        self.utm_easting_zero, 
+                        self.utm_northing_zero)
+            )
+        
         self.error_label.setText('Waypoint Sent for Preview')
+
+    def plan_order_service_call(self):
+        req = OrderPath.Request() # Path
+        req.path = self.current_previewed_waypoints
+
+        future = self.plan_order_client.call_async(req)
+        self.error_label.setText('Planning Order...')
+        rclpy.spin_until_future_complete(self, future)
+        if future.done() and future.result():
+            response = future.result()
+            if response.success:
+                self.error_label.setText('Order Planned Successfully')
+            else:
+                self.error_label.setText(f'Failed to Plan Order')
+        else:
+            self.error_label.setText('Service call failed or did not complete')
+
+        self.current_previewed_waypoints = response.path
+        # self.current_previewed_waypoints.header.frame_id = 'map'
+        self.path_publisher.publish(
+            path_to_utm(self.current_previewed_waypoints, 
+                        self.utm_easting_zero, 
+                        self.utm_northing_zero)
+            )
 
     def clear_mapviz(self):
 
@@ -403,6 +433,41 @@ def get_coordinates(file_path, location):
         return lat, lon
     else:
         return None
+    
+# Converts a path from UTM to lat/lon
+def path_to_latlon(path, utm_easting_zero, utm_northing_zero, utm_zone_number, utm_zone_letter):
+    latlon_path = Path()
+    latlon_path.header = path.header
+    for pose in path.poses:
+        lat, lon = utm.to_latlon(pose.pose.position.x + utm_easting_zero, pose.pose.position.y + utm_northing_zero, utm_zone_number, utm_zone_letter)
+        latlon_path.poses.append(
+            PoseStamped(
+                header=pose.header, 
+                pose=Pose(
+                    position=Point(x=lat, y=lon, z=0.0),
+                    orientation=pose.pose.orientation
+                )
+            )
+        )
+    return latlon_path
+
+# Converts a path from lat/lon to UTM
+def path_to_utm(path, utm_easting_zero, utm_northing_zero):
+    utm_path = Path()
+    utm_path.header = path.header
+    for pose in path.poses:
+        utm_coords = utm.from_latlon(pose.pose.position.x, pose.pose.position.y)
+        utm_path.poses.append(
+            PoseStamped(
+                header=pose.header,
+                pose=Pose(
+                    position=Point(x=utm_coords[0] - utm_easting_zero, y=utm_coords[1] - utm_northing_zero, z=0.0),
+                    orientation=pose.pose.orientation
+                )
+            )
+        )
+    return utm_path
+        
         
 def gui_ros_spin_thread(node):
     rclpy.spin(node)

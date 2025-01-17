@@ -212,7 +212,7 @@ class AStarPlanner:
                     explored_nodes.append((j, i))
         return explored_nodes
     
-    def plan_wp_order(start, wp):
+    def plan_wp_order(self, start, wp):
         '''
         Plan the order of waypoints to visit
             Pass in: a list of waypoints in (x, y) format

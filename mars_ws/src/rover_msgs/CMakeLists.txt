@@ -13,6 +13,7 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -60,7 +61,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/IWCMotors.msg"
   "msg/Elevator.msg"
   "msg/PointList.msg"
-  "srv/PointList.srv"
+  "srv/OrderPath.srv"
   "srv/CameraControl.srv"
   "srv/CameraControlResponse.srv"
   "srv/AutonomyAbort.srv"
@@ -68,7 +69,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/AutonomyWaypointResponse.srv"
   "srv/SetFloat32.srv"
   "srv/PlanPath.srv"
-  DEPENDENCIES std_msgs geometry_msgs sensor_msgs builtin_interfaces # Add packages that above messages depend on
+  DEPENDENCIES std_msgs geometry_msgs nav_msgs sensor_msgs builtin_interfaces # Add packages that above messages depend on
 )
 
 if(BUILD_TESTING)
