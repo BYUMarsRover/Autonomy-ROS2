@@ -91,18 +91,18 @@
              </property>
             </widget>
            </item>
-           <!-- lattitude entry item -->
+           <!-- latitude entry item -->
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <!-- lattitude label "lat" -->
+             <!-- latitude label "lat" -->
              <item>
               <widget class="QLabel" name="LatitudeLabel">
                <property name="text">
-                <string>Lattitude</string>
+                <string>Latitude</string>
                </property>
               </widget>
              </item>
-             <!-- lattitude text input area item -->
+             <!-- latitude text input area item -->
              <item>
               <widget class="QLineEdit" name="LatitudeInput">
                <property name="placeholderText">
@@ -133,14 +133,30 @@
              </item>
             </layout>
            </item>
-           <!-- Horizontal Box for the Preview and clear mapviz buttons -->
+           <!-- Horizontal Box for the Preview, Optimize Path and clear mapviz buttons -->
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <!-- Mapviz Label -->
+             <item>
+              <widget class="QLabel" name="MapvizLabel">
+               <property name="text">
+                <string>Mapviz: </string>
+               </property>
+              </widget>
+             </item>
              <!-- Preview Button -->
              <item>
               <widget class="QPushButton" name="PreviewMapvizButton">
                <property name="text">
-                <string>Preview on Mapviz</string>
+                <string>Preview</string>
+               </property>
+              </widget>
+             </item>
+             <!-- Plan Order Button -->
+             <item>
+              <widget class="QPushButton" name="PlanOrderButton">
+               <property name="text">
+                <string>Plan Order</string>
                </property>
               </widget>
              </item>
@@ -148,7 +164,7 @@
              <item>
               <widget class="QPushButton" name="ClearMapvizButton">
                <property name="text">
-                <string>Clear Mapviz</string>
+                <string>Clear</string>
                </property>
               </widget>
              </item>
