@@ -29,6 +29,10 @@ find_package(OpenCV 4 REQUIRED)
 include_directories(
   include  # Your local include directory
 )
+install(DIRECTORY
+  config
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 # Include directories (for OpenCV headers)
 include_directories(${OpenCV_INCLUDE_DIRS})
