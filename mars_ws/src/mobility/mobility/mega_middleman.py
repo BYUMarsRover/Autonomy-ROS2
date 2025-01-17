@@ -3,7 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool, String, UInt16MultiArray
-from rover_msgs.msg import IWC_motors, Elevator, HeartbeatStatusRover, FPVServo
+from rover_msgs.msg import IWCMotors, Elevator, HeartbeatStatusRover #, FPVServo
 import serial
 import time
 import queue
@@ -14,7 +14,7 @@ class MegaMiddleman(Node):
         super().__init__('mega_middleman')
 
         # SUBSCRIBERS
-        self.create_subscription(IWC_motors, '/IWC_motorControl', self.send_wheel, 1)
+        self.create_subscription(IWCMotors, '/IWC_motorControl', self.send_wheel, 1)
         self.create_subscription(Elevator, '/elevator', self.send_elevator, 1)
         self.create_subscription(Bool, '/arm_clicker', self.send_clicker, 1)
         self.create_subscription(Bool, '/arm_laser', self.send_laser, 1)
