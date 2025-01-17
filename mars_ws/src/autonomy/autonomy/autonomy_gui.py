@@ -112,7 +112,7 @@ class AutonomyGUI(Node, QWidget):
         ################# Mapviz Communication Setup #################
 
         # Retrieve Mapviz Location
-        self.declare_parameter('location', '')
+        self.declare_parameter('location', 'hanksville')
         location = self.get_parameter('location').value
 
         # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
