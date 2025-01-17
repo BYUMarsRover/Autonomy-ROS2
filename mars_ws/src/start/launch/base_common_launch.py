@@ -42,9 +42,9 @@ def generate_launch_description():
     include_mapviz = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
             get_package_share_directory('mapviz_tf'), 'launch', 'mapviz_launch.py')),
-            launch_arguments={
-                'location': LaunchConfiguration('MAPVIZ_LOCATION')
-            }.items()
+        launch_arguments={
+            'location': LaunchConfiguration('MAPVIZ_LOCATION')
+        }.items()
     )
 
     #GPS node on the base station
