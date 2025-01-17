@@ -20,7 +20,6 @@ from subprocess import Popen, PIPE
 from .html_templates import *
 from .dev_name_map import BASE_DEV_NAME_MAP, ROVER_DEV_NAME_MAP
 from launch import LaunchService
-from launch_ros.actions import Node
 import os
 import launch
 import launch.actions
@@ -59,7 +58,7 @@ class HomeGuiUI(Node, QWidget):
 
     def __init__(self):
         # Call the inherited classes __init__ method
-        Node.__init__(self, executable='base_home_gui')
+        Node.__init__(self, 'base_home_gui')
         QWidget.__init__(self)
         # Load the .ui file
         uic.loadUi(
