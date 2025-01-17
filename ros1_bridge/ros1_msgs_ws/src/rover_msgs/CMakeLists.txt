@@ -74,7 +74,7 @@ find_package(catkin REQUIRED std_msgs message_generation sensor_msgs)
    MobilityIWCFeedback.msg
    MobilityDriveCommands.msg
    IWC_feedback.msg
-   IWCMotors.msg
+   IWC_motors.msg
    MobilityJoyDriveEnable.msg
    MobilityVelocityCommands.msg
    MobilityWaypoint2Follow.msg
@@ -105,6 +105,7 @@ find_package(catkin REQUIRED std_msgs message_generation sensor_msgs)
    ArmPosition.msg
    Orientation.msg
    RoverStateSingleton.msg
+   FPVServo.msg
  )
 
 ## Generate services in the 'srv' folder
