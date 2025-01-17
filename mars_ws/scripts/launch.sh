@@ -344,7 +344,7 @@ echo $BASE_ADDRESS
 # START ROVER LAUNCH FILE
 ###############################################################################
 tmux send-keys "$SET_ROVER_ENV_CMD && $LAUNCHER start \
-  rover_task_${TASK_NAME}.launch.py" Enter
+  rover_task_${TASK_NAME}_launch.py" Enter
 
 # Select the left pane and set title
 tmux select-pane -t 0
@@ -355,7 +355,7 @@ tmux select-pane -t 0 -T base-station-${TASK_NAME}-task
 # START BASE LAUNCH FILE
 ###############################################################################
 tmux send-keys "$SET_BASE_ENV_CMD && $LAUNCHER start \
-  base_task_${TASK_NAME}.launch.py" Enter
+  base_task_${TASK_NAME}_launch.py" Enter
 
 
 # Attach to the beautiful tmux session we have created
