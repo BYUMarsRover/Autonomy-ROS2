@@ -27,11 +27,12 @@ def generate_launch_description():
             description='Console output format'
         ),
 
-        # Peripherals
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join( 
-                peripherals_dir, 'launch', 'peripherals.launch.py'))
-        ),
+        # NOTE: Comment not pushed because it is a temporary fix
+        # # Peripherals
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join( 
+        #         peripherals_dir, 'launch', 'peripherals.launch.py'))
+        # ),
 
         # Heartbeat
         IncludeLaunchDescription(
@@ -39,11 +40,11 @@ def generate_launch_description():
                 heartbeat_dir, 'launch', 'heartbeat_rover_launch.py'))
         ),
 
-        # Rover Home GUI
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join( 
-                home_gui_dir, 'launch', 'rover_home_gui.launch.py'))
-        ),
+        # # Rover Home GUI
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join( 
+        #         home_gui_dir, 'launch', 'rover_home_gui.launch.py'))
+        # ),
 
         # Mobility
         IncludeLaunchDescription(
