@@ -28,6 +28,6 @@ def generate_launch_description():
             executable='joystick',
             name='xbox_drive',
             namespace='mobility',
-            output='screen'
+            # output='screen'
         )
     ])
