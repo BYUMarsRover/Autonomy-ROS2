@@ -95,8 +95,8 @@ class AutonomyGUI(Node, QWidget):
         self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
 
         # Subscribers
-        #self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
-        #self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
+        self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
+        self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
         self.create_subscription(RoverState, "/rover_status", self.rover_state_callback, 10) #Rover state (speed, direction, navigation state)
         self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
 
@@ -143,6 +143,9 @@ class AutonomyGUI(Node, QWidget):
         self.BaseSats.setText(f'Satellites: {self.base_numSV}')
         self.BaseDate.setText(f'Date: {base_month}/{base_day}/{base_year}')
         self.BaseTime.setText(f'Time: {base_hour}:{base_min}:{base_sec}')
+        self.BaseLat.setText(f'Latitude: {msg.latitude}')
+        self.BaseLon.setText(f'Longitude: {msg.longitude}')
+        return
 
     def rover_GPS_info_callback(self, msg):
         self.rover_GPS_info = msg
@@ -157,6 +160,8 @@ class AutonomyGUI(Node, QWidget):
         self.RoverSats.setText(f'Satellites: {self.rover_numSV}')
         self.RoverDate.setText(f'Date: {rover_month}/{rover_day}/{rover_year}')
         self.RoverTime.setText(f'Time: {rover_hour}:{rover_min}:{rover_sec}')
+        self.RoverLat.setText(f'Latitude: {msg.latitude}')
+        self.RoverLon.setText(f'Longitude: {msg.longitude}')
         return
 
     def rover_state_callback(self, msg): #rover status (speed, direction, navigation state)

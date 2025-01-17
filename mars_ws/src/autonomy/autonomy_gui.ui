@@ -400,11 +400,11 @@
                   </property>
                  </widget>
                 </item>
-                <!-- Base Lattitude Item -->
+                <!-- Base Latitude Item -->
                 <item>
                  <widget class="QLabel" name="BaseLat">
                   <property name="text">
-                   <string>Lattitude: ...</string>
+                   <string>Latitude: ...</string>
                   </property>
                  </widget>
                 </item>
@@ -460,11 +460,11 @@
                   </property>
                  </widget>
                 </item>
-                <!-- Rover Lattitude Item -->
+                <!-- Rover Latitude Item -->
                 <item>
                  <widget class="QLabel" name="RoverLat">
                   <property name="text">
-                   <string>Lattitude: ...</string>
+                   <string>Latitude: ...</string>
                   </property>
                  </widget>
                 </item>
