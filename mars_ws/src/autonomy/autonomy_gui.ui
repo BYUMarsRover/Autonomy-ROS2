@@ -9,7 +9,7 @@
     <x>0</x>
     <y>0</y>
     <width>640</width>
-    <height>375</height>
+    <height>425</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -30,13 +30,13 @@
      <property name="minimumSize">
       <size>
        <width>620</width>
-       <height>355</height>
+       <height>405</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
        <width>620</width>
-       <height>355</height>
+       <height>405</height>
       </size>
      </property>
      <!-- Layout Widget -->
@@ -47,7 +47,7 @@
         <x>11</x>
         <y>11</y>
         <width>600</width>
-        <height>335</height>
+        <height>385</height>
        </rect>
       </property>
       <!-- Layout Widget Layout -->
@@ -128,6 +128,27 @@
               <widget class="QLineEdit" name="LongitudeInput">
                <property name="placeholderText">
                 <string>enter longitude here</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <!-- Horizontal Box for the Preview and clear mapviz buttons -->
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <!-- Preview Button -->
+             <item>
+              <widget class="QPushButton" name="PreviewMapvizButton">
+               <property name="text">
+                <string>Preview on Mapviz</string>
+               </property>
+              </widget>
+             </item>
+             <!-- Clear Mapviz Button -->
+             <item>
+              <widget class="QPushButton" name="ClearMapvizButton">
+               <property name="text">
+                <string>Clear Mapviz</string>
                </property>
               </widget>
              </item>
@@ -306,13 +327,13 @@
            <property name="minimumSize">
             <size>
              <width>280</width>
-             <height>355</height>
+             <height>405</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
              <width>280</width>
-             <height>355</height>
+             <height>405</height>
             </size>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_10">

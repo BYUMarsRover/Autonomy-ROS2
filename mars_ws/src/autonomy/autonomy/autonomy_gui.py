@@ -24,6 +24,9 @@ import yaml
 import utm
 
 from std_srvs.srv import SetBool
+from std_msgs.msg import Header
+from nav_msgs.msg import Path
+from geometry_msgs.msg import PoseStamped
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from rover_msgs.msg import AutonomyTaskInfo, PositionVelocityTime, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
@@ -45,7 +48,7 @@ class AutonomyGUI(Node, QWidget):
         # Timer to periodically spin the ROS node
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.spin_ros)
-        self.timer.start(1)  # 1 second interval for spinning ROS
+        self.timer.start(5)  # 5 millisecond interval for spinning ROS
 
 
         # Gui Buttons
@@ -63,6 +66,9 @@ class AutonomyGUI(Node, QWidget):
         self.DisableAutonomyButton.clicked.connect(self.disable_autonomy)
         self.AbortButton.clicked.connect(self.abort_autonomy)
         self.SendWaypointButton.clicked.connect(self.send_waypoint)
+
+        self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
+        self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
 
         # GUI Input Fields
         self.latitude_input = self.LatitudeInput
@@ -86,7 +92,7 @@ class AutonomyGUI(Node, QWidget):
         ################# ROS Communication #################
 
         # Publishers
-        self.path_publisher = self.create_publisher(PositionVelocityTime, '/mapviz/path', 10)
+        self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
 
         # Subscribers
         #self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
@@ -117,6 +123,8 @@ class AutonomyGUI(Node, QWidget):
         self.utm_northing_zero = utm_coords[1]
         self.utm_zone_number = utm_coords[2]
         self.utm_zone_letter = utm_coords[3]
+
+        self.current_previewed_waypoints = Path()
 
     def spin_ros(self):
         rclpy.spin_once(self)
@@ -213,9 +221,66 @@ class AutonomyGUI(Node, QWidget):
             self.error_label.setText('Failed to Disable Autonomy')
 
     def preview_waypoint(self):
-        msg = PositionVelocityTime()
+        # Find the x and y to be sent to mapviz
+        lat = float(self.latitude_input.text())
+        lon = float(self.longitude_input.text())
+        utm_coords = utm.from_latlon(lat, lon)
+        x = utm_coords[0] - self.utm_easting_zero
+        y = utm_coords[1] - self.utm_northing_zero
 
+        current_time = self.get_clock().now().to_msg()
+        self.current_previewed_waypoints.header = Header()
+        self.current_previewed_waypoints.header.stamp = current_time
+        self.current_previewed_waypoints.header.frame_id = "map"
 
+        pose_stamped = PoseStamped()
+        pose_stamped.header.stamp = current_time
+        pose_stamped.header.frame_id = "map"
+
+        pose_stamped.pose.position.x = x
+        pose_stamped.pose.position.y = y
+        pose_stamped.pose.position.z = 0.0
+
+        pose_stamped.pose.orientation.x = 0.0
+        pose_stamped.pose.orientation.y = 0.0
+        pose_stamped.pose.orientation.z = 0.0
+        pose_stamped.pose.orientation.w = 1.0
+        
+        self.current_previewed_waypoints.poses.append(pose_stamped)
+
+        self.path_publisher.publish(self.current_previewed_waypoints)
+        self.error_label.setText('Waypoint Sent for Preview')
+
+    def clear_mapviz(self):
+
+        # Clear the current previewed waypoints
+        while(len(self.current_previewed_waypoints.poses) > 0):
+            self.current_previewed_waypoints.poses.pop()
+
+        msg = Path()
+
+        current_time = self.get_clock().now().to_msg()
+        msg.header = Header()
+        msg.header.stamp = current_time
+        msg.header.frame_id = "map"
+
+        pose_stamped = PoseStamped()
+        pose_stamped.header.stamp = current_time
+        pose_stamped.header.frame_id = "map"
+
+        pose_stamped.pose.position.x = 0.0
+        pose_stamped.pose.position.y = 0.0
+        pose_stamped.pose.position.z = 0.0
+
+        pose_stamped.pose.orientation.x = 0.0
+        pose_stamped.pose.orientation.y = 0.0
+        pose_stamped.pose.orientation.z = 0.0
+        pose_stamped.pose.orientation.w = 1.0
+        
+        msg.poses = [pose_stamped]
+
+        self.path_publisher.publish(msg)
+        self.error_label.setText('Mapviz Cleared')
         
     def send_waypoint(self):
         #logic for sending waypoint
