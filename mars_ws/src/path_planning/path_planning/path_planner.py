@@ -32,13 +32,13 @@ class PathPlanner(Node):
 
         # Clients
 
-        # Check Actions Needed
+        # Timer for the loop function
         self.timer = self.create_timer(0.1, self.loop) # Perform the loop function at 10Hz
 
         # Initialize Mapper object with asc file
-        # Gravel Pits Map
+        # Gravel Pit Map
         if self.location[0] > 40.3166 and self.location[0] < 40.323302 and self.location[1] > -111.649553 and self.location[1] < -111.6369:
-            self.get_logger().info("Welcome to the gravel pits! Path Planning is ready.")
+            self.get_logger().info("Welcome to the gravel pit! Path Planning is ready.")
             file_path=os.path.join(get_package_share_directory('path_planning'), 'data', 'gravel_pits.asc')
             self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='T') # TODO: verify zone and zone_letter
             self.eMapper.chop_map(200, 700, 0, 500)
@@ -51,7 +51,7 @@ class PathPlanner(Node):
             print("Current location not supported")
             self.get_logger().warn("Current location not supported for path planning")
 
-        # Initialize PathPlanner object
+        # Initialize PathPlanner object with elevation map, elevation weight, and slope degree threshold
         self.path_planner = AStarPlanner(cost_map=self.eMapper.map, ew=30., e_thresh=10)
         self.path_needed = False
 
