@@ -77,12 +77,13 @@ class MegaMiddleman(Node):
             msg.right_middle_speed, msg.right_middle_dir,
             msg.right_rear_speed, msg.right_rear_dir
         ]
-        wheel_msg = "$WHEEL," + ",".join(str(param) for param in motor_params) + "*"
+        wheel_msg = "$WHEEL," + ",".join(str(int(param)) for param in motor_params) + "*"
+        self.write_debug(wheel_msg)
         self.serial_write(wheel_msg)
 
     def send_elevator(self, msg):
         eleva_params = [msg.elevator_speed, msg.elevator_direction]
-        eleva_msg = "$ELEVA," + ",".join(str(param) for param in eleva_params) + "*"
+        eleva_msg = "$ELEVA," + ",".join(str(int(param)) for param in eleva_params) + "*"
         self.write_debug("Orin: Sending elevator message to Arduino.")
         self.serial_write(eleva_msg)
 
