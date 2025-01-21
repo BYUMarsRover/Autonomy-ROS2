@@ -163,8 +163,20 @@ class HazardDetector(Node):
 
     def generate_hazard_message(self, high_points, steep_slopes):
         #TODO Work on this next to have hazards published according to the custom msgs that we made
-        message = f"Hazards detected: "
+        message = HazardArray()
+        
+
+        #message = f"Hazards detected: "
         if high_points:
+            for high_point in high_points:
+                # Create a hazard message for each high point by averaging the x, y, z coordinates
+                hazard = Hazard()
+                hazard.type = Hazard.OBSTACLE
+                hazard.location_x = np.mean(high_point[:, 0])
+                hazard.location_y = np.mean(high_point[:, 1])
+                hazard.location_z = np.mean(high_point[:, 2])
+                hazard.radius = np.max(np.std(high_point, axis=0))
+                message.hazards.append(hazard)
             message += f"{len(high_points)} high obstacles. "
         if steep_slopes:
             message += "Steep slopes detected."
