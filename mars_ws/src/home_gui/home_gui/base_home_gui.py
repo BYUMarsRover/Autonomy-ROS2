@@ -10,7 +10,7 @@ from PyQt5 import uic
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-from mars_ws.src.keyboard_autonomy.keyboard_autonomy.keyboard_fsm import KeyboardFSMNode
+from keyboard_autonomy.keyboard_fsm import KeyboardFSMNode
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import UInt16MultiArray
@@ -127,7 +127,7 @@ class HomeGuiUI(Node, QWidget):
             CameraControl, 'camera_control')
         self.create_service(
             CameraControl, 'camera_cleanup', self.handle_camera_cleanup)
-
+        self.keyboard_process = None
         signal.signal(signal.SIGINT, self.handler_stop_signals)
         signal.signal(signal.SIGTERM, self.handler_stop_signals)
 
@@ -312,10 +312,24 @@ class HomeGuiUI(Node, QWidget):
         word = self.autonomousKeyboardLineEdit.text()
         print(word)
         self.get_logger().info(word)
-
-        rclpy.init(args=word)
-        node = KeyboardFSMNode()
-        rclpy.spin(node)
+        if self.keyboard_process is None or self.keyboard_process.poll() is not None:
+            self.get_logger().info("starting keyboard autonomy launch file")
+            self.keyboard_process = Popen(['ros2', 'launch', 'keyboard_autonomy', 'keyboard_autonomy_launch.py', f'word:={word}'],
+                                          stdout=PIPE,
+                                          stderr=PIPE
+                                          )
+            self.get_logger().info("launched the keyboard autonomy file")
+            for line in self.keyboard_process.stdout:
+                self.get_logger().info("hi")
+                self.get_logger().info(line.decode().strip())
+            for line in self.keyboard_process.stderr:
+                self.get_logger().info("he")
+                self.get_logger().info(line.decode().strip())
+        else:
+            self.get_logger().info('Launch file already running.')
+        # rclpy.init(args=word)
+        # node = KeyboardFSMNode()
+        # rclpy.spin(node)
 
     def launch_view(self):
         channel = self.get_available_channel()

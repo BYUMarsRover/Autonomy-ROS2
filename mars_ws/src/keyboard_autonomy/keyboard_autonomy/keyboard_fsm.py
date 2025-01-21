@@ -75,7 +75,8 @@ def main(args=None):
     # Use this format when calling the launch file:
     # 'ros2 launch keyboard_autonomy keyboard_autonomy_launch.py word:=test'
     keys = list(sys.argv[1])
-
+    print(keys)
+    
     for key in keys:
         send_key_press(node, key)
     

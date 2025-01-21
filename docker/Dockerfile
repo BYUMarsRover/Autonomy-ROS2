@@ -68,6 +68,9 @@ RUN pip3 install pydantic==1.10.9
 RUN pip3 install odpslides
 RUN pip3 install pyserial
 
+# Install roboticstoolbox
+RUN pip3 install roboticstoolbox
+
 USER root
 RUN apt update && apt install -y \
     libboost-dev \

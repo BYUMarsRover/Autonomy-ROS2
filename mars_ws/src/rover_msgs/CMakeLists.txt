@@ -48,12 +48,14 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HeartbeatStatusBase.msg"
   "msg/IWCMotors.msg"
   "msg/Elevator.msg"
+  "msg/KeyboardHomography.msg"
   "srv/CameraControl.srv"
   "srv/CameraControlResponse.srv"
   "srv/AutonomyAbort.srv"
   "srv/AutonomyWaypoint.srv"
   "srv/AutonomyWaypointResponse.srv"
   "srv/SetFloat32.srv"
+  "srv/KeyPress.srv"
   DEPENDENCIES std_msgs geometry_msgs sensor_msgs builtin_interfaces # Add packages that above messages depend on
 )
 
