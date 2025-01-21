@@ -97,11 +97,12 @@ class HazardDetector(Node):
         high_points = self.detect_high_obstacles(non_ground)
 
         # Detect steep slopes
-        steep_slopes = self.detect_steep_slopes(ground, plane_model)
+        (steep_slopes, slope_angle) = self.detect_steep_slopes(ground, plane_model)
 
         # Publish hazards
-        hazard_message = self.generate_hazard_message(high_points, steep_slopes)
-        self.publisher.publish(hazard_message)
+        hazard_message = self.generate_hazard_message(high_points, steep_slopes, slope_angle)
+        if hazard_message.hazards:
+            self.publisher.publish(hazard_message)
 
     def detect_high_obstacles(self, non_ground_cloud):
         # Find maximum height in each cluster
@@ -130,8 +131,8 @@ class HazardDetector(Node):
 
         self.get_logger().info(f"Angle of the ground is: {angle} radians, and the slope threshold is {np.radians(self.slope_threshold)}")
         if angle > np.radians(self.slope_threshold):
-            return True
-        return False
+            return (True, angle)
+        return (False, angle)
 
     def cluster_point_cloud(self, cloud):
         # Convert PointCloud2 to a NumPy array
@@ -161,12 +162,10 @@ class HazardDetector(Node):
 
         return clusters
 
-    def generate_hazard_message(self, high_points, steep_slopes):
+    def generate_hazard_message(self, high_points, steep_slopes, slope_angle):
         #TODO Work on this next to have hazards published according to the custom msgs that we made
         message = HazardArray()
-        
-
-        #message = f"Hazards detected: "
+    
         if high_points:
             for high_point in high_points:
                 # Create a hazard message for each high point by averaging the x, y, z coordinates
@@ -175,12 +174,20 @@ class HazardDetector(Node):
                 hazard.location_x = np.mean(high_point[:, 0])
                 hazard.location_y = np.mean(high_point[:, 1])
                 hazard.location_z = np.mean(high_point[:, 2])
-                hazard.radius = np.max(np.std(high_point, axis=0))
+                # Approximate radius of the hazard as 3 times the standard deviation of the high points
+                peak_to_peak = np.ptp(high_point, axis=0)
+                hazard.length_x= peak_to_peak[0]
+                hazard.length_y= peak_to_peak[1]
+                hazard.length_z= peak_to_peak[2]
+                hazard.num_points = len(high_point)
                 message.hazards.append(hazard)
-            message += f"{len(high_points)} high obstacles. "
         if steep_slopes:
-            message += "Steep slopes detected."
-        return String(data=message)
+            hazard = Hazard()
+            hazard.type = Hazard.STEEP_SLOPE
+            hazard.slope_angle = slope_angle
+            message.hazards.append(hazard)
+
+        return message
 
 def main(args=None):
     rclpy.init(args=args)
