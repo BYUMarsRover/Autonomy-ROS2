@@ -134,21 +134,6 @@ class HomeGuiUI(Node, QWidget):
     def error(self, message, title='Error'):
         self.get_logger().error(message)
 
-    def start_keyboard_autonomy(self):
-        launch_file_path = os.path.join(
-            get_package_share_directory('keyboard_autonomy'), 'launch', 'keyboard_autonomy_launch.py'
-        )
-
-        launch_description = launch.LaunchDescription([
-            launch.actions.IncludeLaunchDescription(
-                launch.launch_description_sources.PythonLaunchDescriptionSource(launch_file_path)
-            )
-        ])
-
-        launch_service = launch.LaunchService()
-        launch_service.include_launch_description(launch_description)
-        launch_service.run()
-
     def popup(self, title, message):
         QMessageBox.about(self, title, message)
 
@@ -320,10 +305,8 @@ class HomeGuiUI(Node, QWidget):
                                           )
             self.get_logger().info("launched the keyboard autonomy file")
             for line in self.keyboard_process.stdout:
-                self.get_logger().info("hi")
                 self.get_logger().info(line.decode().strip())
             for line in self.keyboard_process.stderr:
-                self.get_logger().info("he")
                 self.get_logger().info(line.decode().strip())
         else:
             self.get_logger().info('Launch file already running.')
