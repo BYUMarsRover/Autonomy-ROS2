@@ -69,7 +69,7 @@ RUN pip3 install odpslides
 RUN pip3 install pyserial
 
 # Install roboticstoolbox
-RUN pip3 install roboticstoolbox
+RUN pip3 install roboticstoolbox-python
 
 USER root
 RUN apt update && apt install -y \
