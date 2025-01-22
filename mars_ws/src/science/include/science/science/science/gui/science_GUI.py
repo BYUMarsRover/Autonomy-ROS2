@@ -6,6 +6,7 @@ import rclpy
 from rover_msgs.srv import CameraControl
 from rover_msgs.msg import ScienceToolPosition, ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceFADIntensity, Camera, RoverStateSingleton
 from rclpy.node import Node
+from ament_index_python.packages import get_package_share_directory
 
 import os
 import sys
@@ -22,7 +23,15 @@ class science_GUI(Node):
         
         super().__init__('science_GUI')
         self.qt = QtWidgets.QWidget()
-        uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/science/science/gui/science_GUI.ui', self.qt) # Load the .ui file
+
+        ui_file_path = os.path.join(
+            get_package_share_directory('science'),
+            'gui',
+            'science_GUI.ui'
+            )
+
+        uic.loadUi(ui_file_path, self.qt)
+        # uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/science/science/gui/science_GUI.ui', self.qt) # Load the .ui file
         self.qt.show() # Show the GUI
 
         self.base_ip = self.get_base_ip()
