@@ -45,7 +45,7 @@ def generate_launch_description():
             executable='keyboard_fsm',
             arguments=[word],
         ),
-        launch_ros.action.Node(
+        launch_ros.actions.Node(
             package='keyboard_autonomy',
             executable='gstreamer2ros2',
         ),

@@ -28,21 +28,24 @@ class GStreamer2ROS2Node(Node):
         '''
         Publisher to the "/image_raw" topic with the message type Image.
         '''
-
         # Timer
         timer_period = 1.0 / self.frame_rate
         self.timer = self.create_timer(timer_period, self.timer_callback)
-
         # Initialize GStreamer
-        self.cap = cv2.VideoCapture(self.gstreamer_pipeline, cv2.CAP_GSTREAMER)
-        if not self.cap.isOpened():
-            self.get_logger().error("Failed to open GStreamer pipeline!")
+        try:
+            self.cap = cv2.VideoCapture(self.gstreamer_pipeline, cv2.CAP_GSTREAMER)
+        except:
+            self.get_logger().info("Failed to open GStreamer pipeline2!")
             self.destroy_node()
+        if not self.cap.isOpened():
+            self.get_logger().info("Failed to open GStreamer pipeline!")
+            self.destroy_node()
+        self.get_logger().info("Pipeline is open, yay!")
         
     def timer_callback(self):
         ret, frame = self.cap.read()
         if not ret:
-            self.get_logger().warm("Failed to capture frame")
+            self.get_logger().info("Failed to capture frame")
             return
         
         # Try to convert frame to ROS 2 Image message and publish
@@ -50,23 +53,23 @@ class GStreamer2ROS2Node(Node):
             ros_image = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
             self.publisher.publish(ros_image)
         except Exception as e:
-            self.get_logger().error(f"Failed to publish image: {str(e)}")
+            self.get_logger().info(f"Failed to publish image: {str(e)}")
 
     def destroy(self):
         # Release resources
         self.cap.release()
         super().destroy
 
-    def main(args=None):
-        rclpy.init(args=args)
-        node = GStreamer2ROS2Node()
-        try:
-            rclpy.spin(node)
-        except KeyboardInterrupt:
-            node.get_logger().info("Sutting down...")
-        finally:
-            node.destroy()
-            rclpy.shutdown()
+def main(args=None):
+    rclpy.init(args=args)
+    node = GStreamer2ROS2Node()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info("Sutting down...")
+    finally:
+        node.destroy()
+        rclpy.shutdown()
 
-    if __name__ == '__main__':
-        main()
+if __name__ == '__main__':
+    main()
