@@ -49,6 +49,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/IWCMotors.msg"
   "msg/Elevator.msg"
   "msg/KeyboardHomography.msg"
+  "msg/KeyLocations.msg"
   "srv/CameraControl.srv"
   "srv/CameraControlResponse.srv"
   "srv/AutonomyAbort.srv"
