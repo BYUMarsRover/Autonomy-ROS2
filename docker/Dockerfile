@@ -92,7 +92,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     ros-humble-mapviz-plugins \
     ros-humble-tile-map \
     ros-humble-multires-image \
-    ros-humble-rosapi
+    ros-humble-rosapi; \
+    fi
 USER marsrover
 
 # Colorized ROS 2 logging output
