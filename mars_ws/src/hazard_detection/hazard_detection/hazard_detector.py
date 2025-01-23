@@ -174,7 +174,6 @@ class HazardDetector(Node):
                 hazard.location_x = np.mean(high_point[:, 0])
                 hazard.location_y = np.mean(high_point[:, 1])
                 hazard.location_z = np.mean(high_point[:, 2])
-                # Approximate radius of the hazard as 3 times the standard deviation of the high points
                 peak_to_peak = np.ptp(high_point, axis=0)
                 hazard.length_x= peak_to_peak[0]
                 hazard.length_y= peak_to_peak[1]
