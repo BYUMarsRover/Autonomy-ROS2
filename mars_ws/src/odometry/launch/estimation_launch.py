@@ -42,6 +42,7 @@ def generate_launch_description():
                 ('imu', 'imu/data'),
                 ('gps/fix', 'ins/lla'),
             ],
+            arguments=['--ros-args', '--log-level', 'fatal'],
             emulate_tty=True
         ),
 
