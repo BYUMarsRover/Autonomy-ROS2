@@ -111,6 +111,11 @@ class ArmControlsNode(Node):
         Publisher to the "/elevator" topic with the message type Elevator.
         '''
 
+        self.srv = self.create_service(KeyPress, '/key_press', self.key_press_callback, 10)
+        '''
+        Service that attempts to press a certain key based on the KeyPress request.
+        '''
+
         # Initial controller states
         self.elev_set = False  # Is the elevator in the desired position?
         self.arm_set = False  # Is the arm in the desired position?
@@ -128,13 +133,13 @@ class ArmControlsNode(Node):
 
     def update_elev(self, elevator_cmd: Elevator):
         """
-        Updates the elevator position. This is just a rough estiate based on relative position and speed
+        Updates the elevator position. This is just a rough estimate based on relative position and speed
         """
-        # TODO: Needs tunning
+        # TODO: Needs tuning
         dir = 1 if elevator_cmd.elevator_direction else -1
         speed = dir * elevator_cmd.elevator_speed
-        if (dir == 1 and self.arm_dh_model.q[0] + p.ELEV_PWM_TO_VEL * speed < p.TOP_ELEVATOR_LIM):
-            if (dir == -1 and self.arm_dh_model.q[0] + p.ELEV_PWM_TO_VEL * speed > p.BOTTOM_ELEVATOR_LIM):
+        if dir == 1 and self.arm_dh_model.q[0] + p.ELEV_PWM_TO_VEL * speed < p.TOP_ELEVATOR_LIM:
+            if dir == -1 and self.arm_dh_model.q[0] + p.ELEV_PWM_TO_VEL * speed > p.BOTTOM_ELEVATOR_LIM:
                 self.arm_dh_model.q[0] += p.ELEV_PWM_TO_VEL * speed
 
     def update_pos(self, measured_joint_pos: JointState):
@@ -145,7 +150,7 @@ class ArmControlsNode(Node):
         """
         # The indexing is just some defensive programming
         self.arm_dh_model.q[1:] = np.array(
-            measured_joint_pos.position[-(self.arm_dh_model.n - 1):])  ## still need to fix this for elevator
+            measured_joint_pos.position[-(self.arm_dh_model.n - 1):])  # still need to fix this for elevator
 
     def update_homography(self, homography: KeyboardHomography):
         """
@@ -157,7 +162,8 @@ class ArmControlsNode(Node):
     def control(self):
         # Arm control
         error = np.linalg.norm(self.homography_matrix - np.eye(3), "fro")
-        if not arm_set and error > ERROR_THRESHOLD:
+        arm_stability = 0
+        if not self.arm_set and error > ERROR_THRESHOLD:
             lambda_v = 1
             lambda_omega = 1
 
@@ -173,8 +179,8 @@ class ArmControlsNode(Node):
             e_omega_skew = self.homography_matrix - self.homography_matrix.transpose()
             e_omega = np.array([e_omega_skew[2][1], e_omega_skew[0][2], e_omega_skew[1][0]])
 
-            # Compute the twist in the camera frame
-            # Twist is a 6x1 matrix that has [0:3] as the linear velocity and [3:end] being the rotation velocity needed to command the camera frame to match the desired homography
+            # Compute the twist in the camera frame Twist is a 6x1 matrix that has [0:3] as the linear velocity and [
+            # 3:end] being the rotation velocity needed to command the camera frame to match the desired homography
             twist = -np.vstack(np.hstack(lambda_v * np.eye(3), np.zeros((3, 3))),
                                np.hstack(np.zeros((3, 3)), lambda_omega * np.eye(3))) @ np.vstack(e_v.transpose(),
                                                                                                   e_omega.transpose())
@@ -197,10 +203,10 @@ class ArmControlsNode(Node):
             qdot = J_dagger @ twist
             qdot = qdot.flatten()
 
-            # Take the q_dot and send it to the coresponding motors
+            # Take the q_dot and send it to the corresponding motors
             elevPWM = round(qdot[0] / p.ELEV_PWM_TO_VEL)
 
-            ## Publish the arm joint commands
+            # Publish the arm joint commands
             cmd = JointJog()
             cmd.velocities = [
                 qdot[1],
@@ -218,20 +224,36 @@ class ArmControlsNode(Node):
             elevator_cmd.elevator_direction = 1 if elevPWM > 0 else 0
             self.elevator_publisher.publish(elevator_cmd)
 
-            arm_stability = 0
         else:
             # Ensure the arm position is stable
             arm_stability += 1
             if arm_stability >= STABLE_REQ:
-                arm_set = True
+                self.arm_set = True
                 self.get_logger().info('Arm stability achieved')
 
-        if arm_set:
+        if self.arm_set:
             # TODO: Press the button
 
             self.get_logger().info(f"[SUCCESS] Key {self.key} has been pressed")
             self.key = None  # IMPORTANT! This stops the controller
 
+    def key_press_callback(self, request, response):
+        if self.arm_set:
+            # Simulate pressing the button
+            self.key = request.key  # Assuming `key` is a field in your KeyPress request
+
+            # TODO: Add logic to actually press the button if necessary
+            self.get_logger().info(f"[SUCCESS] Key {self.key} has been pressed")
+
+            # Respond with success
+            response.success = True
+            self.key = None  # Reset key state
+        else:
+            # If arm is not set, log failure and respond
+            self.get_logger().warn("Arm is not set. Cannot press the key.")
+            response.success = False
+
+        return response
 
 def main(args=None):
     rclpy.init(args=args)

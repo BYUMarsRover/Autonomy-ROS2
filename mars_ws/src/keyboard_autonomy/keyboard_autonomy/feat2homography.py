@@ -5,7 +5,7 @@ from cv_bridge import CvBridge
 import numpy as np
 import cv2
 from rover_msgs.msg import KeyboardHomography
-from mars_ws.build.rover_msgs.rosidl_generator_py.rover_msgs.srv._key_press import KeyPress
+from rover_msgs.srv._key_press import KeyPress
 
 MIN_MATCH_COUNT = 10
 
@@ -100,7 +100,6 @@ class Feat2HomographyNode(Node):
         if self.key is not None:
             self.control()
         self.get_logger().info(f"Attempting to press key {self.key}")
-        response.success = True
         return response
 
     def listener_callback(self, msg):

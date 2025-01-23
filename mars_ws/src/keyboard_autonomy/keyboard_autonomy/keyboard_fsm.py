@@ -46,15 +46,15 @@ class KeyboardFSMNode(Node):
 
 
 def send_key_press(node, key):
-    '''
+    """
     Calls the KeyPress service and checks to make sure it executed successfully.
-    '''
+    """
 
     # Keep requesting the service until it is successful
     # Could be replaced with an action and is kind of hacky -- but hey, it works
     completed = False
     while not completed:
-        
+
         future = node.send_request(key)
         rclpy.spin_until_future_complete(node, future)
         response = future.result()
@@ -64,13 +64,14 @@ def send_key_press(node, key):
             if response.success:
                 completed = True
 
-        time.sleep(1) # Throttle the service calls
+        time.sleep(1)  # Throttle the service calls
+
 
 def main(args=None):
     rclpy.init(args=args)
     node = KeyboardFSMNode()
 
-    time.sleep(5) # Wait for the other nodes to start up
+    time.sleep(5)  # Wait for the other nodes to start up
 
     # Use this format when calling the launch file:
     # 'ros2 launch keyboard_autonomy keyboard_autonomy_launch.py word:=test'
@@ -78,8 +79,9 @@ def main(args=None):
 
     for key in keys:
         send_key_press(node, key)
-    
+
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
