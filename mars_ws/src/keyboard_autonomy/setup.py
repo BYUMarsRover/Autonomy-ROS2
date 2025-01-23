@@ -26,6 +26,7 @@ setup(
             'homography2keys = keyboard_autonomy.homography2keys:main',
             'arm_controls = keyboard_autonomy.arm_controls:main',
             'keyboard_fsm = keyboard_autonomy.keyboard_fsm:main',
+            'gstreamer2ros2 = keyboard_autonomy.gstreamer2ros2:main',
         ],
     },
 )
