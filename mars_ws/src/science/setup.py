@@ -19,6 +19,8 @@ setup(
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*.launch.py'))),
         # Include the gui .ui file
         (os.path.join('share', package_name, 'gui'), glob(os.path.join('science', 'gui', '*.ui'))),
+        #include resources
+        (os.path.join('share', package_name, 'gui'), glob(os.path.join('science', 'presentation', '*.txt'))),
     ],
     # This is important as well
     install_requires=['setuptools'],
@@ -40,7 +42,8 @@ setup(
             'science_control = science.science_control:main',
             'science_serial_interface = science.science_serial_interface:main',
             'science_data_saver = science.presentation.science_data_saver:main',
-            'science_GUI = science.gui.science_GUI:main'
+            'science_GUI = science.gui.science_GUI:main',
+            # 'presentation_generator = science.presentation.presentation_generator:main'
         ],
     },
 )

@@ -3,6 +3,8 @@ import os
 import rclpy
 from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceFADIntensity
 from rclpy.node import Node
+from ament_index_python.packages import get_package_share_directory
+
 
 class ScienceDataSaver(Node):
 
@@ -54,8 +56,15 @@ class ScienceDataSaver(Node):
         
         if msg.save:
             self.sensor_values[msg.position] = []
-        else:
+        else: #Change this f string so that it gets this going in the correct directory
+            presentation_path = os.path.join(
+                get_package_share_directory('science'),
+                'presentation',
+                'resources'
+                )
+
             file_name = f'{self.sensor_map[msg.position]}-plot-{self.get_file_num()}.txt'
+            # file_name = f'{presentation_path}/{self.sensor_map[msg.position]}-plot-{self.get_file_num()}.txt'
             self.save_sensor_values(msg.position, file_name)
 
     def change_site_directory(self, site_num):
