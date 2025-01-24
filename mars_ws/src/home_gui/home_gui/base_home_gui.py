@@ -102,6 +102,10 @@ class HomeGuiUI(Node, QWidget):
             self.launch_autonomous_keyboard
         )
 
+        self.cancelAutonomousKeyboardButton.clicked.connect(
+            self.cancelAutonomousKeyboard
+        )
+
         self.cameraLaunchViewButton.clicked.connect(self.launch_view)
         # self.clickerButton.clicked.connect(self.activate_clicker)
 
@@ -325,6 +329,20 @@ class HomeGuiUI(Node, QWidget):
         # rclpy.init(args=word)
         # node = KeyboardFSMNode()
         # rclpy.spin(node)
+
+    def cancelAutonomousKeyboard(self):
+        reply = QMessageBox.question(self, 'Confirm Cance', 'Are yu sure you want to cancel?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            self.keyboard_process.terminate()
+            try:
+                self.keyboard_process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.get_logger().info("Graceful termination failed, killing process...")
+                self.keyboard_process.kill()
+            self.get_logger().info("Process terminated.")
+            # print("Keboard typing killed successfully")
+
+
 
     def launch_view(self):
         channel = self.get_available_channel()

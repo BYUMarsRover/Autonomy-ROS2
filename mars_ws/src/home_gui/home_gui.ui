@@ -132,6 +132,13 @@
                  </property>
                 </widget>
                </item>
+               <item>
+                    <widget class="QPushButton" name="cancelAutonomousKeyboardButton">
+                        <property name="text">
+                        <string>Cancel</string>
+                        </property>
+                    </widget>
+                </item>
               </layout>
              </item>
             </layout>
