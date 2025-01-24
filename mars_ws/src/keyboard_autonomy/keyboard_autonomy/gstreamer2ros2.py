@@ -37,8 +37,9 @@ class GStreamer2ROS2Node(Node):
             self.cap = cv2.VideoCapture(self.gstreamer_pipeline, cv2.CAP_GSTREAMER)
         except:
             self.get_logger().info("Failed to open GStreamer pipeline2!")
-            self.destroy_node()
-        if not self.cap.isOpened():
+            self.destroy()
+            raise BrokenPipeError
+        if not self.cap or not self.cap.isOpened():
             self.get_logger().info("Failed to open GStreamer pipeline!")
             self.destroy()
             raise BrokenPipeError
