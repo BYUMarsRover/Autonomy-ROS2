@@ -238,21 +238,10 @@ class ArmControlsNode(Node):
             self.key = None  # IMPORTANT! This stops the controller
 
     def key_press_callback(self, request, response):
-        if self.arm_set:
-            # Simulate pressing the button
-            self.key = request.key  # Assuming `key` is a field in your KeyPress request
+        while (self.key != None):
+            continue
 
-            # TODO: Add logic to actually press the button if necessary
-            self.get_logger().info(f"[SUCCESS] Key {self.key} has been pressed")
-
-            # Respond with success
-            response.success = True
-            self.key = None  # Reset key state
-        else:
-            # If arm is not set, log failure and respond
-            self.get_logger().warn("Arm is not set. Cannot press the key.")
-            response.success = False
-
+        response.success = True
         return response
 
 def main(args=None):
