@@ -81,7 +81,7 @@ def main(args=None):
     
     for key in keys:
         send_key_press(node, key)
-    node.send_shutdown()
+
     rclpy.shutdown()
 
 if __name__ == '__main__':

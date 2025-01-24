@@ -18,7 +18,7 @@ class GStreamer2ROS2Node(Node):
     def __init__(self):
 
         super().__init__('gstreamer2ros2')
-
+        self.get_logger().info("GStreamer2ROS2Node started")
         self.gstreamer_pipeline = 'udpsrc address=192.168.1.111 port=5010 caps="application/x-rtp,media=video,encoding-name=H265,payload=96" ! rtph265depay ! h265parse ! avdec_h265 ! videoconvert ! appsink'
         self.ros_topic = 'image_raw'
         self.frame_rate = 10.0
@@ -40,10 +40,12 @@ class GStreamer2ROS2Node(Node):
             self.destroy_node()
         if not self.cap.isOpened():
             self.get_logger().info("Failed to open GStreamer pipeline!")
-            self.destroy_node()
+            self.destroy()
+            raise BrokenPipeError
         self.get_logger().info("Pipeline is open, yay!")
 
     def timer_callback(self):
+        self.get_logger().info("Timer callback")
         ret, frame = self.cap.read()
         if not ret:
             self.get_logger().info("Failed to capture frame")
@@ -59,18 +61,19 @@ class GStreamer2ROS2Node(Node):
     def destroy(self):
         # Release resources
         self.cap.release()
-        super().destroy
 
 def main(args=None):
     rclpy.init(args=args)
-    node = GStreamer2ROS2Node()
+
     try:
+        node = GStreamer2ROS2Node()
         rclpy.spin(node)
-    except KeyboardInterrupt:
-        node.get_logger().info("Sutting down...")
-    finally:
-        node.destroy()
+    except BrokenPipeError:
         rclpy.shutdown()
+    except KeyboardInterrupt:
+        node.destroy()
+    finally:
+        pass
 
 if __name__ == '__main__':
     main()
