@@ -304,12 +304,24 @@ class HomeGuiUI(Node, QWidget):
                                           stderr=PIPE
                                           )
             self.get_logger().info("launched the keyboard autonomy file")
-            for line in self.keyboard_process.stdout:
-                self.get_logger().info(line.decode().strip())
-            for line in self.keyboard_process.stderr:
-                self.get_logger().info(line.decode().strip())
         else:
             self.get_logger().info('Launch file already running.')
+            
+        # Define a method to read stdout and stderr asynchronously
+        def read_output():
+            # Read stdout in a separate thread
+            for line in self.keyboard_process.stdout:
+                self.get_logger().info(line.decode().strip())
+
+            # Read stderr in a separate thread
+            for line in self.keyboard_process.stderr:
+                self.get_logger().info(line.decode().strip())
+
+        # Run the output reading in a separate thread to avoid blocking the main thread
+        output_thread = threading.Thread(target=read_output)
+        output_thread.daemon = True  # Ensure the thread dies with the main program
+        output_thread.start()
+        
         # rclpy.init(args=word)
         # node = KeyboardFSMNode()
         # rclpy.spin(node)
