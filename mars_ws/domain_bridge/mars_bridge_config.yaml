@@ -1,0 +1,9 @@
+# Created by Nelson Durrant, Jan 2025
+
+name: mars_bridge
+from_domain: 2 # Domain ID for base station
+to_domain: 3 # Domain ID for rover
+topics:
+  chatter:
+    type: example_interfaces/msg/String
+    bidirectional: True
