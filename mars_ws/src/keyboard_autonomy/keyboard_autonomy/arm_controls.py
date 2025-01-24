@@ -102,7 +102,6 @@ class ArmControlsNode(Node):
         '''
         Subscription to the "/keyboard_homography" topic with the message type KeyboardHomography
         '''
-        self.shutdown_subscription = self.create_subscription(Bool, '/keyboard_autonomy/shutdown', self.shutdown_cb, 10)
 
         self.arm_publisher = self.create_publisher(JointJog, '/motor_commands', 10)
         '''
@@ -157,9 +156,6 @@ class ArmControlsNode(Node):
         self.homography_matrix = homography.homography
         self.control()
 
-    def shutdown_cb(self, msg):
-        self.get_logger().info("Shutting down arm control")
-        rclpy.shutdown()
 
     def control(self):
         # Arm control

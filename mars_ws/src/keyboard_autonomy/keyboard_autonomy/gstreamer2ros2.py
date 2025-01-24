@@ -28,8 +28,7 @@ class GStreamer2ROS2Node(Node):
         '''
         Publisher to the "/image_raw" topic with the message type Image.
         '''
-        # Subcriptions
-        self.shutdown_subscription = self.create_subscription(Bool, '/keyboard_autonomy/shutdown', self.shutdown_cb, 10)
+
         # Timer
         timer_period = 1.0 / self.frame_rate
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -56,12 +55,6 @@ class GStreamer2ROS2Node(Node):
             self.publisher.publish(ros_image)
         except Exception as e:
             self.get_logger().info(f"Failed to publish image: {str(e)}")
-
-    def shutdown_cb(self, msg):
-        self.get_logger().info('Shuting down this Node')
-        self.destroy_node()
-        rclpy.shutdown()
-
 
     def destroy(self):
         # Release resources

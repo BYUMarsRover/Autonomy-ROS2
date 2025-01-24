@@ -44,6 +44,7 @@ def generate_launch_description():
             package='keyboard_autonomy',
             executable='keyboard_fsm',
             arguments=[word],
+            on_exit=launch.actions.Shutdown()
         ),
         launch_ros.actions.Node(
             package='keyboard_autonomy',

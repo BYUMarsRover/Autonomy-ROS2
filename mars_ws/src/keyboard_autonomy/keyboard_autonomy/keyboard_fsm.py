@@ -38,7 +38,6 @@ class KeyboardFSMNode(Node):
         Request object that stores the desired key value.
         '''
 
-        self.shutdown_publisher = self.create_publisher(Bool, '/keyboard_autonomy/shutdown', 10)
 
     def send_request(self, key):
         '''
@@ -47,11 +46,6 @@ class KeyboardFSMNode(Node):
         self.req.key = ord(key)
         return self.cli.call_async(self.req)
 
-    def send_shutdown(self):
-        msg = Bool()
-        msg.data = True
-        self.shutdown_publisher.publish(msg)
-        self.get_logger().info("Sent shutdown signal.")
 
 def send_key_press(node, key):
     '''
