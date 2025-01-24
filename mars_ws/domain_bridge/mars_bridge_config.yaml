@@ -4,6 +4,21 @@ name: mars_bridge
 from_domain: 2 # Domain ID for base station
 to_domain: 3 # Domain ID for rover
 topics:
-  chatter:
+  heartbeat_base:
     type: example_interfaces/msg/String
     bidirectional: True
+  heartbeat_rover:
+    type: example_interfaces/msg/String
+    bidirectional: True
+
+  # ADDITIONS NEEDED:
+  # /mapviz/path
+  # /GPS_waypoint_plotter
+  # /GPSFix_base
+  # /tf (?)
+  # /nav_status
+  # /rover_status
+  # /AU_waypoint_service
+  # /autonomy/enable_autonomy
+  # /autonomy/abort_autonomy
+  # /odometry/rover_state_singleton
