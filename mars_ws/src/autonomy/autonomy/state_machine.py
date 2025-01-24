@@ -88,6 +88,7 @@ class AutonomyStateMachine(Node):
         self.aruco_dist_tolerance = self.get_parameter('aruco_distance_tolerance').get_parameter_value().double_value
         self.hex_search_radius = self.get_parameter('hex_search_radius').get_parameter_value().double_value
         self.navigate_speed = self.get_parameter('navigate_speed').get_parameter_value().double_value
+        self.object_speed = self.get_parameter('object_speed').get_parameter_value().double_value
         self.aruco_speed = self.get_parameter('aruco_speed').get_parameter_value().double_value
         self.aruco_spin_speed = self.get_parameter('aruco_spin_speed').get_parameter_value().double_value
         self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value
@@ -395,7 +396,6 @@ class AutonomyStateMachine(Node):
             self.get_logger().info(f"State is: {self.state.value}")
 
         if self.enabled:
-            self.get_logger().info(f"State is: {self.state.value}")
             if self.state == State.MANUAL:
                 self.rover_nav_state.navigation_state = RoverState.TELEOPERATION_STATE
                 self.correct_aruco_tag_found = False
