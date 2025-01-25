@@ -4,10 +4,9 @@ Autonomy GUI
 By: Daniel Webb and Gabe Slade - 2025
 
 Notes: 
-The QWidget Runs all the time and the ros node is spun at
+The QWidget Runs all the time and the ros node is spun in a different thread
 
 """
-
 import rclpy
 from rclpy.node import Node
 
@@ -30,10 +29,10 @@ from geometry_msgs.msg import PoseStamped, Pose, Point
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
 from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
+from ament_index_python.packages import get_package_share_directory
+
 import threading
 
-
-from ament_index_python.packages import get_package_share_directory
 
 class AutonomyGUI(Node, QWidget):
     def __init__(self):
