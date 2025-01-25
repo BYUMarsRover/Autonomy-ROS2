@@ -30,6 +30,8 @@ from geometry_msgs.msg import PoseStamped, Pose, Point
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
 from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
+import threading
+
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -43,12 +45,6 @@ class AutonomyGUI(Node, QWidget):
         # Load the .ui file
         uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/autonomy/autonomy_gui.ui', self)
         self.show()  # Show the GUI
-
-        # Timer to periodically spin the ROS node
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.spin_ros)
-        self.timer.start(5)  # 5 millisecond interval for spinning ROS
-
 
         # Gui Buttons
         self.GNSSRadioButton.toggled.connect(self.update_leg_subselection)
@@ -487,19 +483,13 @@ def main(args=None):
     # Create ROS Gui
     gui_ros = AutonomyGUI()
 
-    # ros_thread = threading.Thread(target=gui_ros_spin_thread, args=(gui_ros,), daemon=True)
-    # ros_thread.start() # Start gui ROS thread
+    # Create a thread to spin the ROS node
+    ros_thread = threading.Thread(target=gui_ros_spin_thread, args=(gui_ros,), daemon=True)
+    ros_thread.start()
 
-    # Run the Qt event loop
-    # try:
-    #     sys.exit(gui_QWidget.exec_())
-    # except KeyboardInterrupt:
-    #     pass
-    # finally:
-    #     rclpy.shutdown()
-    #     ros_thread.join()
+    # Execute the GUI
+    sys.exit(gui_QWidget.exec_())
 
-    gui_QWidget.exec_()
     rclpy.shutdown()
 
 if __name__ == '__main__':
