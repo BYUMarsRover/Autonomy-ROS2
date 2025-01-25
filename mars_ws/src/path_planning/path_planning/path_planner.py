@@ -77,7 +77,8 @@ class PathPlanner(Node):
         self.utm_zone_letter = utm_coords[3]
 
     def update_location(self, msg):
-        self.location = (msg.latitude, msg.longitude)
+
+        self.location = (msg.lla[0], msg.lla[1])
         
 
     def loop(self):
