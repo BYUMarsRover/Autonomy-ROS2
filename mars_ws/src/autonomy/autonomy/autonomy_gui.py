@@ -204,25 +204,14 @@ class AutonomyGUI(Node, QWidget):
         req.data = True
         future = self.enable_autonomy_client.call_async(req)
         self.error_label.setText('Enabling Autonomy...')
-        rclpy.spin_until_future_complete(self, future)
-        
-        if future.result().success:
-            self.error_label.setText('Autonomy Enabled')
-        else:
-            self.error_label.setText('Failed to Enable Autonomy')
-        return
+        self.future_callback(future, 'Autonomy Enabled', 'Failed to Enable Autonomy')
 
     def disable_autonomy(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_autonomy_client.call_async(req)
         self.error_label.setText('Disabling Autonomy...')
-        rclpy.spin_until_future_complete(self, future)
-        
-        if future.result().success:
-            self.error_label.setText('Autonomy Disabled')
-        else:
-            self.error_label.setText('Failed to Disable Autonomy')
+        self.future_callback(future, 'Autonomy Disabled', 'Failed to Disable Autonomy')
 
     def preview_waypoint(self):
         # Find the x and y to be sent to mapviz
@@ -263,23 +252,18 @@ class AutonomyGUI(Node, QWidget):
 
         future = self.plan_order_client.call_async(req)
         self.error_label.setText('Planning Order...')
-        rclpy.spin_until_future_complete(self, future)
-        if future.done() and future.result():
-            response = future.result()
-            if response.success:
-                self.error_label.setText('Order Planned Successfully')
-            else:
-                self.error_label.setText(f'Failed to Plan Order')
-        else:
-            self.error_label.setText('Service call failed or did not complete')
+        self.future_callback(future, 'Order Planned Successfully', 'Failed to Plan Order')
 
-        self.current_previewed_waypoints = response.path
-        # self.current_previewed_waypoints.header.frame_id = 'map'
-        self.path_publisher.publish(
-            path_to_utm(self.current_previewed_waypoints, 
-                        self.utm_easting_zero, 
-                        self.utm_northing_zero)
-            )
+        # TODO: need a response from this future... but the ros node is spinning in another thread
+        # response = future.result()
+
+        # self.current_previewed_waypoints = response.path
+        # # self.current_previewed_waypoints.header.frame_id = 'map'
+        # self.path_publisher.publish(
+        #     path_to_utm(self.current_previewed_waypoints, 
+        #                 self.utm_easting_zero, 
+        #                 self.utm_northing_zero)
+        #     )
 
     def clear_mapviz(self):
 
@@ -338,20 +322,11 @@ class AutonomyGUI(Node, QWidget):
             task.tag_id = self.tag_id
 
         req.task_list.append(task)
-        #send the Request
-        future = self.send_waypoint_client.call_async(req)
-        self.error_label.setText('Sending Waypoint')
 
-        #wait for response
-        rclpy.spin_until_future_complete(self, future)
-        if future.done() and future.result():
-            response = future.result()
-            if response.success:
-                self.error_label.setText('Waypoint Sent')
-            else:
-                self.error_label.setText(f'Failed to Send Waypoint: {response.message}')
-        else:
-            self.error_label.setText('Service call failed or did not complete')
+        # Send the Waypoint
+        self.error_label.setText('Sending Waypoint')
+        future = self.send_waypoint_client.call_async(req)
+        future.add_done_callback(self.future_callback, 'Waypoint Sent', 'Failed to Send Waypoint')
         return
 
     def abort_autonomy(self):
@@ -371,21 +346,10 @@ class AutonomyGUI(Node, QWidget):
         req.lat = lat
         req.lon = lon
 
-        #send the Request
+        # Send the Abort Request
         future = self.abort_autonomy_client.call_async(req)
         self.error_label.setText('Attempting Abort')
-
-        #wait for response
-        rclpy.spin_until_future_complete(self, future)
-        if future.done() and future.result():
-            response = future.result()
-            if response.success:
-                self.error_label.setText('Aborting task. Returning to given coordinates')
-            else:
-                self.error_label.setText(f'Failed to Abort: {response.message}')
-        else:
-            self.error_label.setText('Service call failed or did not complete')
-        return
+        future.add_done_callback(self.future_callback, 'Aborting Task', 'Failed to Abort Task')
 
     # Gui Functions
     def update_leg_subselection(self):
@@ -417,6 +381,17 @@ class AutonomyGUI(Node, QWidget):
         else:
             self.tag_id = None
         return
+    
+    # Service calls generic callback
+    def future_callback(self, future, success_msg, error_msg):
+        try:
+            response = future.result()
+            if response.success:
+                self.error_label.setText(success_msg)
+            else:
+                self.error_label.setText(error_msg)
+        except Exception as e:
+            self.error_label.setText(f'Service call failed: {str(e)}')
 
 def get_coordinates(file_path, location):
     # Read the YAML file
