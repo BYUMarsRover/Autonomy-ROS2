@@ -146,8 +146,8 @@ class AutonomyGUI(Node, QWidget):
         self.BaseSats.setText(f'Satellites: {self.base_numSV}')
         self.BaseDate.setText(f'Date: {base_month}/{base_day}/{base_year}')
         self.BaseTime.setText(f'Time: {base_hour}:{base_min}:{base_sec}')
-        self.BaseLat.setText(f'Latitude: {msg.latitude}')
-        self.BaseLon.setText(f'Longitude: {msg.longitude}')
+        self.BaseLat.setText(f'Latitude: {msg.lla[0]}')
+        self.BaseLon.setText(f'Longitude: {msg.lla[1]}')
         return
 
     def rover_GPS_info_callback(self, msg):
@@ -163,8 +163,8 @@ class AutonomyGUI(Node, QWidget):
         self.RoverSats.setText(f'Satellites: {self.rover_numSV}')
         self.RoverDate.setText(f'Date: {rover_month}/{rover_day}/{rover_year}')
         self.RoverTime.setText(f'Time: {rover_hour}:{rover_min}:{rover_sec}')
-        self.RoverLat.setText(f'Latitude: {msg.latitude}')
-        self.RoverLon.setText(f'Longitude: {msg.longitude}')
+        self.RoverLat.setText(f'Latitude: {msg.lla[0]}')
+        self.RoverLon.setText(f'Longitude: {msg.lla[1]}')
         return
 
     def rover_state_callback(self, msg): #rover status (speed, direction, navigation state)
