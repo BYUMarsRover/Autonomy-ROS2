@@ -73,16 +73,6 @@ def generate_launch_description():
                 namespace='autonomy',
                 output='screen',
                 parameters=[autonomy_params_file]
-            ),
-            Node(
-                package='autonomy',
-                executable='autonomy_gui',
-                name='autonomy_gui',
-                namespace='autonomy',
-                output='screen',
-                parameters=[
-                    {'location': LaunchConfiguration('location')}
-                ]
             )
         ])
 
