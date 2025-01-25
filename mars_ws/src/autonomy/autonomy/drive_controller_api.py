@@ -92,7 +92,7 @@ class DriveControllerAPI:
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
-        future.add_done_callback(self._update_path_manager_status)
+        # future.add_done_callback(self._update_path_manager_status)
 
     def _update_path_manager_status(self, future):
         if future.result().success:
@@ -105,7 +105,7 @@ class DriveControllerAPI:
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
-        future.add_done_callback(self._update_autopilot_manager_status)
+        # future.add_done_callback(self._update_autopilot_manager_status)
 
     def _update_autopilot_manager_status(self, future):
         if future.result().success:
@@ -118,7 +118,7 @@ class DriveControllerAPI:
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
-        future.add_done_callback(self._update_drive_manager_status)
+        # future.add_done_callback(self._update_drive_manager_status)
 
     def _update_drive_manager_status(self, future):
         if future.result().success:
@@ -131,7 +131,7 @@ class DriveControllerAPI:
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
-        future.add_done_callback(self._update_wheel_manager_status)
+        # future.add_done_callback(self._update_wheel_manager_status)
 
     def _update_wheel_manager_status(self, future):
         if future.result().success:
@@ -144,7 +144,7 @@ class DriveControllerAPI:
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
-        future.add_done_callback(self._update_aruco_autopilot_manager_status)
+        # future.add_done_callback(self._update_aruco_autopilot_manager_status)
 
     def _update_aruco_autopilot_manager_status(self, future):
         if future.result().success:

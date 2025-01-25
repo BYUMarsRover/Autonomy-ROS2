@@ -79,6 +79,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('aruco_spin_delay_time', 1.2)
         self.declare_parameter('wrong_aruco_backup_distance', 7.0)
         self.declare_parameter('hex_seach_angle_difference', 50.0)
+        self.declare_parameter('object_speed', 0.3)
         # self.declare_parameter('aruco_gate_spin_speed', 10.0)
         # self.declare_parameter('aruco_gate_approach_distance', 6.0)
 
