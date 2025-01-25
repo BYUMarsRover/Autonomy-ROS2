@@ -204,14 +204,14 @@ class AutonomyGUI(Node, QWidget):
         req.data = True
         future = self.enable_autonomy_client.call_async(req)
         self.error_label.setText('Enabling Autonomy...')
-        self.future_callback(future, 'Autonomy Enabled', 'Failed to Enable Autonomy')
+        future.add_done_callback(self.future_callback)
 
     def disable_autonomy(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_autonomy_client.call_async(req)
         self.error_label.setText('Disabling Autonomy...')
-        self.future_callback(future, 'Autonomy Disabled', 'Failed to Disable Autonomy')
+        future.add_done_callback(self.future_callback)
 
     def preview_waypoint(self):
         # Find the x and y to be sent to mapviz
@@ -252,7 +252,7 @@ class AutonomyGUI(Node, QWidget):
 
         future = self.plan_order_client.call_async(req)
         self.error_label.setText('Planning Order...')
-        self.future_callback(future, 'Order Planned Successfully', 'Failed to Plan Order')
+        future.add_done_callback(self.future_callback)
 
         # TODO: need a response from this future... but the ros node is spinning in another thread
         # response = future.result()
@@ -326,7 +326,7 @@ class AutonomyGUI(Node, QWidget):
         # Send the Waypoint
         self.error_label.setText('Sending Waypoint')
         future = self.send_waypoint_client.call_async(req)
-        future.add_done_callback(self.future_callback, 'Waypoint Sent', 'Failed to Send Waypoint')
+        future.add_done_callback(self.future_callback)
         return
 
     def abort_autonomy(self):
@@ -349,7 +349,7 @@ class AutonomyGUI(Node, QWidget):
         # Send the Abort Request
         future = self.abort_autonomy_client.call_async(req)
         self.error_label.setText('Attempting Abort')
-        future.add_done_callback(self.future_callback, 'Aborting Task', 'Failed to Abort Task')
+        future.add_done_callback(self.future_callback)
 
     # Gui Functions
     def update_leg_subselection(self):
@@ -383,15 +383,16 @@ class AutonomyGUI(Node, QWidget):
         return
     
     # Service calls generic callback
-    def future_callback(self, future, success_msg, error_msg):
-        try:
-            response = future.result()
-            if response.success:
-                self.error_label.setText(success_msg)
-            else:
-                self.error_label.setText(error_msg)
-        except Exception as e:
-            self.error_label.setText(f'Service call failed: {str(e)}')
+    def future_callback(future):
+        # try:
+        #     response = future.result()
+        #     if response.success:
+        #         self.error_label.setText(success_msg)
+        #     else:
+        #         self.error_label.setText(error_msg)
+        # except Exception as e:
+        #     self.error_label.setText(f'Service call failed: {str(e)}')
+        pass
 
 def get_coordinates(file_path, location):
     # Read the YAML file
