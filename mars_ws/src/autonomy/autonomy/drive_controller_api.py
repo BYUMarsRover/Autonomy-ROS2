@@ -92,11 +92,14 @@ class DriveControllerAPI:
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
+
         # future.add_done_callback(self._update_path_manager_status)
+        self._update_path_manager_status(True)
 
     def _update_path_manager_status(self, future):
-        if future.result().success:
-            self.path_manager_enabled = future.result().data
+        # if future.result().success:
+        #     self.path_manager_enabled = future.result().data
+        self.path_manager_enabled = future
 
     def _toggle_enable_autopilot_manager(self, enable: bool):
         client = self.node.create_client(SetBool, '/mobility/autopilot_manager/enabled')
@@ -105,11 +108,13 @@ class DriveControllerAPI:
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
+        self._update_autopilot_manager_status(True)
         # future.add_done_callback(self._update_autopilot_manager_status)
 
     def _update_autopilot_manager_status(self, future):
-        if future.result().success:
-            self.autopilot_manager_enabled = future.result().data
+        # if future.result().success:
+        #     self.autopilot_manager_enabled = future.result().data
+        self.autopilot_manager_enabled = future
 
     def _toggle_enable_drive_manager(self, enable: bool):
         client = self.node.create_client(SetBool, '/mobility/drive_manager/enabled')
@@ -118,11 +123,13 @@ class DriveControllerAPI:
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
+        self._update_drive_manager_status(True)
         # future.add_done_callback(self._update_drive_manager_status)
 
     def _update_drive_manager_status(self, future):
-        if future.result().success:
-            self.drive_manager_enabled = future.result().data
+        # if future.result().success:
+        #     self.drive_manager_enabled = future.result().data
+        self.drive_manager_enabled = future
 
     def _toggle_enable_wheel_manager(self, enable: bool):
         client = self.node.create_client(SetBool, '/mobility/wheel_manager/enabled')
@@ -131,11 +138,13 @@ class DriveControllerAPI:
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
+        self._update_wheel_manager_status(True)
         # future.add_done_callback(self._update_wheel_manager_status)
 
     def _update_wheel_manager_status(self, future):
-        if future.result().success:
-            self.wheel_manager_enabled = future.result().data
+        # if future.result().success:
+        #     self.wheel_manager_enabled = future.result().data
+        self.wheel_manager_enabled = True
 
     def _toggle_enable_aruco_autopilot_manager(self, enable: bool):
         client = self.node.create_client(SetBool, '/mobility/aruco_autopilot_manager/enabled')
@@ -145,10 +154,12 @@ class DriveControllerAPI:
         request.data = enable
         future = client.call_async(request)
         # future.add_done_callback(self._update_aruco_autopilot_manager_status)
+        self._update_aruco_autopilot_manager_status(True)
 
     def _update_aruco_autopilot_manager_status(self, future):
-        if future.result().success:
-            self.aruco_autopilot_manager_enabled = future.result().data
+        # if future.result().success:
+        #     self.aruco_autopilot_manager_enabled = future.result().data
+        self.aruco_autopilot_manager_enabled = future
 #-------------------------------------------------------------------------------
 #Debugging Tips
 # Service Availability:

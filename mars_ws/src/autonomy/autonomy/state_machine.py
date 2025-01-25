@@ -129,7 +129,6 @@ class AutonomyStateMachine(Node):
         self.curr_heading = 0
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)  
         self.tag_id = TagID.GPS_ONLY
-        self.i = 0
 
         # Data structure to hold all of the waypoints at a time
         self.waypoints: deque[AutonomyTaskInfo] = deque()
@@ -389,12 +388,7 @@ class AutonomyStateMachine(Node):
             return False
 
     def state_loop(self):
-        self.i += 1
-        disp = self.i % 10 == 0
-
-        #Display state every 10 iterations
-        if disp and self.enabled:
-            self.get_logger().info(f"State is: {self.state.value}")
+        self.get_logger().info(f"State is: {self.state.value}", throttle_duration_sec=10)
 
         if self.enabled:
             if self.state == State.MANUAL:
@@ -560,9 +554,6 @@ class AutonomyStateMachine(Node):
 
         self.nav_state_pub.publish(self.rover_nav_state)
         self.publish_status()
-
-        if self.i % 100 == 0:
-            self.i = 0
 
     def publish_status(self):
         msg = NavStatus()
