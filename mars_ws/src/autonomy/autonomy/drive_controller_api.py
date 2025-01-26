@@ -86,7 +86,7 @@ class DriveControllerAPI:
     # and if the service call is successful, the respective manager’s enabled status is updated.
     
     def _toggle_enable_path_manager(self, enable: bool):
-        client = self.path_manager_client
+        client = self.node.path_manager_client
         while not client.wait_for_service(timeout_sec=1.0):
             self.node.get_logger().info('Waiting for service /mobility/path_manager/enabled...')
         request = SetBool.Request()
