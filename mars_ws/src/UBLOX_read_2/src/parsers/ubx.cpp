@@ -10,11 +10,11 @@ using namespace std;
 
 #define DEG2RAD (3.14159 / 180.0)
 // #ifndef NDEBUG
-#define DBG(...) fprintf(stderr, __VA_ARGS__)
+// #define DBG(...) fprintf(stderr, __VA_ARGS__)
 // #define DBG(...) //fprintf(stderr, __VA_ARGS__)
 // #define DBG(...) fprintf(stderr, )
 // #else
-// #define DBG(...)
+#define DBG(...)
 // #endif
 
 namespace ublox
