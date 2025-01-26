@@ -41,6 +41,7 @@ class AutopilotManager(Node):
         self.curr_heading = 0
         self.des_heading = 0
 
+        self.avoid_hazard_dumb = False
         # Controller gains
         self.speed = self.declare_parameter("percent_speed", 0.5).value
 
