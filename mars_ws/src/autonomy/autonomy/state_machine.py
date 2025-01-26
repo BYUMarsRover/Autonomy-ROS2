@@ -63,6 +63,7 @@ class AutonomyStateMachine(Node):
         self.srv_switch_abort = self.create_service(AutonomyAbort, '/autonomy/abort_autonomy', self.abort)
         self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback) # TODO: Add this to the GUI buttons
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
+        self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
         self.max_retries = 5
         self.retry_count = 0
 
@@ -362,10 +363,8 @@ class AutonomyStateMachine(Node):
     def set_autopilot_speed(self, speed):
         print("Setting autopilot speed...")
 
-        # Create a service client for the speed factor service
-        self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
-        
         # Wait until the service is available
+        self.get_logger().error("Waiting for Service /mobility/speed_factor")
         if not self.srv_autopilot_speed.wait_for_service(timeout_sec=3.0): #Don't know what would be the appropriate time to wait here
             self.get_logger().error("Service /mobility/speed_factor not available!")
             return False
@@ -377,15 +376,10 @@ class AutonomyStateMachine(Node):
         print("Executing service...")
         
         # Send the request and wait for the response
+        self.get_logger().error("Sending request to autopilot_speed_request")
         future = self.srv_autopilot_speed.call_async(self.autopilot_speed_request)
-        rclpy.spin_until_future_complete(self, future)
 
-        if future.result() is not None:
-            print("Service executed!")
-            return future.result().success
-        else:
-            self.get_logger().error("Service call failed!")
-            return False
+
 
     def state_loop(self):
         self.get_logger().info(f"State is: {self.state.value}", throttle_duration_sec=10)
