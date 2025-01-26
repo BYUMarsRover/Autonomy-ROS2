@@ -32,10 +32,10 @@ class PathManager(Node):
         self.current_point = None
         self.desired_point = None
         self.manager_name = "Path Manager"
+        self.enable = False
 
         # ROS 2 Services
-        # TODO: no attribute 'enable'
-        # self.enable_server = self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable)
+        self.enable_server = self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable_callback)
         self.switch_hazard_avoidance = self.create_service(SetBool, '/mobility/hazard_avoidance/enabled', self.enable_hazard_avoidance)
 
         # ROS 2 Publishers
@@ -138,6 +138,14 @@ class PathManager(Node):
             self.autopilot_cmd.course_angle = self.chi_rad
 
         self.publish_debug("[update_autopilot_cmd] EXIT")
+
+    def enable_callback(self, request: SetBool.Request, response: SetBool.Response):
+        self.enable = request.data
+
+        response.success = True
+        response.message = f'Path Manager is now {"ON" if self.enable else "OFF"}'
+        return response
+
 
     def enable_hazard_avoidance(self, request: SetBool.Request, response: SetBool.Response):
         self.avoid_hazards = request.data

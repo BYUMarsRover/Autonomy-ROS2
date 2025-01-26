@@ -64,6 +64,12 @@ class AutonomyStateMachine(Node):
         self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback) # TODO: Add this to the GUI buttons
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
         self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
+        self.path_manager_client = self.create_client(SetBool, '/mobility/path_manager/enabled')
+        self.autopilot_manager_client = self.create_client(SetBool, '/mobility/autopilot_manager/enabled')
+        self.drive_manager_client = self.create_client(SetBool, '/mobility/drive_manager/enabled')
+        self.wheel_manager_client = self.create_client(SetBool, '/mobility/wheel_manager/enabled')
+        self.aruco_manager_client = self.create_client(SetBool, '/mobility/aruco_autopilot_manager/enabled')
+
         self.max_retries = 5
         self.retry_count = 0
 

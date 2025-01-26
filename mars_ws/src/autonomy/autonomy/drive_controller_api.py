@@ -86,7 +86,7 @@ class DriveControllerAPI:
     # and if the service call is successful, the respective manager’s enabled status is updated.
     
     def _toggle_enable_path_manager(self, enable: bool):
-        client = self.node.create_client(SetBool, '/mobility/path_manager/enabled')
+        client = self.path_manager_client
         while not client.wait_for_service(timeout_sec=1.0):
             self.node.get_logger().info('Waiting for service /mobility/path_manager/enabled...')
         request = SetBool.Request()
@@ -102,7 +102,7 @@ class DriveControllerAPI:
         self.path_manager_enabled = future
 
     def _toggle_enable_autopilot_manager(self, enable: bool):
-        client = self.node.create_client(SetBool, '/mobility/autopilot_manager/enabled')
+        client = self.node.autopilot_manager_client
         while not client.wait_for_service(timeout_sec=1.0):
             self.node.get_logger().info('Waiting for service /mobility/autopilot_manager/enabled...')
         request = SetBool.Request()
@@ -117,7 +117,7 @@ class DriveControllerAPI:
         self.autopilot_manager_enabled = future
 
     def _toggle_enable_drive_manager(self, enable: bool):
-        client = self.node.create_client(SetBool, '/mobility/drive_manager/enabled')
+        client = self.node.drive_manager_client
         while not client.wait_for_service(timeout_sec=1.0):
             self.node.get_logger().info('Waiting for service /mobility/drive_manager/enabled...')
         request = SetBool.Request()
@@ -132,7 +132,7 @@ class DriveControllerAPI:
         self.drive_manager_enabled = future
 
     def _toggle_enable_wheel_manager(self, enable: bool):
-        client = self.node.create_client(SetBool, '/mobility/wheel_manager/enabled')
+        client = self.node.wheel_manager_client
         while not client.wait_for_service(timeout_sec=1.0):
             self.node.get_logger().info('Waiting for service /mobility/wheel_manager/enabled...')
         request = SetBool.Request()
@@ -147,7 +147,7 @@ class DriveControllerAPI:
         self.wheel_manager_enabled = True
 
     def _toggle_enable_aruco_autopilot_manager(self, enable: bool):
-        client = self.node.create_client(SetBool, '/mobility/aruco_autopilot_manager/enabled')
+        client = self.node.aruco_manager_client
         while not client.wait_for_service(timeout_sec=1.0):
             self.node.get_logger().info('Waiting for service /mobility/aruco_autopilot_manager/enabled...')
         request = SetBool.Request()
