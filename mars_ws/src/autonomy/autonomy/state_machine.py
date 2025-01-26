@@ -224,7 +224,7 @@ class AutonomyStateMachine(Node):
         request = SetBool.Request()
         request.data = data
         future = self.object_detect_client.call_async(request)
-        future.add_done_callback(self.handle_response)
+        # future.add_done_callback(self.handle_response)
 
     def handle_response(self, future):
         try:
