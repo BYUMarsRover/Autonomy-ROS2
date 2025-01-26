@@ -91,7 +91,7 @@ class AutonomyStateMachine(Node):
         # self.declare_parameter('aruco_gate_approach_distance', 6.0)
 
         #Get Parameters
-        self.distance_tolerance = self.get_parameter('distance_tolerance').get_parameter_value().double_value
+        self.dist_tolerance = self.get_parameter('distance_tolerance').get_parameter_value().double_value
         self.abort_dist_tolerance = self.get_parameter('abort_distance_tolerance').get_parameter_value().double_value
         self.aruco_dist_tolerance = self.get_parameter('aruco_distance_tolerance').get_parameter_value().double_value
         self.hex_search_radius = self.get_parameter('hex_search_radius').get_parameter_value().double_value
