@@ -406,8 +406,11 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.START_POINT_NAVIGATION:
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
+                self.get_logger().info("Starting commands")
                 self.set_autopilot_speed(self.navigate_speed)
+                self.get_logger().info("Set speed command")
                 self.drive_controller.issue_path_cmd(self.target_latitude, self.target_longitude)
+                self.get_logger().info("Sent Path command")
                 self.state = State.POINT_NAVIGATION
 
             elif self.state == State.POINT_NAVIGATION:
