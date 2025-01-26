@@ -33,6 +33,7 @@ class PathManager(Node):
         self.desired_point = None
         self.manager_name = "Path Manager"
         self.enable = False
+        self.autopilot_cmd = MobilityAutopilotCommand()
 
         # ROS 2 Services
         self.enable_server = self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable_callback)
@@ -41,6 +42,9 @@ class PathManager(Node):
         # ROS 2 Publishers
         self.autopilot_cmds_pub = self.create_publisher(MobilityAutopilotCommand, '/mobility/autopilot_cmds', 10)
         self.debug_pub = self.create_publisher(String, '/mobility/PathManagerDebug', 10)
+
+        timer_period = 0.1
+        self.pub_timer = self.create_timer(timer_period, self.publish_autopilot_cmd)
 
         # self.publish_debug("[__init__] ENTER")
 
@@ -159,6 +163,15 @@ class PathManager(Node):
     def potential_fields(self):
         # Placeholder for potential fields logic
         pass
+
+    def publish_autopilot_cmd(self):
+        # print('in publish_autopilot_cmd, enabled? == {}, autopilot_cmd? == {}'.format(self.enabled, self.autopilot_cmd))
+        if not self.enable:
+            blank_cmd = MobilityAutopilotCommand()
+            self.autopilot_cmds_pub.publish(blank_cmd)
+
+        if self.enable and self.autopilot_cmd != None:
+            self.autopilot_cmds_pub.publish(self.autopilot_cmd)
 
 
 def main(args=None):
