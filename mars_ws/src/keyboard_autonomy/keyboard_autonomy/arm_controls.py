@@ -235,7 +235,7 @@ class ArmControlsNode(Node):
 
         if self.arm_set:
             # TODO: Press the button
-
+            
             self.get_logger().info(f"[SUCCESS] Key {self.key} has been pressed")
             self.key = None  # IMPORTANT! This stops the controller
 
@@ -244,7 +244,7 @@ class ArmControlsNode(Node):
         self.key = request.key
         while self.key is not None:
             continue
-
+        self.get_logger().info(f"Finshed to press {request.key}")
         response.success = True
         return response
 
