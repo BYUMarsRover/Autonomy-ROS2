@@ -42,7 +42,6 @@ class GStreamer2ROS2Node(Node):
             self.cap = cv2.VideoCapture(self.gstreamer_pipeline, cv2.CAP_GSTREAMER)
         except:
             self.get_logger().info("Failed to create GStreamer pipeline2!")
-            self.destroy()
             raise BrokenPipeError
         
         if not self.cap:
@@ -79,6 +78,8 @@ def main(args=None):
         node = GStreamer2ROS2Node()
         rclpy.spin(node)
     except BrokenPipeError:
+        rclpy.shutdown()
+    except AttributeError:
         rclpy.shutdown()
     except KeyboardInterrupt:
         node.destroy()

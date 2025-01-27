@@ -113,7 +113,7 @@ class ArmControlsNode(Node):
         Publisher to the "/elevator" topic with the message type Elevator.
         '''
 
-        self.srv = self.create_service(KeyPress, '/key_press', self.key_press_callback, 10)
+        self.srv = self.create_service(KeyPress, '/key_press', self.key_press_callback)
         '''
         Service that attempts to press a certain key based on the KeyPress request.
         '''
@@ -241,6 +241,8 @@ class ArmControlsNode(Node):
             self.key = None  # IMPORTANT! This stops the controller
 
     def key_press_callback(self, request, response):
+        self.get_logger().info(f"Attempting to press key {request.key}")
+        self.key = request.key
         while self.key is not None:
             continue
 
