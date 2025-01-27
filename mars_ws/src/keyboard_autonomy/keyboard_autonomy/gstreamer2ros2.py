@@ -19,7 +19,12 @@ class GStreamer2ROS2Node(Node):
 
         super().__init__('gstreamer2ros2')
         self.get_logger().info("GStreamer2ROS2Node started")
-        self.gstreamer_pipeline = 'udpsrc address=192.168.1.111 port=5010 caps="application/x-rtp,media=video,encoding-name=H265,payload=96" ! rtph265depay ! h265parse ! avdec_h265 ! videoconvert ! appsink'
+        self.gstreamer_pipeline = "udpsrc port=5010 " \
+                   "! application/x-rtp,encoding-name=H265,payload=96 " \
+                   "! rtpstorage ! rtpjitterbuffer ! rtpulpfecdec " \
+                   "! rtph265depay ! h265parse ! queue ! avdec_h265 " \
+                   "! videobalance contrast=0.8 brightness=-0.25 " \
+                   "! appsink"
         self.ros_topic = 'image_raw'
         self.frame_rate = 10.0
 
