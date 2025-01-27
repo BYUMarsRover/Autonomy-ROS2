@@ -31,7 +31,7 @@ class Feat2HomographyNode(Node):
         '''
         super().__init__('feat2homography')
 
-        self.keyboard_img = None
+        self.keyboard_img = cv2.imread("/home/marsrover/mars_ws/src/keyboard_autonomy/images/m_key_crop_light.png")
         self.key_picture_file = 'keyboard.jpg'
         self.subscription = self.create_subscription(Image, '/image_raw', self.listener_callback, 10)
         '''
@@ -62,36 +62,36 @@ class Feat2HomographyNode(Node):
 
         # TODO: change these to the actual images we get of the clicker pressing each key
         match request.key:
-            case 'a': self.key_picture_file = 'a_file.jpg',
-            case 'b': self.key_picture_file = 'a_file.jpg',
-            case 'c': self.key_picture_file = 'a_file.jpg',
-            case 'd': self.key_picture_file = 'a_file.jpg',
-            case 'e': self.key_picture_file = 'a_file.jpg',
-            case 'f': self.key_picture_file = 'a_file.jpg',
-            case 'g': self.key_picture_file = 'a_file.jpg',
-            case 'h': self.key_picture_file = 'a_file.jpg',
-            case 'i': self.key_picture_file = 'a_file.jpg',
-            case 'j': self.key_picture_file = 'a_file.jpg',
-            case 'k': self.key_picture_file = 'a_file.jpg',
-            case 'l': self.key_picture_file = 'a_file.jpg',
-            case 'm': self.key_picture_file = 'a_file.jpg',
-            case 'n': self.key_picture_file = 'a_file.jpg',
-            case 'o': self.key_picture_file = 'a_file.jpg',
-            case 'p': self.key_picture_file = 'a_file.jpg',
-            case 'q': self.key_picture_file = 'a_file.jpg',
-            case 'r': self.key_picture_file = 'a_file.jpg',
-            case 's': self.key_picture_file = 'a_file.jpg',
-            case 't': self.key_picture_file = 'a_file.jpg',
-            case 'u': self.key_picture_file = 'a_file.jpg',
-            case 'v': self.key_picture_file = 'a_file.jpg',
-            case 'w': self.key_picture_file = 'a_file.jpg',
-            case 'x': self.key_picture_file = 'a_file.jpg',
-            case 'y': self.key_picture_file = 'a_file.jpg',
-            case 'z': self.key_picture_file = 'a_file.jpg',
-            case 'enter': self.key_picture_file = 'a_file.jpg',
-            case 'caps_lock': self.key_picture_file = 'a_file.jpg',
-            case 'delete_key': self.key_picture_file = 'a_file.jpg',
-            case 'space': self.key_picture_file = 'a_file.jpg',
+            case 'a': self.key_picture_file = 'a_key.png',
+            case 'b': self.key_picture_file = 'a_key.png',
+            case 'c': self.key_picture_file = 'a_key.png',
+            case 'd': self.key_picture_file = 'a_key.png',
+            case 'e': self.key_picture_file = 'a_key.png',
+            case 'f': self.key_picture_file = 'a_key.png',
+            case 'g': self.key_picture_file = 'g_key.png',
+            case 'h': self.key_picture_file = 'a_key.png',
+            case 'i': self.key_picture_file = 'a_key.png',
+            case 'j': self.key_picture_file = 'a_key.png',
+            case 'k': self.key_picture_file = 'a_key.png',
+            case 'l': self.key_picture_file = 'a_key.png',
+            case 'm': self.key_picture_file = 'm_key.png',
+            case 'n': self.key_picture_file = 'n_key.png',
+            case 'o': self.key_picture_file = 'o_key.png',
+            case 'p': self.key_picture_file = 'a_key.png',
+            case 'q': self.key_picture_file = 'a_key.png',
+            case 'r': self.key_picture_file = 'a_key.png',
+            case 's': self.key_picture_file = 'a_key.png',
+            case 't': self.key_picture_file = 'a_key.png',
+            case 'u': self.key_picture_file = 'a_key.png',
+            case 'v': self.key_picture_file = 'v_key.png',
+            case 'w': self.key_picture_file = 'a_key.png',
+            case 'x': self.key_picture_file = 'a_key.png',
+            case 'y': self.key_picture_file = 'y_key.png',
+            case 'z': self.key_picture_file = 'a_key.png',
+            case 'enter': self.key_picture_file = 'a_key.png',
+            case 'caps_lock': self.key_picture_file = 'a_key.png',
+            case 'delete_key': self.key_picture_file = 'a_key.png',
+            case 'space': self.key_picture_file = 'a_key.png',
 
         full_file_name = self.image_prefix + self.key_picture_file
         self.keyboard_img = cv2.imread(full_file_name)
