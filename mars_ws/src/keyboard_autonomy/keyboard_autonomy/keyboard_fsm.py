@@ -43,6 +43,7 @@ class KeyboardFSMNode(Node):
         '''
         Sends a request to the KeyPress service to press the desired key.
         '''
+        self.get_logger().info(f"Attempting to press key {key}")
         self.req.key = ord(key)
         return self.cli.call_async(self.req)
 
@@ -54,6 +55,7 @@ def send_key_press(node, key):
 
     # Keep requesting the service until it is successful
     # Could be replaced with an action and is kind of hacky -- but hey, it works
+    
     completed = False
     while not completed:
 
@@ -81,6 +83,7 @@ def main(args=None):
     print(keys)
     
     for key in keys:
+        
         send_key_press(node, key)
 
     rclpy.shutdown()

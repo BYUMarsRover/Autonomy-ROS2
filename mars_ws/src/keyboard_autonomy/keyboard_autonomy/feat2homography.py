@@ -60,7 +60,6 @@ class Feat2HomographyNode(Node):
         :param response: The KeyPress response.
         '''
 
-        self.get_logger().info('Received key locations')
         # TODO: change these to the actual images we get of the clicker pressing each key
         match request.key:
             case 'a': self.key_picture_file = 'a_file.jpg',
@@ -97,8 +96,6 @@ class Feat2HomographyNode(Node):
         full_file_name = self.image_prefix + self.key_picture_file
         self.keyboard_img = cv2.imread(full_file_name)
 
-        # Run the controller on receiving new key locations
-        self.get_logger().info(f"Attempting to press key {request.key}")
         response.success = False
         return response
 
