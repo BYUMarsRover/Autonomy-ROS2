@@ -161,7 +161,6 @@ class ArmControlsNode(Node):
         self.homography_matrix = homography.homography
         self.control()
 
-
     def control(self):
         # Arm control
         error = np.linalg.norm(self.homography_matrix - np.eye(3), "fro")
@@ -248,6 +247,7 @@ class ArmControlsNode(Node):
 
         response.success = True
         return response
+
 
 def main(args=None):
     rclpy.init(args=args)
