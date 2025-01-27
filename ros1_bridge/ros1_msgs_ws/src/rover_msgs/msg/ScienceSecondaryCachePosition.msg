@@ -1,0 +1,1 @@
+int8 secondary_cache_position
