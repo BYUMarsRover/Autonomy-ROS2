@@ -182,7 +182,6 @@ class AutonomyGUI(Node, QWidget):
         return
 
     def rover_nav_status_callback(self, msg): #State machine status (state, auto_enable)
-        self.get_logger().info(f'Nav Status: {msg}')
         self.rover_nav_status = msg
         if self.state_machine_state != None and self.state_machine_state != msg.state:
             self.prev_state_machine_state = self.state_machine_state
