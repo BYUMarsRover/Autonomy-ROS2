@@ -84,14 +84,7 @@
                </property>
               </widget>
              </item>
-              <item>
-              <widget class="QPushButton" name="keyboardLaunchSingleButton">
-               <property name="text">
-                <string>Start Keyboard</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
+            </layout>           
            </item>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -114,6 +107,38 @@
                  </property>
                 </widget>
                </item>
+              </layout>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_7">
+             <item>
+              <widget class="QLabel" name="label_5">
+               <property name="text">
+                <string>Autonomous Keyboard Text</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_2">
+               <item>
+                <widget class="QLineEdit" name="autonomousKeyboardLineEdit"/>
+               </item>
+               <item>
+                <widget class="QPushButton" name="autonomousKeyboardButton">
+                 <property name="text">
+                  <string>Type!</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                    <widget class="QPushButton" name="cancelAutonomousKeyboardButton">
+                        <property name="text">
+                        <string>Cancel</string>
+                        </property>
+                    </widget>
+                </item>
               </layout>
              </item>
             </layout>

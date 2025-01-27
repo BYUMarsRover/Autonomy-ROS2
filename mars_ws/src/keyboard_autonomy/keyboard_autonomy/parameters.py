@@ -6,7 +6,7 @@ Contains the parameters for the rover arm. The point of this file is to have
 
 from roboticstoolbox import RevoluteDH, PrismaticDH, DHRobot
 from numpy import pi, array, diag
-from utils import Controllable
+from keyboard_autonomy.utils import Controllable
 
 #################
 # MISCELLANEOUS #

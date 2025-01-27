@@ -2,11 +2,12 @@ import rclpy
 from rclpy.node import Node
 from control_msgs.msg import JointJog
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Bool
 from roboticstoolbox import DHRobot
 from rover_msgs.msg import KeyLocations, Elevator, KeyboardHomography
 from rover_msgs.srv import KeyPress
 import numpy as np
-import parameters as p
+from keyboard_autonomy import parameters as p
 
 L = np.array([[0.31], [0.34], [0.08]])  # arm lengths (meters), upper segment to lower segment
 
@@ -82,11 +83,11 @@ class ArmControlsNode(Node):
             'space': None
         }
 
-        self.loc_subscription = self.create_subscription(KeyLocations, '/key_locations', self.loc_listener_callback, 10)
-        '''
-        Subscription to the "/key_locations" topic with the message type KeyLocations.
-        '''
-        self.loc_subscription  # Prevent unused variable warning
+        # self.loc_subscription = self.create_subscription(KeyLocations, '/key_locations', self.loc_listener_callback, 10)
+        # '''
+        # Subscription to the "/key_locations" topic with the message type KeyLocations.
+        # '''
+        # self.loc_subscription  # Prevent unused variable warning
 
         self.arm_pos_subscription = self.create_subscription(JointState, "/arm_state", self.update_pos, 10)
         '''
@@ -101,6 +102,7 @@ class ArmControlsNode(Node):
         '''
         Subscription to the "/keyboard_homography" topic with the message type KeyboardHomography
         '''
+
         self.arm_publisher = self.create_publisher(JointJog, '/motor_commands', 10)
         '''
         Publisher to the "/motor_commands" topic with the message type JointJog.
@@ -158,6 +160,7 @@ class ArmControlsNode(Node):
         """
         self.homography_matrix = homography.homography
         self.control()
+
 
     def control(self):
         # Arm control
@@ -247,8 +250,10 @@ class ArmControlsNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = ArmControlsNode()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == '__main__':

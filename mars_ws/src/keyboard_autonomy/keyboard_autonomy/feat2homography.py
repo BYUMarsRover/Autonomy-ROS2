@@ -5,7 +5,7 @@ from cv_bridge import CvBridge
 import numpy as np
 import cv2
 from rover_msgs.msg import KeyboardHomography
-from rover_msgs.srv._key_press import KeyPress
+from rover_msgs.srv import KeyPress
 
 MIN_MATCH_COUNT = 10
 
@@ -32,11 +32,12 @@ class Feat2HomographyNode(Node):
         super().__init__('feat2homography')
 
         self.keyboard_img = None
+        self.key_picture_file = 'keyboard.jpg'
         self.subscription = self.create_subscription(Image, '/image_raw', self.listener_callback, 10)
         '''
         Subscription to the "/image_raw" topic with the message type sensor_msgs/msg/Image.
         '''
-        self.srv = self.create_service(KeyPress, '/key_press', self.key_press_callback, 10)
+        self.srv = self.create_service(KeyPress, '/key_press', self.key_press_callback)
         '''
         Service that attempts to press a certain key based on the KeyPress request.
         '''
@@ -62,44 +63,46 @@ class Feat2HomographyNode(Node):
         self.get_logger().info('Received key locations')
         # TODO: change these to the actual images we get of the clicker pressing each key
         match request.key:
-            case 'a': key_picture_file = 'a_file.jpg',
-            case 'b': key_picture_file = 'a_file.jpg',
-            case 'c': key_picture_file = 'a_file.jpg',
-            case 'd': key_picture_file = 'a_file.jpg',
-            case 'e': key_picture_file = 'a_file.jpg',
-            case 'f': key_picture_file = 'a_file.jpg',
-            case 'g': key_picture_file = 'a_file.jpg',
-            case 'h': key_picture_file = 'a_file.jpg',
-            case 'i': key_picture_file = 'a_file.jpg',
-            case 'j': key_picture_file = 'a_file.jpg',
-            case 'k': key_picture_file = 'a_file.jpg',
-            case 'l': key_picture_file = 'a_file.jpg',
-            case 'm': key_picture_file = 'a_file.jpg',
-            case 'n': key_picture_file = 'a_file.jpg',
-            case 'o': key_picture_file = 'a_file.jpg',
-            case 'p': key_picture_file = 'a_file.jpg',
-            case 'q': key_picture_file = 'a_file.jpg',
-            case 'r': key_picture_file = 'a_file.jpg',
-            case 's': key_picture_file = 'a_file.jpg',
-            case 't': key_picture_file = 'a_file.jpg',
-            case 'u': key_picture_file = 'a_file.jpg',
-            case 'v': key_picture_file = 'a_file.jpg',
-            case 'w': key_picture_file = 'a_file.jpg',
-            case 'x': key_picture_file = 'a_file.jpg',
-            case 'y': key_picture_file = 'a_file.jpg',
-            case 'z': key_picture_file = 'a_file.jpg',
-            case 'enter': key_picture_file = 'a_file.jpg',
-            case 'caps_lock': key_picture_file = 'a_file.jpg',
-            case 'delete_key': key_picture_file = 'a_file.jpg',
-            case 'space': key_picture_file = 'a_file.jpg',
+            case 'a': self.key_picture_file = 'a_file.jpg',
+            case 'b': self.key_picture_file = 'a_file.jpg',
+            case 'c': self.key_picture_file = 'a_file.jpg',
+            case 'd': self.key_picture_file = 'a_file.jpg',
+            case 'e': self.key_picture_file = 'a_file.jpg',
+            case 'f': self.key_picture_file = 'a_file.jpg',
+            case 'g': self.key_picture_file = 'a_file.jpg',
+            case 'h': self.key_picture_file = 'a_file.jpg',
+            case 'i': self.key_picture_file = 'a_file.jpg',
+            case 'j': self.key_picture_file = 'a_file.jpg',
+            case 'k': self.key_picture_file = 'a_file.jpg',
+            case 'l': self.key_picture_file = 'a_file.jpg',
+            case 'm': self.key_picture_file = 'a_file.jpg',
+            case 'n': self.key_picture_file = 'a_file.jpg',
+            case 'o': self.key_picture_file = 'a_file.jpg',
+            case 'p': self.key_picture_file = 'a_file.jpg',
+            case 'q': self.key_picture_file = 'a_file.jpg',
+            case 'r': self.key_picture_file = 'a_file.jpg',
+            case 's': self.key_picture_file = 'a_file.jpg',
+            case 't': self.key_picture_file = 'a_file.jpg',
+            case 'u': self.key_picture_file = 'a_file.jpg',
+            case 'v': self.key_picture_file = 'a_file.jpg',
+            case 'w': self.key_picture_file = 'a_file.jpg',
+            case 'x': self.key_picture_file = 'a_file.jpg',
+            case 'y': self.key_picture_file = 'a_file.jpg',
+            case 'z': self.key_picture_file = 'a_file.jpg',
+            case 'enter': self.key_picture_file = 'a_file.jpg',
+            case 'caps_lock': self.key_picture_file = 'a_file.jpg',
+            case 'delete_key': self.key_picture_file = 'a_file.jpg',
+            case 'space': self.key_picture_file = 'a_file.jpg',
 
-        full_file_name = self.image_prefix + key_picture_file
+        full_file_name = self.image_prefix + self.key_picture_file
         self.keyboard_img = cv2.imread(full_file_name)
 
         # Run the controller on receiving new key locations
-        if self.key is not None:
-            self.control()
-        self.get_logger().info(f"Attempting to press key {self.key}")
+        if request.key is not None:
+            # self.control()
+            pass
+        self.get_logger().info(f"Attempting to press key {request.key}")
+        response.success = True
         return response
 
     def listener_callback(self, msg):
@@ -172,8 +175,10 @@ class Feat2HomographyNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = Feat2HomographyNode()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == '__main__':

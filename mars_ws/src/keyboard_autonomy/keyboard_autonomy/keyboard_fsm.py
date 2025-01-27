@@ -4,6 +4,7 @@ import time
 import rclpy
 from rclpy.node import Node
 from rover_msgs.srv import KeyPress
+from std_msgs.msg import Bool
 
 
 class KeyboardFSMNode(Node):
@@ -36,6 +37,7 @@ class KeyboardFSMNode(Node):
         '''
         Request object that stores the desired key value.
         '''
+
 
     def send_request(self, key):
         '''
@@ -76,7 +78,8 @@ def main(args=None):
     # Use this format when calling the launch file:
     # 'ros2 launch keyboard_autonomy keyboard_autonomy_launch.py word:=test'
     keys = list(sys.argv[1])
-
+    print(keys)
+    
     for key in keys:
         send_key_press(node, key)
 

@@ -1,6 +1,0 @@
-# DEPRECATED: Used in master_gui.py
-Camera camera
----
-bool camera_status
-string message
-CameraSetValues camera_values

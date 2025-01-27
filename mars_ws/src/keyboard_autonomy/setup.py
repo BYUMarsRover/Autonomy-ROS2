@@ -13,7 +13,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'), glob('launch/*.py')),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'roboticstoolbox'],
     zip_safe=True,
     maintainer='marsrover',
     maintainer_email='marsrover@todo.todo',
@@ -26,6 +26,7 @@ setup(
             'homography2keys = keyboard_autonomy.homography2keys:main',
             'arm_controls = keyboard_autonomy.arm_controls:main',
             'keyboard_fsm = keyboard_autonomy.keyboard_fsm:main',
+            'gstreamer2ros2 = keyboard_autonomy.gstreamer2ros2:main',
         ],
     },
 )

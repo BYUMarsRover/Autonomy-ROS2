@@ -68,6 +68,9 @@ RUN pip3 install pydantic==1.10.9
 RUN pip3 install odpslides
 RUN pip3 install pyserial
 
+# Install roboticstoolbox
+RUN pip3 install roboticstoolbox-python
+
 USER root
 RUN apt update && apt install -y \
     libboost-dev \
@@ -89,7 +92,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     ros-humble-mapviz-plugins \
     ros-humble-tile-map \
     ros-humble-multires-image \
-    ros-humble-rosapi
+    ros-humble-rosapi; \
+    fi
 USER marsrover
 
 # Colorized ROS 2 logging output
