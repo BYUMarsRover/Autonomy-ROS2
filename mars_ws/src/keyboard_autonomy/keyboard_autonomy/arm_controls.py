@@ -107,6 +107,11 @@ class ArmControlsNode(Node):
         '''
         Publisher to the "/motor_commands" topic with the message type JointJog.
         '''
+        self.arm_clicker = self.create_publisher(Bool, '/arm_clicker', 10)
+
+        '''
+        Publisher to the /arm_clicker topic with the message type Bool
+        '''
 
         self.elevator_publisher = self.create_publisher(Elevator, '/elevator', 10)
         '''
@@ -234,8 +239,9 @@ class ArmControlsNode(Node):
                 self.get_logger().info('Arm stability achieved')
 
         if self.arm_set:
-            # TODO: Press the button
-            
+            # pushes the button
+            self.arm_clicker.publish(True)
+
             self.get_logger().info(f"[SUCCESS] Key {self.key} has been pressed")
             self.key = None  # IMPORTANT! This stops the controller
 
