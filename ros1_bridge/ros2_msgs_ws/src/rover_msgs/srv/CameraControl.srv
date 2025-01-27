@@ -1,0 +1,10 @@
+Camera camera
+string site_name
+bool kill
+bool screenshot
+bool cleanup
+bool calibrate
+---
+bool error
+string message
+int32 intensity
