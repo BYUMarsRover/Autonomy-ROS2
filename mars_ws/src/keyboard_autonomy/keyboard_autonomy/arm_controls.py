@@ -238,7 +238,7 @@ class ArmControlsNode(Node):
             self.key = None  # IMPORTANT! This stops the controller
 
     def key_press_callback(self, request, response):
-        while (self.key is not None):
+        while self.key is not None:
             continue
 
         response.success = True
