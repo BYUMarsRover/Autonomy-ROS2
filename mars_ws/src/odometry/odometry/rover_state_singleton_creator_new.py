@@ -83,9 +83,10 @@ class RoverStateSingletonCreator(Node):
 
         # TODO: Convert from ZED frame to Map Frame
 
-        self.map_roll = euler[0] * 180/math.pi
-        self.map_pitch = euler[1] * 180/math.pi
-        self.map_yaw = euler[2] * 180/math.pi 
+        # self.map_roll = euler[0] * 180/math.pi
+        # self.map_pitch = euler[1] * 180/math.pi
+
+        self.map_yaw = - euler[1] * 180/math.pi 
 
         self.publish_message()
 
