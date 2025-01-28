@@ -4,6 +4,7 @@ from rclpy.node import Node
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from std_srvs.srv import SetBool
+from std_msgs.msg import String
 from autonomy.drive_controller_api import DriveControllerAPI
 from autonomy.GPSTools import GPSTools, GPSCoordinate
 from enum import Enum
@@ -57,11 +58,12 @@ class AutonomyStateMachine(Node):
         self.aruco_pose_pub = self.create_publisher(FiducialData, "/autonomy/aruco_pose", 10)
         self.nav_state_pub = self.create_publisher(RoverState, "/rover_status", 10)
         self.status_pub = self.create_publisher(NavStatus, '/nav_status', 10)
+        self.debug_pub = self.create_publisher(String, '/state_machine_debug', 10)
 
         # Services
         self.srv_switch_auto = self.create_service(SetBool, '/autonomy/enable_autonomy', self.enable)
         self.srv_switch_abort = self.create_service(AutonomyAbort, '/autonomy/abort_autonomy', self.abort)
-        self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback) # TODO: Add this to the GUI buttons
+        self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback)
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
         self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
         self.path_manager_client = self.create_client(SetBool, '/mobility/path_manager/enabled')
@@ -90,7 +92,7 @@ class AutonomyStateMachine(Node):
         # self.declare_parameter('aruco_gate_spin_speed', 10.0)
         # self.declare_parameter('aruco_gate_approach_distance', 6.0)
 
-        #Get Parameters
+        # Get Parameters
         self.dist_tolerance = self.get_parameter('distance_tolerance').get_parameter_value().double_value
         self.abort_dist_tolerance = self.get_parameter('abort_distance_tolerance').get_parameter_value().double_value
         self.aruco_dist_tolerance = self.get_parameter('aruco_distance_tolerance').get_parameter_value().double_value
@@ -140,8 +142,6 @@ class AutonomyStateMachine(Node):
         # Data structure to hold all of the waypoints at a time
         self.waypoints: deque[AutonomyTaskInfo] = deque()
         self.last_waypoint: AutonomyTaskInfo = None
-        self.is_continue_to_next_waypoint = False
-        self.is_start_timer = True
 
     def set_task_callback(self, task_info: AutonomyTaskInfo):
         self.get_logger().info('in set_task_callback')
@@ -166,9 +166,9 @@ class AutonomyStateMachine(Node):
     def set_all_tasks_callback(self, request: AutonomyWaypoint.Request, response: AutonomyWaypoint.Response) -> AutonomyWaypoint.Response:
         self.get_logger().info('in set_all_tasks_callback')
 
-        tasks = request.task_list  
+        tasks = request.task_list
         for task in tasks:
-            self.waypoints.append(task)  # Append new waypoints to the deque
+            self.waypoints.append(task) # Append new waypoints to the deque
 
         self.get_logger().info(f'Waypoints: {self.waypoints}')
 
@@ -203,14 +203,6 @@ class AutonomyStateMachine(Node):
         self.curr_elevation = msg.gps.altitude
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)
         self.curr_heading = np.deg2rad(msg.map_yaw)
-
-    def wait_timer_callback(self):
-        self.is_continue_to_next_waypoint = True
-
-    def start_timer(self):
-        if self.is_start_timer:
-            self.create_timer(10.0, self.wait_timer_callback)
-            self.is_start_timer = False
 
     def toggle_object_detection(self, data):
         if self.object_detect_client.service_is_ready():  # Check if service is available
@@ -370,9 +362,9 @@ class AutonomyStateMachine(Node):
         print("Setting autopilot speed...")
 
         # Wait until the service is available
-        self.get_logger().error("Waiting for Service /mobility/speed_factor")
+        self.get_logger().info("Waiting for Service /mobility/speed_factor")
         if not self.srv_autopilot_speed.wait_for_service(timeout_sec=3.0): #Don't know what would be the appropriate time to wait here
-            self.get_logger().error("Service /mobility/speed_factor not available!")
+            self.get_logger().info("Service /mobility/speed_factor not available!")
             return False
         print("Service is live")
 
@@ -382,7 +374,7 @@ class AutonomyStateMachine(Node):
         print("Executing service...")
         
         # Send the request and wait for the response
-        self.get_logger().error("Sending request to autopilot_speed_request")
+        self.get_logger().info("Sending request to autopilot_speed_request")
         future = self.srv_autopilot_speed.call_async(self.autopilot_speed_request)
 
 
@@ -512,23 +504,18 @@ class AutonomyStateMachine(Node):
                 self.correct_aruco_tag_found = False
                 self.correct_obj_found = False
 
-                #Pop off the completed task
+                # Pop off the completed task
                 if len(self.waypoints) > 0:
                     self.last_waypoint = self.waypoints.popleft()
+                    self.get_logger().info('Completed waypoint popped off')
 
-                # Check to see if there is another task available and continue the mission. Also wait 10 seconds to signify to the judges.
-                self.start_timer()
-                if len(self.waypoints) > 0 and self.is_continue_to_next_waypoint:
+                # Check if there is another waypoint to complete
+                # If there is: set it as the current task, wait for enable 
+                # and TODO: send a message to the GUI that it is ready for enable to go to the next task
+                if len(self.waypoints) > 0:
                     self.get_logger().info('Additional waypoints to complete!')
-                    self.set_current_task()
 
-                    #Begin the new waypoint
-                    self.get_logger().info('Beginning the new waypoint...')
-                    self.state = State.SEARCH_FOR_WRONG_TAG
-                    
-                    #Reset Flag variables
-                    self.is_continue_to_next_waypoint = False
-                    self.is_start_timer = True
+                self.state = State.MANUAL
 
             elif self.state == State.START_ABORT_STATE:
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE

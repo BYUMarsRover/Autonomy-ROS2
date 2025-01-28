@@ -23,17 +23,12 @@ from std_srvs.srv import SetBool
 from mobility.utils.wrap import wrap
 from mobility.controllers.pid_control import PIDControl
 
-#TODO: implement the manager class
-from mobility.utils.manager_interface import Manager
-
-
 class AutopilotManager(Node):
 
     def __init__(self):
         super().__init__('autopilot_manager')
 
-        #TODO: clean up this class usage since it was was the parent class in ROS1
-        mananger = Manager()
+        self.enabled = False
 
         # Data to be stored for controller
         self.rover_vel_cmd = MobilityVelocityCommands()
@@ -41,7 +36,6 @@ class AutopilotManager(Node):
         self.curr_heading = 0
         self.des_heading = 0
 
-        self.avoid_hazard_dumb = False
         # Controller gains
         self.speed = self.declare_parameter("percent_speed", 0.5).value
 
@@ -75,10 +69,8 @@ class AutopilotManager(Node):
         self.rover_vel_cmds_pub = self.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', 10)
 
         # ROS services
-        self.create_service(SetBool, '/mobility/autopilot_manager/enabled', mananger.enable)
+        self.create_service(SetBool, '/mobility/autopilot_manager/enabled', self.enable)
         self.create_service(SetFloat32, '/mobility/speed_factor', self.set_speed)
-        self.create_service(SetBool, '/mobility/hazard_avoidance/enabled', self.enable_hazard_avoidance)
-        self.create_service(SetBool, '/mobility/hazard_avoidance/dumb_enabled', self.enable_dumb_hazard_avoidance)
 
         # PID controllers
         self.linear_controller = PIDControl(self.speed * self.kp_linear, self.speed * self.ki_linear, self.speed * self.kd_linear,
@@ -86,23 +78,18 @@ class AutopilotManager(Node):
         self.angular_controller = PIDControl(self.speed * self.kp_angular, self.speed * self.ki_angular, self.speed * self.kd_angular,
                                              Ts=Ts_angular, limit=limit_angular)
 
-        self.get_logger().info("Autopilot Manager is started!")
-
         self.timer = self.create_timer(0.1, self.heading_decay)
 
-    def autopilot_cmds_callback(self, msg: MobilityAutopilotCommand):
-        self.distance = msg.distance_to_target
+        self.get_logger().info("Autopilot Manager initialized!")
 
-        if not self.avoid_hazard_dumb:
-            self.heading_plus = 0.0
+
+    def autopilot_cmds_callback(self, msg: MobilityAutopilotCommand):
+        
+        self.distance = msg.distance_to_target
 
         self.des_heading = wrap(msg.course_angle + self.heading_plus, 0)
         self.curr_heading = wrap(self.curr_heading, 0)
         course_error = wrap(self.des_heading - self.curr_heading, 0)
-
-        limit = 8 / 180 * np.pi
-        if abs(course_error) > limit and not self.avoid_hazards:
-            self.distance = 0
 
         lin_vel = self.linear_controller.update_with_error(self.distance)
         angular_vel = self.angular_controller.update_with_error(course_error)
@@ -114,19 +101,6 @@ class AutopilotManager(Node):
 
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
         self.curr_heading = np.deg2rad(msg.map_yaw)
-        self.publish_rover_vel_cmd()
-
-    def enable_hazard_avoidance(self, request: SetBool.Request, response: SetBool.Response):
-        self.avoid_hazards = request.data
-        response.success = True
-        response.message = f"Hazard Avoidance is now {'ON' if self.avoid_hazards else 'OFF'}"
-        return response
-
-    def enable_dumb_hazard_avoidance(self, request: SetBool.Request, response: SetBool.Response):
-        self.avoid_hazard_dumb = request.data
-        response.success = True
-        response.message = f"Hazard Avoidance is now {'ON' if self.avoid_hazards else 'OFF'}"
-        return response
 
     def obstacle_callback(self, msg: ZedObstacles):
         if len(msg.x_coord) == 0:
@@ -166,6 +140,12 @@ class AutopilotManager(Node):
     def publish_rover_vel_cmd(self):
         if self.rover_vel_cmd:
             self.rover_vel_cmds_pub.publish(self.rover_vel_cmd)
+
+    def enable(self, request, response):
+        self.enabled = request.data
+        response.success = True
+        response.message = f"Autopilot Manager: {'ENABLED' if self.enabled else 'DISABLED'}"
+        return response
 
 
 def main(args=None):

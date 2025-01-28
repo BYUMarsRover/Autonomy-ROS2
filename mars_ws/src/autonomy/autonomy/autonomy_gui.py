@@ -183,7 +183,7 @@ class AutonomyGUI(Node, QWidget):
 
     def rover_nav_status_callback(self, msg): #State machine status (state, auto_enable)
         self.rover_nav_status = msg
-        if self.state_machine_state == None:
+        if self.state_machine_state != None and self.state_machine_state != msg.state:
             self.prev_state_machine_state = self.state_machine_state
             self.PreviousStateDisplay.setText(self.prev_state_machine_state)
         self.state_machine_state = msg.state
@@ -203,14 +203,14 @@ class AutonomyGUI(Node, QWidget):
         req.data = True
         future = self.enable_autonomy_client.call_async(req)
         self.error_label.setText('Enabling Autonomy...')
-        future.add_done_callback(self.future_callback)
+        # future.add_done_callback(self.future_callback)
 
     def disable_autonomy(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_autonomy_client.call_async(req)
         self.error_label.setText('Disabling Autonomy...')
-        future.add_done_callback(self.future_callback)
+        # future.add_done_callback(self.future_callback)
 
     def preview_waypoint(self):
         # Find the x and y to be sent to mapviz
@@ -251,7 +251,7 @@ class AutonomyGUI(Node, QWidget):
 
         future = self.plan_order_client.call_async(req)
         self.error_label.setText('Planning Order...')
-        future.add_done_callback(self.future_callback)
+        # future.add_done_callback(self.future_callback)
 
         # TODO: need a response from this future... but the ros node is spinning in another thread
         # response = future.result()
@@ -325,7 +325,7 @@ class AutonomyGUI(Node, QWidget):
         # Send the Waypoint
         self.error_label.setText('Sending Waypoint')
         future = self.send_waypoint_client.call_async(req)
-        future.add_done_callback(self.future_callback)
+        # future.add_done_callback(self.future_callback)
         return
 
     def abort_autonomy(self):
@@ -348,7 +348,7 @@ class AutonomyGUI(Node, QWidget):
         # Send the Abort Request
         future = self.abort_autonomy_client.call_async(req)
         self.error_label.setText('Attempting Abort')
-        future.add_done_callback(self.future_callback)
+        # future.add_done_callback(self.future_callback)
 
     # Gui Functions
     def update_leg_subselection(self):
