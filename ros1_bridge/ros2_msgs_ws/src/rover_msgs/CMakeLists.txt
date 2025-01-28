@@ -15,6 +15,10 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
+install(
+  FILES mapping_rules.yaml
+  DESTINATION share/${PROJECT_NAME})
+
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/AntennaStatus.msg"
   "msg/Arm.msg"

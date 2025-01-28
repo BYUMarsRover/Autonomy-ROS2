@@ -1,0 +1,15 @@
+#!/bin/bash
+# Created by Nelson Durrant, Oct 2024
+#
+# https://github.com/ros2/ros1_bridge/blob/master/doc/index.rst
+
+ros1_package_name: 'rover_msgs'
+ros1_message_name: 'Elevator'
+ros2_package_name: 'rover_msgs'
+ros2_message_name: 'Elevator'
+fields_1_to_2:
+  elevator_speed: 'elevator_speed'
+  elevator_direction: 'elevator_direction'
+fields_2_to_1:
+elevator_speed: 'elevator_speed'
+elevator_direction: 'elevator_direction'
