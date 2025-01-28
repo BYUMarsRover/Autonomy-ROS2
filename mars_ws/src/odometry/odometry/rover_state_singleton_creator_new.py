@@ -10,6 +10,8 @@ np.float = float  # Temporary alias for compatibility
 
 from tf_transformations import euler_from_quaternion
 
+from transform_tools import quat2R, R2quat
+
 from nav_msgs.msg import Odometry
 from rover_msgs.msg import RoverStateSingleton
 from sensor_msgs.msg import NavSatFix, Imu
@@ -74,6 +76,17 @@ class RoverStateSingletonCreator(Node):
         """
         orientation_q = message.orientation  # Extracts the orientation data from the message
         orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]  # Extracts quaternion data
+
+        R = quat2R(orientation_list)
+
+        R_rot = np.array([[ 0,  0, 1],
+                          [-1,  0, 0],
+                          [ 0, -1, 0]])
+
+        R = R_rot @ R
+
+        orientation_list = R2quat(R)
+
         euler = euler_from_quaternion(orientation_list)  # Transforms the quaternion data into euler angles
 
         # sets the roll, pitch and yaw based on the euler angles and converts them to degrees
@@ -81,12 +94,10 @@ class RoverStateSingletonCreator(Node):
         # zed_pitch = euler[1] * 180/math.pi
         # zed_yaw = euler[2] * 180/math.pi
 
-        # TODO: Convert from ZED frame to Map Frame
 
-        # self.map_roll = euler[0] * 180/math.pi
-        # self.map_pitch = euler[1] * 180/math.pi
-
-        self.map_yaw = - euler[1] * 180/math.pi 
+        self.map_roll = euler[0] * 180/math.pi
+        self.map_pitch = euler[1] * 180/math.pi
+        self.map_yaw = - euler[2] * 180/math.pi 
 
         self.publish_message()
 
@@ -117,6 +128,8 @@ class RoverStateSingletonCreator(Node):
         self.odom_yaw_dot = message.twist.twist.angular.z * 180/math.pi
 
         self.publish_message()
+
+
 
     def convert_filtered_gps(self, message):
         """
