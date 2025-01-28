@@ -64,6 +64,9 @@ class AutonomyStateMachine(Node):
         self.srv_switch_auto = self.create_service(SetBool, '/autonomy/enable_autonomy', self.enable)
         self.srv_switch_abort = self.create_service(AutonomyAbort, '/autonomy/abort_autonomy', self.abort)
         self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback)
+        self.remove_waypoint_service = self.create_service(SetBool, '/AU_remove_waypoint_service', self.remove_waypoint)
+
+        
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
         self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
         self.path_manager_client = self.create_client(SetBool, '/mobility/path_manager/enabled')
@@ -84,6 +87,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('navigate_speed', 1.0)
         self.declare_parameter('aruco_speed', 0.3)
         self.declare_parameter('aruco_spin_speed', 30.0)
+        self.declare_parameter('object_alpha_lpf', 0.5)
         self.declare_parameter('aruco_alpha_lpf', 0.5)
         self.declare_parameter('aruco_spin_step_size', 0.6981)
         self.declare_parameter('aruco_spin_delay_time', 1.2)
@@ -103,6 +107,7 @@ class AutonomyStateMachine(Node):
         self.object_speed = self.get_parameter('object_speed').get_parameter_value().double_value
         self.aruco_speed = self.get_parameter('aruco_speed').get_parameter_value().double_value
         self.aruco_spin_speed = self.get_parameter('aruco_spin_speed').get_parameter_value().double_value
+        self.obj_alpha_lpf = self.get_parameter('object_alpha_lpf').get_parameter_value().double_value
         self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value
         self.aruco_spin_step_size = self.get_parameter('aruco_spin_step_size').get_parameter_value().double_value
         self.aruco_spin_delay_time = self.get_parameter('aruco_spin_delay_time').get_parameter_value().double_value
@@ -198,6 +203,19 @@ class AutonomyStateMachine(Node):
         # TODO: Do I want to make this be the current location or the first waypoint?
         if self.last_waypoint is None:
             self.last_waypoint = current_task
+
+    def remove_waypoint(self, request: SetBool.Request, response: SetBool.Response):
+        if len(self.waypoints) > 0:
+            self.waypoints.pop()
+            self.get_logger().info('Waypoint removed')
+            response.success = True
+            response.message = f'Waypoint removed, {len(self.waypoints)} remain'
+        else:
+            self.get_logger().warn('No waypoints to remove')
+            response.success = False
+            response.message = 'No waypoints to remove'
+
+        return response
 
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
         self.curr_latitude = msg.gps.latitude

@@ -15,8 +15,8 @@ import os
 
 def generate_launch_description():
     # import environment variables
-    mapviz_location=os.environ.get('MAPVIZ_LOCATION', '')
-    mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value='gravel_pit')
+    mapviz_location=os.environ.get('MAPVIZ_LOCATION', 'hanksville')
+    mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value='hanksville')
 
     # Start all common launch files on the base station
     include_base_common = IncludeLaunchDescription(
@@ -38,7 +38,7 @@ def generate_launch_description():
         parameters=[
             {'location': LaunchConfiguration('MAPVIZ_LOCATION')}
         ],
-        additional_env={'MAPVIZ_LOCATION': EnvironmentVariable('MAPVIZ_LOCATION', default_value='gravel_pit')}
+        additional_env={'MAPVIZ_LOCATION': EnvironmentVariable('MAPVIZ_LOCATION', default_value='hanksville')}
     )
 
     # Start launch files specific to the Autonomy Task on the base station
