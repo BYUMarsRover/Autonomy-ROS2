@@ -25,7 +25,7 @@ class RoverStateSingletonCreator(Node):
         super().__init__('rover_state_singleton_creator')
 
         # Subscribers
-        # TODO: self.zed_orientation_subscription = self.create_subscription(Imu, "[ORIENTATION TOPIC FROM ZED]", self.convert_map, 10)  # Subscribes to the ZED orientation data
+        self.zed_orientation_subscription = self.create_subscription(Imu, "/zed/imu/data", self.convert_map, 10)  # Subscribes to the ZED orientation data
 
         self.filtered_gps_subscription = self.create_subscription(NavSatFix, "/gps/filtered", self.convert_filtered_gps, 10)  # Subscribes to the filtered GPS data from the UKF output
         self.gps_subscription = self.create_subscription(NavSatFix, "/ins/lla", self.convert_gps, 10) # Subscribes to unfiltered GPS data
@@ -77,9 +77,9 @@ class RoverStateSingletonCreator(Node):
         euler = euler_from_quaternion(orientation_list)  # Transforms the quaternion data into euler angles
 
         # sets the roll, pitch and yaw based on the euler angles and converts them to degrees
-        zed_roll = euler[0] * 180/math.pi
-        zed_pitch = euler[1] * 180/math.pi
-        zed_yaw = euler[2] * 180/math.pi
+        # zed_roll = euler[0] * 180/math.pi
+        # zed_pitch = euler[1] * 180/math.pi
+        # zed_yaw = euler[2] * 180/math.pi
 
         # TODO: Convert from ZED frame to Map Frame
 
