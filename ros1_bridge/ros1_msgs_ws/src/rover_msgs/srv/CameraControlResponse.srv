@@ -1,0 +1,4 @@
+---
+bool error
+string message
+int32 intensity

@@ -8,4 +8,4 @@ float32[] dist
 uint32 gry_depth_height
 uint32 gry_depth_width
 float32 close_slope
-float32 dist_to_pixel
+float32 distToPixel

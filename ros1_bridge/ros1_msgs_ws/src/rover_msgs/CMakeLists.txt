@@ -122,7 +122,9 @@ add_service_files(
    FILES
    AutonomyAbort.srv
    AutonomyWaypoint.srv
+   AutonomyWaypointResponse.srv
    CameraControl.srv
+   CameraControlResponse.srv
    CameraNamesList.srv
    CameraObjectList.srv
    DebugMessages.srv
