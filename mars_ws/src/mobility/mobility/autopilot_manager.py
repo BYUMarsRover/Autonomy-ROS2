@@ -41,7 +41,6 @@ class AutopilotManager(Node):
         self.curr_heading = 0
         self.des_heading = 0
 
-        self.avoid_hazard_dumb = False
         # Controller gains
         self.speed = self.declare_parameter("percent_speed", 0.5).value
 
@@ -77,8 +76,6 @@ class AutopilotManager(Node):
         # ROS services
         self.create_service(SetBool, '/mobility/autopilot_manager/enabled', mananger.enable)
         self.create_service(SetFloat32, '/mobility/speed_factor', self.set_speed)
-        self.create_service(SetBool, '/mobility/hazard_avoidance/enabled', self.enable_hazard_avoidance)
-        self.create_service(SetBool, '/mobility/hazard_avoidance/dumb_enabled', self.enable_dumb_hazard_avoidance)
 
         # PID controllers
         self.linear_controller = PIDControl(self.speed * self.kp_linear, self.speed * self.ki_linear, self.speed * self.kd_linear,
@@ -93,16 +90,9 @@ class AutopilotManager(Node):
     def autopilot_cmds_callback(self, msg: MobilityAutopilotCommand):
         self.distance = msg.distance_to_target
 
-        if not self.avoid_hazard_dumb:
-            self.heading_plus = 0.0
-
         self.des_heading = wrap(msg.course_angle + self.heading_plus, 0)
         self.curr_heading = wrap(self.curr_heading, 0)
         course_error = wrap(self.des_heading - self.curr_heading, 0)
-
-        limit = 8 / 180 * np.pi
-        if abs(course_error) > limit and not self.avoid_hazards:
-            self.distance = 0
 
         lin_vel = self.linear_controller.update_with_error(self.distance)
         angular_vel = self.angular_controller.update_with_error(course_error)
@@ -115,18 +105,6 @@ class AutopilotManager(Node):
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
         self.curr_heading = np.deg2rad(msg.map_yaw)
         self.publish_rover_vel_cmd()
-
-    def enable_hazard_avoidance(self, request: SetBool.Request, response: SetBool.Response):
-        self.avoid_hazards = request.data
-        response.success = True
-        response.message = f"Hazard Avoidance is now {'ON' if self.avoid_hazards else 'OFF'}"
-        return response
-
-    def enable_dumb_hazard_avoidance(self, request: SetBool.Request, response: SetBool.Response):
-        self.avoid_hazard_dumb = request.data
-        response.success = True
-        response.message = f"Hazard Avoidance is now {'ON' if self.avoid_hazards else 'OFF'}"
-        return response
 
     def obstacle_callback(self, msg: ZedObstacles):
         if len(msg.x_coord) == 0:

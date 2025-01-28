@@ -105,6 +105,7 @@ class DriveControllerAPI:
         client = self.node.autopilot_manager_client
         while not client.wait_for_service(timeout_sec=1.0):
             self.node.get_logger().info('Waiting for service /mobility/autopilot_manager/enabled...')
+        self.node.get_logger().info("STRAWBERRY")
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)

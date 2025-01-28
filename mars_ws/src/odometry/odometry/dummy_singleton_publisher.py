@@ -41,7 +41,7 @@ class DummySingletonPublisher(Node):
     def __init__(self):
         super().__init__('dummy_singleton_publisher')
         self.singleton_publisher = self.create_publisher(
-            RoverStateSingleton, '/odometry/rover_state_singleton', 1)  # Publishes the singleton message
+            RoverStateSingleton, '/odometry/rover_state_singleton', 10)  # Publishes the singleton message
         
         self.timer = self.create_timer(1.0 / ROS_RATE, self.publish_singleton_data) # Publish at 15Hz
 

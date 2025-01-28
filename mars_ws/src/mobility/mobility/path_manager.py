@@ -37,7 +37,6 @@ class PathManager(Node):
 
         # ROS 2 Services
         self.enable_server = self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable_callback)
-        self.switch_hazard_avoidance = self.create_service(SetBool, '/mobility/hazard_avoidance/enabled', self.enable_hazard_avoidance)
 
         # ROS 2 Publishers
         self.autopilot_cmds_pub = self.create_publisher(MobilityAutopilotCommand, '/mobility/autopilot_cmds', 10)
@@ -148,13 +147,6 @@ class PathManager(Node):
 
         response.success = True
         response.message = f'Path Manager is now {"ON" if self.enable else "OFF"}'
-        return response
-
-
-    def enable_hazard_avoidance(self, request: SetBool.Request, response: SetBool.Response):
-        self.avoid_hazards = request.data
-        response.success = True
-        response.message = f'Hazard Avoidance is now {"ON" if self.avoid_hazards else "OFF"}'
         return response
 
     def get_rover_heading_from_orientation(self):
