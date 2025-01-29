@@ -69,9 +69,7 @@ def generate_launch_description():
                 )
             ],
             condition=IfCondition(
-                 PythonExpression([
-                    LaunchConfiguration('ROVER_ADDRESS'), " == '127.0.0.1'"
-                ])
+                PythonExpression(["'", LaunchConfiguration('ROVER_ADDRESS'), "' == '127.0.0.1'"])
             )
         ),
     ])
