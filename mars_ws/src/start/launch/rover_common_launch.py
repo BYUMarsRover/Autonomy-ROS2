@@ -1,7 +1,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
@@ -26,6 +26,7 @@ def generate_launch_description():
             default_value='(${node})[${severity}]: ${message}',
             description='Console output format'
         ),
+        DeclareLaunchArgument('ROVER_ADDRESS', default_value='192.168.1.120'),
 
         # NOTE: Comment not pushed because it is a temporary fix
         # # Peripherals
@@ -59,16 +60,18 @@ def generate_launch_description():
         ),
 
         # # Dummy publisher for rover state data when running locally
-        # GroupAction(
-        #     actions=[
-        #         IncludeLaunchDescription(
-        #             PythonLaunchDescriptionSource(
-        #                 os.path.join(odometry_dir, 'launch', 'dummy_singleton_publisher.launch.py')
-        #             )
-        #         )
-        #     ],
-        #     condition=IfCondition(
-        #         LaunchConfiguration('ros_master_uri') == 'http://127.0.0.1:11311'
-        #     )
-        # ),
+        GroupAction(
+            actions=[
+                IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource(
+                        os.path.join(odometry_dir, 'launch', 'dummy_singleton_publisher.launch.py')
+                    )
+                )
+            ],
+            condition=IfCondition(
+                 PythonExpression([
+                    LaunchConfiguration('ROVER_ADDRESS'), " == '127.0.0.1'"
+                ])
+            )
+        ),
     ])
