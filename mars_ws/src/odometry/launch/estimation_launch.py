@@ -14,7 +14,7 @@ def generate_launch_description():
     return LaunchDescription([
         # Load parameters for robot_localization
 
-        DeclareLaunchArgument('rover_address', default_value='192.168.1.120'),
+        DeclareLaunchArgument('ROVER_ADDRESS', default_value='192.168.1.120'),
         Node(
             package='robot_localization',
             executable='ukf_node',

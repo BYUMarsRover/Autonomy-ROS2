@@ -67,7 +67,7 @@ def generate_launch_description():
             )
         ),
         launch_arguments={
-            'rover_address': LaunchConfiguration('ROVER_ADDRESS')
+            'ROVER_ADDRESS': LaunchConfiguration('ROVER_ADDRESS')
         }.items()
     )
 
@@ -77,6 +77,6 @@ def generate_launch_description():
         include_rover_common,
         include_autonomy,
         include_autopilot_drive,
-        include_estimation,
+        include_estimation
         
     ])
