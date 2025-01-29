@@ -4,7 +4,7 @@ project(rover_msgs)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED std_msgs message_generation sensor_msgs)
+find_package(catkin REQUIRED std_msgs message_generation sensor_msgs control_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -42,103 +42,8 @@ find_package(catkin REQUIRED std_msgs message_generation sensor_msgs)
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
-   AntennaStatus.msg
-   Arm.msg
-   ArmFeedback.msg
-   ArmHardware.msg
-   ArmHardwareFeedback.msg
-   ArmPosition.msg
-   ArmSetPosition.msg
-   ArmState.msg
-   AutonomyTaskInfo.msg
-   Battery.msg
-   BatStatGripElevArduino.msg
-   Camera.msg
-   CameraSetValues.msg
-   CameraValue.msg
-   Clicker.msg
-   Laser.msg
-   ConnectionInfo.msg
-   DeviceList.msg
-   DynamixelState.msg
-   Feedback.msg
-   Fiducial.msg
-   FiducialArray.msg
-   FiducialData.msg
-   FiducialTransform.msg
-   FiducialTransformArray.msg
-   Heading.msg
-   Heartbeat.msg
-   HeartbeatStatusBase.msg
-   HeartbeatStatusRover.msg
-   MobilityArucoAutopilotCommand.msg
-   MobilityAutopilotCommand.msg
-   MobilityDriveControl.msg
-   MobilityDriveState.msg
-   MobilityIWCFeedback.msg
-   MobilityDriveCommands.msg
-   IWC_feedback.msg
-   IWC_motors.msg
-   IWCMotors.msg
-   KeyboardHomography.msg
-   KeyLocations.msg
-   MobilityJoyDriveEnable.msg
-   MobilityVelocityCommands.msg
-   MobilityWaypoint2Follow.msg
-   MobilityGPSWaypoint2Follow.msg
-   NavStatus.msg
-   ObjectDetection.msg
-   ObjectDetections.msg
-   ObstacleInfo.msg
-   PathPlanningWaypoints.msg
-   RawBattery.msg
-   RoverState.msg
-   ScienceAugerOn.msg
-   ScienceCacheDoor.msg
-   ScienceFADIntensity.msg
-   ScienceLinearActuatorDirection.msg
-   ScienceSaveNotes.msg
-   ScienceSaveSecondaryCache.msg
-   ScienceSaveSensor.msg
-   ScienceSecondaryCachePosition.msg
-   ScienceSensorValues.msg
-   ScienceSwitchTool.msg
-   ScienceToolPosition.msg
-   Temperature.msg
-   WallObstacles.msg
-   WaypointNav.msg
-   Xbox.msg
-   ZedObstacles.msg
-   Gripper.msg
    Elevator.msg
-   ArmPosition.msg
-   Orientation.msg
-   RoverStateSingleton.msg
-   FPVServo.msg
  )
-
-# Generate services in the 'srv' folder
-add_service_files(
-   FILES
-   AutonomyAbort.srv
-   AutonomyWaypoint.srv
-   AutonomyWaypointResponse.srv
-   CameraControl.srv
-   CameraControlResponse.srv
-   CameraNamesList.srv
-   CameraObjectList.srv
-   DebugMessages.srv
-   DistHeadingConv.srv
-   GimbalCommand.srv
-   GuiCommand.srv
-   KeyPress.srv
-   LaunchCamera.srv
-   LLToNE.srv
-   PositionReturn.srv
-   Screenshot.srv
-   SetFloat32.srv
-   WaypointSend.srv
-)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -152,6 +57,7 @@ add_service_files(
    DEPENDENCIES
    std_msgs
    sensor_msgs
+   control_msgs
  )
 
 ################################################
