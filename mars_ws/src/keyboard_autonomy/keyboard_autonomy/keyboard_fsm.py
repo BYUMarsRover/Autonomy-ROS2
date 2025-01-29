@@ -78,7 +78,7 @@ def main(args=None):
     time.sleep(5)  # Wait for the other nodes to start up
 
     # Use this format when calling the launch file:
-    # 'ros2 launch keyboard_autonomy keyboard_autonomy_launch.py word:=test'
+    # 'ros2 launch keyboard_autonomy keyboard_autonomy_rover_launch.py word:=test'
     keys = list(sys.argv[1])
     print(keys)
     

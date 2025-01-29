@@ -134,6 +134,7 @@ class HomeGuiUI(Node, QWidget):
         self.keyboard_process = None
         signal.signal(signal.SIGINT, self.handler_stop_signals)
         signal.signal(signal.SIGTERM, self.handler_stop_signals)
+        self.script_path = "~/Autonomy-ROS2\mars_ws\src\keyboard_autonomy\scripts\keyboard_autonomy.sh"
 
     def error(self, message, title='Error'):
         self.get_logger().error(message)
@@ -303,10 +304,7 @@ class HomeGuiUI(Node, QWidget):
         self.get_logger().info(word)
         if self.keyboard_process is None or self.keyboard_process.poll() is not None:
             self.get_logger().info("starting keyboard autonomy launch file")
-            self.keyboard_process = Popen(['ros2', 'launch', 'keyboard_autonomy', 'keyboard_autonomy_launch.py', f'word:={word}'],
-                                          stdout=PIPE,
-                                          stderr=PIPE
-                                          )
+            self.keyboard_process = Popen(self.script_path, shell=True, preexec_fn=os.setsid, stderr=PIPE)
             self.get_logger().info("launched the keyboard autonomy file")
         else:
             self.get_logger().info('Launch file already running.')

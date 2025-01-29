@@ -13,7 +13,7 @@ def generate_launch_description():
     Launches the keyboard autonomy nodes and passes in the word to type.
 
     IMPORTANT!: Use this format when calling the launch file:
-    'ros2 launch keyboard_autonomy keyboard_autonomy_launch.py word:=test'
+    'ros2 launch keyboard_autonomy keyboard_autonomy_rover_launch.py word:=test'
 
     :return: The launch description.
     '''
@@ -38,16 +38,12 @@ def generate_launch_description():
         ),
         launch_ros.actions.Node(
             package='keyboard_autonomy',
-            executable='arm_controls',
-        ),
-        launch_ros.actions.Node(
-            package='keyboard_autonomy',
             executable='keyboard_fsm',
             arguments=[word],
             on_exit=launch.actions.Shutdown()
         ),
-        launch_ros.actions.Node(
-            package='keyboard_autonomy',
-            executable='gstreamer2ros2',
-        ),
+        # launch_ros.actions.Node(
+        #     package='keyboard_autonomy',
+        #     executable='gstreamer2ros2',
+        # ),
     ])
