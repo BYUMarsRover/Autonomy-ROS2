@@ -29,15 +29,13 @@ class PathManager(Node):
     def __init__(self) -> None:
         super().__init__('path_manager')
 
-        self.current_point = None
-        self.desired_point = None
-        self.manager_name = "Path Manager"
-        self.enable = False
+        self.current_point = None # Constantly updated by the rover_state_singleton_callback function
+        self.desired_point = None # Updated by the waypoint_2_follow_callback function
+        self.enabled = False
         self.autopilot_cmd = MobilityAutopilotCommand()
 
         # ROS 2 Services
-        self.enable_server = self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable_callback)
-        self.switch_hazard_avoidance = self.create_service(SetBool, '/mobility/hazard_avoidance/enabled', self.enable_hazard_avoidance)
+        self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable)
 
         # ROS 2 Publishers
         self.autopilot_cmds_pub = self.create_publisher(MobilityAutopilotCommand, '/mobility/autopilot_cmds', 10)
@@ -74,7 +72,7 @@ class PathManager(Node):
         self.yaw = None
         self.obstacles = []
 
-        self.get_logger().warn("Waypoint_Manager Initialized!")
+        self.get_logger().warn("Path_Manager Initialized!")
         # self.publish_debug("[__init__] EXIT")
 
     def publish_debug(self, message: str):
@@ -84,6 +82,7 @@ class PathManager(Node):
 
     # Subscriber callbacks
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
+        # Updates the current point of the rover and updates the autopilot command
         curr_lat = msg.gps.latitude
         curr_lon = msg.gps.longitude
         curr_elv = msg.gps.altitude
@@ -97,6 +96,7 @@ class PathManager(Node):
         self.update_autopilot_cmd()
 
     def waypoint_2_follow_callback(self, msg: MobilityGPSWaypoint2Follow):
+        # Updates the desired point of the rover and updates the autopilot command
         try:
             des_lat = msg.latitude
             des_lon = msg.longitude
@@ -129,32 +129,22 @@ class PathManager(Node):
     def update_autopilot_cmd(self):
         self.publish_debug("[update_autopilot_cmd] ENTER")
 
+        # If current point and desired point have been set, calculate the autopilot commands
         if self.current_point and self.desired_point:
             self.publish_debug("[update_autopilot_cmd] Calculating autopilot commands")
             self.chi_rad, chi_deg = GPSTools.course_angle_between_lat_lon(self.current_point, self.desired_point)
             self.distance = GPSTools.distance_between_lat_lon(self.current_point, self.desired_point)
-
-            if self.avoid_hazards and self.obstacles:
-                self.publish_debug("[update_autopilot_cmd] Executing potential fields")
-                self.potential_fields()
 
             self.autopilot_cmd.distance_to_target = self.distance
             self.autopilot_cmd.course_angle = self.chi_rad
 
         self.publish_debug("[update_autopilot_cmd] EXIT")
 
-    def enable_callback(self, request: SetBool.Request, response: SetBool.Response):
-        self.enable = request.data
+    def enable(self, request: SetBool.Request, response: SetBool.Response):
+        self.enabled = request.data
 
         response.success = True
-        response.message = f'Path Manager is now {"ON" if self.enable else "OFF"}'
-        return response
-
-
-    def enable_hazard_avoidance(self, request: SetBool.Request, response: SetBool.Response):
-        self.avoid_hazards = request.data
-        response.success = True
-        response.message = f'Hazard Avoidance is now {"ON" if self.avoid_hazards else "OFF"}'
+        response.message = f'Path Manager: {"ENABLED" if self.enabled else "DISABLED"}'
         return response
 
     def get_rover_heading_from_orientation(self):
@@ -165,12 +155,13 @@ class PathManager(Node):
         pass
 
     def publish_autopilot_cmd(self):
-        # print('in publish_autopilot_cmd, enabled? == {}, autopilot_cmd? == {}'.format(self.enabled, self.autopilot_cmd))
-        if not self.enable:
-            blank_cmd = MobilityAutopilotCommand()
-            self.autopilot_cmds_pub.publish(blank_cmd)
 
-        if self.enable and self.autopilot_cmd != None:
+        if not self.enabled:
+            # blank_cmd = MobilityAutopilotCommand()
+            # self.autopilot_cmds_pub.publish(blank_cmd)
+            return
+
+        if self.enabled and self.autopilot_cmd != None:
             self.autopilot_cmds_pub.publish(self.autopilot_cmd)
 
 

@@ -10,7 +10,7 @@ class DriveManager(Node):
     def __init__(self):
         super().__init__('drive_manager')
 
-        # ROS 2 Subscribers
+        # Subscribers
         self.vel_cmds_sub = self.create_subscription(
             MobilityVelocityCommands, 
             '/mobility/rover_vel_cmds', 
@@ -18,14 +18,14 @@ class DriveManager(Node):
             10
         )
 
-        # ROS 2 Publishers
+        # Publishers
         self.wheel_vel_cmds_pub = self.create_publisher(
             MobilityDriveCommand, 
             '/mobility/wheel_vel_cmds', 
             10
         )
 
-        # ROS 2 Service
+        # Service
         self.enable_server = self.create_service(
             SetBool, 
             '/mobility/drive_manager/enabled', 
@@ -45,9 +45,8 @@ class DriveManager(Node):
         self.k = 0.5     # parameter for sigmoid function
         self.rover_cmd = MobilityDriveCommand()
         self.enabled = False
-        self.manager_name = "Drive Manager"
 
-        self.get_logger().info(f"{self.manager_name} initialized")
+        self.get_logger().info(f"Drive Manager initialized!")
 
     def vel_cmds_callback(self, msg):
         u_cmd = msg.u_cmd
@@ -77,8 +76,7 @@ class DriveManager(Node):
     def enable(self, request, response):
         self.enabled = request.data
         response.success = True
-        response.message = f"{self.manager_name} is {'enabled' if self.enabled else 'disabled'}"
-        self.get_logger().info(response.message)
+        response.message = f"Drive Manager: {'ENABLED' if self.enabled else 'DISABLED'}"
         return response
 
     def piecewise_sigmoid(self, x):
