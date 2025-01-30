@@ -29,6 +29,15 @@ class DriveControllerAPI:
         self.wheel_manager_enabled = False
         self.aruco_autopilot_manager_enabled = False
 
+        # Flags to track if we are attempting to enable or disable the managers
+        self.path_manager_attempted_new_status = True
+        self.autopilot_manager_attempted_new_status = True
+        self.drive_manager_attempted_new_status = True
+        self.wheel_manager_attempted_new_status = True
+        self.aruco_autopilot_manager_attempted_new_status = True
+
+        self.enable_list_buff = [False] * 5
+
     def stop(self):
         self._activate_managers([False] * 5)
 
@@ -40,21 +49,21 @@ class DriveControllerAPI:
         self.path_cmds_pub.publish(self.path_cmd)
 
     def issue_autopilot_cmd(self, distance: float, heading: float):
-        #Autopilot Command: Sends target distance and heading.
+        # Autopilot Command: Sends target distance and heading.
         self._activate_managers([False, True, True, True, False])
         self.autopilot_cmd.distance_to_target = distance
         self.autopilot_cmd.course_angle = heading
         self.autopilot_cmds_pub.publish(self.autopilot_cmd)
 
     def issue_drive_cmd(self, lin_vel: float, ang_vel: float):
-        #Drive Command: Sends linear and angular velocity commands.
+        # Drive Command: Sends linear and angular velocity commands.
         self._activate_managers([False, False, True, True, False])
         self.drive_cmd.u_cmd = float(lin_vel)
         self.drive_cmd.omega_cmd = float(ang_vel)
         self.drive_cmds_pub.publish(self.drive_cmd)
 
     def issue_aruco_autopilot_cmd(self, angle: float, distance: float):
-        #ArUco Autopilot Command: Sends movement commands relative to an ArUco marker.
+        # ArUco Autopilot Command: Sends movement commands relative to an ArUco marker.
         self._activate_managers([False, False, True, True, True])
         self.aruco_autopilot_cmd.distance_to_target = distance
         self.aruco_autopilot_cmd.angle_to_target = angle
@@ -63,17 +72,30 @@ class DriveControllerAPI:
     def _activate_managers(self, enable_list: list):
         #This method is responsible for enabling/disabling different managers 
         #based on a list of booleans (enable_list)
+        # buffer for the previous enabled list
+        # if the buffer changed, print what is enabled and disabled and then update the buffer
         assert len(enable_list) == 5, "enable list is wrong size"
-        if enable_list[0] != self.path_manager_enabled:
-            self._toggle_enable_path_manager(enable_list[0])
-        if enable_list[1] != self.autopilot_manager_enabled:
-            self._toggle_enable_autopilot_manager(enable_list[1])
-        if enable_list[2] != self.drive_manager_enabled:
-            self._toggle_enable_drive_manager(enable_list[2])
-        if enable_list[3] != self.wheel_manager_enabled:
-            self._toggle_enable_wheel_manager(enable_list[3])
-        if enable_list[4] != self.aruco_autopilot_manager_enabled:
-            self._toggle_enable_aruco_autopilot_manager(enable_list[4])
+
+        # Update the managers if the enable list is different from current enabled status of the managers
+        if enable_list != self.enable_list_buff:
+            self.enable_list_buff = enable_list
+            if enable_list[0] != self.path_manager_enabled:
+                self._toggle_enable_path_manager(enable_list[0])
+            if enable_list[1] != self.autopilot_manager_enabled:
+                self._toggle_enable_autopilot_manager(enable_list[1])
+            if enable_list[2] != self.drive_manager_enabled:
+                self._toggle_enable_drive_manager(enable_list[2])
+            if enable_list[3] != self.wheel_manager_enabled:
+                self._toggle_enable_wheel_manager(enable_list[3])
+            if enable_list[4] != self.aruco_autopilot_manager_enabled:
+                self._toggle_enable_aruco_autopilot_manager(enable_list[4])
+            
+            # Log the current status of the managers
+            self.node.get_logger().info(f"Path Manager {'ENABLED' if self.path_manager_enabled else 'DISABLED'}")
+            self.node.get_logger().info(f"Autopilot Manager: {'ENABLED' if self.autopilot_manager_enabled else 'DISABLED'}")
+            self.node.get_logger().info(f"Drive Manager: {'ENABLED' if self.drive_manager_enabled else 'DISABLED'}")
+            self.node.get_logger().info(f"Wheel Manager: {'ENABLED' if self.wheel_manager_enabled else 'DISABLED'}")
+            self.node.get_logger().info(f"ArUco Autopilot Manager: {'ENABLED' if self.aruco_autopilot_manager_enabled else 'DISABLED'}")
 
     #TOGGLE & UPDATE FUNCTIONS-------------------------------------------------------------
     #  _toggle_enable_*_manager methods use ROS2 services (SetBool) to enable/disable the respective managers.
@@ -91,31 +113,27 @@ class DriveControllerAPI:
             self.node.get_logger().info('Waiting for service /mobility/path_manager/enabled...')
         request = SetBool.Request()
         request.data = enable
+        self.path_manager_attempted_new_status = enable
         future = client.call_async(request)
-
-        # future.add_done_callback(self._update_path_manager_status)
-        self._update_path_manager_status(True)
+        future.add_done_callback(self._update_path_manager_status)
 
     def _update_path_manager_status(self, future):
-        # if future.result().success:
-        #     self.path_manager_enabled = future.result().data
-        self.path_manager_enabled = future
+        if future.result().success:
+            self.path_manager_enabled = self.path_manager_attempted_new_status
 
     def _toggle_enable_autopilot_manager(self, enable: bool):
         client = self.node.autopilot_manager_client
         while not client.wait_for_service(timeout_sec=1.0):
             self.node.get_logger().info('Waiting for service /mobility/autopilot_manager/enabled...')
-        self.node.get_logger().info("STRAWBERRY")
         request = SetBool.Request()
         request.data = enable
+        self.autopilot_manager_attempted_new_status = enable
         future = client.call_async(request)
-        self._update_autopilot_manager_status(True)
-        # future.add_done_callback(self._update_autopilot_manager_status)
+        future.add_done_callback(self._update_autopilot_manager_status)
 
     def _update_autopilot_manager_status(self, future):
-        # if future.result().success:
-        #     self.autopilot_manager_enabled = future.result().data
-        self.autopilot_manager_enabled = future
+        if future.result().success:
+            self.autopilot_manager_enabled = self.autopilot_manager_attempted_new_status
 
     def _toggle_enable_drive_manager(self, enable: bool):
         client = self.node.drive_manager_client
@@ -123,14 +141,13 @@ class DriveControllerAPI:
             self.node.get_logger().info('Waiting for service /mobility/drive_manager/enabled...')
         request = SetBool.Request()
         request.data = enable
+        self.drive_manager_attempted_new_status = enable
         future = client.call_async(request)
-        self._update_drive_manager_status(True)
-        # future.add_done_callback(self._update_drive_manager_status)
+        future.add_done_callback(self._update_drive_manager_status)
 
     def _update_drive_manager_status(self, future):
-        # if future.result().success:
-        #     self.drive_manager_enabled = future.result().data
-        self.drive_manager_enabled = future
+        if future.result().success:
+            self.drive_manager_enabled = self.drive_manager_attempted_new_status
 
     def _toggle_enable_wheel_manager(self, enable: bool):
         client = self.node.wheel_manager_client
@@ -138,14 +155,13 @@ class DriveControllerAPI:
             self.node.get_logger().info('Waiting for service /mobility/wheel_manager/enabled...')
         request = SetBool.Request()
         request.data = enable
+        self.wheel_manager_attempted_new_status = enable
         future = client.call_async(request)
-        self._update_wheel_manager_status(True)
-        # future.add_done_callback(self._update_wheel_manager_status)
+        future.add_done_callback(self._update_wheel_manager_status)
 
     def _update_wheel_manager_status(self, future):
-        # if future.result().success:
-        #     self.wheel_manager_enabled = future.result().data
-        self.wheel_manager_enabled = True
+        if future.result().success:
+            self.wheel_manager_enabled = self.wheel_manager_attempted_new_status
 
     def _toggle_enable_aruco_autopilot_manager(self, enable: bool):
         client = self.node.aruco_manager_client
@@ -153,14 +169,14 @@ class DriveControllerAPI:
             self.node.get_logger().info('Waiting for service /mobility/aruco_autopilot_manager/enabled...')
         request = SetBool.Request()
         request.data = enable
+        self.aruco_autopilot_manager_attempted_new_status = enable
         future = client.call_async(request)
-        # future.add_done_callback(self._update_aruco_autopilot_manager_status)
-        self._update_aruco_autopilot_manager_status(True)
+        future.add_done_callback(self._update_aruco_autopilot_manager_status)
 
     def _update_aruco_autopilot_manager_status(self, future):
-        # if future.result().success:
-        #     self.aruco_autopilot_manager_enabled = future.result().data
-        self.aruco_autopilot_manager_enabled = future
+        if future.result().success:
+            self.aruco_autopilot_manager_enabled = self.aruco_autopilot_manager_attempted_new_status
+
 #-------------------------------------------------------------------------------
 #Debugging Tips
 # Service Availability:

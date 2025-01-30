@@ -12,9 +12,8 @@ class WheelManager(Node):
     def __init__(self):
         super().__init__('wheel_manager')
 
-        # ROS 2 Subscribers
+        # Subscribers
         self.IWC_cmd = IWCMotors()
-        self.manager_name = "Wheel Manager"
 
         self.wheel_vel_cmds_sub = self.create_subscription(
             MobilityDriveCommand,
@@ -23,14 +22,14 @@ class WheelManager(Node):
             10
         )
 
-        # ROS 2 Publishers
+        # Publishers
         self.auto_drive_cmds_pub = self.create_publisher(
             IWCMotors,
             '/mobility/auto_drive_cmds',
             10
         )
 
-        # ROS 2 Service
+        # Service
         self.enable_server = self.create_service(
             SetBool,
             '/mobility/wheel_manager/enabled',
@@ -39,6 +38,8 @@ class WheelManager(Node):
 
         self.enabled = False
         self.timer = self.create_timer(0.1, self.publish_wheel_cmd)
+
+        self.get_logger().info(f"Wheel Manager initialized!")
 
     def wheel_vel_cmds_callback(self, msg):
         left_dir = self._check_dir(msg.lw)
@@ -90,8 +91,7 @@ class WheelManager(Node):
         '''
         self.enabled = request.data
         response.success = True
-        response.message = "Wheel Manager enabled" if self.enabled else "Wheel Manager disabled"
-        self.get_logger().info(response.message)
+        response.message = f"Wheel Manager: {'ENABLED' if self.enabled else 'DISABLED'}"
         return response
 
 
