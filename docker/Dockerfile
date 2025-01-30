@@ -58,7 +58,7 @@ USER marsrover
 #
 #   # Quick Description - Your name, Month Year
 #   # Why are you adding this? What nodes/functionality is it needed for?
-#   <Your Dockerfile code here>
+#   <Dockerfile code here>
 # 
 ####################################################################################################
 
@@ -86,6 +86,7 @@ RUN apt update && apt install -y libopencv-dev
 # ENV CMAKE_PREFIX_PATH="/usr/local/share/OpenCV;/opt/ros/humble"
 USER marsrover
 
+# TO DO: DO WE NEED THIS?
 # Install ROS2 dependencies for aruco_detect
 # USER root
 # RUN apt update && \
