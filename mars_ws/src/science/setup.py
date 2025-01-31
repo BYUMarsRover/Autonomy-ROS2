@@ -13,14 +13,14 @@ setup(
     data_files=[
         # Install marker file in the package index
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
+        ('share/' + package_name + '/presentation/resources', 
+            glob('science/presentation/resources/*')),  # Include your resource files
         # Include our package.xml file
         (os.path.join('share', package_name), ['package.xml']),
         # Include all launch files.
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*.launch.py'))),
         # Include the gui .ui file
         (os.path.join('share', package_name, 'gui'), glob(os.path.join('science', 'gui', '*.ui'))),
-        #include resources
-        (os.path.join('share', package_name, 'gui'), glob(os.path.join('science', 'presentation', '*.txt'))),
     ],
     # This is important as well
     install_requires=['setuptools'],

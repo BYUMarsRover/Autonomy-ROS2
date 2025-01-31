@@ -16,10 +16,10 @@
   <widget class="QLCDNumber" name="lcd_moist">
    <property name="geometry">
     <rect>
-     <x>50</x>
+     <x>30</x>
      <y>100</y>
-     <width>211</width>
-     <height>131</height>
+     <width>131</width>
+     <height>121</height>
     </rect>
    </property>
    <property name="toolTipDuration">
@@ -112,12 +112,15 @@
    </property>
   </widget>
   <widget class="QLCDNumber" name="lcd_temp">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
-     <x>320</x>
+     <x>300</x>
      <y>100</y>
-     <width>211</width>
-     <height>131</height>
+     <width>131</width>
+     <height>121</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -290,8 +293,8 @@
   <widget class="QRadioButton" name="moist_radio">
    <property name="geometry">
     <rect>
-     <x>60</x>
-     <y>100</y>
+     <x>40</x>
+     <y>220</y>
      <width>131</width>
      <height>31</height>
     </rect>
@@ -312,8 +315,8 @@
   <widget class="QRadioButton" name="temp_radio">
    <property name="geometry">
     <rect>
-     <x>330</x>
-     <y>100</y>
+     <x>310</x>
+     <y>220</y>
      <width>131</width>
      <height>31</height>
     </rect>
@@ -537,6 +540,86 @@
     <string extracomment="0"/>
    </property>
   </widget>
+  <widget class="QTextBrowser" name="textBrowser">
+   <property name="geometry">
+    <rect>
+     <x>440</x>
+     <y>100</y>
+     <width>111</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="html">
+    <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Enter observed temperature in celsius&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_temperature">
+   <property name="geometry">
+    <rect>
+     <x>440</x>
+     <y>160</y>
+     <width>113</width>
+     <height>61</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_temperature">
+   <property name="geometry">
+    <rect>
+     <x>460</x>
+     <y>220</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Show Graph</string>
+   </property>
+  </widget>
+  <widget class="QTextBrowser" name="textBrowser_2">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>100</y>
+     <width>111</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="html">
+    <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Enter observed moisture value&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_moisture">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>160</y>
+     <width>113</width>
+     <height>61</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_moisture">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>220</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Show Graph</string>
+   </property>
+  </widget>
   <zorder>groupBox</zorder>
   <zorder>lcd_moist</zorder>
   <zorder>lcd_auger</zorder>
@@ -559,6 +642,12 @@
   <zorder>groupBox_2</zorder>
   <zorder>le_fad</zorder>
   <zorder>fad_radio</zorder>
+  <zorder>textBrowser</zorder>
+  <zorder>lineEdit_temperature</zorder>
+  <zorder>pushButton_temperature</zorder>
+  <zorder>textBrowser_2</zorder>
+  <zorder>lineEdit_moisture</zorder>
+  <zorder>pushButton_moisture</zorder>
  </widget>
  <resources/>
  <connections/>

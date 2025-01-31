@@ -7,6 +7,8 @@ from rover_msgs.srv import CameraControl
 from rover_msgs.msg import ScienceToolPosition, ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceFADIntensity, Camera, RoverStateSingleton
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
+import matplotlib.pyplot as plt
+import numpy as np
 
 import os
 import sys
@@ -67,6 +69,9 @@ class science_GUI(Node):
         self.qt.pushButton_save_notes.clicked.connect(self.save_notes)
         self.qt.pushButton_fad.clicked.connect(self.fad_detector_calibration)
 
+        self.qt.pushButton_temperature.clicked.connect(lambda: self.graph_sensor_values(1))
+        self.qt.pushButton_moisture.clicked.connect(lambda: self.graph_sensor_values(0))
+
         self.qt.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
         self.qt.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
         self.qt.fad_radio.toggled.connect(lambda: self.toggle_sensor_save(2))  # fad
@@ -74,7 +79,7 @@ class science_GUI(Node):
         self.qt.lcd_site_num.display(self.site_number)
         self.qt.pushButton_change_site.clicked.connect(self.increment_site_number)
 
-        self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1)
+        self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1) #figure this out
         self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
 
         self.signals.sensor_signal.connect(self.update_sensor_values)
@@ -97,7 +102,10 @@ class science_GUI(Node):
 
         print('Toggling Saving Sensor', p)
         self.sensor_saving[p] = not self.sensor_saving[p]
-        self.sensor_message = ScienceSaveSensor()
+        if (p == 0):
+            self.sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_moisture.text()), save=self.sensor_saving[p])
+        elif (p == 1):
+            self.sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_temperature.text()), save=self.sensor_saving[p])
         self.signals.sensor_save_signal.emit(self.sensor_message)
 
     def stop_temp_saver(self):
@@ -135,6 +143,87 @@ class science_GUI(Node):
         self.qt.lcd_moist.display(moisture)
         self.qt.lcd_temp.display(temperature)
 
+    def graph_sensor_values(self, position):#FIX FORMATTING FOR STANDARD POSITION ARGS
+        manual_points = []
+        analog_vals = []
+        match(position):
+            case 0:
+                file_name = "moisture-plot-1.txt"
+                science_data_path = os.path.expanduser("~/science_data/site-1")
+                file_path = os.path.join(science_data_path, file_name)
+            case 1:
+                file_name = "temperature-plot-1.txt"
+                science_data_path = os.path.expanduser("~/science_data/site-1")
+                file_path = os.path.join(science_data_path, file_name)
+            case _: #Wildcard, acts like else
+                print("Err: this sensor does not have data to graph")
+                return
+
+        with open(file_path, 'r') as f:
+            for line in f:
+                split = line.split()
+                manual_points.append(float(split[0]))
+                reading_series =[]
+                for i in split[1:]:
+                    reading_series.append(float(i))
+                    #Normalize the values form zero to 1.
+                    reading_series[-1] = reading_series[-1]/1023
+                analog_vals.append(reading_series)
+                # count += 1
+
+            # analog_vals.append(count*100+50) #This needs to get changed to collect the raw temperature point from the arduino
+            
+            #Show an updated graph with the new point
+            dummy_manuals = []
+            # print(manual_points)
+            for i in range(len(analog_vals)):
+                for j in analog_vals[i]:
+                    dummy_manuals.append(manual_points[i])
+                    # print(np.size(dummy_manuals),np.size(analog_vals))
+                    # print(dummy_manuals, " --- ", analog_vals)
+            dummy_analog = []
+            for i in analog_vals:
+                for j in i:
+                    dummy_analog.append(j)
+
+            plt.scatter(dummy_analog,dummy_manuals)
+            # plt.draw()
+            plt.pause(0.5)
+            # Have it ask you to save the point or delete after showing you an updated graph.
+            # keep = input("Do you want to keep this point? [y]/n\n")
+            keep = "y"
+            if not (keep == "y" or keep =="Y" or keep == "[Y]" or keep == "[y]" or keep == ""):
+                manual_points.pop()
+                analog_vals.pop()
+                plt.cla()
+                plt.scatter(dummy_analog,dummy_manuals)
+                plt.xlabel("Arduino Digital Readout")
+                plt.ylabel("Reference Temperature (deg C)")
+                # plt.draw()
+                plt.pause(0.5)
+        #Add something so you can decide what order polynomial you want.
+        # order = int(input("What order polynomial do you want to fit? [0 - 6]\n"))
+        order = 1
+        P0 = np.zeros((1,6-order))
+        #Plot the points alongside the polyfit.
+        analog_vals = np.array(dummy_analog)
+        # print(analog_vals)
+        manual_points = np.array(dummy_manuals)
+        # print(manual_points)
+        P1 = np.polyfit(analog_vals, manual_points, order)
+        P = np.concatenate((P0,P1),axis=None)
+        x = np.linspace(0,1,500)
+        poly_y = P[0]*x**6+P[1]*x**5+P[2]*x**4+P[3]*x**3+P[4]*x**2+P[5]*x + P[6]
+        # print(P)
+        plt.figure()
+        plt.scatter(analog_vals, manual_points, label="input data")
+        plt.xlabel("Arduino Digital Readout")
+        plt.ylabel("Reference Temperature (deg C)")
+        plt.plot(x, poly_y, label="polynomial fit")
+        plt.legend()
+        plt.show()
+
+        
     def update_fad_intensity_value(self, msg):
         print('Displaying intensity!', msg)
         self.qt.le_fad.setPlaceholderText(str(msg))
