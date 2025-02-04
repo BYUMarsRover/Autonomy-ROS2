@@ -105,10 +105,10 @@ class Feat2HomographyNode(Node):
             case 'caps_lock': self.key_picture_file = 'a_key.png',
             case 'delete_key': self.key_picture_file = 'a_key.png',
             case 'space': self.key_picture_file = 'a_key.png',
+            case _ : self.key_picture_file = 'm_key_crop_light.png'
 
         full_file_name = self.image_prefix + self.key_picture_file
         self.keyboard_img = cv2.imread(full_file_name)
-        self.get_logger().info("Key press call back setting keyboard img")
         response.success = False
         return response
 
@@ -135,12 +135,7 @@ class Feat2HomographyNode(Node):
         # SIFT and FLANN
         # Initiate SIFT detector and find the keypoints and descriptors
         sift = cv2.SIFT_create(nfeatures=500, nOctaveLayers=2, contrastThreshold=0.04, edgeThreshold=5)
-        if self.keyboard_img is None:
-            self.get_logger().info("keyboard img is none")
-            self.keyboard_img = cv2.imread("/home/marsrover/mars_ws/src/keyboard_autonomy/images/m_key_crop_light.png")
         kp1, des1 = sift.detectAndCompute(self.keyboard_img, None)
-        if self.camera_image is None:
-            self.get_logger().info("camera img is none")
         kp2, des2 = sift.detectAndCompute(self.camera_image, None)
 
         # Set FLANN parameters
@@ -185,7 +180,7 @@ class Feat2HomographyNode(Node):
             cv2.imwrite("matches.jpg", img3)
             keyboard_homography = KeyboardHomography()
             keyboard_homography.homography = M.flatten().tolist()
-            self.get_logger().info( M.flatten().tolist().toString())
+            self.get_logger().info(' '.join(map(str, M.flatten().tolist())))
             self.publisher.publish(keyboard_homography)
         else:
             self.get_logger().warn("Insufficient # of matches found - %d/%d" % (len(good_matches), MIN_MATCH_COUNT))
