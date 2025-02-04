@@ -87,6 +87,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('navigate_speed', 1.0)
         self.declare_parameter('aruco_speed', 0.3)
         self.declare_parameter('aruco_spin_speed', 30.0)
+        self.declare_parameter('object_alpha_lpf', 0.5)
         self.declare_parameter('aruco_alpha_lpf', 0.5)
         self.declare_parameter('aruco_spin_step_size', 0.6981)
         self.declare_parameter('aruco_spin_delay_time', 1.2)
@@ -106,6 +107,7 @@ class AutonomyStateMachine(Node):
         self.object_speed = self.get_parameter('object_speed').get_parameter_value().double_value
         self.aruco_speed = self.get_parameter('aruco_speed').get_parameter_value().double_value
         self.aruco_spin_speed = self.get_parameter('aruco_spin_speed').get_parameter_value().double_value
+        self.obj_alpha_lpf = self.get_parameter('object_alpha_lpf').get_parameter_value().double_value
         self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value
         self.aruco_spin_step_size = self.get_parameter('aruco_spin_step_size').get_parameter_value().double_value
         self.aruco_spin_delay_time = self.get_parameter('aruco_spin_delay_time').get_parameter_value().double_value

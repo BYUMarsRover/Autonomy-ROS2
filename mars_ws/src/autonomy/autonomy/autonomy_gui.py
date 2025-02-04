@@ -17,6 +17,7 @@ from PyQt5.QtCore import *
 from subprocess import Popen, PIPE
 import sys
 import os
+import numpy as np
 
 # For Mapviz Usage
 import yaml
@@ -84,6 +85,9 @@ class AutonomyGUI(Node, QWidget):
         self.rover_numSV = 0
         self.state_machine_state = None
         self.tag_id = None
+        self.obj_distance = None
+        self.obj_angle = None
+        self.obj_alpha_lpf = 0.5
 
         ################# ROS Communication #################
 
@@ -247,52 +251,31 @@ class AutonomyGUI(Node, QWidget):
         return
     
     def obj_detect_callback(self, msg):
-        # TODO: Implement object detection callback
+        obj_name = None
+        objects_string = ''
+        for obj in msg.objects:
+            if obj.label == 1:
+                obj_name = 'Bottle'
+            elif obj.label == 2:
+                obj_name = 'Hammer'
+            else:
+                obj_name = 'Unknown'
 
-        # timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
-        # is_recent = lambda obj_ts: timestamp - obj_ts <= 0.1
+            # Low-pass filter the distance and heading information
+            if self.obj_distance is None:
+                self.obj_distance = np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2)
+                self.obj_angle = - np.arctan(obj.x / obj.z)
+            else:
+                self.obj_distance = self.obj_distance * self.obj_alpha_lpf + np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2) * (1 - self.obj_alpha_lpf)
+                self.obj_angle = self.obj_angle * self.obj_alpha_lpf - np.arctan(obj.x / obj.z) * (1 - self.obj_alpha_lpf)
 
+            #round to 2 places and convert angle to degrees
+            obj_distance = round(self.obj_distance, 2)
+            obj_angle = round(np.rad2deg(self.obj_angle), 2)
 
-        # correct_label = 0 
-        # if self.tag_id == TagID.BOTTLE:
-        #     correct_label = 1
-        
-        # found = False
-        # for obj in msg.objects:
-        #     if obj.label == 1:
-        #         #bottle
-        #     else obj.label == 2:
-        #         #
+            objects_string = objects_string + f'{obj_name}: conf: {obj.confidence}, dist: {obj_distance} m @ {obj_angle} deg \n'
 
-        #     if obj.label != correct_label or obj.confidence < 0.75:
-        #         continue
-
-        #     if obj.id in self.known_objects:
-        #         if is_recent(self.known_objects[obj.id][-1]):
-        #             self.known_objects[obj.id].append(timestamp)
-
-        #         if len(self.known_objects[obj.id]) < 15:
-        #             continue
-
-        #         # Low-pass filter the distance and heading information
-        #         if self.obj_distance is None:
-        #             self.obj_distance = np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2)
-        #             self.obj_angle = - np.arctan(obj.x / obj.z)
-        #         else:
-        #             self.obj_distance = self.obj_distance * self.obj_alpha_lpf + np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2) * (1 - self.obj_alpha_lpf)
-        #             self.obj_angle = self.obj_angle * self.obj_alpha_lpf - np.arctan(obj.x / obj.z) * (1 - self.obj_alpha_lpf)
-        #         self.correct_obj_found = True
-        #         if found:
-        #             self.get_logger().info("Found a duplicate object, taking last one")
-        #         else:
-        #             self.get_logger().info(f"Found object for 15 frames: {obj}")
-        #             found = True
-        #     else:
-        #         self.known_objects[obj.id] = [timestamp]
-
-        # self.known_objects = {k: v for k, v in self.known_objects.items() if is_recent(v[-1])}
-
-
+        self.ObjStatus.setText(objects_string)
         return
     
 
