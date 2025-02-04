@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Home_GUI</class>
+ <class>Autonomy_GUI</class>
  <!-- Main Widget -->
  <widget class="QWidget" name="Autonomy_GUI">
   <!-- Widget Properties -->
@@ -8,8 +8,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
-    <height>425</height>
+    <width>800</width>
+    <height>600</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -29,29 +29,32 @@
      <!-- Everything Widget Properties -->
      <property name="minimumSize">
       <size>
-       <width>620</width>
-       <height>405</height>
+       <width>800</width>
+       <height>600</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>620</width>
-       <height>405</height>
+       <width>800</width>
+       <height>600</height>
       </size>
      </property>
      <!-- Layout Widget -->
      <widget class="QWidget" name="layoutWidget">
       <!-- Layout Widget Properties -->
-      <property name="geometry">
+      <!-- <property name="geometry">
        <rect>
-        <x>11</x>
-        <y>11</y>
-        <width>600</width>
-        <height>385</height>
+        <x>0</x>
+        <y>0</y>
+        <width>800</width>
+        <height>600</height>
        </rect>
-      </property>
+      </property> -->
       <!-- Layout Widget Layout -->
       <layout class="QVBoxLayout" name="verticalLayout_17">
+       <property name="alignment">
+        <set>Qt::AlignTop</set>
+       </property>
        <!-- Gui Title (first item in column)-->
        <item>
         <widget class="QLabel" name="guiTitle">
@@ -75,258 +78,345 @@
        <item>
         <!-- Main Row (with 2 columns) -->
         <layout class="QHBoxLayout" name="horizontalLayout_16">
+         <property name="alignment">
+          <set>Qt::AlignTop</set>
+         </property>
          <!-- Column 1 Item -->
          <item>
-          <!-- Column 1 Layout (Leg Info Column) -->
-          <layout class="QVBoxLayout" name="verticalLayout_8">
-           <!-- Left Column Label Item -->
-           <item>
-            <!-- Left Column Label Widget (Leg Info) -->
-            <widget class="QLabel" name="LegInfoLabel">
-             <property name="text">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Leg Info&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="scaledContents">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <!-- latitude entry item -->
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <!-- latitude label "lat" -->
-             <item>
-              <widget class="QLabel" name="LatitudeLabel">
-               <property name="text">
-                <string>Latitude</string>
+          <widget class="QWidget" name="column1_container">
+           <property name="minimumSize">
+            <size>
+             <width>350</width>
+             <height>500</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>350</width>
+             <height>500</height>
+            </size>
+           </property>
+           <!-- Column 1 Layout (Leg Info Column) -->
+           <layout class="QVBoxLayout" name="verticalLayout_12">
+            <property name="alignment">
+             <set>Qt::AlignTop</set>
+            </property>
+            <!-- Left Column Label Item -->
+            <item>
+             <!-- Left Column Label Widget (Leg Info) -->
+             <widget class="QLabel" name="LegInfoLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Leg Info&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+             </widget>
+            </item>
+            <!-- latitude entry item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- latitude label "lat" -->
+              <item>
+               <widget class="QLabel" name="LatitudeLabel">
+                <property name="alignment">
+                 <set>Qt::AlignTop</set>
+                </property>
+                <property name="text">
+                 <string>Latitude</string>
+                </property>
+               </widget>
+              </item>
+              <!-- latitude text input area item -->
+              <item>
+               <widget class="QLineEdit" name="LatitudeInput">
+                <property name="placeholderText">
+                 <string>enter latitude here</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- longitude entry item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- longitude label "lat" -->
+              <item>
+               <widget class="QLabel" name="label_7">
+                <property name="alignment">
+                 <set>Qt::AlignTop</set>
+                </property>
+                <property name="text">
+                 <string>Longitude</string>
+                </property>
+               </widget>
+              </item>
+              <!-- longitude text input area item -->
+              <item>
+               <widget class="QLineEdit" name="LongitudeInput">
+                <property name="placeholderText">
+                 <string>enter longitude here</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Horizontal Box for the Preview, Optimize Path and clear mapviz buttons -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Mapviz Label -->
+              <item>
+               <widget class="QLabel" name="MapvizLabel">
+                <property name="alignment">
+                 <set>Qt::AlignTop</set>
+                </property>
+                <property name="text">
+                 <string>Mapviz: </string>
+                </property>
+               </widget>
+              </item>
+              <!-- Preview Button -->
+              <item>
+               <widget class="QPushButton" name="PreviewMapvizButton">
+                <property name="text">
+                 <string>Preview</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Plan Order Button -->
+              <item>
+               <widget class="QPushButton" name="PlanOrderButton">
+                <property name="text">
+                 <string>Plan Order</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Clear Mapviz Button -->
+              <item>
+               <widget class="QPushButton" name="ClearMapvizButton">
+                <property name="text">
+                 <string>Clear</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Horizontal box for the leg type entry -->
+            <item>
+             <widget class="QWidget" name="LegEntryWidget">
+              <property name="minimumHeight">
+               <number>50</number>
+              </property>
+              <property name="maximumHeight">
+               <number>100</number>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_3">
+               <property name="alignment">
+                <set>Qt::AlignTop</set>
                </property>
-              </widget>
-             </item>
-             <!-- latitude text input area item -->
-             <item>
-              <widget class="QLineEdit" name="LatitudeInput">
-               <property name="placeholderText">
-                <string>enter latitude here</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <!-- longitude entry item -->
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <!-- longitude label "lat" -->
-             <item>
-              <widget class="QLabel" name="label_7">
-               <property name="text">
-                <string>Longitude</string>
-               </property>
-              </widget>
-             </item>
-             <!-- longitude text input area item -->
-             <item>
-              <widget class="QLineEdit" name="LongitudeInput">
-               <property name="placeholderText">
-                <string>enter longitude here</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <!-- Horizontal Box for the Preview, Optimize Path and clear mapviz buttons -->
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <!-- Mapviz Label -->
-             <item>
-              <widget class="QLabel" name="MapvizLabel">
-               <property name="text">
-                <string>Mapviz: </string>
-               </property>
-              </widget>
-             </item>
-             <!-- Preview Button -->
-             <item>
-              <widget class="QPushButton" name="PreviewMapvizButton">
-               <property name="text">
-                <string>Preview</string>
-               </property>
-              </widget>
-             </item>
-             <!-- Plan Order Button -->
-             <item>
-              <widget class="QPushButton" name="PlanOrderButton">
-               <property name="text">
-                <string>Plan Order</string>
-               </property>
-              </widget>
-             </item>
-             <!-- Clear Mapviz Button -->
-             <item>
-              <widget class="QPushButton" name="ClearMapvizButton">
-               <property name="text">
-                <string>Clear</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <!-- Horizontal box for the leg type entry -->
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <!-- leg type selection item  -->
-             <item>
-              <layout class="QVBoxLayout" name="verticalLayout_9">
-               <!-- GNSS Radio Button Item -->
+               <!-- leg type selection item  -->
                <item>
-                <widget class="QRadioButton" name="GNSSRadioButton">
-                 <property name="text">
-                  <string>GNSS Only</string>
+                <layout class="QVBoxLayout" name="LegTypeSelectionLayout">
+                 <property name="alignment">
+                  <set>Qt::AlignTop</set>
                  </property>
-                </widget>
+                 <!-- GNSS Only Radio Button Item -->
+                 <item>
+                  <widget class="QRadioButton" name="GNSSRadioButton">
+                   <property name="text">
+                    <string>GNSS Only</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <!-- ArUco Radio Button Item -->
+                 <item>
+                  <widget class="QRadioButton" name="ArUcoRadioButton">
+                   <property name="text">
+                    <string>ArUco Tag</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <!-- Object Radio Button Item -->
+                 <item>
+                  <widget class="QRadioButton" name="ObjectRadioButton">
+                   <property name="text">
+                    <string>Object Detection</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </item>
-               <!-- ArUco Radio Button Item -->
+               <!-- leg sub-selection options item  -->
                <item>
-                <widget class="QRadioButton" name="ArUcoRadioButton">
-                 <property name="text">
-                  <string>ArUco Tag</string>
-                 </property>
-                </widget>
-               </item>
-               <!-- Object Radio Button Item -->
-               <item>
-                <widget class="QRadioButton" name="ObjectRadioButton">
-                 <property name="text">
-                  <string>Object Detection</string>
-                 </property>
+                <widget class="QStackedWidget" name="legsubselectionStackedWidget">
+                 <!-- GNSS Subselection Options -->
+                 <widget class="QWidget" name="GNSSPage">
+                  <layout class="QVBoxLayout" name="verticalLayout_GNSSPage">
+                   <property name="alignment">
+                    <set>Qt::AlignTop</set>
+                   </property>
+                   <item>
+                    <widget class="QLabel" name="labelGNSSPage">
+                     <property name="alignment">
+                      <set>Qt::AlignTop</set>
+                     </property>
+                     <property name="text">
+                      <!-- Nothing needed for GNSS -->
+                      <string></string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                 <!-- ArUco Tag Subselection Options (Tag IDs) -->
+                 <widget class="QWidget" name="ArUcoPage">
+                  <layout class="QVBoxLayout" name="ArucoSubselectionLayout">
+                   <property name="alignment">
+                    <set>Qt::AlignTop</set>
+                   </property>
+                   <!-- Tag 1 Radio Button Item -->
+                   <item>
+                    <widget class="QRadioButton" name="Tag1RadioButton">
+                     <property name="text">
+                      <string>Tag ID 1</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <!-- Tag 2 Radio Button Item -->
+                   <item>
+                    <widget class="QRadioButton" name="Tag2RadioButton">
+                     <property name="text">
+                      <string>Tag ID 2</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <!-- Tag 3 Radio Button Item -->
+                   <item>
+                    <widget class="QRadioButton" name="Tag3RadioButton">
+                     <property name="text">
+                      <string>Tag ID 3</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                 <!-- Object Detection Subselection Options -->
+                 <widget class="QWidget" name="ObjectPage">
+                  <layout class="QVBoxLayout" name="ObjectSubselectionLayout">
+                   <property name="alignment">
+                    <set>Qt::AlignTop</set>
+                   </property>
+                   <!-- Watter Bottle Radio Button Item -->
+                   <item>
+                    <widget class="QRadioButton" name="WaterBottleRadioButton">
+                     <property name="text">
+                      <string>Watter Bottle</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <!-- Hammer Radio Button Item -->
+                   <item>
+                    <widget class="QRadioButton" name="HammerRadioButton">
+                     <property name="text">
+                      <string>Hammer</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
                 </widget>
                </item>
               </layout>
-             </item>
-             <!-- leg sub-selection options item  -->
-             <item>
-              <widget class="QStackedWidget" name="legsubselectionStackedWidget">
-               <!-- GNSS Subselection Options -->
-               <widget class="QWidget" name="GNSSPage">
-                <layout class="QVBoxLayout" name="verticalLayout_GNSSPage">
-                 <item>
-                  <widget class="QLabel" name="labelGNSSPage">
-                   <property name="text">
-                    <!-- Nothing needed for GNSS -->
-                    <string></string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-               <!-- ArUco Tag Subselection Options (Tag IDs) -->
-               <widget class="QWidget" name="ArUcoPage">
-                <layout class="QVBoxLayout" name="verticalLayout_9">
-                 <!-- Tag 1 Radio Button Item -->
-                 <item>
-                  <widget class="QRadioButton" name="Tag1RadioButton">
-                   <property name="text">
-                    <string>Tag ID 1</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <!-- Tag 2 Radio Button Item -->
-                 <item>
-                  <widget class="QRadioButton" name="Tag2RadioButton">
-                   <property name="text">
-                    <string>Tag ID 2</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <!-- Tag 3 Radio Button Item -->
-                 <item>
-                  <widget class="QRadioButton" name="Tag3RadioButton">
-                   <property name="text">
-                    <string>Tag ID 3</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-               <!-- Object Detection Subselection Options -->
-               <widget class="QWidget" name="ObjectPage">
-                <layout class="QVBoxLayout" name="verticalLayout_9">
-                 <!-- Watter Bottle Radio Button Item -->
-                 <item>
-                  <widget class="QRadioButton" name="WaterBottleRadioButton">
-                   <property name="text">
-                    <string>Watter Bottle</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <!-- Hammer Radio Button Item -->
-                 <item>
-                  <widget class="QRadioButton" name="HammerRadioButton">
-                   <property name="text">
-                    <string>Hammer</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <!-- Send Waypoint Button -->
-           <item>
-            <widget class="QPushButton" name="SendWaypointButton">
-             <property name="text">
-              <string>Send Waypoint</string>
-             </property>
-            </widget>
-           </item>
-           <!-- Enable and Disable Autonomy Buttons -->
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_9">
-             <!-- Enable Autonomy Button  -->
-             <item>
-              <widget class="QPushButton" name="EnableAutonomyButton">
-               <property name="text">
-                <string>Enable Autonomy</string>
-               </property>
-              </widget>
-             </item>
-             <!-- Disable Autonomy Button  -->
-             <item>
-              <widget class="QPushButton" name="DisableAutonomyButton">
-              <property name="text">
-               <string>Disable Autonomy</string>
+             </widget>
+            </item>
+            <!-- Send Waypoint and Clear Waypoints Buttons -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_10">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <!-- Abort Button -->
-           <item>
-            <widget class="QPushButton" name="AbortButton">
-             <property name="text">
-              <string>Abort</string>
-             </property>
-            </widget>
-           </item>
-           <!-- Error/Success Messages Item -->
-           <item>
-            <widget class="QLabel" name="error_label">
-             <property name="text">
-              <string>Standby</string>
-             </property>
-             <property name="styleSheet">
-              <string>color:rgb(190, 190, 190);</string>
-             </property>
-             <property name="scaledContents">
-              <bool>false</bool>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-          </layout>
+              <!-- Send Waypoint Button -->
+              <item>
+               <widget class="QPushButton" name="SendWaypointButton">
+                <property name="text">
+                 <string>Send Waypoint</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Clear Waypoint Button -->
+              <item>
+               <widget class="QPushButton" name="RemoveWaypointButton">
+                <property name="text">
+                 <string>Remove Last Waypoint</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Enable and Disable Autonomy Buttons -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_9">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Enable Autonomy Button  -->
+              <item>
+               <widget class="QPushButton" name="EnableAutonomyButton">
+                <property name="text">
+                 <string>Enable Autonomy</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Disable Autonomy Button  -->
+              <item>
+               <widget class="QPushButton" name="DisableAutonomyButton">
+               <property name="text">
+                <string>Disable Autonomy</string>
+               </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Abort Button -->
+            <item>
+             <widget class="QPushButton" name="AbortButton">
+              <property name="text">
+               <string>Abort</string>
+              </property>
+             </widget>
+            </item>
+            <!-- Error/Success Messages Item -->
+            <item>
+             <widget class="QLabel" name="error_label">
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignTop</set>
+              </property>
+              <property name="text">
+               <string>Standby</string>
+              </property>
+              <property name="styleSheet">
+               <string>color:rgb(255, 79, 79);</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
          </item>
          <!-- Vertical Dividing Line (divides the 2 columns)-->
          <item>
@@ -338,18 +428,18 @@
          </item>
          <!-- Column 2 Item -->
          <item>
-          <widget class="QWidget" name="layoutWidget_1">
+          <widget class="QWidget" name="column2_container">
            <!-- Sizing Properties of the right column -->
            <property name="minimumSize">
             <size>
-             <width>280</width>
-             <height>405</height>
+             <width>450</width>
+             <height>500</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>280</width>
-             <height>405</height>
+             <width>450</width>
+             <height>500</height>
             </size>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_10">
@@ -412,7 +502,7 @@
                 <item>
                  <widget class="QLabel" name="BaseSats">
                   <property name="text">
-                   <string>Satellites: ...</string>
+                   <string>Sat #: ...</string>
                   </property>
                  </widget>
                 </item>
@@ -420,7 +510,7 @@
                 <item>
                  <widget class="QLabel" name="BaseLat">
                   <property name="text">
-                   <string>Latitude: ...</string>
+                   <string>Lat: ...</string>
                   </property>
                  </widget>
                 </item>
@@ -428,7 +518,7 @@
                 <item>
                  <widget class="QLabel" name="BaseLon">
                   <property name="text">
-                   <string>Longitude: ...</string>
+                   <string>Lon: ...</string>
                   </property>
                  </widget>
                 </item>
@@ -472,7 +562,7 @@
                 <item>
                  <widget class="QLabel" name="RoverSats">
                   <property name="text">
-                   <string>Satellites: ...</string>
+                   <string>Sat #: ...</string>
                   </property>
                  </widget>
                 </item>
@@ -480,7 +570,7 @@
                 <item>
                  <widget class="QLabel" name="RoverLat">
                   <property name="text">
-                   <string>Latitude: ...</string>
+                   <string>Lat: ...</string>
                   </property>
                  </widget>
                 </item>
@@ -488,7 +578,7 @@
                 <item>
                  <widget class="QLabel" name="RoverLon">
                   <property name="text">
-                   <string>Longitude: ...</string>
+                   <string>Lon: ...</string>
                   </property>
                  </widget>
                 </item>
@@ -534,21 +624,21 @@
               </property>
              </widget>
             </item>
-            <!-- State Machine previous and current states Item -->
+            <!-- State Machine previous and current Main states Item -->
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_5">
               <!-- Vertical Box that has the PREVIOUS state -->
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_11">
                 <item>
-                 <widget class="QLabel" name="PreviousStateLabel">
+                 <widget class="QLabel" name="PreviousMainStateLabel">
                   <property name="text">
-                   <string>Previous State</string>
+                   <string>Previous Main State</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="PreviousStateDisplay">
+                 <widget class="QLabel" name="PreviousMainStateDisplay">
                   <property name="text">
                    <string>None</string>
                   </property>
@@ -571,14 +661,71 @@
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_11">
                 <item>
-                 <widget class="QLabel" name="CurrentStateLabel">
+                 <widget class="QLabel" name="CurrentMainStateLabel">
                   <property name="text">
-                   <string>Current State</string>
+                   <string>Current Main State</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="CurrentStateDisplay">
+                 <widget class="QLabel" name="CurrentMainStateDisplay">
+                  <property name="text">
+                   <string>None</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </item>
+            <!-- State Machine previous and current Navigation states Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
+              <!-- Vertical Box that has the PREVIOUS state -->
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_11">
+                <item>
+                 <widget class="QLabel" name="PreviousNavStateLabel">
+                  <property name="text">
+                   <string>Previous Nav State</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="PreviousNavStateDisplay">
+                  <property name="text">
+                   <string>None</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <!-- Vertical Dividing Line (divides previous and current state columns) -->
+              <item>
+               <widget class="Line" name="line">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+               </widget>
+              </item>
+              <!-- Vertical Box that has the CURRENT state -->
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_11">
+                <item>
+                 <widget class="QLabel" name="CurrentNavStateLabel">
+                  <property name="text">
+                   <string>Current Nav State</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="CurrentNavStateDisplay">
                   <property name="text">
                    <string>None</string>
                   </property>
@@ -598,6 +745,61 @@
                <enum>Qt::Horizontal</enum>
               </property>
              </widget>
+            </item>
+            <!-- Status Items -->
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_">
+              <!-- ObjDetTog status -->
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_11">
+                <item>
+                 <widget class="QLabel" name="ObjDetTogLabel">
+                  <property name="text">
+                   <string>Object Detection Toggle:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="ObjDetTogStatus">
+                  <property name="text">
+                   <string>...</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <!-- ObjDetTog status -->
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_11">
+                <item>
+                 <widget class="QLabel" name="ObjDetTogLabel">
+                  <property name="text">
+                   <string>Object Detection Toggle:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="ObjDetTogStatus">
+                  <property name="text">
+                   <string>...</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>

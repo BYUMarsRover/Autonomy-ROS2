@@ -60,6 +60,7 @@ class AutonomyGUI(Node, QWidget):
         self.DisableAutonomyButton.clicked.connect(self.disable_autonomy)
         self.AbortButton.clicked.connect(self.abort_autonomy)
         self.SendWaypointButton.clicked.connect(self.send_waypoint)
+        self.RemoveWaypointButton.clicked.connect(self.remove_waypoint)
 
         self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
         self.PlanOrderButton.clicked.connect(self.plan_order_service_call)
@@ -101,7 +102,12 @@ class AutonomyGUI(Node, QWidget):
         self.plan_order_client = self.create_client(OrderPath, '/plan_order')
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
         self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
+        self.remove_waypoint_client = self.create_client(SetBool, '/AU_remove_waypoint_service')
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
+
+        ################# Debug Setup #################
+
+        
 
         ################# Mapviz Communication Setup #################
 
@@ -124,9 +130,6 @@ class AutonomyGUI(Node, QWidget):
         # Stored in lat/lon format
         self.current_previewed_waypoints = Path()
 
-    def spin_ros(self):
-        rclpy.spin_once(self)
-
     # Callbacks for Subscribers
     def base_GPS_info_callback(self, msg):
         self.base_GPS_info = msg
@@ -138,11 +141,11 @@ class AutonomyGUI(Node, QWidget):
         base_min = msg.min
         base_sec = msg.sec
         # Update Gui Fields
-        self.BaseSats.setText(f'Satellites: {self.base_numSV}')
+        self.BaseSats.setText(f'Sat #: {self.base_numSV}')
         self.BaseDate.setText(f'Date: {base_month}/{base_day}/{base_year}')
         self.BaseTime.setText(f'Time: {base_hour}:{base_min}:{base_sec}')
-        self.BaseLat.setText(f'Latitude: {msg.lla[0]}')
-        self.BaseLon.setText(f'Longitude: {msg.lla[1]}')
+        self.BaseLat.setText(f'Lat: {round(msg.lla[0], 6)}')
+        self.BaseLon.setText(f'Lon: {round(msg.lla[1], 6)}')
         return
 
     def rover_GPS_info_callback(self, msg):
@@ -155,11 +158,11 @@ class AutonomyGUI(Node, QWidget):
         rover_min = msg.min
         rover_sec = msg.sec
         # Update Gui Fields
-        self.RoverSats.setText(f'Satellites: {self.rover_numSV}')
+        self.RoverSats.setText(f'Sat #: {self.rover_numSV}')
         self.RoverDate.setText(f'Date: {rover_month}/{rover_day}/{rover_year}')
         self.RoverTime.setText(f'Time: {rover_hour}:{rover_min}:{rover_sec}')
-        self.RoverLat.setText(f'Latitude: {msg.lla[0]}')
-        self.RoverLon.setText(f'Longitude: {msg.lla[1]}')
+        self.RoverLat.setText(f'Lat: {round(msg.lla[0], 6)}')
+        self.RoverLon.setText(f'Lon: {round(msg.lla[1], 6)}')
         return
 
     def rover_state_callback(self, msg): #rover status (speed, direction, navigation state)
@@ -185,7 +188,7 @@ class AutonomyGUI(Node, QWidget):
         self.rover_nav_status = msg
         if self.state_machine_state == None:
             self.prev_state_machine_state = self.state_machine_state
-            self.PreviousStateDisplay.setText(self.prev_state_machine_state)
+            self.PreviousMainStateDisplay.setText(self.prev_state_machine_state)
         self.state_machine_state = msg.state
         autonomous_enable = msg.auto_enable
         if autonomous_enable:
@@ -193,7 +196,7 @@ class AutonomyGUI(Node, QWidget):
         else:
             self.autonomous_enable = 'Disabled'
 
-        self.CurrentStateDisplay.setText(self.state_machine_state)
+        self.CurrentMainStateDisplay.setText(self.state_machine_state)
         
         return
 
@@ -303,7 +306,7 @@ class AutonomyGUI(Node, QWidget):
         try:
             self.get_logger().info(f'Latitude: {self.latitude_input.text()}')
             self.get_logger().info(f'Longitude: {self.longitude_input.text()}')
-            self.get_logger().info('in init AutonomyStateMachine')
+            self.get_logger().info('Sending Waypoint...')
             lat = float(self.latitude_input.text())
             lon = float(self.longitude_input.text())
         except ValueError:
@@ -327,6 +330,24 @@ class AutonomyGUI(Node, QWidget):
         future = self.send_waypoint_client.call_async(req)
         # future.add_done_callback(self.future_callback)
         return
+
+    def remove_waypoint(self):
+        req = SetBool.Request()
+        req.data = True
+        future = self.remove_waypoint_client.call_async(req)
+        self.error_label.setText('Removing Last Waypoint')
+        future.add_done_callback(self.remove_waypoint_callback)
+
+    def remove_waypoint_callback(self, future):
+        try:
+            response = future.result()
+            if response.success:
+                self.error_label.setText(response.message)
+            else:
+                self.error_label.setText("Failed to remove waypoint")
+        except Exception as e:
+            self.error_label.setText(f'Remove Waypoint Service call failed!')
+
 
     def abort_autonomy(self):
         #logic for aborting autonomy task
