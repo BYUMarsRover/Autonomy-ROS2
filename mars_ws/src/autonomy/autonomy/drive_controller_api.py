@@ -49,8 +49,8 @@ class DriveControllerAPI:
     def issue_drive_cmd(self, lin_vel: float, ang_vel: float):
         #Drive Command: Sends linear and angular velocity commands.
         self._activate_managers([False, False, True, True, False])
-        self.drive_cmd.u_cmd = lin_vel
-        self.drive_cmd.omega_cmd = ang_vel
+        self.drive_cmd.u_cmd = float(lin_vel)
+        self.drive_cmd.omega_cmd = float(ang_vel)
         self.drive_cmds_pub.publish(self.drive_cmd)
 
     def issue_aruco_autopilot_cmd(self, angle: float, distance: float):

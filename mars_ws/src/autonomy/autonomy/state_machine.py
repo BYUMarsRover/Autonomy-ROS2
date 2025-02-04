@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections, PointList
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from std_srvs.srv import SetBool
 from autonomy.drive_controller_api import DriveControllerAPI
@@ -52,6 +52,7 @@ class AutonomyStateMachine(Node):
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
         self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10)
         self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10)
+        self.create_subscription(PointList, '/navigation/waypoints', self.waypoint_callback, 10)
 
         # Publishers
         self.aruco_pose_pub = self.create_publisher(FiducialData, "/autonomy/aruco_pose", 10)
@@ -174,6 +175,14 @@ class AutonomyStateMachine(Node):
         response.message = 'Adding waypoints was successful'
         self.get_logger().info(f"Response: success={response.success}, message='{response.message}'")
         return response
+
+    def waypoint_callback(self, msg: PointList):
+        self.pointlist = msg
+        self.waypoints = [
+        AutonomyTaskInfo(latitude=p.x, longitude=p.y, tag_id=msg.tag_id) for p in msg.points
+    ] 
+        # self.waypoints = self.pointlist.points
+
 
     def set_current_task(self):
         '''
@@ -410,10 +419,26 @@ class AutonomyStateMachine(Node):
                     self.state = State.START_POINT_NAVIGATION
 
             elif self.state == State.START_POINT_NAVIGATION:
+                self.get_logger().info("1")
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
                 self.set_autopilot_speed(self.navigate_speed)
-                self.drive_controller.issue_path_cmd(self.target_latitude, self.target_longitude)
-                self.state = State.POINT_NAVIGATION
+                # Here is an idea. Make an if statement to see if path planning was used, but that means I need to make a subscriber
+                # to the node from path planner. Once I get that subscriber/publisher thingy set up, logic would make that within this section
+                # of the state machine, I should say if waypoints, and then loop through waypoints until theyve finished 
+                # TODO: update how self.target_point is set
+                self.get_logger().info("2")
+                if self.waypoints and len(self.waypoints.points) > 0:
+                    self.get_logger().info("set!")
+                    self.target_latitude = self.waypoints.points[0].x
+                    self.target_longitude = self.waypoints.points[0].y  
+                    self.target_point = GPSCoordinate(self.target_latitude, self.target_longitude, 0)
+                    self.drive_controller.issue_path_cmd(self.target_latitude, self.target_longitude)
+                    if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.dist_tolerance:
+                        self.get_logger().info("popped!")
+                        self.waypoints.points.pop(0)
+                else:       
+                    self.drive_controller.issue_path_cmd(self.target_latitude, self.target_longitude)
+                    self.state = State.POINT_NAVIGATION
 
             elif self.state == State.POINT_NAVIGATION:
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
