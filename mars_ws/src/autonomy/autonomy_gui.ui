@@ -774,31 +774,6 @@
                 </item>
                </layout>
               </item>
-              <!-- ObjDetTog status -->
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_11">
-                <item>
-                 <widget class="QLabel" name="ObjDetTogLabel">
-                  <property name="text">
-                   <string>Object Detection Toggle:</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="ObjDetTogStatus">
-                  <property name="text">
-                   <string>...</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
              </layout>
             </item>
            </layout>
