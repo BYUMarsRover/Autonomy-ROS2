@@ -17,6 +17,7 @@ from PyQt5.QtCore import *
 from subprocess import Popen, PIPE
 import sys
 import os
+import time
 
 # For Mapviz Usage
 import yaml
@@ -93,6 +94,7 @@ class AutonomyGUI(Node, QWidget):
         # Subscribers
         self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
         self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
+        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10) #Rover GPS and Heading
         self.create_subscription(RoverState, "/rover_status", self.rover_state_callback, 10) #Rover state (speed, direction, navigation state)
         self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
         self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10)
@@ -105,6 +107,10 @@ class AutonomyGUI(Node, QWidget):
         self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
         self.remove_waypoint_client = self.create_client(SetBool, '/AU_remove_waypoint_service')
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
+
+        # Timer to run check if we have recieved information from various sources recently
+        self.timepoints_timer = self.create_timer(0.5, self.check_timepoints)
+        self.rover_state_singleton_timepoint = None
 
         ################# Debug Setup #################
 
@@ -119,6 +125,7 @@ class AutonomyGUI(Node, QWidget):
         # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
         mapviz_params_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_params.yaml')
         lat, lon = get_coordinates(mapviz_params_path, location)
+        print(f'Lat: {lat}, Lon: {lon}')
 
         # Convert lat/lon to UTM coordinates
         utm_coords = utm.from_latlon(lat, lon)
@@ -130,6 +137,18 @@ class AutonomyGUI(Node, QWidget):
         # Initialize the current previewed waypoints
         # Stored in lat/lon format
         self.current_previewed_waypoints = Path()
+
+
+    def check_timepoints(self):
+        if self.rover_state_singleton_timepoint is not None:
+            if self.get_clock().now().to_msg().sec - self.rover_state_singleton_timepoint > 1:
+                self.clear_status()
+    
+    def clear_status(self):
+        self.RoverStateMapYaw.setText('Map Yaw: ...')
+        self.RoverStateLat.setText('Latitude: ...')
+        self.RoverStateLon.setText('Longitude: ...')
+        return
 
     # Callbacks for Subscribers
     def base_GPS_info_callback(self, msg):
@@ -199,6 +218,13 @@ class AutonomyGUI(Node, QWidget):
 
         self.CurrentMainStateDisplay.setText(self.state_machine_state)
         
+        return
+    
+    def rover_state_singleton_callback(self, msg):
+        self.rover_state_singleton_timepoint = self.get_clock().now().to_msg().sec
+        self.RoverStateLat.setText(f'Latitude: {msg.gps.latitude}')
+        self.RoverStateLon.setText(f'Longitude: {msg.gps.longitude}')
+        self.RoverStateMapYaw.setText(f'Map Yaw: {msg.map_yaw}')
         return
     
     def obj_detect_callback(self, msg):

@@ -21,7 +21,7 @@ def generate_launch_description():
 
         # Declare launch arguments
         DeclareLaunchArgument('print_profile_data', default_value='false'),
-        DeclareLaunchArgument('location', default_value='hanksville'),
+        DeclareLaunchArgument('MAPVIZ_LOCATION', default_value='hanksville'),
 
         LogInfo(msg=['Config file path: ', config_path]),
 
@@ -44,7 +44,7 @@ def generate_launch_description():
             parameters=[
               {
                 'local_xy_frame': '/map',
-                'local_xy_origin': LaunchConfiguration('location'),
+                'local_xy_origin': LaunchConfiguration('MAPVIZ_LOCATION'),
                 'local_xy_origins': """- name: byu
   latitude: 40.2497218
   longitude: -111.649276

@@ -746,6 +746,58 @@
               </property>
              </widget>
             </item>
+            <!-- Rover State Singleton -->
+            <item>
+             <!-- Rover State Singleton Dash Section Label -->
+             <widget class="QLabel" name="StateMachineLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Rover State Singleton&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <!-- Vertical Box that has Rover State Singleton Status Items -->
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_11">
+              <!-- Rover State Singleton Lat -->
+              <item>
+               <widget class="QLabel" name="RoverStateLat">
+                <property name="text">
+                 <string>Lat: ...</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Rover State Singleton Lon -->
+              <item>
+               <widget class="QLabel" name="RoverStateLon">
+                <property name="text">
+                 <string>Lon: ...</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Rover State Singleton Map Yaw -->
+              <item>
+               <widget class="QLabel" name="RoverStateMapYaw">
+                <property name="text">
+                 <string>Map Yaw: ...</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Horizontal Dividing Line -->
+            <item>
+             <widget class="Line" name="line_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
             <!-- Status Items -->
             <item>
              <layout class="QVBoxLayout" name="verticalLayout_">
