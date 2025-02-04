@@ -163,7 +163,9 @@ class ArmControlsNode(Node):
         """
         Upon receive a message it updates the homography matrix stored
         """
-        self.homography_matrix = homography.homography
+        matrix= np.array(homography.homography)
+        matrix = matrix.reshape(3, 3)
+        self.homography_matrix = matrix
         self.control()
 
     def control(self):
