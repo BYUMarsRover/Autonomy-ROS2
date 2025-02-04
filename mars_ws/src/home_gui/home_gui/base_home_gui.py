@@ -315,7 +315,7 @@ class HomeGuiUI(Node, QWidget):
         # rclpy.spin(node)
 
     def cancelAutonomousKeyboard(self):
-        reply = QMessageBox.question(self, 'Confirm Cance', 'Are yu sure you want to cancel?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        reply = QMessageBox.question(self, 'Confirm Cancel', 'Are yu sure you want to cancel?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.keyboard_process.terminate()
             try:
