@@ -95,6 +95,7 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
         self.create_subscription(RoverState, "/rover_status", self.rover_state_callback, 10) #Rover state (speed, direction, navigation state)
         self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
+        self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10)
 
         # Services
 
@@ -199,6 +200,11 @@ class AutonomyGUI(Node, QWidget):
         self.CurrentMainStateDisplay.setText(self.state_machine_state)
         
         return
+    
+    def obj_detect_callback(self, msg):
+        self.ObjStatus.setText(f'Recieved Message')
+        # for obj in msg.objects:
+
 
     # Callback functions for buttons
     def enable_autonomy(self):

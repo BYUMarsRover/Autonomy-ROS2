@@ -753,9 +753,9 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_11">
                 <item>
-                 <widget class="QLabel" name="ObjDetTogLabel">
+                 <widget class="QLabel" name="ObjLabel">
                   <property name="text">
-                   <string>Object Detection Toggle:</string>
+                   <string>Object Status:</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignLeft</set>
@@ -763,7 +763,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="ObjDetTogStatus">
+                 <widget class="QLabel" name="ObjStatus">
                   <property name="text">
                    <string>...</string>
                   </property>
