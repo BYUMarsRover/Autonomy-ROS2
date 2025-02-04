@@ -64,6 +64,9 @@ class AutonomyStateMachine(Node):
         self.srv_switch_auto = self.create_service(SetBool, '/autonomy/enable_autonomy', self.enable)
         self.srv_switch_abort = self.create_service(AutonomyAbort, '/autonomy/abort_autonomy', self.abort)
         self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback)
+        self.remove_waypoint_service = self.create_service(SetBool, '/AU_remove_waypoint_service', self.remove_waypoint)
+
+        
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
         self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
         self.path_manager_client = self.create_client(SetBool, '/mobility/path_manager/enabled')
@@ -77,6 +80,7 @@ class AutonomyStateMachine(Node):
 
         # Declare Parameters
         self.declare_parameter('distance_tolerance', 1.0)
+        self.declare_parameter('obj_distance_tolerance', 1.0) # TODO: Tune & in the yaml
         self.declare_parameter('aruco_distance_tolerance', 5.0)
         self.declare_parameter('abort_distance_tolerance', 2.0)
         self.declare_parameter('hex_search_radius', 17.0)
@@ -94,6 +98,7 @@ class AutonomyStateMachine(Node):
 
         # Get Parameters
         self.dist_tolerance = self.get_parameter('distance_tolerance').get_parameter_value().double_value
+        self.obj_dist_tolerance = self.get_parameter('obj_distance_tolerance').get_parameter_value().double_value
         self.abort_dist_tolerance = self.get_parameter('abort_distance_tolerance').get_parameter_value().double_value
         self.aruco_dist_tolerance = self.get_parameter('aruco_distance_tolerance').get_parameter_value().double_value
         self.hex_search_radius = self.get_parameter('hex_search_radius').get_parameter_value().double_value
@@ -197,6 +202,19 @@ class AutonomyStateMachine(Node):
         if self.last_waypoint is None:
             self.last_waypoint = current_task
 
+    def remove_waypoint(self, request: SetBool.Request, response: SetBool.Response):
+        if len(self.waypoints) > 0:
+            self.waypoints.pop()
+            self.get_logger().info('Waypoint removed')
+            response.success = True
+            response.message = f'Waypoint removed, {len(self.waypoints)} remain'
+        else:
+            self.get_logger().warn('No waypoints to remove')
+            response.success = False
+            response.message = 'No waypoints to remove'
+
+        return response
+
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
         self.curr_latitude = msg.gps.latitude
         self.curr_longitude = msg.gps.longitude
@@ -242,6 +260,9 @@ class AutonomyStateMachine(Node):
         
         found = False
         for obj in msg.objects:
+            msg = String()
+            msg.data = f"Object: {obj.label}, {obj.confidence}"
+            self.debug_pub.publish(msg)
             if obj.label != correct_label or obj.confidence < 0.75:
                 continue
 
@@ -250,6 +271,9 @@ class AutonomyStateMachine(Node):
                     self.known_objects[obj.id].append(timestamp)
 
                 if len(self.known_objects[obj.id]) < 15:
+                    msg = String()
+                    msg.data = f"Num Detections: {len(self.known_objects[obj.id])}"
+                    self.debug_pub.publish(msg)
                     continue
 
                 # Low-pass filter the distance and heading information
@@ -433,16 +457,20 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.SPIN_SEARCH:
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
+                msg = String()
                 if self.aruco_spin_stop:
+                    msg.data = "aruco spin Stopping"
                     if time.time() - self.aruco_spin_stop_time > self.aruco_spin_delay_time:
                         self.aruco_spin_stop = False
                         self.aruco_spin_target_angle = self.wrap(self.aruco_spin_target_angle + self.aruco_spin_step_size, 0)
                         self.drive_controller.issue_drive_cmd(0.0, self.aruco_spin_speed)
                 else:
+                    msg.data = "Here 1"
                     if abs(self.wrap(self.aruco_spin_start_heading - self.aruco_spin_target_angle, 0)) < 0.01:
                         self.drive_controller.issue_drive_cmd(0, self.aruco_spin_speed)
                         self.state = State.START_HEX_SEARCH
                     if self.wrap(self.curr_heading - self.aruco_spin_target_angle, 0) > 0:
+                        msg.data = "Here 2"
                         self.aruco_spin_stop = True
                         self.aruco_spin_stop_time = time.time()
                         self.drive_controller.issue_drive_cmd(0, 0)
@@ -451,6 +479,7 @@ class AutonomyStateMachine(Node):
                     self.state = State.ARUCO_NAVIGATE
                 elif self.correct_obj_found:
                     self.state = State.OBJECT_NAVIGATE
+                self.debug_pub.publish(msg)
 
             elif self.state == State.START_HEX_SEARCH:
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
