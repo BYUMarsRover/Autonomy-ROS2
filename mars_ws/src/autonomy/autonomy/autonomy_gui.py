@@ -28,7 +28,7 @@ from std_msgs.msg import Header
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections, MobilityArucoAutopilotCommand
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand
 from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
 from ament_index_python.packages import get_package_share_directory
 
@@ -279,15 +279,11 @@ class AutonomyGUI(Node, QWidget):
         return
     
 
-def autopilot_cmds_callback(self, msg):
-    drive_manager_string = f'Distance to target: {msg.distance_to_target}, angle to target: {msg.course_angle}'
-    self.DriveManager.setText(drive_manager_string)
-
-        
-    def obj_detect_callback(self, msg):
-        self.ObjStatus.setText(f'Recieved Message')
-        # for obj in msg.objects:
-
+    def autopilot_cmds_callback(self, msg):
+        #TODO: Round to 2 decimal places
+        drive_manager_string = f'Distance to target: {msg.distance_to_target}, angle to target: {msg.course_angle}'
+        self.DriveManager.setText(drive_manager_string)
+        return
 
     # Callback functions for buttons
     def enable_autonomy(self):

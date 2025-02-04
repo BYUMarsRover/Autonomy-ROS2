@@ -751,7 +751,7 @@
              <layout class="QVBoxLayout" name="verticalLayout_">
               <!-- ObjDetTog status -->
               <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_11">
+               <layout class="QVBoxLayout" name="verticalLayout_11">
                 <item>
                  <widget class="QLabel" name="ObjLabel">
                   <property name="text">
@@ -766,6 +766,26 @@
                  <widget class="QLabel" name="ObjStatus">
                   <property name="text">
                    <string>...</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="ObjLabel">
+                  <property name="text">
+                   <string>Drive Manager:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="DriveManager">
+                  <property name="text">
+                   <string>Test</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignLeft</set>
