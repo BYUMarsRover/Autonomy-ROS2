@@ -52,6 +52,12 @@ class science_GUI(Node):
         self.initialize_timers()
         self.task_launcher_init()
         self.sensor_saving = [False] * 3  # temp, moisture, fad
+        self.temperature_coefficients = [[],[],[],[],[],[]]
+        self.moisture_coefficients = [[],[],[],[],[],[]]
+
+        self.science_data_path = os.path.expanduser("~/science_data/site-1")
+        # file_path = os.path.join(science_data_path, file_name)
+
         if self.future.result() is not None:
             self.get_logger().info(f"{self.future.result()}")
         else:
@@ -65,6 +71,16 @@ class science_GUI(Node):
 
     def task_launcher_init(self):
         self.signals = Signals()
+
+        #Read in coefficients. TODO - implement throw error if not defined.
+        # file_path = os.path.join(self.science_data_path, "polynomials.txt")
+        # with open(file_path, 'r') as f:
+        #     moisture_values = f[0].split()
+        #     for i in range(len(moisture_values)):
+        #         self.moisture_coefficients[i] = moisture_values[i]
+        #     temp_values = f[1].split()
+        #     for i in range(len(temp_values)):
+        #         self.temperature_coefficients[i] = temp_values[i]
 
         self.qt.pushButton_save_notes.clicked.connect(self.save_notes)
         self.qt.pushButton_fad.clicked.connect(self.fad_detector_calibration)
@@ -143,18 +159,23 @@ class science_GUI(Node):
         self.qt.lcd_moist.display(moisture)
         self.qt.lcd_temp.display(temperature)
 
-    def graph_sensor_values(self, position):#FIX FORMATTING FOR STANDARD POSITION ARGS
+    def graph_sensor_values(self, position):
         manual_points = []
         analog_vals = []
+        coefficients_path = ""
+        coefficients_file = ""
+
         match(position):
             case 0:
                 file_name = "moisture-plot-1.txt"
-                science_data_path = os.path.expanduser("~/science_data/site-1")
-                file_path = os.path.join(science_data_path, file_name)
+                file_path = os.path.join(self.science_data_path, file_name)
+                coefficients_file = "moisture_coefficients.txt"
+                coefficients_path = os.path.join(self.science_data_path, coefficients_file)
             case 1:
                 file_name = "temperature-plot-1.txt"
-                science_data_path = os.path.expanduser("~/science_data/site-1")
-                file_path = os.path.join(science_data_path, file_name)
+                file_path = os.path.join(self.science_data_path, file_name)
+                coefficients_file = "moisture_coefficients.txt"
+                coefficients_path = os.path.join(self.science_data_path, coefficients_file)
             case _: #Wildcard, acts like else
                 print("Err: this sensor does not have data to graph")
                 return
@@ -169,18 +190,12 @@ class science_GUI(Node):
                     #Normalize the values form zero to 1.
                     reading_series[-1] = reading_series[-1]/1023
                 analog_vals.append(reading_series)
-                # count += 1
-
-            # analog_vals.append(count*100+50) #This needs to get changed to collect the raw temperature point from the arduino
             
             #Show an updated graph with the new point
             dummy_manuals = []
-            # print(manual_points)
             for i in range(len(analog_vals)):
                 for j in analog_vals[i]:
                     dummy_manuals.append(manual_points[i])
-                    # print(np.size(dummy_manuals),np.size(analog_vals))
-                    # print(dummy_manuals, " --- ", analog_vals)
             dummy_analog = []
             for i in analog_vals:
                 for j in i:
@@ -199,17 +214,14 @@ class science_GUI(Node):
                 plt.scatter(dummy_analog,dummy_manuals)
                 plt.xlabel("Arduino Digital Readout")
                 plt.ylabel("Reference Temperature (deg C)")
-                # plt.draw()
                 plt.pause(0.5)
         #Add something so you can decide what order polynomial you want.
-        # order = int(input("What order polynomial do you want to fit? [0 - 6]\n"))
-        order = 1
+        order = int(input("What order polynomial do you want to fit? [0 - 6]\n"))
+        # order = 1
         P0 = np.zeros((1,6-order))
         #Plot the points alongside the polyfit.
         analog_vals = np.array(dummy_analog)
-        # print(analog_vals)
         manual_points = np.array(dummy_manuals)
-        # print(manual_points)
         P1 = np.polyfit(analog_vals, manual_points, order)
         P = np.concatenate((P0,P1),axis=None)
         x = np.linspace(0,1,500)
@@ -222,6 +234,8 @@ class science_GUI(Node):
         plt.plot(x, poly_y, label="polynomial fit")
         plt.legend()
         plt.show()
+        print(P)
+        # with open()
 
         
     def update_fad_intensity_value(self, msg):

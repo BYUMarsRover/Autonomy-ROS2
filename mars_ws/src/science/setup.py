@@ -18,9 +18,11 @@ setup(
         # Include our package.xml file
         (os.path.join('share', package_name), ['package.xml']),
         # Include all launch files.
-        (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*.launch.py'))),
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.py')),
         # Include the gui .ui file
         (os.path.join('share', package_name, 'gui'), glob(os.path.join('science', 'gui', '*.ui'))),
+        #Might want to be more particular in the future but this is a quick fix to get everything
+        # (os.path.join('share', package_name), glob(os.path.join('science', '*.py'))),
     ],
     # This is important as well
     install_requires=['setuptools'],
