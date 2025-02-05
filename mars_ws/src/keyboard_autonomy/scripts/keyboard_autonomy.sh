@@ -33,10 +33,10 @@ function rover_cmd {
 }
 
 # Start the base station launch file locally
-echo "[INFO] Launching base station ROS node locally"
-$SET_BASE_ENV_CMD && ros2 launch keyboard_autonomy_base_launch.py
+# echo "[INFO] Launching base station ROS node locally"
+# $SET_BASE_ENV_CMD && ros2 launch keyboard_autonomy_base_launch.py
 
 # Start rover's Docker container and launch the rover node
 echo "[INFO] Launching rover ROS node remotely"
-rover_cmd "docker run -d --name rover_container -t -v /path/to/rover_data:/rover_data ros_image"
+rover_cmd "cd ~/Autonomy-ROS2 && ./compose.sh"
 rover_cmd "$SET_ROVER_ENV_CMD && ros2 launch keyboard_autonomy_rover_launch.py"
