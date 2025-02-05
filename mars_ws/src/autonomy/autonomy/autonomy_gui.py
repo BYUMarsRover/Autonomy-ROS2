@@ -28,7 +28,7 @@ from std_msgs.msg import Header
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors
 from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
 from ament_index_python.packages import get_package_share_directory
 
@@ -101,7 +101,10 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
         self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10) #Aruco Detection
         self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10) #Object Detection
-        self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, 10)
+        self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, 10) #What mobility/path_manager is publishing
+        self.create_subscription(MobilityVelocityCommands, '/mobility/rover_vel_cmds', self.vel_cmds_callback, 10) #What mobility/autopilot_manager is publishing
+        self.create_subscription(MobilityDriveCommand, '/mobility/wheel_vel_cmds', self.wheel_vel_cmds_callback, 10) #What mobility/wheel_manager is publishing
+        self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, 1)
 
         # Services
 
@@ -278,11 +281,55 @@ class AutonomyGUI(Node, QWidget):
         self.ObjStatus.setText(objects_string)
         return
     
-
+    ################# Callbacks for Mobility #################
     def autopilot_cmds_callback(self, msg):
-        #TODO: Round to 2 decimal places
-        drive_manager_string = f'Distance to target: {msg.distance_to_target}, angle to target: {msg.course_angle}'
-        self.DriveManager.setText(drive_manager_string)
+        autopilot_cmds_string = f'Distance to target: {round(msg.distance_to_target, 2)}, angle to target: {round(msg.course_angle, 2)}'
+        self.AutopilotCmds.setText(autopilot_cmds_string)
+        return
+
+    def vel_cmds_callback(self, msg):
+        vel_cmds_string = f'Lin Vel: {round(msg.u_cmd, 2)}, Ang Vel: {round(msg.omega_cmd, 2)}'
+        self.VelocityCmds.setText(vel_cmds_string)
+        return
+
+    def wheel_vel_cmds_callback(self, msg):
+        wheel_vel_cmds_string = f'LW Speed: {round(msg.lw, 2)}, RW Speed: {round(msg.rw, 2)}'
+        self.WheelVelocityCmds.setText(wheel_vel_cmds_string)
+        return
+
+    def auto_drive_cmds_callback(self, msg):
+        #Format the IWC wheel commands into a string
+        IWC_cmd_string = ''
+        #For each wheel, put a negative in the string if direction is False
+        if msg.right_front_dir:
+            IWC_cmd_string = IWC_cmd_string + f'RFW: {round(msg.right_front_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f'RFW: -{round(msg.right_front_speed, 2)}'
+        if msg.right_middle_dir:
+            IWC_cmd_string = IWC_cmd_string + f', RMW: {round(msg.right_middle_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', RMW: -{round(msg.right_middle_speed, 2)}'
+        if msg.right_rear_dir:
+            IWC_cmd_string = IWC_cmd_string + f', RRW: {round(msg.right_rear_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', RRW: -{round(msg.right_rear_speed, 2)}'
+        if msg.left_front_dir:
+            IWC_cmd_string = IWC_cmd_string + f', LFW: {round(msg.left_front_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', LFW: -{round(msg.left_front_speed, 2)}'
+        if msg.left_middle_dir:
+            IWC_cmd_string = IWC_cmd_string + f', LMW: {round(msg.left_middle_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', LMW: -{round(msg.left_middle_speed, 2)}'
+        if msg.left_rear_dir:
+            IWC_cmd_string = IWC_cmd_string + f', LRW: {round(msg.left_rear_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', LRW: -{round(msg.left_rear_speed, 2)}'
+        
+        self.IWCCmds.setText(IWC_cmd_string)
+        
+
+
         return
 
     # Callback functions for buttons
@@ -433,7 +480,6 @@ class AutonomyGUI(Node, QWidget):
         except Exception as e:
             self.error_label.setText(f'Remove Waypoint Service call failed!')
 
-
     def abort_autonomy(self):
         #logic for aborting autonomy task
         req = AutonomyAbort.Request()
@@ -499,8 +545,6 @@ class AutonomyGUI(Node, QWidget):
         #     self.error_label.setText(f'Service call failed: {str(e)}')
         pass
 
-
-
 def get_coordinates(file_path, location):
     # Read the YAML file
     with open(file_path, 'r') as file:
@@ -550,8 +594,7 @@ def path_to_utm(path, utm_easting_zero, utm_northing_zero):
             )
         )
     return utm_path
-        
-        
+            
 def gui_ros_spin_thread(node):
     rclpy.spin(node)
 
