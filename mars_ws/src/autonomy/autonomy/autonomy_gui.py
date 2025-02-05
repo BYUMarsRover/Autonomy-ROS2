@@ -88,6 +88,7 @@ class AutonomyGUI(Node, QWidget):
         self.obj_distance = None
         self.obj_angle = None
         self.obj_alpha_lpf = 0.5
+        self.aruco_alpha_lpf = 0.5
         self.aruco_tag_distance = None
 
         ################# ROS Communication #################
@@ -227,12 +228,13 @@ class AutonomyGUI(Node, QWidget):
                 self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2) * (1 - self.aruco_alpha_lpf)
                 self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z) * (1 - self.aruco_alpha_lpf)
             
-            aruco_text = "Tag is {}m away at an angle of {} degrees".format(self.aruco_tag_distance, self.aruco_tag_angle)
+            #TODO: When we have heading data, add it to the angle here to ge the correct angle
+            aruco_text = "Tag is {}m away at {} deg.".format(round(self.aruco_tag_distance, 2), round(np.rad2deg(self.aruco_tag_angle), 2))
 
-            if msg.transforms[0].fiducial_id == self.tag_id.value:
-                aruco_text = aruco_text + f" Correct tagID: {self.tag_id.value}"
+            if msg.transforms[0].fiducial_id == self.tag_id:
+                aruco_text = aruco_text + f" Correct tagID: {self.tag_id}"
             else:
-                aruco_text = f"Incorrect tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id.value}"
+                aruco_text = aruco_text + f"Incorrect tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id}"
             
             self.ArucoStatus.setText(aruco_text)
         return
