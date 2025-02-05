@@ -6,6 +6,9 @@ import rclpy
 from rover_msgs.srv import CameraControl
 from rover_msgs.msg import ScienceToolPosition, ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceFADIntensity, Camera, RoverStateSingleton
 from rclpy.node import Node
+from ament_index_python.packages import get_package_share_directory
+import matplotlib.pyplot as plt
+import numpy as np
 
 import os
 import sys
@@ -22,7 +25,15 @@ class science_GUI(Node):
         
         super().__init__('science_GUI')
         self.qt = QtWidgets.QWidget()
-        uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/science/science/gui/science_GUI.ui', self.qt) # Load the .ui file
+
+        ui_file_path = os.path.join(
+            get_package_share_directory('science'),
+            'gui',
+            'science_GUI.ui'
+            )
+
+        uic.loadUi(ui_file_path, self.qt)
+        # uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/science/science/gui/science_GUI.ui', self.qt) # Load the .ui file
         self.qt.show() # Show the GUI
 
         self.base_ip = self.get_base_ip()
@@ -41,6 +52,12 @@ class science_GUI(Node):
         self.initialize_timers()
         self.task_launcher_init()
         self.sensor_saving = [False] * 3  # temp, moisture, fad
+        self.temperature_coefficients = [[],[],[],[],[],[]]
+        self.moisture_coefficients = [[],[],[],[],[],[]]
+
+        self.science_data_path = os.path.expanduser("~/science_data/site-1")
+        # file_path = os.path.join(science_data_path, file_name)
+
         if self.future.result() is not None:
             self.get_logger().info(f"{self.future.result()}")
         else:
@@ -55,8 +72,21 @@ class science_GUI(Node):
     def task_launcher_init(self):
         self.signals = Signals()
 
+        #Read in coefficients. TODO - implement throw error if not defined.
+        # file_path = os.path.join(self.science_data_path, "polynomials.txt")
+        # with open(file_path, 'r') as f:
+        #     moisture_values = f[0].split()
+        #     for i in range(len(moisture_values)):
+        #         self.moisture_coefficients[i] = moisture_values[i]
+        #     temp_values = f[1].split()
+        #     for i in range(len(temp_values)):
+        #         self.temperature_coefficients[i] = temp_values[i]
+
         self.qt.pushButton_save_notes.clicked.connect(self.save_notes)
         self.qt.pushButton_fad.clicked.connect(self.fad_detector_calibration)
+
+        self.qt.pushButton_temperature.clicked.connect(lambda: self.graph_sensor_values(1))
+        self.qt.pushButton_moisture.clicked.connect(lambda: self.graph_sensor_values(0))
 
         self.qt.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
         self.qt.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
@@ -65,7 +95,7 @@ class science_GUI(Node):
         self.qt.lcd_site_num.display(self.site_number)
         self.qt.pushButton_change_site.clicked.connect(self.increment_site_number)
 
-        self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1)
+        self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1) #figure this out
         self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
 
         self.signals.sensor_signal.connect(self.update_sensor_values)
@@ -88,7 +118,10 @@ class science_GUI(Node):
 
         print('Toggling Saving Sensor', p)
         self.sensor_saving[p] = not self.sensor_saving[p]
-        self.sensor_message = ScienceSaveSensor()
+        if (p == 0):
+            self.sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_moisture.text()), save=self.sensor_saving[p])
+        elif (p == 1):
+            self.sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_temperature.text()), save=self.sensor_saving[p])
         self.signals.sensor_save_signal.emit(self.sensor_message)
 
     def stop_temp_saver(self):
@@ -126,6 +159,85 @@ class science_GUI(Node):
         self.qt.lcd_moist.display(moisture)
         self.qt.lcd_temp.display(temperature)
 
+    def graph_sensor_values(self, position):
+        manual_points = []
+        analog_vals = []
+        coefficients_path = ""
+        coefficients_file = ""
+
+        match(position):
+            case 0:
+                file_name = "moisture-plot-1.txt"
+                file_path = os.path.join(self.science_data_path, file_name)
+                coefficients_file = "moisture_coefficients.txt"
+                coefficients_path = os.path.join(self.science_data_path, coefficients_file)
+            case 1:
+                file_name = "temperature-plot-1.txt"
+                file_path = os.path.join(self.science_data_path, file_name)
+                coefficients_file = "moisture_coefficients.txt"
+                coefficients_path = os.path.join(self.science_data_path, coefficients_file)
+            case _: #Wildcard, acts like else
+                print("Err: this sensor does not have data to graph")
+                return
+
+        with open(file_path, 'r') as f:
+            for line in f:
+                split = line.split()
+                manual_points.append(float(split[0]))
+                reading_series =[]
+                for i in split[1:]:
+                    reading_series.append(float(i))
+                    #Normalize the values form zero to 1.
+                    reading_series[-1] = reading_series[-1]/1023
+                analog_vals.append(reading_series)
+            
+            #Show an updated graph with the new point
+            dummy_manuals = []
+            for i in range(len(analog_vals)):
+                for j in analog_vals[i]:
+                    dummy_manuals.append(manual_points[i])
+            dummy_analog = []
+            for i in analog_vals:
+                for j in i:
+                    dummy_analog.append(j)
+
+            plt.scatter(dummy_analog,dummy_manuals)
+            # plt.draw()
+            plt.pause(0.5)
+            # Have it ask you to save the point or delete after showing you an updated graph.
+            # keep = input("Do you want to keep this point? [y]/n\n")
+            keep = "y"
+            if not (keep == "y" or keep =="Y" or keep == "[Y]" or keep == "[y]" or keep == ""):
+                manual_points.pop()
+                analog_vals.pop()
+                plt.cla()
+                plt.scatter(dummy_analog,dummy_manuals)
+                plt.xlabel("Arduino Digital Readout")
+                plt.ylabel("Reference Temperature (deg C)")
+                plt.pause(0.5)
+        #Add something so you can decide what order polynomial you want.
+        order = int(input("What order polynomial do you want to fit? [0 - 6]\n"))
+        # order = 1
+        P0 = np.zeros((1,6-order))
+        #Plot the points alongside the polyfit.
+        analog_vals = np.array(dummy_analog)
+        manual_points = np.array(dummy_manuals)
+        P1 = np.polyfit(analog_vals, manual_points, order)
+        P = np.concatenate((P0,P1),axis=None)
+        x = np.linspace(0,1,500)
+        poly_y = P[0]*x**6+P[1]*x**5+P[2]*x**4+P[3]*x**3+P[4]*x**2+P[5]*x + P[6]
+        # print(P)
+        plt.figure()
+        plt.scatter(analog_vals, manual_points, label="input data")
+        plt.xlabel("Arduino Digital Readout")
+        plt.ylabel("Reference Temperature (deg C)")
+        plt.plot(x, poly_y, label="polynomial fit")
+        plt.legend()
+        plt.show()
+        print(P)
+        # with open()
+
+        
     def update_fad_intensity_value(self, msg):
         print('Displaying intensity!', msg)
         self.qt.le_fad.setPlaceholderText(str(msg))
