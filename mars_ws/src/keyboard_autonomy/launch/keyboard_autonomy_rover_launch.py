@@ -39,9 +39,7 @@ def generate_launch_description():
             on_exit=launch.actions.Shutdown()
         ),
         launch_ros.actions.Node(
-            launch_ros.actions.Node(
                 package='keyboard_autonomy',
                 executable='arm_controls',
-            ),
-        )
+        ),
     ])

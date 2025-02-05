@@ -22,11 +22,11 @@ ROVER_ADDRESS=$ROVER_ADDRESS
 
 # Prepare to set up environment variables
 SET_BASE_ENV_CMD="export $(echo $BASE_ENVIRONMENT | xargs) && unset ROS_HOSTNAME && cd ~/Autonomy_ROS2/mars_ws && source install/setup.sh"
-SET_ROVER_ENV_CMD="export $(echo $ROVER_ENVIRONMENT | xargs) && unset ROS_HOSTNAME && cd ~/Autonomy_ROS2/mars_ws  && source install/setup.sh"
+SET_ROVER_ENV_CMD="export $(echo $ROVER_ENVIRONMENT | xargs) && unset ROS_HOSTNAME && cd ~/mars_ws  && source install/setup.sh"
 
 # Function to run commands on the rover
 function rover_cmd {
-  ssh $ROVER_ADDRESS -o ConnectTimeout=$TIMEOUT "$SET_ROVER_ENV_CMD && $1" || {
+  ssh $ROVER_ADDRESS -o ConnectTimeout=$TIMEOUT "$1" || {
     echo "[ERROR] Unable to connect to rover at $ROVER_ADDRESS"
     exit 1
   }
@@ -38,5 +38,4 @@ function rover_cmd {
 
 # Start rover's Docker container and launch the rover node
 echo "[INFO] Launching rover ROS node remotely"
-rover_cmd "cd ~/Autonomy-ROS2 && ./compose.sh"
-rover_cmd "$SET_ROVER_ENV_CMD && ros2 launch keyboard_autonomy_rover_launch.py"
+rover_cmd "cd ~/Autonomy-ROS2 && ./compose.sh && $SET_ROVER_ENV_CMD && ros2 launch keyboard_autonomy_rover_launch.py"

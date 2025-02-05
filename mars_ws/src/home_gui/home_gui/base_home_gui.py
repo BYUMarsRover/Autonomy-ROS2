@@ -134,7 +134,7 @@ class HomeGuiUI(Node, QWidget):
         self.keyboard_process = None
         signal.signal(signal.SIGINT, self.handler_stop_signals)
         signal.signal(signal.SIGTERM, self.handler_stop_signals)
-        self.script_path = "~/Autonomy-ROS2\mars_ws\src\keyboard_autonomy\scripts\keyboard_autonomy.sh"
+        self.script_path = "~/mars_ws/src/keyboard_autonomy/scripts/keyboard_autonomy.sh"
 
     def error(self, message, title='Error'):
         self.get_logger().error(message)
@@ -304,12 +304,24 @@ class HomeGuiUI(Node, QWidget):
         self.get_logger().info(word)
         if self.keyboard_process is None or self.keyboard_process.poll() is not None:
             self.get_logger().info("starting keyboard autonomy launch file")
-            self.keyboard_process = Popen(self.script_path, shell=True, preexec_fn=os.setsid, stderr=PIPE)
+            self.keyboard_process = Popen(self.script_path, shell=True, preexec_fn=os.setsid, stderr=PIPE, stdout=PIPE)
             self.get_logger().info("launched the keyboard autonomy file")
         else:
             self.get_logger().info('Launch file already running.')
 
-        
+                # Define a method to read stdout and stderr asynchronously
+        def read_output():
+            # Read stdout in a separate thread
+            for line in self.keyboard_process.stdout:
+                self.get_logger().info(line.decode().strip())
+            # Read stderr in a separate thread
+            for line in self.keyboard_process.stderr:
+                self.get_logger().info(line.decode().strip())
+        # Run the output reading in a separate thread to avoid blocking the main thread
+        output_thread = threading.Thread(target=read_output)
+        output_thread.daemon = True  # Ensure the thread dies with the main program
+        output_thread.start()
+
         # rclpy.init(args=word)
         # node = KeyboardFSMNode()
         # rclpy.spin(node)
