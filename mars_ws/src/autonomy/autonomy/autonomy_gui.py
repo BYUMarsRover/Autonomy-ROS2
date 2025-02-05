@@ -88,6 +88,7 @@ class AutonomyGUI(Node, QWidget):
         self.obj_distance = None
         self.obj_angle = None
         self.obj_alpha_lpf = 0.5
+        self.aruco_tag_distance = None
 
         ################# ROS Communication #################
 
@@ -105,6 +106,7 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(MobilityVelocityCommands, '/mobility/rover_vel_cmds', self.vel_cmds_callback, 10) #What mobility/autopilot_manager is publishing
         self.create_subscription(MobilityDriveCommand, '/mobility/wheel_vel_cmds', self.wheel_vel_cmds_callback, 10) #What mobility/wheel_manager is publishing
         self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, 1)
+
 
         # Services
 
@@ -213,44 +215,26 @@ class AutonomyGUI(Node, QWidget):
         return
 
     def ar_tag_callback(self, msg):
-        #TODO: Implement AR Tag callback
 
-        # # print("in ar_tag_callback")
-        # if len(msg.transforms) == 1: #TODO: if we happpen to see 2, this will not run
-        #     # print("found 1 tag")
-        #     if self.aruco_tag_distance is None:
-        #         self.aruco_tag_distance = np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2)
-        #         self.aruco_tag_angle = - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z)
-        #     else:
-        #         self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2) * (1 - self.aruco_alpha_lpf)
-        #         self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z) * (1 - self.aruco_alpha_lpf)
+        # Clear the string
+        aruco_text = ''
 
-        #     self.current_aruco_point = GPSTools.heading_distance_to_lat_lon(
-        #         self.current_point, 
-        #         -np.rad2deg(self.curr_heading + self.aruco_tag_angle), 
-        #         self.aruco_tag_distance
-        #     )
-        #     # print("tag is {}m away at an angle of {} degrees".format(self.aruco_tag_distance, self.aruco_tag_angle))
-        #     # print("tag at {}".format(np.rad2deg(self.curr_heading + self.aruco_tag_angle)))
-        #     self.aruco_pose = FiducialData()
-        #     self.aruco_pose.angle_offset = self.aruco_tag_angle
-        #     self.aruco_pose.dist_to_fiducial = self.aruco_tag_distance
-        #     self.aruco_pose_pub.publish(self.aruco_pose)
+        if len(msg.transforms) >= 1: #TODO: if we happpen to see 2, this will not run... JM - Unsure what this was used for. 
+            if self.aruco_tag_distance is None:
+                self.aruco_tag_distance = np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2)
+                self.aruco_tag_angle = - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z)
+            else:
+                self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2) * (1 - self.aruco_alpha_lpf)
+                self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z) * (1 - self.aruco_alpha_lpf)
+            
+            aruco_text = "Tag is {}m away at an angle of {} degrees".format(self.aruco_tag_distance, self.aruco_tag_angle)
 
-        #     self.ar_callback_see_time = time.time()
-
-        #     if msg.transforms[0].fiducial_id == self.tag_id.value:
-        #         self.get_logger().info(f"Is correct tag: {self.tag_id.value}")
-        #         self.correct_aruco_tag_found = True
-        #         self.wrong_aruco_tag_found = False
-        #     else:
-        #         self.get_logger().info(f"Is not correct tag. tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id.value}")
-        #         self.correct_aruco_tag_found = False
-        #         self.wrong_aruco_tag_found = True
-        # elif time.time() - self.ar_callback_see_time > 1:
-        #     self.correct_aruco_tag_found = False
-        #     self.wrong_aruco_tag_found = False
-        #     # self.both_aruco_tags_found = False
+            if msg.transforms[0].fiducial_id == self.tag_id.value:
+                aruco_text = aruco_text + f" Correct tagID: {self.tag_id.value}"
+            else:
+                aruco_text = f"Incorrect tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id.value}"
+            
+            self.ArucoStatus.setText(aruco_text)
         return
     
     def obj_detect_callback(self, msg):
