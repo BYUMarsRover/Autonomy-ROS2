@@ -26,7 +26,7 @@ def generate_launch_description():
         # Launch the custom xbox_science node
         Node(
             package='joysticks',
-            executable='xbox_science.py',
+            executable='xbox_science',
             name='xbox_science',
             output='screen'
         ),

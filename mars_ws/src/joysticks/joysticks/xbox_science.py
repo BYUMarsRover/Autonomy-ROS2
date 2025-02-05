@@ -51,6 +51,8 @@ class XBOX(Node):
     def __init__(self):
         super().__init__("xbox_science")
 
+        self.get_logger().info('running joystick!')
+
         # Subscribers
         self.sub_joy = self.create_subscription(
             Joy, "/joy_science_input", self.joy_callback, 10
