@@ -263,15 +263,11 @@ class AutonomyGUI(Node, QWidget):
         return
     
 
-def autopilot_cmds_callback(self, msg):
-    drive_manager_string = f'Distance to target: {msg.distance_to_target}, angle to target: {msg.course_angle}'
-    self.DriveManager.setText(drive_manager_string)
-
-        
-    def obj_detect_callback(self, msg):
-        self.ObjStatus.setText(f'Recieved Message')
-        # for obj in msg.objects:
-
+    def autopilot_cmds_callback(self, msg):
+        #TODO: Round to 2 decimal places
+        drive_manager_string = f'Distance to target: {msg.distance_to_target}, angle to target: {msg.course_angle}'
+        self.DriveManager.setText(drive_manager_string)
+        return
 
     # Callback functions for buttons
     def enable_autonomy(self):
