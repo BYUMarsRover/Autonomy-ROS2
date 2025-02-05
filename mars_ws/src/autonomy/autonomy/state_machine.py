@@ -64,6 +64,9 @@ class AutonomyStateMachine(Node):
         self.srv_switch_auto = self.create_service(SetBool, '/autonomy/enable_autonomy', self.enable)
         self.srv_switch_abort = self.create_service(AutonomyAbort, '/autonomy/abort_autonomy', self.abort)
         self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback)
+        self.remove_waypoint_service = self.create_service(SetBool, '/AU_remove_waypoint_service', self.remove_waypoint)
+
+        
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
         self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
         self.path_manager_client = self.create_client(SetBool, '/mobility/path_manager/enabled')
@@ -198,6 +201,19 @@ class AutonomyStateMachine(Node):
         # TODO: Do I want to make this be the current location or the first waypoint?
         if self.last_waypoint is None:
             self.last_waypoint = current_task
+
+    def remove_waypoint(self, request: SetBool.Request, response: SetBool.Response):
+        if len(self.waypoints) > 0:
+            self.waypoints.pop()
+            self.get_logger().info('Waypoint removed')
+            response.success = True
+            response.message = f'Waypoint removed, {len(self.waypoints)} remain'
+        else:
+            self.get_logger().warn('No waypoints to remove')
+            response.success = False
+            response.message = 'No waypoints to remove'
+
+        return response
 
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
         self.curr_latitude = msg.gps.latitude

@@ -32,12 +32,14 @@ class DriveManager(Node):
             self.enable
         )
 
-        # Parameters
-        self.declare_parameter('cmd_lb', 0.0)
-        self.declare_parameter('max_speed', 1.0)
+        # Parameters #TODO: this node is not getting these parameters properly form the params file being passed in by the launch file
+        self.declare_parameter('cmd_lb', 0.01) # Wheel Command Lower Bound
+        self.declare_parameter('max_speed', 3.0) # Maximum Speed
 
-        self.cmd_lb = self.get_parameter('cmd_lb').value
-        self.max_speed = self.get_parameter('max_speed').value
+        self.cmd_lb = self.get_parameter('cmd_lb').get_parameter_value().double_value
+        self.max_speed = self.get_parameter('max_speed').get_parameter_value().double_value
+        self.get_logger().info(f"In Init - cmd_lb: {self.cmd_lb}")
+        self.get_logger().info(f"In Init - max_speed: {self.max_speed}")
 
         # Attributes
         self.r = 0.8382  # wheel radius (meters)
@@ -48,7 +50,7 @@ class DriveManager(Node):
 
         self.get_logger().info(f"Drive Manager initialized!")
 
-    def vel_cmds_callback(self, msg):
+    def vel_cmds_callback(self, msg): # NOTE: HERE
         u_cmd = msg.u_cmd
         omega_cmd = msg.omega_cmd
 
@@ -56,12 +58,14 @@ class DriveManager(Node):
             rw_speed = 0.0
             lw_speed = 0.0
         else:
-            v_l = u_cmd - omega_cmd * self.B / 2
-            v_r = u_cmd + omega_cmd * self.B / 2
+            v_l = u_cmd - omega_cmd * self.B / 2 * 20
+            v_r = u_cmd + omega_cmd * self.B / 2 * 20
+            # self.get_logger().info(f"IN: vel_cmds_callback, v_l/v_r: {v_l}/{v_r}")
             psidot_Ld = v_l / self.r
             psidot_Rd = v_r / self.r
-            rw_speed = self.piecewise_sigmoid(psidot_Rd)
             lw_speed = self.piecewise_sigmoid(psidot_Ld)
+            rw_speed = self.piecewise_sigmoid(psidot_Rd)
+            # self.get_logger().info(f"IN: vel_cmds_callback, lw/rw: {lw_speed}/{rw_speed}")
 
         self.rover_cmd.rw = float(rw_speed)
         self.rover_cmd.lw = float(lw_speed)
@@ -80,6 +84,7 @@ class DriveManager(Node):
         return response
 
     def piecewise_sigmoid(self, x):
+        # self.get_logger().info(f"IN: piecewise_sigmoid, x: {x}")
         m = (1 - self.cmd_lb) / self.max_speed
         if x < -self.max_speed:
             return -1
@@ -89,8 +94,11 @@ class DriveManager(Node):
             return 0
         elif 0 < x <= self.max_speed:
             return self.cmd_lb + m * x
-        else:  # x > self.max_speed
+        elif x > self.max_speed:
             return 1
+        else:
+            self.get_logger().error(f"Invalid input to piecewise_sigmoid: {x}")
+            return 0
 
 def main(args=None):
     rclpy.init(args=args)
