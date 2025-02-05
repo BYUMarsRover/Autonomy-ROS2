@@ -300,7 +300,6 @@ class HomeGuiUI(Node, QWidget):
 
     def launch_autonomous_keyboard(self):
         word = self.autonomousKeyboardLineEdit.text()
-        print(word)
         self.get_logger().info(word)
         if self.keyboard_process is None or self.keyboard_process.poll() is not None:
             self.get_logger().info("starting keyboard autonomy launch file")
