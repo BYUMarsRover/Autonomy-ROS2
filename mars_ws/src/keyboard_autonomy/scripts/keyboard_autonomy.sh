@@ -21,8 +21,8 @@ ROVER_ADDRESS=$ROVER_ADDRESS
 "
 
 # Prepare to set up environment variables
-SET_BASE_ENV_CMD="export $(echo $BASE_ENVIRONMENT | xargs) && unset ROS_HOSTNAME && source /path/to/base_station_workspace/devel/setup.sh"
-SET_ROVER_ENV_CMD="export $(echo $ROVER_ENVIRONMENT | xargs) && unset ROS_HOSTNAME && source /path/to/rover_workspace/devel/setup.sh"
+SET_BASE_ENV_CMD="export $(echo $BASE_ENVIRONMENT | xargs) && unset ROS_HOSTNAME && cd ~/Autonomy_ROS2/mars_ws && source install/setup.sh"
+SET_ROVER_ENV_CMD="export $(echo $ROVER_ENVIRONMENT | xargs) && unset ROS_HOSTNAME && cd ~/Autonomy_ROS2/mars_ws  && source install/setup.sh"
 
 # Function to run commands on the rover
 function rover_cmd {
