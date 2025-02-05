@@ -30,8 +30,6 @@ setup(
             'gps_to_mapviz = mapviz_tf.gps_to_mapviz:main',
             'path_to_mapviz = mapviz_tf.path_to_mapviz:main',
             'rover_tf_broadcaster = mapviz_tf.rover_tf_broadcaster:main',
-            'path_test = mapviz_tf.path_broadcaster_test:main',
-            'wgs84_tf = mapviz_tf.wgs84_tf_broadcaster:main',
         ],
     },
 )

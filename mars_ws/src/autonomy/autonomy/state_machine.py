@@ -88,7 +88,6 @@ class AutonomyStateMachine(Node):
         self.aruco_dist_tolerance = self.get_parameter('aruco_distance_tolerance').get_parameter_value().double_value
         self.hex_search_radius = self.get_parameter('hex_search_radius').get_parameter_value().double_value
         self.navigate_speed = self.get_parameter('navigate_speed').get_parameter_value().double_value
-        self.object_speed = self.get_parameter('object_speed').get_parameter_value().double_value
         self.aruco_speed = self.get_parameter('aruco_speed').get_parameter_value().double_value
         self.aruco_spin_speed = self.get_parameter('aruco_spin_speed').get_parameter_value().double_value
         self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value
@@ -396,6 +395,7 @@ class AutonomyStateMachine(Node):
             self.get_logger().info(f"State is: {self.state.value}")
 
         if self.enabled:
+            self.get_logger().info(f"State is: {self.state.value}")
             if self.state == State.MANUAL:
                 self.rover_nav_state.navigation_state = RoverState.TELEOPERATION_STATE
                 self.correct_aruco_tag_found = False
@@ -404,9 +404,9 @@ class AutonomyStateMachine(Node):
             elif self.state == State.SEARCH_FOR_WRONG_TAG:
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
                 if self.wrong_aruco_tag_found and self.aruco_tag_distance < self.wrong_aruco_backup_distance:
-                    self.drive_controller.issue_drive_cmd(-2.0, 0.0)
+                    self.drive_controller.issue_drive_cmd(-2, 0)
                 else:
-                    self.drive_controller.issue_drive_cmd(0.0, 0.0)
+                    self.drive_controller.issue_drive_cmd(0, 0)
                     self.state = State.START_POINT_NAVIGATION
 
             elif self.state == State.START_POINT_NAVIGATION:
@@ -438,7 +438,7 @@ class AutonomyStateMachine(Node):
                 self.aruco_spin_stop = False
                 self.aruco_spin_target_angle = self.wrap(self.curr_heading + self.aruco_spin_step_size, 0)
                 self.get_logger().info(f"target: {self.aruco_spin_target_angle}")
-                self.drive_controller.issue_drive_cmd(0.0, self.aruco_spin_speed)
+                self.drive_controller.issue_drive_cmd(0, self.aruco_spin_speed)
                 self.state = State.SPIN_SEARCH
 
             elif self.state == State.SPIN_SEARCH:
@@ -447,7 +447,7 @@ class AutonomyStateMachine(Node):
                     if time.time() - self.aruco_spin_stop_time > self.aruco_spin_delay_time:
                         self.aruco_spin_stop = False
                         self.aruco_spin_target_angle = self.wrap(self.aruco_spin_target_angle + self.aruco_spin_step_size, 0)
-                        self.drive_controller.issue_drive_cmd(0.0, self.aruco_spin_speed)
+                        self.drive_controller.issue_drive_cmd(0, self.aruco_spin_speed)
                 else:
                     if abs(self.wrap(self.aruco_spin_start_heading - self.aruco_spin_target_angle, 0)) < 0.01:
                         self.drive_controller.issue_drive_cmd(0, self.aruco_spin_speed)

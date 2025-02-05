@@ -1,8 +1,7 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable, DeclareLaunchArgument
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
-from launch.substitutions import LaunchConfiguration, EnvironmentVariable
 import os
 
 # Base Common Launch
@@ -13,15 +12,11 @@ import os
 
 def generate_launch_description():
     # Define launch arguments
-    mapviz_location_arg = DeclareLaunchArgument(
-        'MAPVIZ_LOCATION',
-        default_value=EnvironmentVariable('MAPVIZ_LOCATION', default_value='')
-    )
 
-    # Set Log Info for Debugging
-    set_rosconsole_format = SetEnvironmentVariable(
-        'ROSCONSOLE_FORMAT', '(${node})[${severity}]: ${message}'
-    )
+    # Set environment variable TODO: Is this needed?
+    # set_rosconsole_format = SetEnvironmentVariable(
+    #     'ROSCONSOLE_FORMAT', '(${node})[${severity}]: ${message}'
+    # )
 
     # Include other launch files TODO: Uncomment packages as they are created
     include_xbox_drive = IncludeLaunchDescription(
@@ -41,10 +36,7 @@ def generate_launch_description():
 
     include_mapviz = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
-            get_package_share_directory('mapviz_tf'), 'launch', 'mapviz_launch.py')),
-        launch_arguments={
-            'location': LaunchConfiguration('MAPVIZ_LOCATION')
-        }.items()
+            get_package_share_directory('mapviz_tf'), 'launch', 'mapviz_launch.py'))
     )
 
     #GPS node on the base station
@@ -54,10 +46,9 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        mapviz_location_arg,
-        set_rosconsole_format,
+        # set_rosconsole_format,
         include_xbox_drive,
-        include_base_home_gui,
+        # include_base_home_gui,
         include_heartbeat_base,
         # include_mapviz,
         include_odometry_base

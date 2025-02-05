@@ -76,7 +76,7 @@ class PathManager(Node):
     def publish_debug(self, message: str):
         """Publish debug messages."""
         self.debug_pub.publish(String(data=message))
-        # self.get_logger().info(message)
+        self.get_logger().info(message)
 
     # Subscriber callbacks
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):

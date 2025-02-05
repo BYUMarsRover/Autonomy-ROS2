@@ -5,7 +5,6 @@
     aruco_distance_tolerance: 2.0
     hex_search_radius: 17.3
     navigate_speed: 1.0
-    object_speed: 0.3
     aruco_speed: 0.3
     aruco_spin_speed: 30.0
     aruco_gate_spin_speed: 10.0

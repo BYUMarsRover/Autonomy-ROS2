@@ -14,7 +14,6 @@ def generate_launch_description():
         ),
 
         # Launch the joy_node (renamed to xbox_node_drive)
-        #TODO: I don't think this node is correctly called 
         Node(
             package='joy',
             executable='joy_node',

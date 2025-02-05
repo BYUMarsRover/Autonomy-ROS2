@@ -10,6 +10,7 @@ from PyQt5 import uic
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from keyboard_autonomy.keyboard_fsm import KeyboardFSMNode
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import UInt16MultiArray
@@ -18,6 +19,12 @@ from rover_msgs.srv import CameraControl
 from subprocess import Popen, PIPE
 from .html_templates import *
 from .dev_name_map import BASE_DEV_NAME_MAP, ROVER_DEV_NAME_MAP
+from launch import LaunchService
+import os
+import launch
+import launch.actions
+import launch_ros.actions
+from ament_index_python.packages import get_package_share_directory
 
 import sys
 import atexit
@@ -91,6 +98,14 @@ class HomeGuiUI(Node, QWidget):
         self.cameraScreenshotButton.clicked.connect(
             self.take_screenshot)
 
+        self.autonomousKeyboardButton.clicked.connect(
+            self.launch_autonomous_keyboard
+        )
+
+        self.cancelAutonomousKeyboardButton.clicked.connect(
+            self.cancelAutonomousKeyboard
+        )
+
         self.cameraLaunchViewButton.clicked.connect(self.launch_view)
         # self.clickerButton.clicked.connect(self.activate_clicker)
 
@@ -116,7 +131,7 @@ class HomeGuiUI(Node, QWidget):
             CameraControl, 'camera_control')
         self.create_service(
             CameraControl, 'camera_cleanup', self.handle_camera_cleanup)
-
+        self.keyboard_process = None
         signal.signal(signal.SIGINT, self.handler_stop_signals)
         signal.signal(signal.SIGTERM, self.handler_stop_signals)
 
@@ -281,6 +296,53 @@ class HomeGuiUI(Node, QWidget):
         camera.camera_name = camera_name
         # In ROS 1 services are synchronous so this will block until the service finishes
         self.camera_control(camera=camera, site_name=site_name, screenshot=True)
+
+    def launch_autonomous_keyboard(self):
+        word = self.autonomousKeyboardLineEdit.text()
+        print(word)
+        self.get_logger().info(word)
+        if self.keyboard_process is None or self.keyboard_process.poll() is not None:
+            self.get_logger().info("starting keyboard autonomy launch file")
+            self.keyboard_process = Popen(['ros2', 'launch', 'keyboard_autonomy', 'keyboard_autonomy_launch.py', f'word:={word}'],
+                                          stdout=PIPE,
+                                          stderr=PIPE
+                                          )
+            self.get_logger().info("launched the keyboard autonomy file")
+        else:
+            self.get_logger().info('Launch file already running.')
+            
+        # Define a method to read stdout and stderr asynchronously
+        def read_output():
+            # Read stdout in a separate thread
+            for line in self.keyboard_process.stdout:
+                self.get_logger().info(line.decode().strip())
+
+            # Read stderr in a separate thread
+            for line in self.keyboard_process.stderr:
+                self.get_logger().info(line.decode().strip())
+
+        # Run the output reading in a separate thread to avoid blocking the main thread
+        output_thread = threading.Thread(target=read_output)
+        output_thread.daemon = True  # Ensure the thread dies with the main program
+        output_thread.start()
+        
+        # rclpy.init(args=word)
+        # node = KeyboardFSMNode()
+        # rclpy.spin(node)
+
+    def cancelAutonomousKeyboard(self):
+        reply = QMessageBox.question(self, 'Confirm Cance', 'Are yu sure you want to cancel?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            self.keyboard_process.terminate()
+            try:
+                self.keyboard_process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.get_logger().info("Graceful termination failed, killing process...")
+                self.keyboard_process.kill()
+            self.get_logger().info("Process terminated.")
+            # print("Keboard typing killed successfully")
+
+
 
     def launch_view(self):
         channel = self.get_available_channel()

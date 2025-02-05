@@ -13,7 +13,6 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -47,28 +46,18 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Heartbeat.msg"
   "msg/HeartbeatStatusRover.msg"
   "msg/HeartbeatStatusBase.msg"
-  "msg/ScienceAugerOn.msg"
-  "msg/ScienceCacheDoor.msg"
-  "msg/ScienceLinearActuatorDirection.msg"
-  "msg/ScienceSaveNotes.msg"
-  "msg/ScienceSaveSecondaryCache.msg"
-  "msg/ScienceSaveSensor.msg"
-  "msg/ScienceSecondaryCachePosition.msg"
-  "msg/ScienceSensorValues.msg"
-  "msg/ScienceSwitchTool.msg"
-  "msg/ScienceToolPosition.msg"
   "msg/IWCMotors.msg"
   "msg/Elevator.msg"
-  "msg/PointList.msg"
-  "srv/OrderPath.srv"
+  "msg/KeyboardHomography.msg"
+  "msg/KeyLocations.msg"
   "srv/CameraControl.srv"
   "srv/CameraControlResponse.srv"
   "srv/AutonomyAbort.srv"
   "srv/AutonomyWaypoint.srv"
   "srv/AutonomyWaypointResponse.srv"
   "srv/SetFloat32.srv"
-  "srv/PlanPath.srv"
-  DEPENDENCIES std_msgs geometry_msgs nav_msgs sensor_msgs builtin_interfaces # Add packages that above messages depend on
+  "srv/KeyPress.srv"
+  DEPENDENCIES std_msgs geometry_msgs sensor_msgs builtin_interfaces # Add packages that above messages depend on
 )
 
 if(BUILD_TESTING)

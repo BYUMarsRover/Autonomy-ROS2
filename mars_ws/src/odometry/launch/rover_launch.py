@@ -30,5 +30,4 @@ def generate_launch_description():
             parameters=[ublox_config],
             output='screen'
         ),
-        #TODO: ADD STATIC TRANSFORM PUBLISHER FOR GPS TO BASE LINK FRAME
     ])

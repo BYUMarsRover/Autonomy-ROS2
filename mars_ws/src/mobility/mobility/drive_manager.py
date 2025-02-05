@@ -54,8 +54,8 @@ class DriveManager(Node):
         omega_cmd = msg.omega_cmd
 
         if u_cmd == 0 and omega_cmd == 0:
-            rw_speed = 0.0
-            lw_speed = 0.0
+            rw_speed = 0
+            lw_speed = 0
         else:
             v_l = u_cmd - omega_cmd * self.B / 2
             v_r = u_cmd + omega_cmd * self.B / 2
@@ -64,8 +64,8 @@ class DriveManager(Node):
             rw_speed = self.piecewise_sigmoid(psidot_Rd)
             lw_speed = self.piecewise_sigmoid(psidot_Ld)
 
-        self.rover_cmd.rw = float(rw_speed)
-        self.rover_cmd.lw = float(lw_speed)
+        self.rover_cmd.rw = rw_speed
+        self.rover_cmd.lw = lw_speed
         self.publish_rover_cmd()
 
     def publish_rover_cmd(self):
