@@ -19,6 +19,7 @@ def generate_launch_description():
     '''
 
     # Get the word to type from the command line arguments
+    word="default"
     for arg in sys.argv:
         if arg.startswith("word:="):
             word = arg.split(":=")[1]

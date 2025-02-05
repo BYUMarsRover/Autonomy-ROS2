@@ -6,19 +6,20 @@
 ROVER_ADDRESS="192.168.1.120"
 TIMEOUT=5
 
+# Capture the word from the command-line arguments
+WORD="$1"
+echo "word is ${WORD}"
 # Base station ROS environment
 BASE_ENVIRONMENT="
 ROS_MASTER_URI=http://$ROVER_ADDRESS:11311
 ROS_IP=localhost
 ROVER_ADDRESS=$ROVER_ADDRESS
-"
 
 # Rover ROS environment
 ROVER_ENVIRONMENT="
 ROS_MASTER_URI=http://$ROVER_ADDRESS:11311
 ROS_IP=$ROVER_ADDRESS
 ROVER_ADDRESS=$ROVER_ADDRESS
-"
 
 # Prepare to set up environment variables
 SET_BASE_ENV_CMD="export $(echo $BASE_ENVIRONMENT | xargs) && unset ROS_HOSTNAME && cd ~/Autonomy_ROS2/mars_ws && source install/setup.sh"
@@ -38,4 +39,4 @@ function rover_cmd {
 
 # Start rover's Docker container and launch the rover node
 echo "[INFO] Launching rover ROS node remotely"
-rover_cmd "cd ~/Autonomy-ROS2 && ./compose.sh && $SET_ROVER_ENV_CMD && ros2 launch keyboard_autonomy_rover_launch.py"
+rover_cmd "cd ~/Autonomy-ROS2 && ./compose.sh && $SET_ROVER_ENV_CMD && ros2 launch keyboard_autonomy_rover_launch.py word:=${WORD}"
