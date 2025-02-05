@@ -8,7 +8,6 @@ TIMEOUT=5
 
 # Capture the word from the command-line arguments
 WORD="$1"
-echo "word is ${WORD}"
 # Base station ROS environment
 BASE_ENVIRONMENT="
 ROS_MASTER_URI=http://$ROVER_ADDRESS:11311

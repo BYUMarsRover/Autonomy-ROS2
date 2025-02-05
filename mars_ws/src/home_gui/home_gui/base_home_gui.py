@@ -300,12 +300,11 @@ class HomeGuiUI(Node, QWidget):
 
     def launch_autonomous_keyboard(self):
         word = self.autonomousKeyboardLineEdit.text()
-        self.get_logger().info(word)
         if self.keyboard_process is None or self.keyboard_process.poll() is not None:
-            self.get_logger().info("starting keyboard autonomy launch file")
+            self.get_logger().info("Starting keyboard autonomy launch file")
             command = f"{self.script_path} {word}"
             self.keyboard_process = Popen(command, shell=True, preexec_fn=os.setsid, stderr=PIPE, stdout=PIPE)
-            self.get_logger().info("launched the keyboard autonomy file")
+            self.get_logger().info("Launched the keyboard autonomy file")
         else:
             self.get_logger().info('Launch file already running.')
 
