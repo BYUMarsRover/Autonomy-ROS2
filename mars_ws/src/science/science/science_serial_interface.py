@@ -64,7 +64,7 @@ class ScienceSerialInterface(Node):
         self.science_serial_auger = self.create_subscription(ScienceAugerOn, '/science_serial_auger', self.auger_on_callback, 10)
         self.science_tool_position = self.create_subscription(ScienceToolPosition, '/science_tool_position', self.tool_position_callback, 10)
         self.science_serial_la = self.create_subscription(ScienceLinearActuatorDirection, '/science_serial_la', self.linear_actuator_callback, 10)
-        self.science_serial_primary_cache_door = self.create_subscription(ScienceCacheDoor, '/science_serial_primary_cache_door', self.primary_cache_door_callback, 10)
+        self.science_serial_primary_cache_door = self.create_subscription(ScienceCacheDoor, '/science_primary_cache_door_position', self.primary_cache_door_callback, 10)
         self.science_serial_secondary_cache_door = self.create_subscription(ScienceCacheDoor, '/science_serial_secondary_cache_door', self.secondary_cache_door_callback, 10)
         self.science_serial_secondary_cache = self.create_subscription(ScienceSecondaryCachePosition, '/science_serial_secondary_cache', self.secondary_cache_position_callback, 10)
 
@@ -99,8 +99,10 @@ class ScienceSerialInterface(Node):
     def primary_cache_door_callback(self, msg: ScienceCacheDoor):
         if msg.position == True: # Extend the trapdoor
             self.write_serial([UPDATE_PRIMARY_CACHE_DOOR_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_FORWARD])
+            self.get_logger().info('open trap')
         else: # Close the trapdoor
             self.write_serial([UPDATE_PRIMARY_CACHE_DOOR_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_BACKWARD])
+            self.get_logger().info('close trap')
 
 
     def secondary_cache_door_callback(self, msg: ScienceCacheDoor):
