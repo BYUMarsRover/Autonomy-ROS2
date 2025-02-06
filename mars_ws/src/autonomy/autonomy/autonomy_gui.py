@@ -17,7 +17,7 @@ from PyQt5.QtCore import *
 from subprocess import Popen, PIPE
 import sys
 import os
-import time
+import numpy as np
 
 # For Mapviz Usage
 import yaml
@@ -27,8 +27,8 @@ from std_srvs.srv import SetBool
 from std_msgs.msg import Header
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
-from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloat32
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
+from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors
 from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
 from ament_index_python.packages import get_package_share_directory
 
@@ -88,6 +88,11 @@ class AutonomyGUI(Node, QWidget):
         self.rover_numSV = 0
         self.state_machine_state = None
         self.tag_id = None
+        self.obj_distance = None
+        self.obj_angle = None
+        self.obj_alpha_lpf = 0.5
+        self.aruco_alpha_lpf = 0.5
+        self.aruco_tag_distance = None
 
         ################# ROS Communication #################
 
@@ -102,6 +107,11 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
         self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10) #Aruco Detection
         self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10) #Object Detection
+        self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, 10) #What mobility/path_manager is publishing
+        self.create_subscription(MobilityVelocityCommands, '/mobility/rover_vel_cmds', self.vel_cmds_callback, 10) #What mobility/autopilot_manager is publishing
+        self.create_subscription(MobilityDriveCommand, '/mobility/wheel_vel_cmds', self.wheel_vel_cmds_callback, 10) #What mobility/wheel_manager is publishing
+        self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, 1)
+
 
         # Services
 
@@ -224,99 +234,112 @@ class AutonomyGUI(Node, QWidget):
 
         self.CurrentMainStateDisplay.setText(self.state_machine_state)
         
+        self.CurrentStateDisplay.setText(self.state_machine_state)
+        
         return
 
     def ar_tag_callback(self, msg):
-        # print("in ar_tag_callback")
-        if len(msg.transforms) == 1: #TODO: if we happpen to see 2, this will not run
-            # print("found 1 tag")
+
+        # Clear the string
+        aruco_text = ''
+
+        if len(msg.transforms) >= 1: #TODO: if we happpen to see 2, this will not run... JM - Unsure what this was used for. 
             if self.aruco_tag_distance is None:
                 self.aruco_tag_distance = np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2)
                 self.aruco_tag_angle = - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z)
             else:
                 self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2) * (1 - self.aruco_alpha_lpf)
                 self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z) * (1 - self.aruco_alpha_lpf)
+            
+            #TODO: When we have heading data, add it to the angle here to ge the correct angle
+            aruco_text = "Tag is {}m away at {} deg.".format(round(self.aruco_tag_distance, 2), round(np.rad2deg(self.aruco_tag_angle), 2))
 
-            self.current_aruco_point = GPSTools.heading_distance_to_lat_lon(
-                self.current_point, 
-                -np.rad2deg(self.curr_heading + self.aruco_tag_angle), 
-                self.aruco_tag_distance
-            )
-            # print("tag is {}m away at an angle of {} degrees".format(self.aruco_tag_distance, self.aruco_tag_angle))
-            # print("tag at {}".format(np.rad2deg(self.curr_heading + self.aruco_tag_angle)))
-            self.aruco_pose = FiducialData()
-            self.aruco_pose.angle_offset = self.aruco_tag_angle
-            self.aruco_pose.dist_to_fiducial = self.aruco_tag_distance
-            self.aruco_pose_pub.publish(self.aruco_pose)
-
-            self.ar_callback_see_time = time.time()
-
-            if msg.transforms[0].fiducial_id == self.tag_id.value:
-                self.get_logger().info(f"Is correct tag: {self.tag_id.value}")
-                self.correct_aruco_tag_found = True
-                self.wrong_aruco_tag_found = False
+            if msg.transforms[0].fiducial_id == self.tag_id:
+                aruco_text = aruco_text + f" Correct tagID: {self.tag_id}"
             else:
-                self.get_logger().info(f"Is not correct tag. tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id.value}")
-                self.correct_aruco_tag_found = False
-                self.wrong_aruco_tag_found = True
-        elif time.time() - self.ar_callback_see_time > 1:
-            self.correct_aruco_tag_found = False
-            self.wrong_aruco_tag_found = False
-            # self.both_aruco_tags_found = False
+                aruco_text = aruco_text + f"Incorrect tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id}"
+            
+            self.ArucoStatus.setText(aruco_text)
         return
     
     def obj_detect_callback(self, msg):
-        timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
-        is_recent = lambda obj_ts: timestamp - obj_ts <= 0.1
-
-        correct_label = 0 
-        if self.tag_id == TagID.BOTTLE:
-            correct_label = 1
-        
-        found = False
+        obj_name = None
+        objects_string = ''
         for obj in msg.objects:
-            if obj.label != correct_label or obj.confidence < 0.75:
-                continue
-
-            if obj.id in self.known_objects:
-                if is_recent(self.known_objects[obj.id][-1]):
-                    self.known_objects[obj.id].append(timestamp)
-
-                if len(self.known_objects[obj.id]) < 15:
-                    continue
-
-                # Low-pass filter the distance and heading information
-                if self.obj_distance is None:
-                    self.obj_distance = np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2)
-                    self.obj_angle = - np.arctan(obj.x / obj.z)
-                else:
-                    self.obj_distance = self.obj_distance * self.obj_alpha_lpf + np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2) * (1 - self.obj_alpha_lpf)
-                    self.obj_angle = self.obj_angle * self.obj_alpha_lpf - np.arctan(obj.x / obj.z) * (1 - self.obj_alpha_lpf)
-                self.correct_obj_found = True
-                if found:
-                    self.get_logger().info("Found a duplicate object, taking last one")
-                else:
-                    self.get_logger().info(f"Found object for 15 frames: {obj}")
-                    found = True
+            if obj.label == 1:
+                obj_name = 'Bottle'
+            elif obj.label == 2:
+                obj_name = 'Hammer'
             else:
-                self.known_objects[obj.id] = [timestamp]
+                obj_name = 'Unknown'
 
-        self.known_objects = {k: v for k, v in self.known_objects.items() if is_recent(v[-1])}
+            # Low-pass filter the distance and heading information
+            if self.obj_distance is None:
+                self.obj_distance = np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2)
+                self.obj_angle = - np.arctan(obj.x / obj.z)
+            else:
+                self.obj_distance = self.obj_distance * self.obj_alpha_lpf + np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2) * (1 - self.obj_alpha_lpf)
+                self.obj_angle = self.obj_angle * self.obj_alpha_lpf - np.arctan(obj.x / obj.z) * (1 - self.obj_alpha_lpf)
+
+            #round to 2 places and convert angle to degrees
+            obj_distance = round(self.obj_distance, 2)
+            obj_angle = round(np.rad2deg(self.obj_angle), 2)
+
+            objects_string = objects_string + f'{obj_name}: conf: {obj.confidence}, dist: {obj_distance} m @ {obj_angle} deg \n'
+
+        self.ObjStatus.setText(objects_string)
+        return
+    
+    ################# Callbacks for Mobility #################
+    def autopilot_cmds_callback(self, msg):
+        autopilot_cmds_string = f'Distance to target: {round(msg.distance_to_target, 2)}, angle to target: {round(msg.course_angle, 2)}'
+        self.AutopilotCmds.setText(autopilot_cmds_string)
+        return
+
+    def vel_cmds_callback(self, msg):
+        vel_cmds_string = f'Lin Vel: {round(msg.u_cmd, 2)}, Ang Vel: {round(msg.omega_cmd, 2)}'
+        self.VelocityCmds.setText(vel_cmds_string)
+        return
+
+    def wheel_vel_cmds_callback(self, msg):
+        wheel_vel_cmds_string = f'LW Speed: {round(msg.lw, 2)}, RW Speed: {round(msg.rw, 2)}'
+        self.WheelVelocityCmds.setText(wheel_vel_cmds_string)
+        return
+
+    def auto_drive_cmds_callback(self, msg):
+        #Format the IWC wheel commands into a string
+        IWC_cmd_string = ''
+        #For each wheel, put a negative in the string if direction is False
+        if msg.right_front_dir:
+            IWC_cmd_string = IWC_cmd_string + f'RFW: {round(msg.right_front_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f'RFW: -{round(msg.right_front_speed, 2)}'
+        if msg.right_middle_dir:
+            IWC_cmd_string = IWC_cmd_string + f', RMW: {round(msg.right_middle_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', RMW: -{round(msg.right_middle_speed, 2)}'
+        if msg.right_rear_dir:
+            IWC_cmd_string = IWC_cmd_string + f', RRW: {round(msg.right_rear_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', RRW: -{round(msg.right_rear_speed, 2)}'
+        if msg.left_front_dir:
+            IWC_cmd_string = IWC_cmd_string + f', LFW: {round(msg.left_front_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', LFW: -{round(msg.left_front_speed, 2)}'
+        if msg.left_middle_dir:
+            IWC_cmd_string = IWC_cmd_string + f', LMW: {round(msg.left_middle_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', LMW: -{round(msg.left_middle_speed, 2)}'
+        if msg.left_rear_dir:
+            IWC_cmd_string = IWC_cmd_string + f', LRW: {round(msg.left_rear_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', LRW: -{round(msg.left_rear_speed, 2)}'
+        
+        self.IWCCmds.setText(IWC_cmd_string)
+        
 
 
         return
-    
-    def rover_state_singleton_callback(self, msg):
-        self.rover_state_singleton_timepoint = self.get_clock().now().to_msg().sec
-        self.RoverStateLat.setText(f'Latitude: {msg.gps.latitude}')
-        self.RoverStateLon.setText(f'Longitude: {msg.gps.longitude}')
-        self.RoverStateMapYaw.setText(f'Map Yaw: {msg.map_yaw}')
-        return
-    
-    def obj_detect_callback(self, msg):
-        self.ObjStatus.setText(f'Recieved Message')
-        # for obj in msg.objects:
-
 
     # Callback functions for buttons
     def enable_autonomy(self):
@@ -552,7 +575,18 @@ class AutonomyGUI(Node, QWidget):
         else:
             self.tag_id = None
         return
-
+    
+    # Service calls generic callback
+    def future_callback(future):
+        # try:
+        #     response = future.result()
+        #     if response.success:
+        #         self.error_label.setText(success_msg)
+        #     else:
+        #         self.error_label.setText(error_msg)
+        # except Exception as e:
+        #     self.error_label.setText(f'Service call failed: {str(e)}')
+        pass
 
 def get_coordinates(file_path, location):
     # Read the YAML file
@@ -603,8 +637,7 @@ def path_to_utm(path, utm_easting_zero, utm_northing_zero):
             )
         )
     return utm_path
-        
-        
+            
 def gui_ros_spin_thread(node):
     rclpy.spin(node)
 
