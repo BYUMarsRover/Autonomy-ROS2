@@ -3,6 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import MobilityDriveCommand, MobilityVelocityCommands
+from rover_msgs.srv import SetFloat32
 from std_srvs.srv import SetBool
 import numpy as np
 
@@ -31,6 +32,16 @@ class DriveManager(Node):
             '/mobility/drive_manager/enabled', 
             self.enable
         )
+        self.set_turn_constant_service = self.create_service(
+            SetFloat32,
+            '/mobility/drive_manager/set_turn_constant',
+            self.set_turn_constant
+        )
+        self.set_speed_service = self.create_service(
+            SetFloat32,
+            '/mobility/drive_manager/set_speed',
+            self.set_speed
+        )
 
         # Parameters #TODO: this node is not getting these parameters properly form the params file being passed in by the launch file
         self.declare_parameter('cmd_lb', 0.01) # Wheel Command Lower Bound
@@ -38,17 +49,33 @@ class DriveManager(Node):
 
         self.cmd_lb = self.get_parameter('cmd_lb').get_parameter_value().double_value
         self.max_speed = self.get_parameter('max_speed').get_parameter_value().double_value
-        self.get_logger().info(f"In Init - cmd_lb: {self.cmd_lb}")
-        self.get_logger().info(f"In Init - max_speed: {self.max_speed}")
 
         # Attributes
         self.r = 0.8382  # wheel radius (meters)
         self.B = 0.1335  # wheel base distance (meters)
         self.k = 0.5     # parameter for sigmoid function
+        self.turn_constant = 20.0
         self.rover_cmd = MobilityDriveCommand()
         self.enabled = False
 
         self.get_logger().info(f"Drive Manager initialized!")
+
+    def set_turn_constant(self, request, response):
+        self.turn_constant = request.data
+        response.success = True
+        response.message = f"Drive Manager: Turn Constant set to {self.turn_constant}"
+        return response
+    
+    def set_speed(self, request, response):
+        if request.data > 10.0:
+            response.success = False
+            response.message = f"Drive Manager: Max Speed cannot be greater than 10.0"
+            return response
+        else:
+            self.max_speed = 10.1 - request.data
+            response.success = True
+            response.message = f"Drive Manager: Max Speed set to {request.data}"
+        return response
 
     def vel_cmds_callback(self, msg): # NOTE: HERE
         u_cmd = msg.u_cmd
@@ -58,8 +85,8 @@ class DriveManager(Node):
             rw_speed = 0.0
             lw_speed = 0.0
         else:
-            v_l = u_cmd - omega_cmd * self.B / 2 * 20
-            v_r = u_cmd + omega_cmd * self.B / 2 * 20
+            v_l = u_cmd - omega_cmd * self.B / 2 * self.turn_constant # NOTE: turn constant was a quick fix
+            v_r = u_cmd + omega_cmd * self.B / 2 * self.turn_constant
             # self.get_logger().info(f"IN: vel_cmds_callback, v_l/v_r: {v_l}/{v_r}")
             psidot_Ld = v_l / self.r
             psidot_Rd = v_r / self.r

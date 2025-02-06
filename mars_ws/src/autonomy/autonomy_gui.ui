@@ -397,6 +397,78 @@
               </property>
              </widget>
             </item>
+            <!-- Turn Constant Setting Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Turn Constant Label -->
+              <item>
+               <widget class="QLabel" name="TurnConstantLabel">
+                <property name="text">
+                 <string>Update C_turn:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Turn Constant Input -->
+              <item>
+               <widget class="QLineEdit" name="TurnConstantInput">
+                <property name="placeholderText">
+                 <string>enter turn constant</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Send Turn Constant Button -->
+              <item>
+               <widget class="QPushButton" name="SetTurnConstantButton">
+                <property name="text">
+                 <string>Send</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Speed Constant Setting Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Turn Constant Label -->
+              <item>
+               <widget class="QLabel" name="SpeedConstantLabel">
+                <property name="text">
+                 <string>Update C_speed:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Turn Constant Input -->
+              <item>
+               <widget class="QLineEdit" name="SpeedConstantInput">
+                <property name="placeholderText">
+                 <string>enter (0-10)</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Send Turn Constant Button -->
+              <item>
+               <widget class="QPushButton" name="SetSpeedConstantButton">
+                <property name="text">
+                 <string>Send</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Horizontal Dividing Line -->
+            <item>
+             <widget class="Line" name="line_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
             <!-- Error/Success Messages Item -->
             <item>
              <widget class="QLabel" name="error_label">

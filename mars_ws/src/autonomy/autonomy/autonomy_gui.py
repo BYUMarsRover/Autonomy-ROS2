@@ -27,7 +27,7 @@ from std_srvs.srv import SetBool
 from std_msgs.msg import Header
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
-from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath
+from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloat32
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
 from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
 from ament_index_python.packages import get_package_share_directory
@@ -66,6 +66,9 @@ class AutonomyGUI(Node, QWidget):
         self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
         self.PlanOrderButton.clicked.connect(self.plan_order_service_call)
         self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
+
+        self.SetTurnConstantButton.clicked.connect(self.set_turn_constant)
+        self.SetSpeedConstantButton.clicked.connect(self.set_speed_constant)
 
         # GUI Input Fields
         self.latitude_input = self.LatitudeInput
@@ -108,6 +111,8 @@ class AutonomyGUI(Node, QWidget):
         self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
         self.remove_waypoint_client = self.create_client(SetBool, '/AU_remove_waypoint_service')
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
+        self.set_turn_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_turn_constant')
+        self.set_speed_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_speed')
 
         # Timer to run check if we have recieved information from various sources recently
         self.timepoints_timer = self.create_timer(0.5, self.check_timepoints)
@@ -461,7 +466,6 @@ class AutonomyGUI(Node, QWidget):
         except Exception as e:
             self.error_label.setText(f'Remove Waypoint Service call failed!')
 
-
     def abort_autonomy(self):
         #logic for aborting autonomy task
         req = AutonomyAbort.Request()
@@ -483,6 +487,40 @@ class AutonomyGUI(Node, QWidget):
         future = self.abort_autonomy_client.call_async(req)
         self.error_label.setText('Attempting Abort')
         # future.add_done_callback(self.future_callback)
+
+    def set_turn_constant(self):
+        req = SetFloat32.Request()
+        req.data = float(self.TurnConstantInput.text())
+        future = self.set_turn_constant_client.call_async(req)
+        self.error_label.setText('Sending Turn Constant...')
+        future.add_done_callback(self.set_turn_constant_callback)
+
+    def set_turn_constant_callback(self, future):
+        try:
+            response = future.result()
+            if response.success:
+                self.error_label.setText(response.message)
+            else:
+                self.error_label.setText("Failed to send turn constant")
+        except Exception as e:
+            self.error_label.setText(f'Send Turn Constant Service call failed!')
+
+    def set_speed_constant(self):
+        req = SetFloat32.Request()
+        req.data = float(self.SpeedConstantInput.text())
+        future = self.set_speed_constant_client.call_async(req)
+        self.error_label.setText('Sending Speed Constant...')
+        future.add_done_callback(self.set_speed_constant_callback)
+
+    def set_speed_constant_callback(self, future):
+        try:
+            response = future.result()
+            if response.success:
+                self.error_label.setText(response.message)
+            else:
+                self.error_label.setText("Failed! Must be in range (0-10)")
+        except Exception as e:
+            self.error_label.setText(f'Send Speed Constant Service call failed!')
 
     # Gui Functions
     def update_leg_subselection(self):
@@ -514,19 +552,6 @@ class AutonomyGUI(Node, QWidget):
         else:
             self.tag_id = None
         return
-    
-    # Service calls generic callback
-    def future_callback(future):
-        # try:
-        #     response = future.result()
-        #     if response.success:
-        #         self.error_label.setText(success_msg)
-        #     else:
-        #         self.error_label.setText(error_msg)
-        # except Exception as e:
-        #     self.error_label.setText(f'Service call failed: {str(e)}')
-        pass
-
 
 
 def get_coordinates(file_path, location):
