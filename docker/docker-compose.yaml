@@ -2,7 +2,7 @@
 
 services:
   autonomy_ros2:
-    image: byuawesomerover/autonomy_ros2:latest
+    image: byuawesomerover/autonomy_ros2:rosdep
     container_name: autonomy_ros2
     user: marsrover
     network_mode: host
@@ -12,6 +12,7 @@ services:
     privileged: true
     volumes:
       - ../mars_ws:/home/marsrover/mars_ws
+      - $HOME/.Xauthority:/root/.Xauthority:rw
       - /etc/localtime:/etc/localtime:ro # Syncs the container's time with the host
       - /run/udev:/run/udev:ro
       - /dev:/dev:rw
