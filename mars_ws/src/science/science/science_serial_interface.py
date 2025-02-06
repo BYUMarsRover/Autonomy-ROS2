@@ -71,6 +71,7 @@ class ScienceSerialInterface(Node):
         self.info_publisher = self.create_publisher(ScienceSensorValues, '/science_sensor_values', 10)
         # self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
         self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
+        self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
 
         self.create_timer(100e-3, self.read_serial) # 10 Hz
         self.create_timer(1, self.query_temperature) # 1 Hz

@@ -90,6 +90,8 @@ class XBOX(Node):
     def joy_callback(self, msg: Joy):
         DEAD_ZONE = 0.05
 
+        print(f"leght of axes is: {msg.axes}")
+
         # Linear Actuator Control: RIGHT JOYSTICK VERTICAL
         if msg.axes[RIGHT_STICK_VERTICAL] > DEAD_ZONE:
             linear_actuator_speed = msg.axes[RIGHT_STICK_VERTICAL]
