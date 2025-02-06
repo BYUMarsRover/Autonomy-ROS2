@@ -10,6 +10,8 @@ np.float = float  # Temporary alias for compatibility
 
 from tf_transformations import euler_from_quaternion
 
+from transform_tools import quat2R, R2quat
+
 from nav_msgs.msg import Odometry
 from rover_msgs.msg import RoverStateSingleton
 from sensor_msgs.msg import NavSatFix, Imu
@@ -116,6 +118,8 @@ class RoverStateSingletonCreator(Node):
         self.odom_yaw_dot = message.twist.twist.angular.z * 180/math.pi
 
         self.publish_message()
+
+
 
     def convert_filtered_gps(self, message):
         """
