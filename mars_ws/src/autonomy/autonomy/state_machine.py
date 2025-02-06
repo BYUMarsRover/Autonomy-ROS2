@@ -386,9 +386,9 @@ class AutonomyStateMachine(Node):
         print("Setting autopilot speed...")
 
         # Wait until the service is available
-        self.get_logger().error("Waiting for Service /mobility/speed_factor")
+        self.get_logger().info("Waiting for Service /mobility/speed_factor")
         if not self.srv_autopilot_speed.wait_for_service(timeout_sec=3.0): #Don't know what would be the appropriate time to wait here
-            self.get_logger().error("Service /mobility/speed_factor not available!")
+            self.get_logger().info("Service /mobility/speed_factor not available!")
             return False
         print("Service is live")
 
@@ -398,7 +398,7 @@ class AutonomyStateMachine(Node):
         print("Executing service...")
         
         # Send the request and wait for the response
-        self.get_logger().error("Sending request to autopilot_speed_request")
+        self.get_logger().info("Sending request to autopilot_speed_request")
         future = self.srv_autopilot_speed.call_async(self.autopilot_speed_request)
 
 

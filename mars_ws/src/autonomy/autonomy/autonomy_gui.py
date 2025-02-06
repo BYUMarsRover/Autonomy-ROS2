@@ -97,7 +97,8 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10) #Rover GPS and Heading
         self.create_subscription(RoverState, "/rover_status", self.rover_state_callback, 10) #Rover state (speed, direction, navigation state)
         self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
-        self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10)
+        self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10) #Aruco Detection
+        self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10) #Object Detection
 
         # Services
 
@@ -206,7 +207,7 @@ class AutonomyGUI(Node, QWidget):
 
     def rover_nav_status_callback(self, msg): #State machine status (state, auto_enable)
         self.rover_nav_status = msg
-        if self.state_machine_state == None:
+        if self.state_machine_state != None and self.state_machine_state != msg.state:
             self.prev_state_machine_state = self.state_machine_state
             self.PreviousMainStateDisplay.setText(self.prev_state_machine_state)
         self.state_machine_state = msg.state
@@ -218,6 +219,86 @@ class AutonomyGUI(Node, QWidget):
 
         self.CurrentMainStateDisplay.setText(self.state_machine_state)
         
+        return
+
+    def ar_tag_callback(self, msg):
+        # print("in ar_tag_callback")
+        if len(msg.transforms) == 1: #TODO: if we happpen to see 2, this will not run
+            # print("found 1 tag")
+            if self.aruco_tag_distance is None:
+                self.aruco_tag_distance = np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2)
+                self.aruco_tag_angle = - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z)
+            else:
+                self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2) * (1 - self.aruco_alpha_lpf)
+                self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z) * (1 - self.aruco_alpha_lpf)
+
+            self.current_aruco_point = GPSTools.heading_distance_to_lat_lon(
+                self.current_point, 
+                -np.rad2deg(self.curr_heading + self.aruco_tag_angle), 
+                self.aruco_tag_distance
+            )
+            # print("tag is {}m away at an angle of {} degrees".format(self.aruco_tag_distance, self.aruco_tag_angle))
+            # print("tag at {}".format(np.rad2deg(self.curr_heading + self.aruco_tag_angle)))
+            self.aruco_pose = FiducialData()
+            self.aruco_pose.angle_offset = self.aruco_tag_angle
+            self.aruco_pose.dist_to_fiducial = self.aruco_tag_distance
+            self.aruco_pose_pub.publish(self.aruco_pose)
+
+            self.ar_callback_see_time = time.time()
+
+            if msg.transforms[0].fiducial_id == self.tag_id.value:
+                self.get_logger().info(f"Is correct tag: {self.tag_id.value}")
+                self.correct_aruco_tag_found = True
+                self.wrong_aruco_tag_found = False
+            else:
+                self.get_logger().info(f"Is not correct tag. tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id.value}")
+                self.correct_aruco_tag_found = False
+                self.wrong_aruco_tag_found = True
+        elif time.time() - self.ar_callback_see_time > 1:
+            self.correct_aruco_tag_found = False
+            self.wrong_aruco_tag_found = False
+            # self.both_aruco_tags_found = False
+        return
+    
+    def obj_detect_callback(self, msg):
+        timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
+        is_recent = lambda obj_ts: timestamp - obj_ts <= 0.1
+
+        correct_label = 0 
+        if self.tag_id == TagID.BOTTLE:
+            correct_label = 1
+        
+        found = False
+        for obj in msg.objects:
+            if obj.label != correct_label or obj.confidence < 0.75:
+                continue
+
+            if obj.id in self.known_objects:
+                if is_recent(self.known_objects[obj.id][-1]):
+                    self.known_objects[obj.id].append(timestamp)
+
+                if len(self.known_objects[obj.id]) < 15:
+                    continue
+
+                # Low-pass filter the distance and heading information
+                if self.obj_distance is None:
+                    self.obj_distance = np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2)
+                    self.obj_angle = - np.arctan(obj.x / obj.z)
+                else:
+                    self.obj_distance = self.obj_distance * self.obj_alpha_lpf + np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2) * (1 - self.obj_alpha_lpf)
+                    self.obj_angle = self.obj_angle * self.obj_alpha_lpf - np.arctan(obj.x / obj.z) * (1 - self.obj_alpha_lpf)
+                self.correct_obj_found = True
+                if found:
+                    self.get_logger().info("Found a duplicate object, taking last one")
+                else:
+                    self.get_logger().info(f"Found object for 15 frames: {obj}")
+                    found = True
+            else:
+                self.known_objects[obj.id] = [timestamp]
+
+        self.known_objects = {k: v for k, v in self.known_objects.items() if is_recent(v[-1])}
+
+
         return
     
     def rover_state_singleton_callback(self, msg):
@@ -445,6 +526,8 @@ class AutonomyGUI(Node, QWidget):
         # except Exception as e:
         #     self.error_label.setText(f'Service call failed: {str(e)}')
         pass
+
+
 
 def get_coordinates(file_path, location):
     # Read the YAML file
