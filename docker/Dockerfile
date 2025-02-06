@@ -102,3 +102,7 @@ RUN echo "export RCUTILS_COLORIZED_OUTPUT=1" >> /home/marsrover/.bashrc
 USER root
 RUN apt update && apt install -y ros-humble-domain-bridge
 USER marsrover
+
+USER root
+RUN apt update && apt install -y ros-humble-joy
+USER marsrover
