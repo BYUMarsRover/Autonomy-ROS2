@@ -254,7 +254,7 @@ class AutonomyStateMachine(Node):
     
     def obj_detect_callback(self, msg: ObjectDetections):
         timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
-        is_recent = lambda obj_ts: timestamp - obj_ts <= 0.1
+        is_recent = lambda obj_ts: timestamp - obj_ts <= 1.0
 
         correct_label = 0 
         if self.tag_id == TagID.BOTTLE:
@@ -272,7 +272,7 @@ class AutonomyStateMachine(Node):
                 if is_recent(self.known_objects[obj.id][-1]):
                     self.known_objects[obj.id].append(timestamp)
 
-                if len(self.known_objects[obj.id]) < 15:
+                if len(self.known_objects[obj.id]) < 5:
                     msg = String()
                     msg.data = f"Num Detections: {len(self.known_objects[obj.id])}"
                     self.debug_pub.publish(msg)
