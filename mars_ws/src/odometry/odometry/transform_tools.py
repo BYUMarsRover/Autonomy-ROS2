@@ -38,7 +38,7 @@ def R2quat(R):
      [r21, r22, r23],
      [r31, r32, r33]] = R
 
-    return np.array([[0.5*np.sign(r32 - r23)*np.sqrt(r11 - r22 - r33 + 1)],
-                     [0.5*np.sign(r13 - r31)*np.sqrt(r22 - r33 - r11 + 1)],
-                     [0.5*np.sign(r21 - r12)*np.sqrt(r33 - r11 - r22 + 1)],
-                     [0.5*np.sqrt(r11 + r22 + r33 + 1)]])
+    return np.array([0.5*np.sign(r32 - r23)*np.sqrt(r11 - r22 - r33 + 1),
+                     0.5*np.sign(r13 - r31)*np.sqrt(r22 - r33 - r11 + 1),
+                     0.5*np.sign(r21 - r12)*np.sqrt(r33 - r11 - r22 + 1),
+                     0.5*np.sqrt(r11 + r22 + r33 + 1)])
