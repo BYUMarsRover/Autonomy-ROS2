@@ -27,7 +27,7 @@ from std_srvs.srv import SetBool
 from std_msgs.msg import Header
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
-from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath
+from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloat32
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors
 from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
 from ament_index_python.packages import get_package_share_directory
@@ -544,6 +544,13 @@ class AutonomyGUI(Node, QWidget):
                 self.error_label.setText("Failed! Must be in range (0-10)")
         except Exception as e:
             self.error_label.setText(f'Send Speed Constant Service call failed!')
+
+    def rover_state_singleton_callback(self, msg):
+        self.rover_state_singleton_timepoint = self.get_clock().now().to_msg().sec
+        self.RoverStateLat.setText(f'Latitude: {msg.gps.latitude}')
+        self.RoverStateLon.setText(f'Longitude: {msg.gps.longitude}')
+        self.RoverStateMapYaw.setText(f'Map Yaw: {msg.map_yaw}')
+        return
 
     # Gui Functions
     def update_leg_subselection(self):

@@ -9,7 +9,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>700</height>
+    <height>800</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -30,13 +30,13 @@
      <property name="minimumSize">
       <size>
        <width>800</width>
-       <height>700</height>
+       <height>800</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
        <width>800</width>
-       <height>700</height>
+       <height>800</height>
       </size>
      </property>
      <!-- Layout Widget -->
@@ -505,13 +505,13 @@
            <property name="minimumSize">
             <size>
              <width>450</width>
-             <height>700</height>
+             <height>800</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
              <width>450</width>
-             <height>700</height>
+             <height>800</height>
             </size>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_10">
