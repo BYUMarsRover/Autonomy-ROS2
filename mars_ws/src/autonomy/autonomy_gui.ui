@@ -9,7 +9,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>800</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -30,13 +30,13 @@
      <property name="minimumSize">
       <size>
        <width>800</width>
-       <height>600</height>
+       <height>800</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
        <width>800</width>
-       <height>600</height>
+       <height>800</height>
       </size>
      </property>
      <!-- Layout Widget -->
@@ -397,6 +397,78 @@
               </property>
              </widget>
             </item>
+            <!-- Turn Constant Setting Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Turn Constant Label -->
+              <item>
+               <widget class="QLabel" name="TurnConstantLabel">
+                <property name="text">
+                 <string>Update C_turn:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Turn Constant Input -->
+              <item>
+               <widget class="QLineEdit" name="TurnConstantInput">
+                <property name="placeholderText">
+                 <string>enter turn constant</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Send Turn Constant Button -->
+              <item>
+               <widget class="QPushButton" name="SetTurnConstantButton">
+                <property name="text">
+                 <string>Send</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Speed Constant Setting Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Turn Constant Label -->
+              <item>
+               <widget class="QLabel" name="SpeedConstantLabel">
+                <property name="text">
+                 <string>Update C_speed:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Turn Constant Input -->
+              <item>
+               <widget class="QLineEdit" name="SpeedConstantInput">
+                <property name="placeholderText">
+                 <string>enter (0-10)</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Send Turn Constant Button -->
+              <item>
+               <widget class="QPushButton" name="SetSpeedConstantButton">
+                <property name="text">
+                 <string>Send</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Horizontal Dividing Line -->
+            <item>
+             <widget class="Line" name="line_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
             <!-- Error/Success Messages Item -->
             <item>
              <widget class="QLabel" name="error_label">
@@ -433,13 +505,13 @@
            <property name="minimumSize">
             <size>
              <width>450</width>
-             <height>500</height>
+             <height>800</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
              <width>450</width>
-             <height>500</height>
+             <height>800</height>
             </size>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_10">
@@ -803,7 +875,8 @@
              <layout class="QVBoxLayout" name="verticalLayout_">
               <!-- ObjDetTog status -->
               <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_11">
+               <layout class="QVBoxLayout" name="verticalLayout_11">
+               <!-- Object Detection -->
                 <item>
                  <widget class="QLabel" name="ObjLabel">
                   <property name="text">
@@ -817,7 +890,112 @@
                 <item>
                  <widget class="QLabel" name="ObjStatus">
                   <property name="text">
-                   <string>...</string>
+                   <string>Waiting...</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <!-- Aruco Detection -->
+                <item>
+                 <widget class="QLabel" name="ObjLabel">
+                  <property name="text">
+                   <string>Aruco Status:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="ArucoStatus">
+                  <property name="text">
+                   <string>Waiting...</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <!-- Autopilot commands -->
+                <item>
+                 <widget class="QLabel" name="DriveManagerLabel">
+                  <property name="text">
+                   <string>Drive Manager:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="AutopilotCmds">
+                  <property name="text">
+                   <string>Waiting...</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <!-- Rover Velocity Commands -->
+                <item>
+                 <widget class="QLabel" name="AutopilotManagerLabel">
+                  <property name="text">
+                   <string>Autopilot Manager:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="VelocityCmds">
+                  <property name="text">
+                   <string>Waiting...</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <!-- Wheel velocity commands -->
+                <item>
+                 <widget class="QLabel" name="DriveManagerLabel">
+                  <property name="text">
+                   <string>Drive Manager:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="WheelVelocityCmds">
+                  <property name="text">
+                   <string>Waiting...</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <!--  IWC Motor Commands-->
+                <item>
+                 <widget class="QLabel" name="WheelManagerLabel">
+                  <property name="text">
+                   <string>Wheel Manager:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignLeft</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="IWCCmds">
+                  <property name="text">
+                   <string>Waiting...</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignLeft</set>
