@@ -1,7 +1,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
@@ -26,12 +26,14 @@ def generate_launch_description():
             default_value='(${node})[${severity}]: ${message}',
             description='Console output format'
         ),
+        DeclareLaunchArgument('ROVER_ADDRESS', default_value='192.168.1.120'),
 
-        # Peripherals
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join( 
-                peripherals_dir, 'launch', 'peripherals.launch.py'))
-        ),
+        # NOTE: Comment not pushed because it is a temporary fix
+        # # Peripherals
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join( 
+        #         peripherals_dir, 'launch', 'peripherals.launch.py'))
+        # ),
 
         # Heartbeat
         IncludeLaunchDescription(
@@ -39,11 +41,11 @@ def generate_launch_description():
                 heartbeat_dir, 'launch', 'heartbeat_rover_launch.py'))
         ),
 
-        # Rover Home GUI
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join( 
-                home_gui_dir, 'launch', 'rover_home_gui.launch.py'))
-        ),
+        # # Rover Home GUI
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join( 
+        #         home_gui_dir, 'launch', 'rover_home_gui.launch.py'))
+        # ),
 
         # Mobility
         IncludeLaunchDescription(
@@ -52,22 +54,22 @@ def generate_launch_description():
         ),
 
         # GPS
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(
-                odometry_dir, 'launch', 'rover_launch.py'))
-        ),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join(
+        #         odometry_dir, 'launch', 'rover_launch.py'))
+        # ),
 
         # # Dummy publisher for rover state data when running locally
-        # GroupAction(
-        #     actions=[
-        #         IncludeLaunchDescription(
-        #             PythonLaunchDescriptionSource(
-        #                 os.path.join(odometry_dir, 'launch', 'dummy_singleton_publisher.launch.py')
-        #             )
-        #         )
-        #     ],
-        #     condition=IfCondition(
-        #         LaunchConfiguration('ros_master_uri') == 'http://127.0.0.1:11311'
-        #     )
-        # ),
+        GroupAction(
+            actions=[
+                IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource(
+                        os.path.join(odometry_dir, 'launch', 'dummy_singleton_publisher.launch.py')
+                    )
+                )
+            ],
+            condition=IfCondition(
+                PythonExpression(["'", LaunchConfiguration('ROVER_ADDRESS'), "' == '127.0.0.1'"])
+            )
+        ),
     ])

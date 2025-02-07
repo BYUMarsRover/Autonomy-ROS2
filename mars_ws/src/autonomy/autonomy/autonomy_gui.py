@@ -4,10 +4,9 @@ Autonomy GUI
 By: Daniel Webb and Gabe Slade - 2025
 
 Notes: 
-The QWidget Runs all the time and the ros node is spun at
+The QWidget Runs all the time and the ros node is spun in a different thread
 
 """
-
 import rclpy
 from rclpy.node import Node
 
@@ -18,6 +17,7 @@ from PyQt5.QtCore import *
 from subprocess import Popen, PIPE
 import sys
 import os
+import numpy as np
 
 # For Mapviz Usage
 import yaml
@@ -27,12 +27,13 @@ from std_srvs.srv import SetBool
 from std_msgs.msg import Header
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
-from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath
-from rover_msgs.msg import AutonomyTaskInfo, PositionVelocityTime, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections
-#from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
-
+from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloat32
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors
+from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
 from ament_index_python.packages import get_package_share_directory
+
+import threading
+
 
 class AutonomyGUI(Node, QWidget):
     def __init__(self):
@@ -44,12 +45,6 @@ class AutonomyGUI(Node, QWidget):
         # Load the .ui file
         uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/autonomy/autonomy_gui.ui', self)
         self.show()  # Show the GUI
-
-        # Timer to periodically spin the ROS node
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.spin_ros)
-        self.timer.start(5)  # 5 millisecond interval for spinning ROS
-
 
         # Gui Buttons
         self.GNSSRadioButton.toggled.connect(self.update_leg_subselection)
@@ -66,10 +61,14 @@ class AutonomyGUI(Node, QWidget):
         self.DisableAutonomyButton.clicked.connect(self.disable_autonomy)
         self.AbortButton.clicked.connect(self.abort_autonomy)
         self.SendWaypointButton.clicked.connect(self.send_waypoint)
+        self.RemoveWaypointButton.clicked.connect(self.remove_waypoint)
 
         self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
         self.PlanOrderButton.clicked.connect(self.plan_order_service_call)
         self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
+
+        self.SetTurnConstantButton.clicked.connect(self.set_turn_constant)
+        self.SetSpeedConstantButton.clicked.connect(self.set_speed_constant)
 
         # GUI Input Fields
         self.latitude_input = self.LatitudeInput
@@ -89,6 +88,11 @@ class AutonomyGUI(Node, QWidget):
         self.rover_numSV = 0
         self.state_machine_state = None
         self.tag_id = None
+        self.obj_distance = None
+        self.obj_angle = None
+        self.obj_alpha_lpf = 0.5
+        self.aruco_alpha_lpf = 0.5
+        self.aruco_tag_distance = None
 
         ################# ROS Communication #################
 
@@ -96,10 +100,18 @@ class AutonomyGUI(Node, QWidget):
         self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
 
         # Subscribers
-        #self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
-        #self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
+        self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
+        self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
+        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10) #Rover GPS and Heading
         self.create_subscription(RoverState, "/rover_status", self.rover_state_callback, 10) #Rover state (speed, direction, navigation state)
         self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
+        self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10) #Aruco Detection
+        self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10) #Object Detection
+        self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, 10) #What mobility/path_manager is publishing
+        self.create_subscription(MobilityVelocityCommands, '/mobility/rover_vel_cmds', self.vel_cmds_callback, 10) #What mobility/autopilot_manager is publishing
+        self.create_subscription(MobilityDriveCommand, '/mobility/wheel_vel_cmds', self.wheel_vel_cmds_callback, 10) #What mobility/wheel_manager is publishing
+        self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, 1)
+
 
         # Services
 
@@ -107,17 +119,29 @@ class AutonomyGUI(Node, QWidget):
         self.plan_order_client = self.create_client(OrderPath, '/plan_order')
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
         self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
+        self.remove_waypoint_client = self.create_client(SetBool, '/AU_remove_waypoint_service')
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
+        self.set_turn_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_turn_constant')
+        self.set_speed_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_speed')
+
+        # Timer to run check if we have recieved information from various sources recently
+        self.timepoints_timer = self.create_timer(0.5, self.check_timepoints)
+        self.rover_state_singleton_timepoint = None
+
+        ################# Debug Setup #################
+
+        
 
         ################# Mapviz Communication Setup #################
 
         # Retrieve Mapviz Location
-        self.declare_parameter('location', '')
+        self.declare_parameter('location', 'hanksville')
         location = self.get_parameter('location').value
 
         # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
         mapviz_params_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_params.yaml')
         lat, lon = get_coordinates(mapviz_params_path, location)
+        print(f'Lat: {lat}, Lon: {lon}')
 
         # Convert lat/lon to UTM coordinates
         utm_coords = utm.from_latlon(lat, lon)
@@ -130,8 +154,17 @@ class AutonomyGUI(Node, QWidget):
         # Stored in lat/lon format
         self.current_previewed_waypoints = Path()
 
-    def spin_ros(self):
-        rclpy.spin_once(self)
+
+    def check_timepoints(self):
+        if self.rover_state_singleton_timepoint is not None:
+            if self.get_clock().now().to_msg().sec - self.rover_state_singleton_timepoint > 1:
+                self.clear_status()
+    
+    def clear_status(self):
+        self.RoverStateMapYaw.setText('Map Yaw: ...')
+        self.RoverStateLat.setText('Latitude: ...')
+        self.RoverStateLon.setText('Longitude: ...')
+        return
 
     # Callbacks for Subscribers
     def base_GPS_info_callback(self, msg):
@@ -144,9 +177,12 @@ class AutonomyGUI(Node, QWidget):
         base_min = msg.min
         base_sec = msg.sec
         # Update Gui Fields
-        self.BaseSats.setText(f'Satellites: {self.base_numSV}')
+        self.BaseSats.setText(f'Sat #: {self.base_numSV}')
         self.BaseDate.setText(f'Date: {base_month}/{base_day}/{base_year}')
         self.BaseTime.setText(f'Time: {base_hour}:{base_min}:{base_sec}')
+        self.BaseLat.setText(f'Lat: {round(msg.lla[0], 6)}')
+        self.BaseLon.setText(f'Lon: {round(msg.lla[1], 6)}')
+        return
 
     def rover_GPS_info_callback(self, msg):
         self.rover_GPS_info = msg
@@ -158,9 +194,11 @@ class AutonomyGUI(Node, QWidget):
         rover_min = msg.min
         rover_sec = msg.sec
         # Update Gui Fields
-        self.RoverSats.setText(f'Satellites: {self.rover_numSV}')
+        self.RoverSats.setText(f'Sat #: {self.rover_numSV}')
         self.RoverDate.setText(f'Date: {rover_month}/{rover_day}/{rover_year}')
         self.RoverTime.setText(f'Time: {rover_hour}:{rover_min}:{rover_sec}')
+        self.RoverLat.setText(f'Lat: {round(msg.lla[0], 6)}')
+        self.RoverLon.setText(f'Lon: {round(msg.lla[1], 6)}')
         return
 
     def rover_state_callback(self, msg): #rover status (speed, direction, navigation state)
@@ -184,9 +222,9 @@ class AutonomyGUI(Node, QWidget):
 
     def rover_nav_status_callback(self, msg): #State machine status (state, auto_enable)
         self.rover_nav_status = msg
-        if self.state_machine_state == None:
+        if self.state_machine_state != None and self.state_machine_state != msg.state:
             self.prev_state_machine_state = self.state_machine_state
-            self.PreviousStateDisplay.setText(self.prev_state_machine_state)
+            self.PreviousMainStateDisplay.setText(self.prev_state_machine_state)
         self.state_machine_state = msg.state
         autonomous_enable = msg.auto_enable
         if autonomous_enable:
@@ -194,8 +232,113 @@ class AutonomyGUI(Node, QWidget):
         else:
             self.autonomous_enable = 'Disabled'
 
+        self.CurrentMainStateDisplay.setText(self.state_machine_state)
+        
         self.CurrentStateDisplay.setText(self.state_machine_state)
         
+        return
+
+    def ar_tag_callback(self, msg):
+
+        # Clear the string
+        aruco_text = ''
+
+        if len(msg.transforms) >= 1: #TODO: if we happpen to see 2, this will not run... JM - Unsure what this was used for. 
+            if self.aruco_tag_distance is None:
+                self.aruco_tag_distance = np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2)
+                self.aruco_tag_angle = - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z)
+            else:
+                self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2) * (1 - self.aruco_alpha_lpf)
+                self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z) * (1 - self.aruco_alpha_lpf)
+            
+            #TODO: When we have heading data, add it to the angle here to ge the correct angle
+            aruco_text = "Tag is {}m away at {} deg.".format(round(self.aruco_tag_distance, 2), round(np.rad2deg(self.aruco_tag_angle), 2))
+
+            if msg.transforms[0].fiducial_id == self.tag_id:
+                aruco_text = aruco_text + f" Correct tagID: {self.tag_id}"
+            else:
+                aruco_text = aruco_text + f"Incorrect tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id}"
+            
+            self.ArucoStatus.setText(aruco_text)
+        return
+    
+    def obj_detect_callback(self, msg):
+        obj_name = None
+        objects_string = ''
+        for obj in msg.objects:
+            if obj.label == 1:
+                obj_name = 'Bottle'
+            elif obj.label == 2:
+                obj_name = 'Hammer'
+            else:
+                obj_name = 'Unknown'
+
+            # Low-pass filter the distance and heading information
+            if self.obj_distance is None:
+                self.obj_distance = np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2)
+                self.obj_angle = - np.arctan(obj.x / obj.z)
+            else:
+                self.obj_distance = self.obj_distance * self.obj_alpha_lpf + np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2) * (1 - self.obj_alpha_lpf)
+                self.obj_angle = self.obj_angle * self.obj_alpha_lpf - np.arctan(obj.x / obj.z) * (1 - self.obj_alpha_lpf)
+
+            #round to 2 places and convert angle to degrees
+            obj_distance = round(self.obj_distance, 2)
+            obj_angle = round(np.rad2deg(self.obj_angle), 2)
+
+            objects_string = objects_string + f'{obj_name}: conf: {obj.confidence}, dist: {obj_distance} m @ {obj_angle} deg \n'
+
+        self.ObjStatus.setText(objects_string)
+        return
+    
+    ################# Callbacks for Mobility #################
+    def autopilot_cmds_callback(self, msg):
+        autopilot_cmds_string = f'Distance to target: {round(msg.distance_to_target, 2)}, angle to target: {round(msg.course_angle, 2)}'
+        self.AutopilotCmds.setText(autopilot_cmds_string)
+        return
+
+    def vel_cmds_callback(self, msg):
+        vel_cmds_string = f'Lin Vel: {round(msg.u_cmd, 2)}, Ang Vel: {round(msg.omega_cmd, 2)}'
+        self.VelocityCmds.setText(vel_cmds_string)
+        return
+
+    def wheel_vel_cmds_callback(self, msg):
+        wheel_vel_cmds_string = f'LW Speed: {round(msg.lw, 2)}, RW Speed: {round(msg.rw, 2)}'
+        self.WheelVelocityCmds.setText(wheel_vel_cmds_string)
+        return
+
+    def auto_drive_cmds_callback(self, msg):
+        #Format the IWC wheel commands into a string
+        IWC_cmd_string = ''
+        #For each wheel, put a negative in the string if direction is False
+        if msg.right_front_dir:
+            IWC_cmd_string = IWC_cmd_string + f'RFW: {round(msg.right_front_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f'RFW: -{round(msg.right_front_speed, 2)}'
+        if msg.right_middle_dir:
+            IWC_cmd_string = IWC_cmd_string + f', RMW: {round(msg.right_middle_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', RMW: -{round(msg.right_middle_speed, 2)}'
+        if msg.right_rear_dir:
+            IWC_cmd_string = IWC_cmd_string + f', RRW: {round(msg.right_rear_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', RRW: -{round(msg.right_rear_speed, 2)}'
+        if msg.left_front_dir:
+            IWC_cmd_string = IWC_cmd_string + f', LFW: {round(msg.left_front_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', LFW: -{round(msg.left_front_speed, 2)}'
+        if msg.left_middle_dir:
+            IWC_cmd_string = IWC_cmd_string + f', LMW: {round(msg.left_middle_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', LMW: -{round(msg.left_middle_speed, 2)}'
+        if msg.left_rear_dir:
+            IWC_cmd_string = IWC_cmd_string + f', LRW: {round(msg.left_rear_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', LRW: -{round(msg.left_rear_speed, 2)}'
+        
+        self.IWCCmds.setText(IWC_cmd_string)
+        
+
+
         return
 
     # Callback functions for buttons
@@ -204,25 +347,14 @@ class AutonomyGUI(Node, QWidget):
         req.data = True
         future = self.enable_autonomy_client.call_async(req)
         self.error_label.setText('Enabling Autonomy...')
-        rclpy.spin_until_future_complete(self, future)
-        
-        if future.result().success:
-            self.error_label.setText('Autonomy Enabled')
-        else:
-            self.error_label.setText('Failed to Enable Autonomy')
-        return
+        # future.add_done_callback(self.future_callback)
 
     def disable_autonomy(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_autonomy_client.call_async(req)
         self.error_label.setText('Disabling Autonomy...')
-        rclpy.spin_until_future_complete(self, future)
-        
-        if future.result().success:
-            self.error_label.setText('Autonomy Disabled')
-        else:
-            self.error_label.setText('Failed to Disable Autonomy')
+        # future.add_done_callback(self.future_callback)
 
     def preview_waypoint(self):
         # Find the x and y to be sent to mapviz
@@ -263,23 +395,18 @@ class AutonomyGUI(Node, QWidget):
 
         future = self.plan_order_client.call_async(req)
         self.error_label.setText('Planning Order...')
-        rclpy.spin_until_future_complete(self, future)
-        if future.done() and future.result():
-            response = future.result()
-            if response.success:
-                self.error_label.setText('Order Planned Successfully')
-            else:
-                self.error_label.setText(f'Failed to Plan Order')
-        else:
-            self.error_label.setText('Service call failed or did not complete')
+        # future.add_done_callback(self.future_callback)
 
-        self.current_previewed_waypoints = response.path
-        # self.current_previewed_waypoints.header.frame_id = 'map'
-        self.path_publisher.publish(
-            path_to_utm(self.current_previewed_waypoints, 
-                        self.utm_easting_zero, 
-                        self.utm_northing_zero)
-            )
+        # TODO: need a response from this future... but the ros node is spinning in another thread
+        # response = future.result()
+
+        # self.current_previewed_waypoints = response.path
+        # # self.current_previewed_waypoints.header.frame_id = 'map'
+        # self.path_publisher.publish(
+        #     path_to_utm(self.current_previewed_waypoints, 
+        #                 self.utm_easting_zero, 
+        #                 self.utm_northing_zero)
+        #     )
 
     def clear_mapviz(self):
 
@@ -320,7 +447,7 @@ class AutonomyGUI(Node, QWidget):
         try:
             self.get_logger().info(f'Latitude: {self.latitude_input.text()}')
             self.get_logger().info(f'Longitude: {self.longitude_input.text()}')
-            self.get_logger().info('in init AutonomyStateMachine')
+            self.get_logger().info('Sending Waypoint...')
             lat = float(self.latitude_input.text())
             lon = float(self.longitude_input.text())
         except ValueError:
@@ -338,21 +465,29 @@ class AutonomyGUI(Node, QWidget):
             task.tag_id = self.tag_id
 
         req.task_list.append(task)
-        #send the Request
-        future = self.send_waypoint_client.call_async(req)
-        self.error_label.setText('Sending Waypoint')
 
-        #wait for response
-        rclpy.spin_until_future_complete(self, future)
-        if future.done() and future.result():
+        # Send the Waypoint
+        self.error_label.setText('Sending Waypoint')
+        future = self.send_waypoint_client.call_async(req)
+        # future.add_done_callback(self.future_callback)
+        return
+
+    def remove_waypoint(self):
+        req = SetBool.Request()
+        req.data = True
+        future = self.remove_waypoint_client.call_async(req)
+        self.error_label.setText('Removing Last Waypoint')
+        future.add_done_callback(self.remove_waypoint_callback)
+
+    def remove_waypoint_callback(self, future):
+        try:
             response = future.result()
             if response.success:
-                self.error_label.setText('Waypoint Sent')
+                self.error_label.setText(response.message)
             else:
-                self.error_label.setText(f'Failed to Send Waypoint: {response.message}')
-        else:
-            self.error_label.setText('Service call failed or did not complete')
-        return
+                self.error_label.setText("Failed to remove waypoint")
+        except Exception as e:
+            self.error_label.setText(f'Remove Waypoint Service call failed!')
 
     def abort_autonomy(self):
         #logic for aborting autonomy task
@@ -371,20 +506,50 @@ class AutonomyGUI(Node, QWidget):
         req.lat = lat
         req.lon = lon
 
-        #send the Request
+        # Send the Abort Request
         future = self.abort_autonomy_client.call_async(req)
         self.error_label.setText('Attempting Abort')
+        # future.add_done_callback(self.future_callback)
 
-        #wait for response
-        rclpy.spin_until_future_complete(self, future)
-        if future.done() and future.result():
+    def set_turn_constant(self):
+        req = SetFloat32.Request()
+        req.data = float(self.TurnConstantInput.text())
+        future = self.set_turn_constant_client.call_async(req)
+        self.error_label.setText('Sending Turn Constant...')
+        future.add_done_callback(self.set_turn_constant_callback)
+
+    def set_turn_constant_callback(self, future):
+        try:
             response = future.result()
             if response.success:
-                self.error_label.setText('Aborting task. Returning to given coordinates')
+                self.error_label.setText(response.message)
             else:
-                self.error_label.setText(f'Failed to Abort: {response.message}')
-        else:
-            self.error_label.setText('Service call failed or did not complete')
+                self.error_label.setText("Failed to send turn constant")
+        except Exception as e:
+            self.error_label.setText(f'Send Turn Constant Service call failed!')
+
+    def set_speed_constant(self):
+        req = SetFloat32.Request()
+        req.data = float(self.SpeedConstantInput.text())
+        future = self.set_speed_constant_client.call_async(req)
+        self.error_label.setText('Sending Speed Constant...')
+        future.add_done_callback(self.set_speed_constant_callback)
+
+    def set_speed_constant_callback(self, future):
+        try:
+            response = future.result()
+            if response.success:
+                self.error_label.setText(response.message)
+            else:
+                self.error_label.setText("Failed! Must be in range (0-10)")
+        except Exception as e:
+            self.error_label.setText(f'Send Speed Constant Service call failed!')
+
+    def rover_state_singleton_callback(self, msg):
+        self.rover_state_singleton_timepoint = self.get_clock().now().to_msg().sec
+        self.RoverStateLat.setText(f'Latitude: {msg.gps.latitude}')
+        self.RoverStateLon.setText(f'Longitude: {msg.gps.longitude}')
+        self.RoverStateMapYaw.setText(f'Map Yaw: {msg.map_yaw}')
         return
 
     # Gui Functions
@@ -417,6 +582,18 @@ class AutonomyGUI(Node, QWidget):
         else:
             self.tag_id = None
         return
+    
+    # Service calls generic callback
+    def future_callback(future):
+        # try:
+        #     response = future.result()
+        #     if response.success:
+        #         self.error_label.setText(success_msg)
+        #     else:
+        #         self.error_label.setText(error_msg)
+        # except Exception as e:
+        #     self.error_label.setText(f'Service call failed: {str(e)}')
+        pass
 
 def get_coordinates(file_path, location):
     # Read the YAML file
@@ -467,8 +644,7 @@ def path_to_utm(path, utm_easting_zero, utm_northing_zero):
             )
         )
     return utm_path
-        
-        
+            
 def gui_ros_spin_thread(node):
     rclpy.spin(node)
 
@@ -483,19 +659,13 @@ def main(args=None):
     # Create ROS Gui
     gui_ros = AutonomyGUI()
 
-    # ros_thread = threading.Thread(target=gui_ros_spin_thread, args=(gui_ros,), daemon=True)
-    # ros_thread.start() # Start gui ROS thread
+    # Create a thread to spin the ROS node
+    ros_thread = threading.Thread(target=gui_ros_spin_thread, args=(gui_ros,), daemon=True)
+    ros_thread.start()
 
-    # Run the Qt event loop
-    # try:
-    #     sys.exit(gui_QWidget.exec_())
-    # except KeyboardInterrupt:
-    #     pass
-    # finally:
-    #     rclpy.shutdown()
-    #     ros_thread.join()
+    # Execute the GUI
+    sys.exit(gui_QWidget.exec_())
 
-    gui_QWidget.exec_()
     rclpy.shutdown()
 
 if __name__ == '__main__':

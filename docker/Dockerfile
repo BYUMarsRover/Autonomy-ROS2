@@ -68,6 +68,8 @@ RUN pip3 install pydantic==1.10.9
 RUN pip3 install odpslides
 RUN pip3 install pyserial
 
+RUN pip3 install roboticstoolbox-python
+
 USER root
 RUN apt update && apt install -y \
     libboost-dev \
@@ -89,8 +91,14 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     ros-humble-mapviz-plugins \
     ros-humble-tile-map \
     ros-humble-multires-image \
-    ros-humble-rosapi
+    ros-humble-rosapi; \
+    fi
 USER marsrover
 
 # Colorized ROS 2 logging output
 RUN echo "export RCUTILS_COLORIZED_OUTPUT=1" >> /home/marsrover/.bashrc
+
+# Domain bridge setup - Nelson Durrant, Jan 2025
+USER root
+RUN apt update && apt install -y ros-humble-domain-bridge
+USER marsrover

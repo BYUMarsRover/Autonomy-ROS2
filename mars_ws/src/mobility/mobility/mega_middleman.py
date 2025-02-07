@@ -3,7 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool, String, UInt16MultiArray
-from rover_msgs.msg import IWC_motors, Elevator, HeartbeatStatusRover, FPVServo
+from rover_msgs.msg import IWCMotors, Elevator, HeartbeatStatusRover #, FPVServo
 import serial
 import time
 import queue
@@ -14,7 +14,7 @@ class MegaMiddleman(Node):
         super().__init__('mega_middleman')
 
         # SUBSCRIBERS
-        self.create_subscription(IWC_motors, '/IWC_motorControl', self.send_wheel, 1)
+        self.create_subscription(IWCMotors, '/IWC_motorControl', self.send_wheel, 1)
         self.create_subscription(Elevator, '/elevator', self.send_elevator, 1)
         self.create_subscription(Bool, '/arm_clicker', self.send_clicker, 1)
         self.create_subscription(Bool, '/arm_laser', self.send_laser, 1)
@@ -77,12 +77,13 @@ class MegaMiddleman(Node):
             msg.right_middle_speed, msg.right_middle_dir,
             msg.right_rear_speed, msg.right_rear_dir
         ]
-        wheel_msg = "$WHEEL," + ",".join(str(param) for param in motor_params) + "*"
+        wheel_msg = "$WHEEL," + ",".join(str(int(param)) for param in motor_params) + "*"
+        self.write_debug(wheel_msg)
         self.serial_write(wheel_msg)
 
     def send_elevator(self, msg):
         eleva_params = [msg.elevator_speed, msg.elevator_direction]
-        eleva_msg = "$ELEVA," + ",".join(str(param) for param in eleva_params) + "*"
+        eleva_msg = "$ELEVA," + ",".join(str(int(param)) for param in eleva_params) + "*"
         self.write_debug("Orin: Sending elevator message to Arduino.")
         self.serial_write(eleva_msg)
 

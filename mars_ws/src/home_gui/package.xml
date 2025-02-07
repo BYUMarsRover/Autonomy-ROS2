@@ -9,6 +9,7 @@
 
 
   <build_depend>rover_msgs</build_depend>
+  <exec_depend>roboticstoolbox-python</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

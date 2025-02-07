@@ -15,7 +15,7 @@ def generate_launch_description():
     # Define launch arguments
     mapviz_location_arg = DeclareLaunchArgument(
         'MAPVIZ_LOCATION',
-        default_value=EnvironmentVariable('MAPVIZ_LOCATION', default_value='')
+        default_value=EnvironmentVariable('MAPVIZ_LOCATION', default_value='hanksville')
     )
 
     # Set Log Info for Debugging
@@ -43,7 +43,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(os.path.join(
             get_package_share_directory('mapviz_tf'), 'launch', 'mapviz_launch.py')),
         launch_arguments={
-            'location': LaunchConfiguration('MAPVIZ_LOCATION')
+            'MAPVIZ_LOCATION': LaunchConfiguration('MAPVIZ_LOCATION')
         }.items()
     )
 
