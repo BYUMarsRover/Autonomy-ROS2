@@ -369,6 +369,7 @@ class AutonomyStateMachine(Node):
 
     def set_autopilot_speed(self, speed):
         print("Setting autopilot speed...")
+        self.get_logger().error("Setting autopilot speed...")
 
         # Create a service client for the speed factor service
         self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
@@ -378,18 +379,22 @@ class AutonomyStateMachine(Node):
             self.get_logger().error("Service /mobility/speed_factor not available!")
             return False
         print("Service is live")
+        self.get_logger().error("Service is live")
 
         # Create a request object
         self.autopilot_speed_request = SetFloat32.Request()  # Create a request instance
         self.autopilot_speed_request.data = speed
         print("Executing service...")
+        self.get_logger().error("Executing service")
         
         # Send the request and wait for the response
         future = self.srv_autopilot_speed.call_async(self.autopilot_speed_request)
         rclpy.spin_until_future_complete(self, future)
+        self.get_logger().error("finished spinning")
 
         if future.result() is not None:
             print("Service executed!")
+            self.get_logger().error("Service executede")
             return future.result().success
         else:
             self.get_logger().error("Service call failed!")
