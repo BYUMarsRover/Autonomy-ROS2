@@ -33,7 +33,6 @@ class science_GUI(Node):
             )
 
         uic.loadUi(ui_file_path, self.qt)
-        # uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/science/science/gui/science_GUI.ui', self.qt) # Load the .ui file
         self.qt.show() # Show the GUI
 
         self.base_ip = self.get_base_ip()
@@ -56,7 +55,26 @@ class science_GUI(Node):
         self.moisture_coefficients = [[],[],[],[],[],[]]
 
         self.science_data_path = os.path.expanduser("~/science_data/site-1")
-        # file_path = os.path.join(science_data_path, file_name)
+
+        # Read in coefficients. 
+        moisture_path = os.path.join(self.science_data_path, "moisture_polynomials.txt")
+        temp_path = os.path.join(self.science_data_path, "temp_polynomials.txt")
+        if os.path.exists(moisture_path):
+            with open(moisture_path, 'r') as f:
+                moisture_values = f[0].split()
+                for i in range(len(moisture_values)):
+                    self.moisture_coefficients[i] = moisture_values[i]
+        else:
+            self.moisture_coefficients = []
+            print("Moisture coefficients file does not exist. Please use the show graph button to store coefficients.")
+        if os.path.exists(temp_path):
+            with open(temp_path, 'r') as f:
+                temp_values = f[1].split()
+                for i in range(len(temp_values)):
+                    self.temperature_coefficients[i] = temp_values[i]
+        else:
+            self.temperature_coefficients = []
+            print("Temperature coefficients file does not exist. Please use the show graph button to store coefficients.")
 
         if self.future.result() is not None:
             self.get_logger().info(f"{self.future.result()}")
@@ -72,21 +90,14 @@ class science_GUI(Node):
     def task_launcher_init(self):
         self.signals = Signals()
 
-        #Read in coefficients. TODO - implement throw error if not defined.
-        # file_path = os.path.join(self.science_data_path, "polynomials.txt")
-        # with open(file_path, 'r') as f:
-        #     moisture_values = f[0].split()
-        #     for i in range(len(moisture_values)):
-        #         self.moisture_coefficients[i] = moisture_values[i]
-        #     temp_values = f[1].split()
-        #     for i in range(len(temp_values)):
-        #         self.temperature_coefficients[i] = temp_values[i]
-
         self.qt.pushButton_save_notes.clicked.connect(self.save_notes)
         self.qt.pushButton_fad.clicked.connect(self.fad_detector_calibration)
 
         self.qt.pushButton_temperature.clicked.connect(lambda: self.graph_sensor_values(1))
         self.qt.pushButton_moisture.clicked.connect(lambda: self.graph_sensor_values(0))
+
+        self.qt.pushButton_temperature_2.clicked.connect(lambda: self.estimate_reading(1))
+        self.qt.pushButton_moisture_2.clicked.connect(lambda: self.estimate_reading(0))
 
         self.qt.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
         self.qt.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
@@ -174,11 +185,16 @@ class science_GUI(Node):
             case 1:
                 file_name = "temperature-plot-1.txt"
                 file_path = os.path.join(self.science_data_path, file_name)
-                coefficients_file = "moisture_coefficients.txt"
+                coefficients_file = "temperature_coefficients.txt"
                 coefficients_path = os.path.join(self.science_data_path, coefficients_file)
             case _: #Wildcard, acts like else
                 print("Err: this sensor does not have data to graph")
                 return
+
+        #Check file existence
+        if not os.path.exists(file_path):
+            print("Err: file does not exist")
+            return
 
         with open(file_path, 'r') as f:
             for line in f:
@@ -202,10 +218,9 @@ class science_GUI(Node):
                     dummy_analog.append(j)
 
             plt.scatter(dummy_analog,dummy_manuals)
-            # plt.draw()
             plt.pause(0.5)
             # Have it ask you to save the point or delete after showing you an updated graph.
-            # keep = input("Do you want to keep this point? [y]/n\n")
+
             keep = "y"
             if not (keep == "y" or keep =="Y" or keep == "[Y]" or keep == "[y]" or keep == ""):
                 manual_points.pop()
@@ -217,8 +232,8 @@ class science_GUI(Node):
                 plt.pause(0.5)
         #Add something so you can decide what order polynomial you want.
         order = int(input("What order polynomial do you want to fit? [0 - 6]\n"))
-        # order = 1
         P0 = np.zeros((1,6-order))
+
         #Plot the points alongside the polyfit.
         analog_vals = np.array(dummy_analog)
         manual_points = np.array(dummy_manuals)
@@ -226,7 +241,6 @@ class science_GUI(Node):
         P = np.concatenate((P0,P1),axis=None)
         x = np.linspace(0,1,500)
         poly_y = P[0]*x**6+P[1]*x**5+P[2]*x**4+P[3]*x**3+P[4]*x**2+P[5]*x + P[6]
-        # print(P)
         plt.figure()
         plt.scatter(analog_vals, manual_points, label="input data")
         plt.xlabel("Arduino Digital Readout")
@@ -234,9 +248,37 @@ class science_GUI(Node):
         plt.plot(x, poly_y, label="polynomial fit")
         plt.legend()
         plt.show()
-        print(P)
-        # with open()
 
+        with open(coefficients_path, 'w') as f:
+            line = ''
+            for i in P:
+                line += str(i)
+                line += " "
+            f.write(line)
+
+    def estimate_reading(self, position):
+        match(position):
+            case 0:
+                coefficients_file = "moisture_coefficients.txt"
+                coefficients_path = os.path.join(self.science_data_path, coefficients_file)
+                x = self.qt.lineEdit_moisture_2.text()
+            case 1:
+                coefficients_file = "temperature_coefficients.txt"
+                coefficients_path = os.path.join(self.science_data_path, coefficients_file)
+                x = self.qt.lineEdit_temperature_2.text()
+            case _: #Wildcard, acts like else. This should never happen.
+                print("Err: this sensor does not have data to graph")
+                return
+
+        with open(coefficients_path, 'r') as f:
+            coefs = f.read().split()
+            result = 0
+            for i in range(len(coefs)):
+                result += (float(coefs[i]) * (float(x)**i))
+        sensor = "None"
+        if position == 0: sensor = "Moisture"
+        else: sensor = "Temperature"
+        self.qt.textBrowser.setPlainText(sensor + f" reading is {result}")
         
     def update_fad_intensity_value(self, msg):
         print('Displaying intensity!', msg)

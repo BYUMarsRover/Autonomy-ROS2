@@ -32,6 +32,7 @@ setup(
     entry_points={
         'console_scripts': [
             'rover_state_singleton_creator = odometry.rover_state_singleton_creator:main',
+            'rover_state_singleton_creator_new = odometry.rover_state_singleton_creator_new:main',
             'position_velocity_time_translator = odometry.position_velocity_time_translator:main',
             'dummy_singleton_publisher = odometry.dummy_singleton_publisher:main',
         ],
