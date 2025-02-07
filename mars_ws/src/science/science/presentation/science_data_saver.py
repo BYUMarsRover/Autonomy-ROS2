@@ -20,7 +20,6 @@ class ScienceDataSaver(Node):
         self.saving_sensor_values = [False, False, False]
         self.sensor_count = 0
         self.fad_count = 0
-        # self.DIR = os.path.join(os.path.dirname(__file__), "resources")
         self.DIR = os.path.expanduser("~/science_data") #This is due to the install files usually not being writable. 
         os.makedirs(self.DIR, exist_ok=True)
         self.file_num = 1
@@ -28,16 +27,11 @@ class ScienceDataSaver(Node):
         self.sensor_map = ['moisture', 'temperature', 'fad']
 
         print('Science Data Save Started.')
-    
-    # def get_file_num(self):
-    #     self.file_num += 1
-    #     return self.file_num - 1
 
     def sensor_values_callback(self, msg: ScienceSensorValues):
         # Prevents the sensor data from getting saved constantly, only saved every 60 calls
-        # self.sensor_count = (self.sensor_count + 1) % 60
-        self.sensor_count = 0 #For testing purposes, go back to the mod 60 for actual stuff
-        # print("save")
+        self.sensor_count = (self.sensor_count + 1) % 60
+        # self.sensor_count = 0 #For testing purposes, go back to the mod 60 for actual stuff
         print(self.saving_sensor_values, self.sensor_count, self.sensor_values)
         if self.saving_sensor_values[0] and self.sensor_count == 0:
             self.sensor_values[0].append(msg.moisture)
@@ -63,7 +57,6 @@ class ScienceDataSaver(Node):
         else: #Change this f string so that it gets this going in the correct directory
 
             file_name = f'{self.sensor_map[msg.position]}-plot-{self.file_num}.txt'
-            # file_name = f'{presentation_path}/{self.sensor_map[msg.position]}-plot-{self.get_file_num()}.txt'
             print(file_name)
             file_path = os.path.join(self.DIR, file_name)
             self.save_sensor_values(msg.position, file_path)
