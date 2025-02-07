@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 from rover_msgs.srv import PlanPath, OrderPath
-from rover_msgs.msg import PositionVelocityTime
+from ublox_read_2.msg import PositionVelocityTime
 from nav_msgs.msg import Path
 from geometry_msgs.msg import Point, PoseStamped, Pose, Quaternion
 from std_msgs.msg import Header
@@ -77,7 +77,7 @@ class PathPlanner(Node):
         self.utm_zone_letter = utm_coords[3]
 
     def update_location(self, msg):
-        self.location = (msg.latitude, msg.longitude)
+        self.location = (msg.lla[0], msg.lla[1])
         
 
     def loop(self):

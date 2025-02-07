@@ -31,7 +31,7 @@ class ArucoAutopilotManager(Node):
             MobilityArucoAutopilotCommand, '/mobility/aruco_autopilot_cmds', self.aruco_autopilot_cmds_callback, 10)
 
         self.enable_service = self.create_service(SetBool, '/mobility/aruco_autopilot_manager/enabled', self.enable_callback)
-        self.speed_service = self.create_service(SetFloat32, '/mobility/speed_factor', self.set_speed)
+        # self.speed_service = self.create_service(SetFloat32, '/mobility/speed_factor', self.set_speed) #NOt working because this is a service in autopilot manager
 
         # Initialize PID controllers
         self.kp_linear = self.get_parameter_helper('aruco_linear_autopilot_kp', 1.0)
