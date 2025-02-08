@@ -15,7 +15,7 @@ class MegaMiddleman(Node):
 
         # SUBSCRIBERS
         self.create_subscription(IWCMotors, '/IWC_motorControl', self.send_wheel, 1)
-        self.create_subscription(Elevator, '/elevator', self.send_elevator, 1)
+        self.create_subscription(Elevator, '/elevator', self.send_elevator, 10)
         self.create_subscription(Bool, '/arm_clicker', self.send_clicker, 1)
         self.create_subscription(Bool, '/arm_laser', self.send_laser, 1)
         # self.create_subscription(FPVServo, '/fpv_servo', self.send_fpvsv, 1)
@@ -82,6 +82,7 @@ class MegaMiddleman(Node):
         self.serial_write(wheel_msg)
 
     def send_elevator(self, msg):
+        self.get_logger().info('recieved /elevator')
         eleva_params = [msg.elevator_speed, msg.elevator_direction]
         eleva_msg = "$ELEVA," + ",".join(str(int(param)) for param in eleva_params) + "*"
         self.write_debug("Orin: Sending elevator message to Arduino.")

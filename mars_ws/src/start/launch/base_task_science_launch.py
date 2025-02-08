@@ -27,11 +27,11 @@ def generate_launch_description():
             ])
         ),
 
-        # IncludeLaunchDescription(TODO - get working with Alyssa
-        #     PythonLaunchDescriptionSource([
-        #         FindPackageShare("joysticks"), "/launch/xbox_science.launch.py"
-        #     ])
-        # ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([
+                FindPackageShare("joysticks"), "/launch/xbox_science_launch.py"
+            ])
+        ),
         mapviz_location_arg, #TODO - consider changing this so that everything matches here or changing the others so it matches the style of autonomy
         # include_base_common,
     ])
