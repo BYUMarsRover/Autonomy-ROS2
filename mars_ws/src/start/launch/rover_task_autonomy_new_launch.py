@@ -53,7 +53,7 @@ def generate_launch_description():
     )
 
     # XBOX CONTROLS from the rover 
-    IncludeLaunchDescription(
+    include_xbox = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
             get_package_share_directory('mobility'), 'launch', 'xbox_drive_launch.py'))
     ),
@@ -71,5 +71,6 @@ def generate_launch_description():
         include_rover_common,
         include_autonomy,
         include_autopilot_drive,
-        include_rover_state_singleton_creator_new
+        include_rover_state_singleton_creator_new,
+        include_xbox
     ])
