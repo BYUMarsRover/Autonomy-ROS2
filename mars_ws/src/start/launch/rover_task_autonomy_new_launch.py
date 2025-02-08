@@ -52,6 +52,13 @@ def generate_launch_description():
         )
     )
 
+    # XBOX CONTROLS from the rover 
+    IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(
+            mobility_dir, 'launch', 'xbox_drive_launch.py'))
+    ),
+
+
     include_rover_state_singleton_creator_new = Node(
         package='odometry',
         executable='rover_state_singleton_creator_new',

@@ -36,10 +36,10 @@ def generate_launch_description():
         # ),
 
         # Heartbeat
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join( 
-                heartbeat_dir, 'launch', 'heartbeat_rover_launch.py'))
-        ),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join( 
+        #         heartbeat_dir, 'launch', 'heartbeat_rover_launch.py'))
+        # ),
 
         # # Rover Home GUI
         # IncludeLaunchDescription(
