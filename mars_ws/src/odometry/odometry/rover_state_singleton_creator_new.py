@@ -112,11 +112,10 @@ class RoverStateSingletonCreator(Node):
         # self.map_roll = euler[0] * 180/math.pi
         # self.map_pitch = euler[1] * 180/math.pi
         # self.map_yaw = euler[2] * 180/math.pi 
-        self.map_yaw = yaw * 180/math.pi
+        self.map_yaw = (yaw * 180/math.pi ) - 65
 
-        # self.map_yaw += 180.0
-        # if self.map_yaw > 180:
-        #     self.map_yaw -= 360
+        if self.map_yaw < -180:
+            self.map_yaw += 360
 
         self.publish_message()
 
