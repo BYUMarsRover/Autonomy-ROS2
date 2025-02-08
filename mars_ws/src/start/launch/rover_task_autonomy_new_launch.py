@@ -56,7 +56,7 @@ def generate_launch_description():
     include_xbox = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
             get_package_share_directory('mobility'), 'launch', 'xbox_drive_launch.py'))
-    ),
+    )
 
 
     include_rover_state_singleton_creator_new = Node(
