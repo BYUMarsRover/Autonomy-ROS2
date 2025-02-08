@@ -77,7 +77,7 @@ class RoverStateSingletonCreator(Node):
         Converts orientation from quaternions to euler (converts them into human readable roll, pitch, yaw) angles and sets the map variables
         """
         orientation_q = message.orientation  # Extracts the orientation data from the message
-        orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]  # Extracts quaternion data
+        # orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]  # Extracts quaternion data
 
         # R = quat2R(orientation_list)
 
@@ -88,8 +88,20 @@ class RoverStateSingletonCreator(Node):
         # R = R_rot @ R
 
         # orientation_list = R2quat(R)
+        w = orientation_q.w
+        x = orientation_q.x
+        y = orientation_q.y
+        z = orientation_q.z
+        # yaw = np.atan2(2.0 * (y*z + w*x), w*w - x*x - y*y + z*z)
+        yaw = math.atan2(2.0 * (w*z + x*y), 1.0 - 2.0 * (y* y + z * z))
 
-        euler = euler_from_quaternion(orientation_list)  # Transforms the quaternion data into euler angles
+        # dcm10 = 2.0 * (x * y + w * z)
+        # dcm00 = w * w + x * x - y * y - z * z
+
+        # yaw = math.atan2(dcm10, dcm00)
+
+
+        # euler = euler_from_quaternion(orientation_list, axes ='rzyx')  # Transforms the quaternion data into euler angles
 
         # sets the roll, pitch and yaw based on the euler angles and converts them to degrees
         # zed_roll = euler[0] * 180/math.pi
@@ -97,13 +109,14 @@ class RoverStateSingletonCreator(Node):
         # zed_yaw = euler[2] * 180/math.pi
 
 
-        self.map_roll = euler[0] * 180/math.pi
-        self.map_pitch = euler[1] * 180/math.pi
-        self.map_yaw = euler[2] * 180/math.pi 
+        # self.map_roll = euler[0] * 180/math.pi
+        # self.map_pitch = euler[1] * 180/math.pi
+        # self.map_yaw = euler[2] * 180/math.pi 
+        self.map_yaw = yaw * 180/math.pi
 
-        self.map_yaw += 180.0
-        if self.map_yaw > 180:
-            self.map_yaw -= 360
+        # self.map_yaw += 180.0
+        # if self.map_yaw > 180:
+        #     self.map_yaw -= 360
 
         self.publish_message()
 
