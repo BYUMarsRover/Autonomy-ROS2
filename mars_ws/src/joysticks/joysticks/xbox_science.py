@@ -90,7 +90,7 @@ class XBOX(Node):
     def joy_callback(self, msg: Joy):
         DEAD_ZONE = 0.05
 
-        print(f"leght of axes is: {msg.axes}")
+        # print(f"leght of axes is: {msg.axes}")
 
         # Linear Actuator Control: RIGHT JOYSTICK VERTICAL
         if msg.axes[RIGHT_STICK_VERTICAL] > DEAD_ZONE:
@@ -133,21 +133,21 @@ class XBOX(Node):
 
         # Save to secondary cache: XBOX Button
         if msg.buttons[POWER]:
-            self.pub_save_secondary_cache.publish(ScienceSaveSecondaryCache(True))
+            self.pub_save_secondary_cache.publish(ScienceSaveSecondaryCache(save_to_secondary_cache=True))
 
         # Emergency stop secondary cache automation
         if msg.buttons[B]:
-            self.pub_stop_secondary_cache_automation.publish(ScienceSaveSecondaryCache(False))
+            self.pub_stop_secondary_cache_automation.publish(ScienceSaveSecondaryCache(save_to_secondary_cache=False))
 
         # Move secondary cache out and in
         if msg.buttons[BACK]:
-            self.pub_move_secondary_cache.publish(ScienceSecondaryCachePosition(1))
+            self.pub_move_secondary_cache.publish(ScienceSecondaryCachePosition(secondary_cache_position=1))
 
         # Publish all changed controls
         if linear_actuator_speed != self.linear_actuator_speed:
             self.linear_actuator_speed = int(linear_actuator_speed * 127)
             self.pub_science_la_direction.publish(
-                ScienceLinearActuatorDirection(self.linear_actuator_speed)
+                ScienceLinearActuatorDirection(direction=self.linear_actuator_speed)
             )
 
         if elev_direction != self.elev_direction:
@@ -161,17 +161,17 @@ class XBOX(Node):
 
         if primary_cache_door_position != self.primary_cache_door_position:
             self.primary_cache_door_position = primary_cache_door_position
-            self.pub_primary_cache_door_position.publish(ScienceCacheDoor(primary_cache_door_position))
+            self.pub_primary_cache_door_position.publish(ScienceCacheDoor(position=primary_cache_door_position))
 
         if auger_speed != self.auger_speed:
             self.auger_speed = int(auger_speed * 127)
-            self.pub_auger_on.publish(ScienceAugerOn(self.auger_speed))
+            self.pub_auger_on.publish(ScienceAugerOn(auger_speed=self.auger_speed))
 
         if switch_tool_direction != self.switch_tool_direction:
             self.switch_tool_direction = switch_tool_direction
             if switch_tool_direction != 0:
                 self.pub_switch_tool_direction.publish(
-                    ScienceSwitchTool(switch_tool_direction)
+                    ScienceSwitchTool(direction=switch_tool_direction)
                 )
 
 
