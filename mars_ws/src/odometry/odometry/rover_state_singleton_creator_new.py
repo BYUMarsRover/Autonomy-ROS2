@@ -79,15 +79,15 @@ class RoverStateSingletonCreator(Node):
         orientation_q = message.orientation  # Extracts the orientation data from the message
         orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]  # Extracts quaternion data
 
-        R = quat2R(orientation_list)
+        # R = quat2R(orientation_list)
 
-        R_rot = np.array([[ 0,  0, 1],
-                          [-1,  0, 0],
-                          [ 0, -1, 0]])
+        # R_rot = np.array([[ 0,  0, 1],
+        #                   [-1,  0, 0],
+        #                   [ 0, -1, 0]])
 
-        R = R_rot @ R
+        # R = R_rot @ R
 
-        orientation_list = R2quat(R)
+        # orientation_list = R2quat(R)
 
         euler = euler_from_quaternion(orientation_list)  # Transforms the quaternion data into euler angles
 
