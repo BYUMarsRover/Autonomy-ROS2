@@ -55,7 +55,7 @@ def generate_launch_description():
     # XBOX CONTROLS from the rover 
     IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
-            mobility_dir, 'launch', 'xbox_drive_launch.py'))
+            get_package_share_directory('mobility'), 'launch', 'xbox_drive_launch.py'))
     ),
 
 
