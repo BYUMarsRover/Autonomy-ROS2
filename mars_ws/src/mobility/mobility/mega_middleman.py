@@ -122,9 +122,6 @@ class MegaMiddleman(Node):
             self.ser.reset_input_buffer()
             return -1, ""
 
-        # Log the current buffer state for debugging
-        self.get_logger().info(f"Current Buffer: {self.buffer}")
-
         # Process any complete NMEA sentences in the buffer
         return self.process_buffer()
 
