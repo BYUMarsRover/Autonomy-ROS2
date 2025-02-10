@@ -66,17 +66,21 @@ USER marsrover
 # "transforms3d" uses a function depreciated in numpy 2.0
 RUN pip3 uninstall -y numpy
 RUN pip3 install numpy==1.26.0
+# included in mobility, but maybe should leave 1.26.0
 
 # Install utm - ADD HERE
 # ADD HERE
 RUN pip3 install utm
+# included in mobility
 
 # Install localization and transform packages - ADD HERE
 # ADD HERE
 USER root
 RUN apt update && apt install -y \
     ros-humble-robot-localization \
+    # included in odometry
     ros-humble-tf-transformations
+    # included in odometry
 USER marsrover
 
 # Add OpenCV dependency - ADD HERE
@@ -85,6 +89,7 @@ USER root
 RUN apt update && apt install -y libopencv-dev
 # ENV CMAKE_PREFIX_PATH="/usr/local/share/OpenCV;/opt/ros/humble"
 USER marsrover
+# not included in anything ?
 
 # TO DO: DO WE NEED THIS?
 # Install ROS2 dependencies for aruco_detect
@@ -97,16 +102,20 @@ USER marsrover
 # Install pydantic version 1.10.9 - ADD HERE
 # This version is used by the usb_cam launch file
 RUN pip3 install pydantic==1.10.9
+
 RUN pip3 install odpslides
 RUN pip3 install pyserial
+# not included in anything ?
 
 # Install USB camera package - ADD HERE
 # ADD HERE
 RUN apt update && apt install -y ros-humble-usb-cam
+# included in autonomy
 
 # Install roboticstoolbox-python - ADD HERE
 # ADD HERE
 RUN pip3 install roboticstoolbox-python
+# included in home_gui
 
 # Install ROS 2 dependencies for mapviz - ADD HERE
 # ADD HERE
@@ -114,6 +123,7 @@ USER root
 RUN apt update && apt install -y \
     libboost-dev \
     ros-humble-rviz-common
+# not included in anything ?
 
 # Install mapviz and related packages
 USER root
