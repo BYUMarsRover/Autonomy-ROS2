@@ -158,13 +158,15 @@ while true; do
   shift
 done
 
+################FIX ABOVE?###############
+
 # Non-option arguments
 ROVER_ADDRESS="$1"
 
 # Check arguments and set defaults
 
 if [ -z "$ROVER_ADDRESS" ]; then
-  DEFAULT_ROVER_ADDRESS='192.168.1.20'
+  DEFAULT_ROVER_ADDRESS='192.168.1.120'
   ROVER_ADDRESS=$DEFAULT_ROVER_ADDRESS
 fi
 
@@ -243,16 +245,17 @@ export $(echo $BASE_ENVIRONMENT | xargs)
 
 # Source the rover workspace, if it has been built, warn the user that it has not been built otherwise
 #**Check
-BASE_REPO_SETUP="../install/setup.bash"
+BASE_REPO_SETUP="~/mars_ws/install/setup.bash"
 
+###########FIX HERE
 # Run the ROS setup script
-if ! test -f "$BASE_REPO_SETUP"; then
-    printWarning "The rover workspace has not been built, so it cannot be set up.
-Please build the workspace with catkin_make, and then run the command \"source ${BASE_REPO_SETUP}\""
-    exit 1
-else
-    source "$BASE_REPO_SETUP"
-fi
+# if ! test -f "$BASE_REPO_SETUP"; then
+#     printWarning "The rover workspace has not been built, so it cannot be set up.
+# Please build the workspace with catkin_make, and then run the command \"source ${BASE_REPO_SETUP}\""
+#     exit 1
+# else
+#     source "$BASE_REPO_SETUP"
+# fi
 
 SET_BASE_ENV_CMD="export $(echo $BASE_ENVIRONMENT | xargs) && unset ROS_HOSTNAME && source $BASE_REPO_SETUP"
 SET_ROVER_ENV_CMD="export $(echo $ROVER_ENVIRONMENT | xargs) && unset ROS_HOSTNAME && source $ROVER_REPO/mars_ws/install/setup.bash"  #**Check
@@ -273,7 +276,7 @@ function rover_cmd {
 
 # Show the settings we are using
 printInfo "Using rover address: $ROVER_ADDRESS"
-printInfo "Using rover user: $ROVER_USER"
+printInfo "Using rover user: $ROVER_USER" 
 printInfo "Using base address: $BASE_ADDRESS"
 
 ###############################################################################
@@ -303,7 +306,8 @@ SESSION_NAME='rover'
 BASE_CAMERA_SCRIPT_DIR=$BASE_STATION_REPO/scripts/camera
 ROVER_CAMERA_SCRIPT_DIR=$ROVER_REPO/scripts/camera
 
-docker run -d -p 8080:8080 -t -v ~/mapproxy:/mapproxy danielsnider/mapproxy
+# For mapviz
+# docker run -d -p 8080:8080 -t -v ~/mapproxy:/mapproxy danielsnider/mapproxy
 
 # Kill gstreamer processes that may be already open
 pkill gst
@@ -343,6 +347,7 @@ echo $BASE_ADDRESS
 ###############################################################################
 # START ROVER LAUNCH FILE
 ###############################################################################
+tmux send-keys "cd /home/marsrover/Autonomy-ROS2 && bash compose.sh" Enter
 tmux send-keys "$SET_ROVER_ENV_CMD && $LAUNCHER start \
   rover_task_${TASK_NAME}_launch.py" Enter
 
@@ -354,8 +359,19 @@ tmux select-pane -t 0 -T base-station-${TASK_NAME}-task
 ###############################################################################
 # START BASE LAUNCH FILE
 ###############################################################################
-tmux send-keys "$SET_BASE_ENV_CMD && $LAUNCHER start \
-  base_task_${TASK_NAME}_launch.py" Enter
+tmux send-keys "cd /home/marsrover/Autonomy-ROS2 && bash compose.sh" Enter
+tmux send-keys "$SET_BASE_ENV_CMD" Enter
+tmux send-keys "$LAUNCHER start base_task_${TASK_NAME}_launch.py" Enter
+
+
+# object detection
+tmux new-window -t $SESSION_NAME -n "object_detection"
+tmux select-window -t $SESSION_NAME:object_detection
+tmux send-keys "echo here" Enter
+tmux send-keys "$CONNECT $ROVER_USER@$ROVER_ADDRESS" Enter
+tmux send-keys "cd ~/foxy_ws && source /opt/ros/foxy/setup.bash && source install/setup.bash" Enter
+tmux send-keys "ros2 launch object_detection object_detection_launch.py" 
+
 
 
 # Attach to the beautiful tmux session we have created

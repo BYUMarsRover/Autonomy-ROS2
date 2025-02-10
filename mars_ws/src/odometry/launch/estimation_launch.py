@@ -1,4 +1,7 @@
 from launch import LaunchDescription
+from launch.actions import GroupAction, DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import os
@@ -10,6 +13,8 @@ def generate_launch_description():
 
     return LaunchDescription([
         # Load parameters for robot_localization
+
+        DeclareLaunchArgument('ROVER_ADDRESS', default_value='192.168.1.120'),
         Node(
             package='robot_localization',
             executable='ukf_node',
@@ -46,12 +51,22 @@ def generate_launch_description():
             emulate_tty=True
         ),
 
-        Node(
-            package='odometry',
-            executable='rover_state_singleton_creator',
-            name='rover_state_singleton_creator',
-            output='screen'
+        #Condition to run the singleton creator only on the rover and not
+        GroupAction(
+            actions=[
+                Node(
+                    package='odometry',
+                    executable='rover_state_singleton_creator',
+                    name='rover_state_singleton_creator',
+                    output='screen'
+                ),
+            ],
+            condition=IfCondition(
+                PythonExpression(["'", LaunchConfiguration('ROVER_ADDRESS'), "' != '127.0.0.1'"])
+            )
         ),
+
+        
 
         Node(
             package='imu_filter_madgwick',
