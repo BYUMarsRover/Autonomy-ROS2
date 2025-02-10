@@ -13,6 +13,6 @@ def generate_launch_description():
                 package='peripherals',
                 executable='battery_info',
                 name='battery_info',
-                output='screen'
+                output='log'
             ) 
     ])
