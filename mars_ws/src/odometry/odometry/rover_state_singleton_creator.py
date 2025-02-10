@@ -32,7 +32,7 @@ class RoverStateSingletonCreator(Node):
         self.gps_subscription = self.create_subscription(NavSatFix, "/ins/lla", self.convert_gps, 10) # Subscribes to unfiltered GPS data
 
         # Publishers
-        self.singleton_publisher = self.create_publisher(RoverStateSingleton, '/odometry/rover_state_singleton', 10) # Publishes the singleton message
+        self.singleton_publisher = self.create_publisher(RoverStateSingleton, '/odometry/rover_state_singleton_old', 10) # Publishes the singleton message
 
         self.map_roll = 0.0
         self.map_pitch = 0.0

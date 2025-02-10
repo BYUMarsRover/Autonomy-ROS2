@@ -11,6 +11,16 @@ def generate_launch_description():
     config = os.path.join(get_package_share_directory('odometry'), 'config', 'estimation.yaml'),
     imu_config = os.path.join(get_package_share_directory('odometry'), 'config', 'imu_filter.yaml'),
 
+    include_autopilot_drive = IncludeLaunchDescription(
+    PythonLaunchDescriptionSource(
+        os.path.join(
+            get_package_share_directory('gpsd_client'),
+            'launch',
+            'gpsd_client_launch.py'
+            )
+        )
+    )
+
     return LaunchDescription([
         # Load parameters for robot_localization
 
@@ -45,11 +55,14 @@ def generate_launch_description():
             remappings=[
                 ('odometry/filtered', 'odometry/filtered_map'),
                 ('imu', 'imu/data'),
-                ('gps/fix', 'ins/lla'),
+                ('gps/fix', '/fix'),
             ],
             arguments=['--ros-args', '--log-level', 'fatal'],
             emulate_tty=True
         ),
+        
+        include_autopilot_drive,
+
 
         #Condition to run the singleton creator only on the rover and not
         GroupAction(
