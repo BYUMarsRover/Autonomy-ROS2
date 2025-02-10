@@ -32,7 +32,7 @@ This README gives a simple guide to and overview of the Autonomy-ROS2 repository
 
 **Structure:**
 
-- `Autonomy-ROS2/docker`: Contains the Dockerfile and docker compose file for building and running our custom ROS 2 Docker image. If you need to add dependencies to the image, simply add them to the `docker/Dockerfile`, push them to the main branch, and the GitHub Actions workflow will automatically rebuild and redeploy the image to Docker Hub. If you need to pass additional arguments to the Docker build command (such as mounting directories as volumes), you can do so by adding them to the `docker-compose.yml` file.
+- `Autonomy-ROS2/docker`: Contains the Dockerfile and docker compose file for building and running our custom ROS 2 Docker image. If you need to add dependencies to the image, simply add them to `docker/Dockerfile`, push them to the main branch, and the GitHub Actions workflow will automatically rebuild and redeploy the image to Docker Hub. If you need to pass additional arguments to the Docker build command (such as mounting directories as volumes), you can do so by adding them to the `docker-compose.yml` file.
 
 - `Autonomy-ROS2/mars_ws`: The ROS 2 workspace we use for building and running ROS 2 packages. You can add custom ROS 2 packages to the `src` folder in this workspace and build them using the `colcon build` build system. To build a specific package, run `colcon build --packages-select <package_name>`. To source the workspace, run `source install/setup.bash`.
 
