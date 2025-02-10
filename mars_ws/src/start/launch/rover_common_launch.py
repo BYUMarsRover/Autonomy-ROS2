@@ -48,10 +48,10 @@ def generate_launch_description():
         # ),
 
         # Mobility
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(
-                mobility_dir, 'launch', 'rover_drive_launch.py'))
-        ),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join(
+        #         mobility_dir, 'launch', 'rover_drive_launch.py'))
+        # ),
 
         # GPS
         # IncludeLaunchDescription(
