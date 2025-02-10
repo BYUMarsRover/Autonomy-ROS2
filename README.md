@@ -1,4 +1,4 @@
-## Autonomy-ROS2 Repository
+## Autonomy-ROS2 Guide
 
 This README gives a simple guide to and overview of the Autonomy-ROS2 repository.
 
@@ -37,3 +37,7 @@ This README gives a simple guide to and overview of the Autonomy-ROS2 repository
 - `Autonomy-ROS2/mars_ws`: The ROS 2 workspace we use for building and running ROS 2 packages. You can add custom ROS 2 packages to the `src` folder in this workspace and build them using the `colcon` build system.
 
 - `Autonomy-ROS2/ros1_bridge`: Contains the code for running the ROS 1 - ROS 2 bridge. It has a seperate, more complicated Docker image and ROS workspace setup. For more information on how to work with the bridge, refer to the `ros1_bridge/README.md` file.
+
+--
+
+Created by Nelson Durrant, Feb 2025.
