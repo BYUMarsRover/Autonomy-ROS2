@@ -16,7 +16,7 @@ This README gives a simple guide to and overview of the Autonomy-ROS2 repository
 
 > **NOTE:** 
 >
-> `compose.sh` spins up a Docker container from our custom ROS 2 image, which includes all the necessary dependencies needed to run our ROS 2 packages. If you make changes inside the Docker container (i.e. installing packages or modifying files not included as volumes), those changes will not be saved when the container restarts. To make persistent changes, you need to modify the Dockerfile and rebuild the image. If you ever need to restart the container, simply run `bash compose.sh down` to stop the container, and then `bash compose.sh` to start it again.
+> `compose.sh` spins up a Docker container from our custom ROS 2 image, which includes all the necessary dependencies needed to run our ROS 2 packages. If you make changes inside the Docker container (i.e. installing packages or modifying files not included as volumes), those changes will not be saved when the container restarts. If you ever need to restart the container, simply run `bash compose.sh down` to stop the container, and then `bash compose.sh` to start it again.
 
 --
 
@@ -24,7 +24,7 @@ This README gives a simple guide to and overview of the Autonomy-ROS2 repository
 
 - **Create a new branch.** The main branch of this repository is protected, so you will need to create a new branch to make changes. To do this, run `git checkout -b <branch_name>`. We recommend naming your branch with a combination of your name and the feature you are working on (i.e. `nelson/repo-docs`).
 
-- **Make your changes.** Add new ROS 2 packages to the `mars_ws/src` folder, or modify existing packages as needed. If you need to add dependencies to the Docker image, modify the `docker/Dockerfile` image (these changes will not be pushed to Docker Hub until you merge your branch into the main branch).
+- **Make your changes.** Add new ROS 2 packages to the `mars_ws/src` folder, or modify existing packages as needed. If you need to add dependencies to the Docker image, modify `docker/Dockerfile` (these changes will not be pushed to Docker Hub until you merge your branch into the main branch).
 
 - **Submit a pull request.** Once you have made and tested your changes, make sure they are commited and pushed. Then, navigate to the GitHub repository and create a new pull request. Once another member of the team has reviewed and approved your changes, you can merge them into the main branch.
 
