@@ -132,7 +132,7 @@ class PathManager(Node):
         # If current point and desired point have been set, calculate the autopilot commands
         if self.current_point and self.desired_point:
             self.publish_debug("[update_autopilot_cmd] Calculating autopilot commands")
-            self.chi_rad, chi_deg = GPSTools.course_angle_between_lat_lon(self.current_point, self.desired_point)
+            self.chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, self.desired_point)
             self.distance = GPSTools.distance_between_lat_lon(self.current_point, self.desired_point)
 
             self.autopilot_cmd.distance_to_target = self.distance

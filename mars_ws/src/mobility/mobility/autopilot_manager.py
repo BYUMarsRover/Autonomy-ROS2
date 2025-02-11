@@ -35,6 +35,7 @@ class AutopilotManager(Node):
         self.distance = 0
         self.curr_heading = 0
         self.des_heading = 0
+        self.course_error = 0
 
         # Controller gains
         self.speed = self.declare_parameter("percent_speed", 0.5).value
@@ -87,15 +88,17 @@ class AutopilotManager(Node):
         
         self.distance = msg.distance_to_target
 
-        self.des_heading = wrap(msg.course_angle + self.heading_plus, 0)
+        # self.des_heading = wrap(msg.course_angle + self.heading_plus, 0)
+        self.des_heading = wrap(msg.course_angle, 0)
         self.curr_heading = wrap(self.curr_heading, 0)
-        course_error = wrap(self.des_heading - self.curr_heading, 0)
+        self.course_error = wrap(self.des_heading - self.curr_heading, 0)
 
         lin_vel = self.linear_controller.update_with_error(self.distance)
-        angular_vel = self.angular_controller.update_with_error(course_error)
+        angular_vel = self.angular_controller.update_with_error(self.course_error)
 
         self.rover_vel_cmd.u_cmd = lin_vel
         self.rover_vel_cmd.omega_cmd = angular_vel
+        self.rover_vel_cmd.course_heading_error = self.course_error
 
         self.publish_rover_vel_cmd()
 

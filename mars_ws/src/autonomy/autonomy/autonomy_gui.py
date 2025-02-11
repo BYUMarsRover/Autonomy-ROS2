@@ -93,6 +93,7 @@ class AutonomyGUI(Node, QWidget):
         self.obj_alpha_lpf = 0.5
         self.aruco_alpha_lpf = 0.5
         self.aruco_tag_distance = None
+        self.course_heading_error = None
 
         ################# ROS Communication #################
 
@@ -292,13 +293,28 @@ class AutonomyGUI(Node, QWidget):
     
     ################# Callbacks for Mobility #################
     def autopilot_cmds_callback(self, msg):
-        autopilot_cmds_string = f'Distance to target: {round(msg.distance_to_target, 2)}, angle to target: {round(msg.course_angle, 2)}'
-        self.AutopilotCmds.setText(autopilot_cmds_string)
+        self.autopilot_cmds_msg = msg
+        self.setAutopilotString(self.autopilot_cmds_msg)        
         return
 
+    #helper function for autopilot_cmds_callback
+    def setAutopilotString(self, msg):
+        if self.course_heading_error is None:
+            autopilot_cmds_string = f'Dist to target: {round(msg.distance_to_target, 2)}m, cw from N: {round(np.rad2deg(msg.course_angle), 2)}°'
+        else:
+            autopilot_cmds_string = f'Dist to target: {round(msg.distance_to_target, 2)}m, cw from N: {round(np.rad2deg(msg.course_angle), 2)}°, Heading Err: {round(np.rad2deg(self.course_heading_error), 2)}°'
+        self.AutopilotCmds.setText(autopilot_cmds_string)
+        return
+    
     def vel_cmds_callback(self, msg):
+        self.course_heading_error = msg.course_heading_error
         vel_cmds_string = f'Lin Vel: {round(msg.u_cmd, 2)}, Ang Vel: {round(msg.omega_cmd, 2)}'
         self.VelocityCmds.setText(vel_cmds_string)
+
+        # If we have a course heading error, update the autopilot string
+        if self.autopilot_cmds_msg is not None:
+            self.setAutopilotString(self.autopilot_cmds_msg)
+
         return
 
     def wheel_vel_cmds_callback(self, msg):
@@ -337,8 +353,6 @@ class AutonomyGUI(Node, QWidget):
         
         self.IWCCmds.setText(IWC_cmd_string)
         
-
-
         return
 
     # Callback functions for buttons
