@@ -8,7 +8,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>1050</width>
     <height>800</height>
    </rect>
   </property>
@@ -29,13 +29,13 @@
      <!-- Everything Widget Properties -->
      <property name="minimumSize">
       <size>
-       <width>800</width>
+       <width>1050</width>
        <height>800</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>800</width>
+       <width>1050</width>
        <height>800</height>
       </size>
      </property>
@@ -1005,6 +1005,62 @@
                </layout>
               </item>
              </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        <!-- Vertical Dividing Line (divides the 2 columns)-->
+         <item>
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+        <!-- Column 3 Item -->
+         <item>
+          <widget class="QWidget" name="column1_container">
+           <property name="minimumSize">
+            <size>
+             <width>350</width>
+             <height>500</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>350</width>
+             <height>500</height>
+            </size>
+           </property>
+           <!-- Column 3 Layout (Previous State Column) -->
+           <layout class="QVBoxLayout" name="verticalLayout_12">
+            <property name="alignment">
+             <set>Qt::AlignTop</set>
+            </property>
+            <!-- Right Column Label Item -->
+            <item>
+             <!-- Right Column Label Widget (Previous States) -->
+             <widget class="QLabel" name="LegInfoLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Previous States&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="PreviousStatesList">
+              <property name="text">
+               <string>Waiting...</string>
+              </property>
+              <property name="alignment">
+                <set>Qt::AlignLeft</set>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>

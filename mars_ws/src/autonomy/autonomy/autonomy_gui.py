@@ -94,6 +94,7 @@ class AutonomyGUI(Node, QWidget):
         self.aruco_alpha_lpf = 0.5
         self.aruco_tag_distance = None
         self.course_heading_error = None
+        self.state_machine_list_string = ''
 
         ################# ROS Communication #################
 
@@ -222,10 +223,20 @@ class AutonomyGUI(Node, QWidget):
         return
 
     def rover_nav_status_callback(self, msg): #State machine status (state, auto_enable)
-        self.rover_nav_status = msg
-        if self.state_machine_state != None and self.state_machine_state != msg.state:
+        #Update previous state and state list
+        if self.state_machine_state != None and msg.state != self.state_machine_state:
+            self.state_machine_list_string = f'{msg.state}\n' + self.state_machine_list_string
+            self.PreviousStatesList.setText(self.state_machine_list_string) 
+
             self.prev_state_machine_state = self.state_machine_state
             self.PreviousMainStateDisplay.setText(self.prev_state_machine_state)
+
+        #Show the first state on the previous state column
+        if self.state_machine_state == None:
+            self.state_machine_list_string = f'{msg.state}\n'
+            self.PreviousStatesList.setText(self.state_machine_list_string)
+
+        #Update current state and autonomous enable
         self.state_machine_state = msg.state
         autonomous_enable = msg.auto_enable
         if autonomous_enable:
@@ -234,8 +245,6 @@ class AutonomyGUI(Node, QWidget):
             self.autonomous_enable = 'Disabled'
 
         self.CurrentMainStateDisplay.setText(self.state_machine_state)
-        
-        self.CurrentStateDisplay.setText(self.state_machine_state)
         
         return
 
@@ -297,7 +306,7 @@ class AutonomyGUI(Node, QWidget):
         self.setAutopilotString(self.autopilot_cmds_msg)        
         return
 
-    #helper function for autopilot_cmds_callback
+    #helper function for autopilot_cmds_callback and vel_cmds_callback
     def setAutopilotString(self, msg):
         if self.course_heading_error is None:
             autopilot_cmds_string = f'Dist to target: {round(msg.distance_to_target, 2)}m, cw from N: {round(np.rad2deg(msg.course_angle), 2)}°'
