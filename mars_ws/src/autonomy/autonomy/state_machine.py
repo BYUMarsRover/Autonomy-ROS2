@@ -279,12 +279,16 @@ class AutonomyStateMachine(Node):
                     continue
 
                 # Low-pass filter the distance and heading information
+                # For the ZED X is forward, Y is left, Z is up. Positive angle is counterclockwise from x-axis. All in meters.
+                obj_dist = np.sqrt((obj.y) ** 2 + (obj.x) ** 2)
+                obj_ang = np.arctan(obj.y / obj.x)
                 if self.obj_distance is None:
-                    self.obj_distance = np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2)
-                    self.obj_angle = - np.arctan(obj.x / obj.z)
+                    self.obj_distance = obj_dist
+                    self.obj_angle = obj_ang
                 else:
-                    self.obj_distance = self.obj_distance * self.obj_alpha_lpf + np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2) * (1 - self.obj_alpha_lpf)
-                    self.obj_angle = self.obj_angle * self.obj_alpha_lpf - np.arctan(obj.x / obj.z) * (1 - self.obj_alpha_lpf)
+                    # Low pass filter the distance and heading information
+                    self.obj_distance = self.obj_distance * self.obj_alpha_lpf + obj_dist * (1 - self.obj_alpha_lpf)
+                    self.obj_angle = self.obj_angle * self.obj_alpha_lpf + obj_ang * (1 - self.obj_alpha_lpf)
                 self.correct_obj_found = True
                 if found:
                     self.get_logger().info("Found a duplicate object, taking last one")
@@ -300,12 +304,19 @@ class AutonomyStateMachine(Node):
         # print("in ar_tag_callback")
         if len(msg.transforms) == 1: #TODO: if we happpen to see 2, this will not run
             # print("found 1 tag")
+
+            #For the webcam giving us this data, X is to the right, Y is down, Z is forward. All in meters. we want a positive angle to be counterclockwise from the z-axis
+            aruco_x = msg.transforms[0].transform.translation.x
+            aruco_z = msg.transforms[0].transform.translation.z
+            aruco_dist = np.sqrt(aruco_x ** 2 + aruco_z ** 2)
+            aruco_angle = - np.arctan(aruco_x / aruco_z)
             if self.aruco_tag_distance is None:
-                self.aruco_tag_distance = np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2)
-                self.aruco_tag_angle = - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z)
+                self.aruco_tag_distance = aruco_dist
+                self.aruco_tag_angle = aruco_angle
             else:
-                self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2) * (1 - self.aruco_alpha_lpf)
-                self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z) * (1 - self.aruco_alpha_lpf)
+                #Low pass filter the distance and heading information
+                self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + aruco_dist * (1 - self.aruco_alpha_lpf)
+                self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf + aruco_angle * (1 - self.aruco_alpha_lpf)
 
             self.current_aruco_point = GPSTools.heading_distance_to_lat_lon(
                 self.current_point, 

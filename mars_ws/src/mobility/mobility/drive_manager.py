@@ -78,6 +78,7 @@ class DriveManager(Node):
         return response
 
     def vel_cmds_callback(self, msg): # NOTE: HERE
+        #Postive angle is left turn, negative angle is right turn
         u_cmd = msg.u_cmd
         omega_cmd = msg.omega_cmd
 
