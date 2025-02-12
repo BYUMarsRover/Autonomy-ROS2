@@ -16,6 +16,7 @@ class State(Enum):
     MANUAL = "MANUAL"
     SEARCH_FOR_WRONG_TAG = "SEARCH_FOR_WRONG_TAG"
     START_POINT_NAVIGATION = "START_POINT_NAVIGATION"
+    WAYPOINT_NAVIGATION = "WAYPOINT_NAVIGATION"
     POINT_NAVIGATION = "POINT_NAVIGATION"
     START_SPIN_SEARCH = "START_SPIN_SEARCH"
     SPIN_SEARCH = "SPIN_SEARCH"
@@ -192,10 +193,14 @@ class AutonomyStateMachine(Node):
         return response
 
     def waypoint_callback(self, msg: PointList):
+        self.get_logger().info("waypoint callback")
         self.pointlist = msg
         self.waypoints = [
         AutonomyTaskInfo(latitude=p.x, longitude=p.y, tag_id=msg.tag_id) for p in msg.points
     ] 
+        self.tag_id = msg.tag_id
+        self.get_logger().info(f"Waypoints: {self.waypoints}")
+        self.get_logger().info(f"Tag ID {self.tag_id}")
         # self.waypoints = self.pointlist.points
 
 
@@ -443,20 +448,24 @@ class AutonomyStateMachine(Node):
                 # to the node from path planner. Once I get that subscriber/publisher thingy set up, logic would make that within this section
                 # of the state machine, I should say if waypoints, and then loop through waypoints until theyve finished 
                 # TODO: update how self.target_point is set
-                self.get_logger().info("2")
-                if self.waypoints and len(self.waypoints.points) > 0:
-                    self.get_logger().info("set!")
-                    self.target_latitude = self.waypoints.points[0].x
-                    self.target_longitude = self.waypoints.points[0].y  
-                    self.target_point = GPSCoordinate(self.target_latitude, self.target_longitude, 0)
-                    self.drive_controller.issue_path_cmd(self.target_latitude, self.target_longitude)
-                    if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.dist_tolerance:
+                self.get_logger().info(f"Number of waypoints {len(self.waypoints)}")
+                self.target_latitude = self.waypoints[0].latitude
+                self.target_longitude = self.waypoints[0].longitude
+                self.target_point = GPSCoordinate(self.target_latitude, self.target_longitude, 0)
+                self.drive_controller.issue_path_cmd(self.target_latitude, self.target_longitude)
+                self.state = State.WAYPOINT_NAVIGATION
+
+            elif self.state == State.WAYPOINT_NAVIGATION:
+                self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
+                if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.dist_tolerance:
+                    if len(self.waypoints) > 1:
+                        self.waypoints.pop(0)
                         self.get_logger().info("popped!")
-                        self.waypoints.points.pop(0)
-                else:       
-                    self.drive_controller.issue_path_cmd(self.target_latitude, self.target_longitude)
-                self.get_logger().info("Sent Path command")
-                    self.state = State.POINT_NAVIGATION
+                        self.state = State.START_POINT_NAVIGATION
+                    else:
+                        self.get_logger().info("finished!")
+                        self.state = State.POINT_NAVIGATION
+
 
             elif self.state == State.POINT_NAVIGATION:
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
