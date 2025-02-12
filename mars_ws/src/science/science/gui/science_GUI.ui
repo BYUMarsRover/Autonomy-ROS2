@@ -16,10 +16,10 @@
   <widget class="QLCDNumber" name="lcd_moist">
    <property name="geometry">
     <rect>
-     <x>50</x>
+     <x>20</x>
      <y>100</y>
-     <width>211</width>
-     <height>131</height>
+     <width>131</width>
+     <height>121</height>
     </rect>
    </property>
    <property name="toolTipDuration">
@@ -50,8 +50,8 @@
   <widget class="QLCDNumber" name="lcd_auger">
    <property name="geometry">
     <rect>
-     <x>870</x>
-     <y>100</y>
+     <x>880</x>
+     <y>90</y>
      <width>111</width>
      <height>131</height>
     </rect>
@@ -112,12 +112,15 @@
    </property>
   </widget>
   <widget class="QLCDNumber" name="lcd_temp">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
-     <x>320</x>
+     <x>310</x>
      <y>100</y>
-     <width>211</width>
-     <height>131</height>
+     <width>131</width>
+     <height>121</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -136,7 +139,7 @@
   <widget class="Line" name="line_3">
    <property name="geometry">
     <rect>
-     <x>550</x>
+     <x>570</x>
      <y>70</y>
      <width>20</width>
      <height>171</height>
@@ -149,7 +152,7 @@
   <widget class="Line" name="line_4">
    <property name="geometry">
     <rect>
-     <x>820</x>
+     <x>840</x>
      <y>70</y>
      <width>20</width>
      <height>171</height>
@@ -162,9 +165,9 @@
   <widget class="QPlainTextEdit" name="textEdit_notes">
    <property name="geometry">
     <rect>
-     <x>510</x>
+     <x>680</x>
      <y>270</y>
-     <width>491</width>
+     <width>321</width>
      <height>111</height>
     </rect>
    </property>
@@ -176,7 +179,7 @@
   <widget class="QPushButton" name="pushButton_save_notes">
    <property name="geometry">
     <rect>
-     <x>703</x>
+     <x>790</x>
      <y>390</y>
      <width>111</width>
      <height>31</height>
@@ -189,7 +192,7 @@
   <widget class="Line" name="line_5">
    <property name="geometry">
     <rect>
-     <x>480</x>
+     <x>650</x>
      <y>270</y>
      <width>20</width>
      <height>171</height>
@@ -202,8 +205,8 @@
   <widget class="QLineEdit" name="lineEdit_4">
    <property name="geometry">
     <rect>
-     <x>320</x>
-     <y>40</y>
+     <x>330</x>
+     <y>30</y>
      <width>211</width>
      <height>51</height>
     </rect>
@@ -224,8 +227,8 @@
   <widget class="QLineEdit" name="lineEdit_5">
    <property name="geometry">
     <rect>
-     <x>870</x>
-     <y>40</y>
+     <x>880</x>
+     <y>30</y>
      <width>111</width>
      <height>51</height>
     </rect>
@@ -246,8 +249,8 @@
   <widget class="QLineEdit" name="lineEdit_6">
    <property name="geometry">
     <rect>
-     <x>50</x>
-     <y>40</y>
+     <x>40</x>
+     <y>30</y>
      <width>211</width>
      <height>51</height>
     </rect>
@@ -268,8 +271,8 @@
   <widget class="QLineEdit" name="lineEdit_7">
    <property name="geometry">
     <rect>
-     <x>590</x>
-     <y>40</y>
+     <x>610</x>
+     <y>30</y>
      <width>211</width>
      <height>51</height>
     </rect>
@@ -290,8 +293,8 @@
   <widget class="QRadioButton" name="moist_radio">
    <property name="geometry">
     <rect>
-     <x>60</x>
-     <y>100</y>
+     <x>30</x>
+     <y>220</y>
      <width>131</width>
      <height>31</height>
     </rect>
@@ -312,8 +315,8 @@
   <widget class="QRadioButton" name="temp_radio">
    <property name="geometry">
     <rect>
-     <x>330</x>
-     <y>100</y>
+     <x>320</x>
+     <y>220</y>
      <width>131</width>
      <height>31</height>
     </rect>
@@ -334,8 +337,8 @@
   <widget class="QRadioButton" name="fad_radio">
    <property name="geometry">
     <rect>
-     <x>600</x>
-     <y>100</y>
+     <x>650</x>
+     <y>220</y>
      <width>131</width>
      <height>31</height>
     </rect>
@@ -362,7 +365,7 @@
   <widget class="QGroupBox" name="groupBox">
    <property name="geometry">
     <rect>
-     <x>310</x>
+     <x>480</x>
      <y>270</y>
      <width>161</width>
      <height>161</height>
@@ -407,7 +410,7 @@
   <widget class="QPushButton" name="pushButton_fad">
    <property name="geometry">
     <rect>
-     <x>70</x>
+     <x>240</x>
      <y>280</y>
      <width>151</width>
      <height>25</height>
@@ -420,7 +423,7 @@
   <widget class="QGroupBox" name="groupBox_2">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>180</x>
      <y>310</y>
      <width>281</width>
      <height>131</height>
@@ -508,8 +511,8 @@
   <widget class="QLineEdit" name="le_fad">
    <property name="geometry">
     <rect>
-     <x>590</x>
-     <y>100</y>
+     <x>610</x>
+     <y>90</y>
      <width>211</width>
      <height>131</height>
     </rect>
@@ -537,6 +540,206 @@
     <string extracomment="0"/>
    </property>
   </widget>
+  <widget class="QLineEdit" name="lineEdit_temperature">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>100</y>
+     <width>101</width>
+     <height>41</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_temperature">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>140</y>
+     <width>101</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Show Graph</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_moisture">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>100</y>
+     <width>101</width>
+     <height>41</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_moisture">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>140</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Show Graph</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>80</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enter calibtration value</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_moisture_2">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>180</y>
+     <width>101</width>
+     <height>41</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_moisture_2">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>220</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Estimate Moisture</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>160</y>
+     <width>121</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enter observed reading</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_6">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>80</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enter calibtration value</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_7">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>160</y>
+     <width>121</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enter observed reading</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_temperature_2">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>180</y>
+     <width>101</width>
+     <height>41</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_temperature_2">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>220</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Estimate Temp</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="moisture_poly_label">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>100</y>
+     <width>121</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Polynomial not saved</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="temperature_poly_label">
+   <property name="geometry">
+    <rect>
+     <x>320</x>
+     <y>100</y>
+     <width>121</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Polynomial not saved</string>
+   </property>
+  </widget>
+  <widget class="QTextBrowser" name="textBrowser">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>350</y>
+     <width>161</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="html">
+    <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_8">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>310</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Estimated Value</string>
+   </property>
+  </widget>
   <zorder>groupBox</zorder>
   <zorder>lcd_moist</zorder>
   <zorder>lcd_auger</zorder>
@@ -559,6 +762,22 @@
   <zorder>groupBox_2</zorder>
   <zorder>le_fad</zorder>
   <zorder>fad_radio</zorder>
+  <zorder>lineEdit_temperature</zorder>
+  <zorder>pushButton_temperature</zorder>
+  <zorder>lineEdit_moisture</zorder>
+  <zorder>pushButton_moisture</zorder>
+  <zorder>label_4</zorder>
+  <zorder>lineEdit_moisture_2</zorder>
+  <zorder>pushButton_moisture_2</zorder>
+  <zorder>label_5</zorder>
+  <zorder>label_6</zorder>
+  <zorder>label_7</zorder>
+  <zorder>lineEdit_temperature_2</zorder>
+  <zorder>pushButton_temperature_2</zorder>
+  <zorder>moisture_poly_label</zorder>
+  <zorder>temperature_poly_label</zorder>
+  <zorder>textBrowser</zorder>
+  <zorder>label_8</zorder>
  </widget>
  <resources/>
  <connections/>

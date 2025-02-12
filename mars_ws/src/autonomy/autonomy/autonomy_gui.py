@@ -232,9 +232,9 @@ class AutonomyGUI(Node, QWidget):
         else:
             self.autonomous_enable = 'Disabled'
 
-        self.CurrentMainStateDisplay.setText(self.state_machine_state)
+        # self.CurrentMainStateDisplay.setText(self.state_machine_state)
         
-        self.CurrentStateDisplay.setText(self.state_machine_state)
+        # self.CurrentStateDisplay.setText(self.state_machine_state)
         
         return
 

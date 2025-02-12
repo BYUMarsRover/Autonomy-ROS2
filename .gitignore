@@ -4,3 +4,6 @@
 **/build_isolated
 **/install_isolated
 **/devel_isolated
+
+.vscode
+.DS_Store

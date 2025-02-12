@@ -26,7 +26,7 @@ case $1 in
     docker exec -it autonomy_ros2 bash
     ;;
   *)
-    printInfo "Entering Container... (run "bash compose.sh build" to build or create the container)"
+    printInfo "Entering Container... (run 'bash compose.sh build' to build or create the container)"
     docker exec -it autonomy_ros2 bash
     ;;
 esac
