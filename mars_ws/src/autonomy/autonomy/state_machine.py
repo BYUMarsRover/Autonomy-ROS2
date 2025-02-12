@@ -439,15 +439,8 @@ class AutonomyStateMachine(Node):
                     self.state = State.START_POINT_NAVIGATION
 
             elif self.state == State.START_POINT_NAVIGATION:
-                self.get_logger().info("1")
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
-                self.get_logger().info("Starting commands")
                 self.set_autopilot_speed(self.navigate_speed)
-                self.get_logger().info("Set speed command")
-                # Here is an idea. Make an if statement to see if path planning was used, but that means I need to make a subscriber
-                # to the node from path planner. Once I get that subscriber/publisher thingy set up, logic would make that within this section
-                # of the state machine, I should say if waypoints, and then loop through waypoints until theyve finished 
-                # TODO: update how self.target_point is set
                 self.get_logger().info(f"Number of waypoints {len(self.waypoints)}")
                 self.target_latitude = self.waypoints[0].latitude
                 self.target_longitude = self.waypoints[0].longitude
@@ -460,11 +453,17 @@ class AutonomyStateMachine(Node):
                 if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.dist_tolerance:
                     if len(self.waypoints) > 1:
                         self.waypoints.pop(0)
-                        self.get_logger().info("popped!")
+                        self.get_logger().info("Popped waypoint!")
                         self.state = State.START_POINT_NAVIGATION
                     else:
                         self.get_logger().info("finished!")
                         self.state = State.POINT_NAVIGATION
+                if self.correct_aruco_tag_found:
+                    self.get_logger().info('Found ArUo')
+                    self.state = State.ARUCO_NAVIGATE
+                elif self.correct_obj_found:
+                    self.get_logger().info('Found object')
+                    self.state = State.OBJECT_NAVIGATE
 
 
             elif self.state == State.POINT_NAVIGATION:
