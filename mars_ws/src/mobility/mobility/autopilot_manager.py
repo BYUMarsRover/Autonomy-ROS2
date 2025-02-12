@@ -28,6 +28,25 @@ class AutopilotManager(Node):
     def __init__(self):
         super().__init__('autopilot_manager')
 
+        self.declare_parameters(
+            namespace='',
+            parameters=[
+                ('percent_speed', 0.5),
+                ('linear_autopilot_kp', 1.0),
+                ('linear_autopilot_ki', 0.0),
+                ('linear_autopilot_kd', 0.0),
+                ('linear_autopilot_Ts', 0.1),
+                ('linear_autopilot_limit', 1.0),
+                ('angular_autopilot_kp', 1.0),
+                ('angular_autopilot_ki', 0.0),
+                ('angular_autopilot_kd', 0.0),
+                ('angular_autopilot_Ts', 0.1),
+                ('angular_autopilot_limit', 1.0),
+                ('low_bound', -45.0),
+                ('high_bound', 45.0),
+            ]
+        )
+
         self.enabled = False
 
         # Data to be stored for controller
@@ -37,22 +56,22 @@ class AutopilotManager(Node):
         self.des_heading = 0
 
         # Controller gains
-        self.speed = self.declare_parameter("percent_speed", 0.5).value
+        self.speed = self.get_parameter("percent_speed").get_parameter_value().double_value
 
-        self.kp_linear = self.declare_parameter("linear_autopilot_kp", 1.0).value
-        self.ki_linear = self.declare_parameter("linear_autopilot_ki", 0.0).value
-        self.kd_linear = self.declare_parameter("linear_autopilot_kd", 0.0).value
-        Ts_linear = self.declare_parameter("linear_autopilot_Ts", 0.1).value
-        limit_linear = self.declare_parameter("linear_autopilot_limit", 1.0).value
+        self.kp_linear = self.get_parameter("linear_autopilot_kp").get_parameter_value().double_value
+        self.ki_linear = self.get_parameter("linear_autopilot_ki").get_parameter_value().double_value
+        self.kd_linear = self.get_parameter("linear_autopilot_kd").get_parameter_value().double_value
+        Ts_linear = self.get_parameter("linear_autopilot_Ts").get_parameter_value().double_value
+        limit_linear = self.get_parameter("linear_autopilot_limit").get_parameter_value().double_value
 
-        self.kp_angular = self.declare_parameter("angular_autopilot_kp", 1.0).value
-        self.ki_angular = self.declare_parameter("angular_autopilot_ki", 0.0).value
-        self.kd_angular = self.declare_parameter("angular_autopilot_kd", 0.0).value
-        Ts_angular = self.declare_parameter("angular_autopilot_Ts", 0.1).value
-        limit_angular = self.declare_parameter("angular_autopilot_limit", 1.0).value
+        self.kp_angular = self.get_parameter("angular_autopilot_kp").get_parameter_value().double_value
+        self.ki_angular = self.get_parameter("angular_autopilot_ki").get_parameter_value().double_value
+        self.kd_angular = self.get_parameter("angular_autopilot_kd").get_parameter_value().double_value
+        Ts_angular = self.get_parameter("angular_autopilot_Ts").get_parameter_value().double_value
+        limit_angular = self.get_parameter("angular_autopilot_limit").get_parameter_value().double_value
 
-        self.low_bound = np.deg2rad(self.declare_parameter("low_bound", -45.0).value)
-        self.high_bound = np.deg2rad(self.declare_parameter("high_bound", 45.0).value)
+        self.low_bound = np.deg2rad(self.get_parameter("low_bound").get_parameter_value().double_value)
+        self.high_bound = np.deg2rad(self.get_parameter("high_bound").get_parameter_value().double_value)
 
         # Other variables
         self.heading_plus = 0.0
@@ -77,8 +96,6 @@ class AutopilotManager(Node):
                                             Ts=Ts_linear, limit=limit_linear)
         self.angular_controller = PIDControl(self.speed * self.kp_angular, self.speed * self.ki_angular, self.speed * self.kd_angular,
                                              Ts=Ts_angular, limit=limit_angular)
-
-        self.timer = self.create_timer(0.1, self.heading_decay)
 
         self.get_logger().info("Autopilot Manager initialized!")
 

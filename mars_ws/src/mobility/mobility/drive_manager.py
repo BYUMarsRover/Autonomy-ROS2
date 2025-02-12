@@ -54,7 +54,7 @@ class DriveManager(Node):
         self.r = 0.8382  # wheel radius (meters)
         self.B = 0.1335  # wheel base distance (meters)
         self.k = 0.5     # parameter for sigmoid function
-        self.turn_constant = 20.0
+        self.turn_constant = 1.0
         self.rover_cmd = MobilityDriveCommand()
         self.enabled = False
 
