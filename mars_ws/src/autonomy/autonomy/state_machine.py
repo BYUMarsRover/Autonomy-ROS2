@@ -64,7 +64,7 @@ class AutonomyStateMachine(Node):
         self.srv_switch_auto = self.create_service(SetBool, '/autonomy/enable_autonomy', self.enable)
         self.srv_switch_abort = self.create_service(AutonomyAbort, '/autonomy/abort_autonomy', self.abort)
         self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback)
-        self.remove_waypoint_service = self.create_service(SetBool, '/AU_remove_waypoint_service', self.remove_waypoint)
+        self.clear_waypoint_service = self.create_service(SetBool, '/AU_clear_waypoint_service', self.clear_waypoint)
 
         
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
@@ -204,16 +204,17 @@ class AutonomyStateMachine(Node):
         if self.last_waypoint is None:
             self.last_waypoint = current_task
 
-    def remove_waypoint(self, request: SetBool.Request, response: SetBool.Response):
+    def clear_waypoint(self, request: SetBool.Request, response: SetBool.Response):
         if len(self.waypoints) > 0:
-            self.waypoints.pop()
+            while len(self.waypoints) > 0:
+                self.waypoints.pop()
             self.get_logger().info('Waypoint removed')
             response.success = True
-            response.message = f'Waypoint removed, {len(self.waypoints)} remain'
+            response.message = f'Waypoint removed successfully'
         else:
-            self.get_logger().warn('No waypoints to remove')
+            self.get_logger().warn('No waypoint to remove')
             response.success = False
-            response.message = 'No waypoints to remove'
+            response.message = 'No waypoint to remove'
 
         return response
 

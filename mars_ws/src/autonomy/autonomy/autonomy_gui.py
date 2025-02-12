@@ -61,7 +61,7 @@ class AutonomyGUI(Node, QWidget):
         self.DisableAutonomyButton.clicked.connect(self.disable_autonomy)
         self.AbortButton.clicked.connect(self.abort_autonomy)
         self.SendWaypointButton.clicked.connect(self.send_waypoint)
-        self.RemoveWaypointButton.clicked.connect(self.remove_waypoint)
+        self.ClearWaypointButton.clicked.connect(self.clear_waypoint)
 
         self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
         self.PlanOrderButton.clicked.connect(self.plan_order_service_call)
@@ -119,7 +119,7 @@ class AutonomyGUI(Node, QWidget):
         self.plan_order_client = self.create_client(OrderPath, '/plan_order')
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
         self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
-        self.remove_waypoint_client = self.create_client(SetBool, '/AU_remove_waypoint_service')
+        self.clear_waypoint_client = self.create_client(SetBool, '/AU_clear_waypoint_service')
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
         self.set_turn_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_turn_constant')
         self.set_speed_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_speed')
@@ -472,14 +472,14 @@ class AutonomyGUI(Node, QWidget):
         # future.add_done_callback(self.future_callback)
         return
 
-    def remove_waypoint(self):
+    def clear_waypoint(self):
         req = SetBool.Request()
         req.data = True
-        future = self.remove_waypoint_client.call_async(req)
+        future = self.clear_waypoint_client.call_async(req)
         self.error_label.setText('Removing Last Waypoint')
-        future.add_done_callback(self.remove_waypoint_callback)
+        future.add_done_callback(self.clear_waypoint_callback)
 
-    def remove_waypoint_callback(self, future):
+    def clear_waypoint_callback(self, future):
         try:
             response = future.result()
             if response.success:
