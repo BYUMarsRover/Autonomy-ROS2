@@ -743,6 +743,14 @@
               </item>
              </layout>
             </item>
+            <!-- Plan Path to Selected Waypoint Button -->
+            <item>
+             <widget class="QPushButton" name="PlanPathButton">
+              <property name="text">
+               <string>Plan Path to Selected Waypoint</string>
+              </property>
+             </widget>
+            </item>
             <!-- Send Waypoint and Clear Waypoints Buttons -->
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_10">
