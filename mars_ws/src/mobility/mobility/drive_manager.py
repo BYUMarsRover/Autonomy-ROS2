@@ -78,6 +78,7 @@ class DriveManager(Node):
         return response
 
     def vel_cmds_callback(self, msg): # NOTE: HERE
+        #Postive angle is right turn, negative angle is left turn (NED coordinate frame)
         u_cmd = msg.u_cmd
         omega_cmd = msg.omega_cmd
 
@@ -85,8 +86,8 @@ class DriveManager(Node):
             rw_speed = 0.0
             lw_speed = 0.0
         else:
-            v_l = u_cmd - omega_cmd * self.B / 2 * self.turn_constant # NOTE: turn constant was a quick fix
-            v_r = u_cmd + omega_cmd * self.B / 2 * self.turn_constant
+            v_l = u_cmd + omega_cmd * self.B / 2 * self.turn_constant # NOTE: turn constant was a quick fix
+            v_r = u_cmd - omega_cmd * self.B / 2 * self.turn_constant
             # self.get_logger().info(f"IN: vel_cmds_callback, v_l/v_r: {v_l}/{v_r}")
             psidot_Ld = v_l / self.r
             psidot_Rd = v_r / self.r
