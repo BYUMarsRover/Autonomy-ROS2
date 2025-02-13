@@ -336,18 +336,6 @@ class AutonomyGUI(Node, QWidget):
         #Format the IWC wheel commands into a string
         IWC_cmd_string = ''
         #For each wheel, put a negative in the string if direction is False
-        if msg.right_front_dir:
-            IWC_cmd_string = IWC_cmd_string + f'RFW: {round(msg.right_front_speed, 2)}'
-        else:
-            IWC_cmd_string = IWC_cmd_string + f'RFW: -{round(msg.right_front_speed, 2)}'
-        if msg.right_middle_dir:
-            IWC_cmd_string = IWC_cmd_string + f', RMW: {round(msg.right_middle_speed, 2)}'
-        else:
-            IWC_cmd_string = IWC_cmd_string + f', RMW: -{round(msg.right_middle_speed, 2)}'
-        if msg.right_rear_dir:
-            IWC_cmd_string = IWC_cmd_string + f', RRW: {round(msg.right_rear_speed, 2)}'
-        else:
-            IWC_cmd_string = IWC_cmd_string + f', RRW: -{round(msg.right_rear_speed, 2)}'
         if msg.left_front_dir:
             IWC_cmd_string = IWC_cmd_string + f', LFW: {round(msg.left_front_speed, 2)}'
         else:
@@ -360,6 +348,19 @@ class AutonomyGUI(Node, QWidget):
             IWC_cmd_string = IWC_cmd_string + f', LRW: {round(msg.left_rear_speed, 2)}'
         else:
             IWC_cmd_string = IWC_cmd_string + f', LRW: -{round(msg.left_rear_speed, 2)}'
+        if msg.right_front_dir:
+            IWC_cmd_string = IWC_cmd_string + f'RFW: {round(msg.right_front_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f'RFW: -{round(msg.right_front_speed, 2)}'
+        if msg.right_middle_dir:
+            IWC_cmd_string = IWC_cmd_string + f', RMW: {round(msg.right_middle_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', RMW: -{round(msg.right_middle_speed, 2)}'
+        if msg.right_rear_dir:
+            IWC_cmd_string = IWC_cmd_string + f', RRW: {round(msg.right_rear_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', RRW: -{round(msg.right_rear_speed, 2)}'
+
         
         self.IWCCmds.setText(IWC_cmd_string)
         

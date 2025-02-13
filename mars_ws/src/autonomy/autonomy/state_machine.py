@@ -302,9 +302,7 @@ class AutonomyStateMachine(Node):
         self.known_objects = {k: v for k, v in self.known_objects.items() if is_recent(v[-1])}
 
     def ar_tag_callback(self, msg: FiducialTransformArray):
-        # print("in ar_tag_callback")
-        if len(msg.transforms) == 1: #TODO: if we happpen to see 2, this will not run
-            # print("found 1 tag")
+        if len(msg.transforms) == 1: 
 
             #For the webcam giving us this data, X is to the right, Y is down, Z is forward. All in meters. we want a positive angle to be counterclockwise from the z-axis
             aruco_x = msg.transforms[0].transform.translation.x
@@ -319,13 +317,14 @@ class AutonomyStateMachine(Node):
                 self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + aruco_dist * (1 - self.aruco_alpha_lpf)
                 self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf + aruco_angle * (1 - self.aruco_alpha_lpf)
 
+            #Calculate aruco GPS coordinates to be used if we have not seen the tag within the last second (see elif statement below)
             self.current_aruco_point = GPSTools.heading_distance_to_lat_lon(
                 self.current_point, 
-                -np.rad2deg(self.curr_heading + self.aruco_tag_angle), 
+                np.rad2deg(self.curr_heading + self.aruco_tag_angle), 
                 self.aruco_tag_distance
             )
-            # print("tag is {}m away at an angle of {} degrees".format(self.aruco_tag_distance, self.aruco_tag_angle))
-            # print("tag at {}".format(np.rad2deg(self.curr_heading + self.aruco_tag_angle)))
+
+            # TODO: Do we need to publish this data? What is using this data?
             self.aruco_pose = FiducialData()
             self.aruco_pose.angle_offset = self.aruco_tag_angle
             self.aruco_pose.dist_to_fiducial = self.aruco_tag_distance
@@ -334,14 +333,14 @@ class AutonomyStateMachine(Node):
             self.ar_callback_see_time = time.time()
 
             if msg.transforms[0].fiducial_id == self.tag_id.value:
-                self.get_logger().info(f"Is correct tag: {self.tag_id.value}")
+                self.get_logger().info(f"Is correct tag: {self.tag_id.value}") #correct Tag found, navigate using angle and distance
                 self.correct_aruco_tag_found = True
                 self.wrong_aruco_tag_found = False
             else:
                 self.get_logger().info(f"Is not correct tag. tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id.value}")
                 self.correct_aruco_tag_found = False
                 self.wrong_aruco_tag_found = True
-        elif time.time() - self.ar_callback_see_time > 1:
+        elif time.time() - self.ar_callback_see_time > 1: #If we have not seen the tag within the last second, we will use the last known position
             self.correct_aruco_tag_found = False
             self.wrong_aruco_tag_found = False
             # self.both_aruco_tags_found = False
@@ -520,9 +519,9 @@ class AutonomyStateMachine(Node):
             elif self.state == State.ARUCO_NAVIGATE:
                 self.set_autopilot_speed(self.aruco_speed)
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
-                if self.correct_aruco_tag_found:
+                if self.correct_aruco_tag_found: #f we have seen the correct tag in the last second, navigate using angle and distance
                     self.drive_controller.issue_aruco_autopilot_cmd(self.aruco_tag_angle, self.aruco_tag_distance)
-                else:
+                else: #if we have not seen the correct tag in the last second, navigate to the last known position
                     self.drive_controller.issue_path_cmd(self.current_aruco_point.lat, self.current_aruco_point.lon)
                 if self.aruco_tag_distance < self.aruco_dist_tolerance and self.tag_id.value < 4:
                     self.get_logger().info('Successfully navigated to the aruco tag!')
