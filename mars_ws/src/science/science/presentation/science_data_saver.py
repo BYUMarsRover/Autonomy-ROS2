@@ -29,8 +29,8 @@ class ScienceDataSaver(Node):
         print('Science Data Save Started.')
 
     def sensor_values_callback(self, msg: ScienceSensorValues):
-        # Prevents the sensor data from getting saved constantly, only saved every 60 calls
-        self.sensor_count = (self.sensor_count + 1) % 60
+        # Prevents the sensor data from getting saved constantly, only saved every 5 calls - maybe implement in the GUI
+        self.sensor_count = (self.sensor_count + 1) % 5
         # self.sensor_count = 0 #For testing purposes, go back to the mod 60 for actual stuff
         print(self.saving_sensor_values, self.sensor_count, self.sensor_values)
         if self.saving_sensor_values[0] and self.sensor_count == 0:
