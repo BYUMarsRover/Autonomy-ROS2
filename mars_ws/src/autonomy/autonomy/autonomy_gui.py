@@ -95,6 +95,7 @@ class AutonomyGUI(Node, QWidget):
         self.aruco_tag_distance = None
         self.course_heading_error = None
         self.state_machine_list_string = ''
+        self.autopilot_cmds_msg = None
 
         ################# ROS Communication #################
 
