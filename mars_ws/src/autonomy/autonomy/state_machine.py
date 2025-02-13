@@ -281,7 +281,7 @@ class AutonomyStateMachine(Node):
                 # Low-pass filter the distance and heading information
                 # For the ZED X is forward, Y is left, Z is up. Positive angle is counterclockwise from x-axis. All in meters.
                 obj_dist = np.sqrt((obj.y) ** 2 + (obj.x) ** 2)
-                obj_ang = np.arctan(obj.y / obj.x)
+                obj_ang = -np.arctan(obj.y / obj.x)
                 if self.obj_distance is None:
                     self.obj_distance = obj_dist
                     self.obj_angle = obj_ang
@@ -309,7 +309,7 @@ class AutonomyStateMachine(Node):
             aruco_x = msg.transforms[0].transform.translation.x
             aruco_z = msg.transforms[0].transform.translation.z
             aruco_dist = np.sqrt(aruco_x ** 2 + aruco_z ** 2)
-            aruco_angle = - np.arctan(aruco_x / aruco_z)
+            aruco_angle = np.arctan(aruco_x / aruco_z)
             if self.aruco_tag_distance is None:
                 self.aruco_tag_distance = aruco_dist
                 self.aruco_tag_angle = aruco_angle
