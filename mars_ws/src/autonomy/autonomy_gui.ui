@@ -8,7 +8,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1050</width>
+    <width>1200</width>
     <height>800</height>
    </rect>
   </property>
@@ -29,13 +29,13 @@
      <!-- Everything Widget Properties -->
      <property name="minimumSize">
       <size>
-       <width>1050</width>
+       <width>1200</width>
        <height>800</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>1050</width>
+       <width>1200</width>
        <height>800</height>
       </size>
      </property>
@@ -1427,27 +1427,27 @@
           </widget>
          </item>
         <!-- Column 3 Item -->
-         <item>
-          <widget class="QWidget" name="column1_container">
+         <item alignment="Qt::AlignTop">
+          <widget class="QWidget" name="column3_container">
            <property name="minimumSize">
             <size>
-             <width>350</width>
+             <width>250</width>
              <height>500</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>350</width>
+             <width>250</width>
              <height>500</height>
             </size>
            </property>
            <!-- Column 3 Layout (Previous State Column) -->
-           <layout class="QVBoxLayout" name="verticalLayout_12">
+           <layout class="QVBoxLayout" name="verticalLayout_13">
             <property name="alignment">
              <set>Qt::AlignTop</set>
             </property>
             <!-- Right Column Label Item -->
-            <item>
+            <item alignment="Qt::AlignTop">
              <!-- Right Column Label Widget (Previous States) -->
              <widget class="QLabel" name="LegInfoLabel">
               <property name="text">
