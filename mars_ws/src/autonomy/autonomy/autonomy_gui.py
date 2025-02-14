@@ -255,17 +255,23 @@ class AutonomyGUI(Node, QWidget):
         aruco_text = ''
 
         if len(msg.transforms) >= 1: #TODO: if we happpen to see 2, this will not run... JM - Unsure what this was used for. 
+            aruco_x = msg.transforms[0].transform.translation.x
+            aruco_z = msg.transforms[0].transform.translation.z
+            aruco_dist = np.sqrt(aruco_x ** 2 + aruco_z ** 2)
+            aruco_angle = np.arctan(aruco_x / aruco_z)
             if self.aruco_tag_distance is None:
-                self.aruco_tag_distance = np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2)
-                self.aruco_tag_angle = - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z)
+                self.aruco_tag_distance = aruco_dist
+                self.aruco_tag_angle = aruco_angle
             else:
-                self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2) * (1 - self.aruco_alpha_lpf)
-                self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z) * (1 - self.aruco_alpha_lpf)
+                #Low pass filter the distance and heading information
+                self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + aruco_dist * (1 - self.aruco_alpha_lpf)
+                self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf + aruco_angle * (1 - self.aruco_alpha_lpf)
             
             #TODO: When we have heading data, add it to the angle here to ge the correct angle
             aruco_text = "Tag is {}m away at {} deg.".format(round(self.aruco_tag_distance, 2), round(np.rad2deg(self.aruco_tag_angle), 2))
 
-            if msg.transforms[0].fiducial_id == self.tag_id:
+            # Check if the tag id is correct, compare by converting to string
+            if str(msg.transforms[0].fiducial_id) == self.tag_id:
                 aruco_text = aruco_text + f" Correct tagID: {self.tag_id}"
             else:
                 aruco_text = aruco_text + f"Incorrect tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id}"
@@ -285,12 +291,14 @@ class AutonomyGUI(Node, QWidget):
                 obj_name = 'Unknown'
 
             # Low-pass filter the distance and heading information
+            obj_dist = np.sqrt((obj.y) ** 2 + (obj.x) ** 2)
+            obj_ang = -np.arctan(obj.y / obj.x)
             if self.obj_distance is None:
-                self.obj_distance = np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2)
-                self.obj_angle = - np.arctan(obj.x / obj.z)
+                self.obj_distance = obj_dist
+                self.obj_angle = obj_ang
             else:
-                self.obj_distance = self.obj_distance * self.obj_alpha_lpf + np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2) * (1 - self.obj_alpha_lpf)
-                self.obj_angle = self.obj_angle * self.obj_alpha_lpf - np.arctan(obj.x / obj.z) * (1 - self.obj_alpha_lpf)
+                self.obj_distance = self.obj_distance * self.obj_alpha_lpf + obj_dist * (1 - self.obj_alpha_lpf)
+                self.obj_angle = self.obj_angle * self.obj_alpha_lpf + obj_ang * (1 - self.obj_alpha_lpf)
 
             #round to 2 places and convert angle to degrees
             obj_distance = round(self.obj_distance, 2)
@@ -337,9 +345,9 @@ class AutonomyGUI(Node, QWidget):
         IWC_cmd_string = ''
         #For each wheel, put a negative in the string if direction is False
         if msg.left_front_dir:
-            IWC_cmd_string = IWC_cmd_string + f', LFW: {round(msg.left_front_speed, 2)}'
+            IWC_cmd_string = IWC_cmd_string + f'LFW: {round(msg.left_front_speed, 2)}'
         else:
-            IWC_cmd_string = IWC_cmd_string + f', LFW: -{round(msg.left_front_speed, 2)}'
+            IWC_cmd_string = IWC_cmd_string + f'LFW: -{round(msg.left_front_speed, 2)}'
         if msg.left_middle_dir:
             IWC_cmd_string = IWC_cmd_string + f', LMW: {round(msg.left_middle_speed, 2)}'
         else:
@@ -349,9 +357,9 @@ class AutonomyGUI(Node, QWidget):
         else:
             IWC_cmd_string = IWC_cmd_string + f', LRW: -{round(msg.left_rear_speed, 2)}'
         if msg.right_front_dir:
-            IWC_cmd_string = IWC_cmd_string + f'RFW: {round(msg.right_front_speed, 2)}'
+            IWC_cmd_string = IWC_cmd_string + f', RFW: {round(msg.right_front_speed, 2)}'
         else:
-            IWC_cmd_string = IWC_cmd_string + f'RFW: -{round(msg.right_front_speed, 2)}'
+            IWC_cmd_string = IWC_cmd_string + f', RFW: -{round(msg.right_front_speed, 2)}'
         if msg.right_middle_dir:
             IWC_cmd_string = IWC_cmd_string + f', RMW: {round(msg.right_middle_speed, 2)}'
         else:
