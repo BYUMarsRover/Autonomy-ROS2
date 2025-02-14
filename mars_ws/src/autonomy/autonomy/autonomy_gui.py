@@ -46,17 +46,17 @@ class AutonomyGUI(Node, QWidget):
         uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/autonomy/autonomy_gui.ui', self)
         self.show()  # Show the GUI
 
-        # Gui Buttons
+        #################### GUI Button Connections ####################
+        # Connect Leg Type Radio Buttons to update_leg_subselection function
         self.GNSSRadioButton.toggled.connect(self.update_leg_subselection)
         self.ArUcoRadioButton.toggled.connect(self.update_leg_subselection)
         self.ObjectRadioButton.toggled.connect(self.update_leg_subselection)
-
-        self.Tag1RadioButton.toggled.connect(self.update_tag_selection)
-        self.Tag2RadioButton.toggled.connect(self.update_tag_selection)
-        self.Tag3RadioButton.toggled.connect(self.update_tag_selection)
+        for i in range(1, 4):
+            getattr(self, f'Tag{i}RadioButton').toggled.connect(self.update_tag_selection)
         self.WaterBottleRadioButton.toggled.connect(self.update_tag_selection)
         self.MalletRadioButton.toggled.connect(self.update_tag_selection)
 
+        # Autonomy Control Buttons
         self.EnableAutonomyButton.clicked.connect(self.enable_autonomy)
         self.DisableAutonomyButton.clicked.connect(self.disable_autonomy)
         self.AbortButton.clicked.connect(self.abort_autonomy)
@@ -67,10 +67,11 @@ class AutonomyGUI(Node, QWidget):
         self.PlanOrderMapvizButton.clicked.connect(self.plan_order_mapviz_service_call)
         self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
 
+        # Mobility Control Buttons
         self.SetTurnConstantButton.clicked.connect(self.set_turn_constant)
         self.SetSpeedConstantButton.clicked.connect(self.set_speed_constant)
 
-        # Waypoint List
+        # Waypoint List Functions
         self.AddWaypointButton.clicked.connect(self.add_waypoint)
         self.PlanOrderButton.clicked.connect(self.plan_order_service_call)
         self.RemoveSelectedWaypointButton.clicked.connect(self.remove_selected_waypoint)
@@ -104,7 +105,8 @@ class AutonomyGUI(Node, QWidget):
         self.course_heading_error = None
         self.state_machine_list_string = ''
         self.autopilot_cmds_msg = None
-        self.waypoints = []
+        self.waypoints = [] # Stores the waypoints in the format [waypoint_number, tag_id, latitude, longitude, status]
+        self.current_path = AutonomyWaypoint().Request()
 
         ################# ROS Communication #################
 
@@ -143,7 +145,7 @@ class AutonomyGUI(Node, QWidget):
 
         ################# Debug Setup #################
 
-        
+        # NOTE: Empty for now
 
         ################# Mapviz Communication Setup #################
 
@@ -180,7 +182,7 @@ class AutonomyGUI(Node, QWidget):
         self.RoverStateLon.setText('Longitude: ...')
         return
 
-    # Callbacks for Subscribers
+    ################# Callbacks for Subscribers #################
     def base_GPS_info_callback(self, msg):
         self.base_GPS_info = msg
         self.base_numSV = msg.num_sv
@@ -684,7 +686,7 @@ class AutonomyGUI(Node, QWidget):
         self.RoverStateMapYaw.setText(f'Map Yaw: {msg.map_yaw}')
         return
 
-    # Gui Functions
+    # GUI Graphics Functions
     def update_leg_subselection(self):
         if self.GNSSRadioButton.isChecked():
             self.leg_type = 'GNSS'
@@ -730,6 +732,7 @@ class AutonomyGUI(Node, QWidget):
             self.tag_id = None
         return
 
+# This gets the 0, 0 coordinates of the mapviz map
 def get_coordinates(file_path, location):
     # Read the YAML file
     with open(file_path, 'r') as file:
