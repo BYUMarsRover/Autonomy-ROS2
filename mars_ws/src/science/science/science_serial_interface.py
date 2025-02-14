@@ -9,7 +9,7 @@ SUBSCRIBED TO:
 import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Empty
 import serial
 import struct
 
@@ -42,6 +42,8 @@ RESPONSE_FOOTER_BASE_INDEX = 4
 
 GET_TEMP_COMMAND_WORD = 0x0F
 GET_HUM_COMMAND_WORD = 0x10
+GET_TEMP_RAW_COMMAND_WORD = 0x0D
+GET_HUM_RAW_COMMAND_WORD = 0x0E
 
 PROBE_TOOL_INDEX = 0
 AUGER_TOOL_INDEX = 1
@@ -70,8 +72,10 @@ class ScienceSerialInterface(Node):
         self.sub_science_serial_primary_cache_door = self.create_subscription(ScienceActuatorControl, '/science_serial_primary_cache_door', self.primary_cache_door_control_callback, 10)
         self.sub_science_serial_secondary_cache = self.create_subscription(ScienceActuatorControl, '/science_serial_secondary_cache', self.secondary_cache_control_callback, 10)
         self.sub_science_serial_override = self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
+        self.sub_science_gui_raw_request = self.create_subscription(Empty, '/science_serial_request_raw', self.query_sensor_raw_callback, 10)
 
-        self.info_publisher = self.create_publisher(ScienceSensorValues, '/science_sensor_values', 10)
+        self.sensor_calibrated_publisher = self.create_publisher(ScienceSensorValues, '/science_sensor_values', 10)
+        self.sensor_raw_publisher = self.create_publisher(ScienceSensorValues, '/science_sensor_values_raw', 10)
         # self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
         self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
         # self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
@@ -79,6 +83,7 @@ class ScienceSerialInterface(Node):
         self.create_timer(100e-3, self.read_serial) # 10 Hz
         self.create_timer(1, self.query_temperature) # 1 Hz
         self.create_timer(1, self.query_humidity) # 1 Hz
+        self.create_timer(1, self.query_sensor_raw) # 1 Hz
 
         # Caches for control purposes
         self.current_tool_index = 0
@@ -89,6 +94,8 @@ class ScienceSerialInterface(Node):
         # Caches for sensor values
         self.temperature = None
         self.humidity = None
+        self.temperature_raw = 0
+        self.humidity_raw = 0
 
         # State Variable
         self.override_bit = False
@@ -143,6 +150,15 @@ class ScienceSerialInterface(Node):
         print('Doing query humidity')
         # ask the arduino to return the humidity as a calibrated float
         self.write_serial([GET_HUM_COMMAND_WORD, 0x00])
+
+    def query_sensor_raw_callback(self, msg: Empty):
+        self.query_sensor()
+
+    def query_sensor_raw(self):
+        print('Doing query raw')
+        # ask the arduino to return the temperature as a raw float
+        self.write_serial([GET_TEMP_RAW_COMMAND_WORD, 0x00])
+        self.write_serial([GET_HUM_RAW_COMMAND_WORD, 0x00])
 
     def contains_possible_packet(self, queue):
         # Returns format information for a possible packet in the queue
@@ -216,12 +232,19 @@ class ScienceSerialInterface(Node):
                         if len(self.read_queue) == 0 or self.read_queue[0] == RESPONSE_PACKET_HEADER:
                             break
 
-    def publish_sensors_value(self):
+    def publish_sensors_calibrated(self):
         if (self.temperature is None):
             self.temperature = SENSOR_ERR_CODE
         if (self.humidity is None):
             self.humidity = SENSOR_ERR_CODE
-        self.info_publisher.publish(ScienceSensorValues(temperature=int(self.temperature),moisture=int(self.humidity)))
+        self.sensor_calibrated_publisher.publish(ScienceSensorValues(temperature=int(self.temperature),moisture=int(self.humidity)))
+
+    def publish_sensors_raw(self):
+        if (self.temperature is None):
+            self.temperature = SENSOR_ERR_CODE
+        if (self.humidity is None):
+            self.humidity = SENSOR_ERR_CODE
+        self.sensor_raw_publisher.publish(ScienceSensorValues(temperature=int(self.temp_raw),moisture=int(self.humidity_raw)))
 
     def process_packet(self, response_packet, formatting_data):
         # Process a valid response packet
@@ -243,13 +266,17 @@ class ScienceSerialInterface(Node):
         if function_address == (GET_TEMP_COMMAND_WORD & 0b11111):
             # This packet contains temperature data as a float
             self.temperature = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))[0] #For some reason struct.unpack returns a tuple with a single value. Da heck
-            # print(f"Received temp: {self.temperature}")
-            self.publish_sensors_value()
+            self.publish_sensors_calibrated()
         elif function_address == (GET_HUM_COMMAND_WORD & 0b11111):
             # This packet contains humidity data as a float
             self.humidity = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))[0]
-            # print(f"Received humidity: {self.humidity}")
-            self.publish_sensors_value()
+            self.publish_sensors_calibrated()
+        elif function_address == (GET_TEMP_RAW_COMMAND_WORD & 0b11111):
+            self.temp_raw = struct.unpack('<H', struct.pack('B' * len(error_message), *error_message))[0]
+            # self.publish_sensors_raw() #since these publish both, we're only going to publish once on when humidity is received
+        elif function_address == (GET_HUM_RAW_COMMAND_WORD & 0b11111):
+            self.humidity_raw = struct.unpack('<H', struct.pack('B' * len(error_message), *error_message))[0]
+            self.publish_sensors_raw()
 
 def main(args=None):
     rclpy.init(args=args)

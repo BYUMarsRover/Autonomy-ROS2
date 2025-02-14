@@ -1,10 +1,11 @@
 #!/usr/bin/python3
 
 from PyQt5 import QtWidgets, uic
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from python_qt_binding.QtCore import QObject, Signal
 import rclpy
 from rover_msgs.srv import CameraControl
-from rover_msgs.msg import ScienceToolPosition, ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceFADIntensity, Camera, RoverStateSingleton
+from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceFADIntensity, Camera, RoverStateSingleton
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.pyplot as plt
@@ -14,8 +15,8 @@ import os
 import sys
 
 class Signals(QObject):
-    sensor_signal = Signal(ScienceSensorValues)
-    auger_position = Signal(ScienceToolPosition)
+    sensor_signal = pyqtSignal(object)
+    auger_position = Signal(ScienceActuatorControl)
     sensor_save_signal = Signal(ScienceSaveSensor)
     notes_save_signal = Signal(ScienceSaveNotes)
     fad_intensity_signal = Signal(ScienceFADIntensity)
@@ -115,10 +116,14 @@ class science_GUI(Node):
         self.signals.notes_save_signal.connect(self.pub_save_notes.publish)
         self.signals.fad_intensity_signal.connect(self.update_fad_intensity_value)
 
-        self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.signals.sensor_signal.emit, 10)
-        self.science_auger_position = self.create_subscription(ScienceToolPosition, '/science_auger_position', self.signals.auger_position.emit, 10)
+        self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values_raw', self.signals.sensor_signal.emit, 10)
+        # self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.jank_test, 10)
+        self.science_auger_position = self.create_subscription(ScienceActuatorControl, '/science_auger_position', self.signals.auger_position.emit, 10)
         self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
         self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
+
+    # def jank_test(self, msg: ScienceSensorValues):
+    #     print("I belong")
 
     def toggle_sensor_save(self, p):
         """
@@ -163,7 +168,8 @@ class science_GUI(Node):
         self.signals.notes_save_signal.emit(self.save_notes_msg)
         print('Notes sent.')
 
-    def update_sensor_values(self, msg):
+    def update_sensor_values(self, msg: ScienceSensorValues):
+        # print(msg.temperature, msg.moisture)
         temperature = msg.temperature
         moisture = msg.moisture
 
@@ -328,6 +334,11 @@ def main(args=None):
     rclpy.init(args=args)
     app = QtWidgets.QApplication(sys.argv)
     window = science_GUI()
+
+    # Create a QTimer to periodically call rclpy.spin_once
+    timer = QTimer()
+    timer.timeout.connect(lambda: rclpy.spin_once(window, timeout_sec=0.1))
+    timer.start(100)  # Call spin_once every 100 ms
 
     window.qt.show()
     sys.exit(app.exec_())

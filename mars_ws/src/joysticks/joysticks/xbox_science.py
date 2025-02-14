@@ -91,7 +91,7 @@ class XBOX(Node):
         input_button_primary_cache_door =   self.primary_cache_door_button.update(msg)
         input_axis_secondary_cache =        self.secondary_cache_axis.update(msg)
         input_override =                    self.override_button.update(msg)
-        input_elevator =                    self.override_button.update(msg)
+        input_elevator =                    self.elevator_axis.update(msg)
 
         # Handle Override - This sets the override bit for science module communications (see science_serial.py)
         self.override_control.set(input_override)
