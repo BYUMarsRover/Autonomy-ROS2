@@ -9,6 +9,7 @@ SUBSCRIBED TO:
 import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues
+from std_msgs.msg import Bool
 import serial
 import struct
 
@@ -68,6 +69,7 @@ class ScienceSerialInterface(Node):
         self.sub_science_serial_auger = self.create_subscription(ScienceActuatorControl, '/science_serial_auger', self.auger_control_callback, 10)
         self.sub_science_serial_primary_cache_door = self.create_subscription(ScienceActuatorControl, '/science_serial_primary_cache_door', self.primary_cache_door_control_callback, 10)
         self.sub_science_serial_secondary_cache = self.create_subscription(ScienceActuatorControl, '/science_serial_secondary_cache', self.secondary_cache_control_callback, 10)
+        self.sub_science_serial_override = self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
 
         self.info_publisher = self.create_publisher(ScienceSensorValues, '/science_sensor_values', 10)
         # self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
@@ -87,6 +89,13 @@ class ScienceSerialInterface(Node):
         # Caches for sensor values
         self.temperature = None
         self.humidity = None
+
+        # State Variable
+        self.override_bit = False
+
+    def set_override_bit_callback(self, msg: Bool): #Control is an int8control = FULL_STEAM_FORWARD if self.secondary_cache_state == True else FULL_STEAM_BACKWARD
+        print("Received override change")
+        self.override_bit = msg.data
 
     def write_actuator_control(self, command_word, control): #Control is an int8control = FULL_STEAM_FORWARD if self.secondary_cache_state == True else FULL_STEAM_BACKWARD
         self.write_serial([command_word, 0x01, signed_to_unsigned(control)])
@@ -117,6 +126,7 @@ class ScienceSerialInterface(Node):
             # todo proper error message
             print(f"Provided command packet is of size {len(byte_array)}, maximum is {MAXIMUM_PACKET_SIZE}")
         elif self.arduino:
+            byte_array[0] |= 0b01000000 if self.override_bit else 0b00000000  # Set the Override Bit
             byte_array.insert(0, COMMAND_PACKET_HEADER)
             byte_array.append(COMMAND_PACKET_FOOTER)
             self.arduino.write(struct.pack('B' * len(byte_array), *byte_array))
