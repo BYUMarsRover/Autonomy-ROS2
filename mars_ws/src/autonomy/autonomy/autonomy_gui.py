@@ -24,10 +24,10 @@ import yaml
 import utm
 
 from std_srvs.srv import SetBool
-from std_msgs.msg import Header
+from std_msgs.msg import Header, Int8
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
-from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloat32
+from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloat32, OrderAutonomyWaypoint
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors
 from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
 from ament_index_python.packages import get_package_share_directory
@@ -46,29 +46,38 @@ class AutonomyGUI(Node, QWidget):
         uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/autonomy/autonomy_gui.ui', self)
         self.show()  # Show the GUI
 
-        # Gui Buttons
+        #################### GUI Button Connections ####################
+        # Connect Leg Type Radio Buttons to update_leg_subselection function
         self.GNSSRadioButton.toggled.connect(self.update_leg_subselection)
         self.ArUcoRadioButton.toggled.connect(self.update_leg_subselection)
         self.ObjectRadioButton.toggled.connect(self.update_leg_subselection)
-
-        self.Tag1RadioButton.toggled.connect(self.update_tag_selection)
-        self.Tag2RadioButton.toggled.connect(self.update_tag_selection)
-        self.Tag3RadioButton.toggled.connect(self.update_tag_selection)
+        for i in range(1, 4):
+            getattr(self, f'Tag{i}RadioButton').toggled.connect(self.update_tag_selection)
         self.WaterBottleRadioButton.toggled.connect(self.update_tag_selection)
-        self.HammerRadioButton.toggled.connect(self.update_tag_selection)
+        self.MalletRadioButton.toggled.connect(self.update_tag_selection)
 
+        # Autonomy Control Buttons
         self.EnableAutonomyButton.clicked.connect(self.enable_autonomy)
         self.DisableAutonomyButton.clicked.connect(self.disable_autonomy)
         self.AbortButton.clicked.connect(self.abort_autonomy)
         self.SendWaypointButton.clicked.connect(self.send_waypoint)
-        self.RemoveWaypointButton.clicked.connect(self.remove_waypoint)
+        self.ClearWaypointButton.clicked.connect(self.clear_waypoint)
 
         self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
-        self.PlanOrderButton.clicked.connect(self.plan_order_service_call)
+        self.PlanOrderMapvizButton.clicked.connect(self.plan_order_mapviz_service_call)
         self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
 
+        # Mobility Control Buttons
         self.SetTurnConstantButton.clicked.connect(self.set_turn_constant)
         self.SetSpeedConstantButton.clicked.connect(self.set_speed_constant)
+
+        # Waypoint List Functions
+        self.AddWaypointButton.clicked.connect(self.add_waypoint)
+        self.PlanOrderButton.clicked.connect(self.plan_order_service_call)
+        self.RemoveSelectedWaypointButton.clicked.connect(self.remove_selected_waypoint)
+        for i in range(1, 8):
+            getattr(self, f'WP{i}RadioButton').toggled.connect(self.update_selected_waypoint)
+        self.selected_waypoint = None
 
         # GUI Input Fields
         self.latitude_input = self.LatitudeInput
@@ -93,6 +102,11 @@ class AutonomyGUI(Node, QWidget):
         self.obj_alpha_lpf = 0.5
         self.aruco_alpha_lpf = 0.5
         self.aruco_tag_distance = None
+        self.course_heading_error = None
+        self.state_machine_list_string = ''
+        self.autopilot_cmds_msg = None
+        self.waypoints = [] # Stores the waypoints in the format [waypoint_number, tag_id, latitude, longitude, status]
+        self.current_path = AutonomyWaypoint().Request()
 
         ################# ROS Communication #################
 
@@ -116,10 +130,11 @@ class AutonomyGUI(Node, QWidget):
         # Services
 
         # Clients
-        self.plan_order_client = self.create_client(OrderPath, '/plan_order')
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
         self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
-        self.remove_waypoint_client = self.create_client(SetBool, '/AU_remove_waypoint_service')
+        self.clear_waypoint_client = self.create_client(SetBool, '/AU_clear_waypoint_service')
+        self.plan_order_client = self.create_client(OrderAutonomyWaypoint, '/plan_order')
+        self.plan_order_mapviz_client = self.create_client(OrderPath, '/plan_order_mapviz')
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
         self.set_turn_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_turn_constant')
         self.set_speed_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_speed')
@@ -130,7 +145,7 @@ class AutonomyGUI(Node, QWidget):
 
         ################# Debug Setup #################
 
-        
+        # NOTE: Empty for now
 
         ################# Mapviz Communication Setup #################
 
@@ -155,18 +170,19 @@ class AutonomyGUI(Node, QWidget):
         self.current_previewed_waypoints = Path()
 
 
+    # Clears displays in the gui if information stops being received.
     def check_timepoints(self):
         if self.rover_state_singleton_timepoint is not None:
             if self.get_clock().now().to_msg().sec - self.rover_state_singleton_timepoint > 1:
-                self.clear_status()
+                self.clear_rover_state_singleton_info()
     
-    def clear_status(self):
+    def clear_rover_state_singleton_info(self):
         self.RoverStateMapYaw.setText('Map Yaw: ...')
         self.RoverStateLat.setText('Latitude: ...')
         self.RoverStateLon.setText('Longitude: ...')
         return
 
-    # Callbacks for Subscribers
+    ################# Callbacks for Subscribers #################
     def base_GPS_info_callback(self, msg):
         self.base_GPS_info = msg
         self.base_numSV = msg.num_sv
@@ -221,10 +237,20 @@ class AutonomyGUI(Node, QWidget):
         return
 
     def rover_nav_status_callback(self, msg): #State machine status (state, auto_enable)
-        self.rover_nav_status = msg
-        if self.state_machine_state != None and self.state_machine_state != msg.state:
+        #Update previous state and state list
+        if self.state_machine_state != None and msg.state != self.state_machine_state:
+            self.state_machine_list_string = f'{msg.state}\n' + self.state_machine_list_string
+            self.PreviousStatesList.setText(self.state_machine_list_string) 
+
             self.prev_state_machine_state = self.state_machine_state
             self.PreviousMainStateDisplay.setText(self.prev_state_machine_state)
+
+        #Show the first state on the previous state column
+        if self.state_machine_state == None:
+            self.state_machine_list_string = f'{msg.state}\n'
+            self.PreviousStatesList.setText(self.state_machine_list_string)
+
+        #Update current state and autonomous enable
         self.state_machine_state = msg.state
         autonomous_enable = msg.auto_enable
         if autonomous_enable:
@@ -234,8 +260,6 @@ class AutonomyGUI(Node, QWidget):
 
         self.CurrentMainStateDisplay.setText(self.state_machine_state)
         
-        self.CurrentStateDisplay.setText(self.state_machine_state)
-        
         return
 
     def ar_tag_callback(self, msg):
@@ -244,17 +268,23 @@ class AutonomyGUI(Node, QWidget):
         aruco_text = ''
 
         if len(msg.transforms) >= 1: #TODO: if we happpen to see 2, this will not run... JM - Unsure what this was used for. 
+            aruco_x = msg.transforms[0].transform.translation.x
+            aruco_z = msg.transforms[0].transform.translation.z
+            aruco_dist = np.sqrt(aruco_x ** 2 + aruco_z ** 2)
+            aruco_angle = np.arctan(aruco_x / aruco_z)
             if self.aruco_tag_distance is None:
-                self.aruco_tag_distance = np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2)
-                self.aruco_tag_angle = - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z)
+                self.aruco_tag_distance = aruco_dist
+                self.aruco_tag_angle = aruco_angle
             else:
-                self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + np.sqrt(msg.transforms[0].transform.translation.x ** 2 + msg.transforms[0].transform.translation.z ** 2) * (1 - self.aruco_alpha_lpf)
-                self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf - np.arctan(msg.transforms[0].transform.translation.x / msg.transforms[0].transform.translation.z) * (1 - self.aruco_alpha_lpf)
+                #Low pass filter the distance and heading information
+                self.aruco_tag_distance = self.aruco_tag_distance * self.aruco_alpha_lpf + aruco_dist * (1 - self.aruco_alpha_lpf)
+                self.aruco_tag_angle = self.aruco_tag_angle * self.aruco_alpha_lpf + aruco_angle * (1 - self.aruco_alpha_lpf)
             
             #TODO: When we have heading data, add it to the angle here to ge the correct angle
             aruco_text = "Tag is {}m away at {} deg.".format(round(self.aruco_tag_distance, 2), round(np.rad2deg(self.aruco_tag_angle), 2))
 
-            if msg.transforms[0].fiducial_id == self.tag_id:
+            # Check if the tag id is correct, compare by converting to string
+            if str(msg.transforms[0].fiducial_id) == self.tag_id:
                 aruco_text = aruco_text + f" Correct tagID: {self.tag_id}"
             else:
                 aruco_text = aruco_text + f"Incorrect tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id}"
@@ -269,17 +299,19 @@ class AutonomyGUI(Node, QWidget):
             if obj.label == 1:
                 obj_name = 'Bottle'
             elif obj.label == 2:
-                obj_name = 'Hammer'
+                obj_name = 'Mallet'
             else:
                 obj_name = 'Unknown'
 
             # Low-pass filter the distance and heading information
+            obj_dist = np.sqrt((obj.y) ** 2 + (obj.x) ** 2)
+            obj_ang = -np.arctan(obj.y / obj.x)
             if self.obj_distance is None:
-                self.obj_distance = np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2)
-                self.obj_angle = - np.arctan(obj.x / obj.z)
+                self.obj_distance = obj_dist
+                self.obj_angle = obj_ang
             else:
-                self.obj_distance = self.obj_distance * self.obj_alpha_lpf + np.sqrt((obj.x / 1000) ** 2 + (obj.z / 1000) ** 2) * (1 - self.obj_alpha_lpf)
-                self.obj_angle = self.obj_angle * self.obj_alpha_lpf - np.arctan(obj.x / obj.z) * (1 - self.obj_alpha_lpf)
+                self.obj_distance = self.obj_distance * self.obj_alpha_lpf + obj_dist * (1 - self.obj_alpha_lpf)
+                self.obj_angle = self.obj_angle * self.obj_alpha_lpf + obj_ang * (1 - self.obj_alpha_lpf)
 
             #round to 2 places and convert angle to degrees
             obj_distance = round(self.obj_distance, 2)
@@ -292,13 +324,28 @@ class AutonomyGUI(Node, QWidget):
     
     ################# Callbacks for Mobility #################
     def autopilot_cmds_callback(self, msg):
-        autopilot_cmds_string = f'Distance to target: {round(msg.distance_to_target, 2)}, angle to target: {round(msg.course_angle, 2)}'
-        self.AutopilotCmds.setText(autopilot_cmds_string)
+        self.autopilot_cmds_msg = msg
+        self.setAutopilotString(self.autopilot_cmds_msg)        
         return
 
+    #helper function for autopilot_cmds_callback and vel_cmds_callback
+    def setAutopilotString(self, msg):
+        if self.course_heading_error is None:
+            autopilot_cmds_string = f'Dist to target: {round(msg.distance_to_target, 2)}m, cw from N: {round(np.rad2deg(msg.course_angle), 2)}°'
+        else:
+            autopilot_cmds_string = f'Dist to target: {round(msg.distance_to_target, 2)}m, cw from N: {round(np.rad2deg(msg.course_angle), 2)}°, Heading Err: {round(np.rad2deg(self.course_heading_error), 2)}°'
+        self.AutopilotCmds.setText(autopilot_cmds_string)
+        return
+    
     def vel_cmds_callback(self, msg):
+        self.course_heading_error = msg.course_heading_error
         vel_cmds_string = f'Lin Vel: {round(msg.u_cmd, 2)}, Ang Vel: {round(msg.omega_cmd, 2)}'
         self.VelocityCmds.setText(vel_cmds_string)
+
+        # If we have a course heading error, update the autopilot string
+        if self.autopilot_cmds_msg is not None:
+            self.setAutopilotString(self.autopilot_cmds_msg)
+
         return
 
     def wheel_vel_cmds_callback(self, msg):
@@ -310,22 +357,10 @@ class AutonomyGUI(Node, QWidget):
         #Format the IWC wheel commands into a string
         IWC_cmd_string = ''
         #For each wheel, put a negative in the string if direction is False
-        if msg.right_front_dir:
-            IWC_cmd_string = IWC_cmd_string + f'RFW: {round(msg.right_front_speed, 2)}'
-        else:
-            IWC_cmd_string = IWC_cmd_string + f'RFW: -{round(msg.right_front_speed, 2)}'
-        if msg.right_middle_dir:
-            IWC_cmd_string = IWC_cmd_string + f', RMW: {round(msg.right_middle_speed, 2)}'
-        else:
-            IWC_cmd_string = IWC_cmd_string + f', RMW: -{round(msg.right_middle_speed, 2)}'
-        if msg.right_rear_dir:
-            IWC_cmd_string = IWC_cmd_string + f', RRW: {round(msg.right_rear_speed, 2)}'
-        else:
-            IWC_cmd_string = IWC_cmd_string + f', RRW: -{round(msg.right_rear_speed, 2)}'
         if msg.left_front_dir:
-            IWC_cmd_string = IWC_cmd_string + f', LFW: {round(msg.left_front_speed, 2)}'
+            IWC_cmd_string = IWC_cmd_string + f'LFW: {round(msg.left_front_speed, 2)}'
         else:
-            IWC_cmd_string = IWC_cmd_string + f', LFW: -{round(msg.left_front_speed, 2)}'
+            IWC_cmd_string = IWC_cmd_string + f'LFW: -{round(msg.left_front_speed, 2)}'
         if msg.left_middle_dir:
             IWC_cmd_string = IWC_cmd_string + f', LMW: {round(msg.left_middle_speed, 2)}'
         else:
@@ -334,11 +369,22 @@ class AutonomyGUI(Node, QWidget):
             IWC_cmd_string = IWC_cmd_string + f', LRW: {round(msg.left_rear_speed, 2)}'
         else:
             IWC_cmd_string = IWC_cmd_string + f', LRW: -{round(msg.left_rear_speed, 2)}'
+        if msg.right_front_dir:
+            IWC_cmd_string = IWC_cmd_string + f', RFW: {round(msg.right_front_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', RFW: -{round(msg.right_front_speed, 2)}'
+        if msg.right_middle_dir:
+            IWC_cmd_string = IWC_cmd_string + f', RMW: {round(msg.right_middle_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', RMW: -{round(msg.right_middle_speed, 2)}'
+        if msg.right_rear_dir:
+            IWC_cmd_string = IWC_cmd_string + f', RRW: {round(msg.right_rear_speed, 2)}'
+        else:
+            IWC_cmd_string = IWC_cmd_string + f', RRW: -{round(msg.right_rear_speed, 2)}'
+
         
         self.IWCCmds.setText(IWC_cmd_string)
         
-
-
         return
 
     # Callback functions for buttons
@@ -347,15 +393,14 @@ class AutonomyGUI(Node, QWidget):
         req.data = True
         future = self.enable_autonomy_client.call_async(req)
         self.error_label.setText('Enabling Autonomy...')
-        # future.add_done_callback(self.future_callback)
 
     def disable_autonomy(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_autonomy_client.call_async(req)
         self.error_label.setText('Disabling Autonomy...')
-        # future.add_done_callback(self.future_callback)
 
+    # This sends the waypoint to mapviz for preview
     def preview_waypoint(self):
         # Find the x and y to be sent to mapviz
         lat = float(self.latitude_input.text())
@@ -389,25 +434,113 @@ class AutonomyGUI(Node, QWidget):
         
         self.error_label.setText('Waypoint Sent for Preview')
 
+    # This adds the waypoint to the waypoint list that is held in the autonomy gui
+    def add_waypoint(self):
+        try:
+            self.error_label.setText('Adding Waypoint...')
+            lat = float(self.latitude_input.text())
+            lon = float(self.longitude_input.text())
+        except ValueError:
+            self.error_label.setText('Invalid latitude or longitude')
+            return
+        waypoint = [int(len(self.waypoints) + 1), self.tag_id, lat, lon, 'idle']
+
+        self.waypoints.append(waypoint)
+        self.update_waypoint_list()
+
+    def remove_selected_waypoint(self):
+        if self.selected_waypoint is None:
+            self.error_label.setText('No waypoint selected')
+            return
+        if self.selected_waypoint > len(self.waypoints):
+            self.error_label.setText('Empty Waypoint Selected')
+            return
+
+        # Update the waypoint numbers
+        for i in range(len(self.waypoints)):
+            if self.waypoints[i][0] > self.waypoints[self.selected_waypoint - 1][0]:
+                self.waypoints[i][0] -= 1
+
+        # Remove the selected waypoint
+        self.waypoints.pop(self.selected_waypoint - 1)
+
+        self.selected_waypoint = None
+        self.update_waypoint_list()
+
+        # Clear the radio buttons for update_selected_waypoint function to work
+        for i in range(1, 8):
+            getattr(self, f'WP{i}RadioButton').setAutoExclusive(False)
+            getattr(self, f'WP{i}RadioButton').setChecked(False)
+            getattr(self, f'WP{i}RadioButton').setAutoExclusive(True)
+
+    # This finds which toggle button was selected and sets the selected_waypoint variable
+    def update_selected_waypoint(self):
+        for i in range(1, 8):
+            if getattr(self, f'WP{i}RadioButton').isChecked():
+                self.selected_waypoint = i
+                break
+
+    # This updated the display of the waypoint list in the gui
+    def update_waypoint_list(self):
+        count = 0
+        for waypoint in self.waypoints:
+            count += 1
+
+            # Set attributes
+            getattr(self, f'WP{count}Label').setText(str(waypoint[0]))
+            getattr(self, f'TagID{count}Label').setText(str(waypoint[1]))
+            getattr(self, f'Lat{count}Label').setText(str(waypoint[2]))
+            getattr(self, f'Lon{count}Label').setText(str(waypoint[3]))
+            getattr(self, f'Status{count}Label').setText(str(waypoint[4]))
+
+
+        for i in range(count + 1, 8):
+            # Set Empty entries
+            getattr(self, f'WP{i}Label').setText('...')
+            getattr(self, f'TagID{i}Label').setText('...')
+            getattr(self, f'Lat{i}Label').setText('...')
+            getattr(self, f'Lon{i}Label').setText('...')
+            getattr(self, f'Status{i}Label').setText('...')
+
     def plan_order_service_call(self):
+        req = OrderAutonomyWaypoint.Request()
+        for waypoint in self.waypoints:
+            task = AutonomyTaskInfo()
+            task.tag_id = waypoint[1]
+            task.latitude = waypoint[2]
+            task.longitude = waypoint[3]
+            req.ids.append(Int8(data=waypoint[0]))
+            req.task_list.append(task)
+
+        future = self.plan_order_client.call_async(req)
+        self.error_label.setText('Planning order...')
+        future.add_done_callback(self.plan_order_service_callback)
+    
+    def plan_order_service_callback(self, future):
+        try:
+            response = future.result()
+            if response.success:
+                self.waypoints = []
+                for waypoint in response.task_list:
+                    self.waypoints.append([0, waypoint.tag_id, waypoint.latitude, waypoint.longitude, 'idle'])
+                for i in range(len(response.ids)):
+                    self.waypoints[i][0] = response.ids[i].data
+                self.update_waypoint_list()
+                self.error_label.setText(response.message)
+            else:
+                self.error_label.setText("Failed to plan order")
+        except Exception as e:
+            self.error_label.setText(f'Plan Order Service call failed!')
+
+    # This reorders the added waypoints to the optimal order based on path length
+    def plan_order_mapviz_service_call(self):
         req = OrderPath.Request() # Path
         req.path = self.current_previewed_waypoints
 
-        future = self.plan_order_client.call_async(req)
-        self.error_label.setText('Planning Order...')
-        # future.add_done_callback(self.future_callback)
+        future = self.plan_order_mapviz_client.call_async(req)
+        self.error_label.setText('Planning order on mapviz...')
 
-        # TODO: need a response from this future... but the ros node is spinning in another thread
-        # response = future.result()
-
-        # self.current_previewed_waypoints = response.path
-        # # self.current_previewed_waypoints.header.frame_id = 'map'
-        # self.path_publisher.publish(
-        #     path_to_utm(self.current_previewed_waypoints, 
-        #                 self.utm_easting_zero, 
-        #                 self.utm_northing_zero)
-        #     )
-
+    # This clears all previewed waypoints from mapviz
     def clear_mapviz(self):
 
         # Clear the current previewed waypoints
@@ -438,7 +571,8 @@ class AutonomyGUI(Node, QWidget):
 
         self.path_publisher.publish(msg)
         self.error_label.setText('Mapviz Cleared')
-        
+    
+    # This sends the waypoint to the state machine
     def send_waypoint(self):
         #logic for sending waypoint
         req = AutonomyWaypoint.Request()
@@ -469,17 +603,17 @@ class AutonomyGUI(Node, QWidget):
         # Send the Waypoint
         self.error_label.setText('Sending Waypoint')
         future = self.send_waypoint_client.call_async(req)
-        # future.add_done_callback(self.future_callback)
         return
 
-    def remove_waypoint(self):
+    # This removes the waypoint from the state machine
+    def clear_waypoint(self):
         req = SetBool.Request()
         req.data = True
-        future = self.remove_waypoint_client.call_async(req)
+        future = self.clear_waypoint_client.call_async(req)
         self.error_label.setText('Removing Last Waypoint')
-        future.add_done_callback(self.remove_waypoint_callback)
+        future.add_done_callback(self.clear_waypoint_callback)
 
-    def remove_waypoint_callback(self, future):
+    def clear_waypoint_callback(self, future):
         try:
             response = future.result()
             if response.success:
@@ -489,6 +623,7 @@ class AutonomyGUI(Node, QWidget):
         except Exception as e:
             self.error_label.setText(f'Remove Waypoint Service call failed!')
 
+    # This calls the abort service
     def abort_autonomy(self):
         #logic for aborting autonomy task
         req = AutonomyAbort.Request()
@@ -509,7 +644,6 @@ class AutonomyGUI(Node, QWidget):
         # Send the Abort Request
         future = self.abort_autonomy_client.call_async(req)
         self.error_label.setText('Attempting Abort')
-        # future.add_done_callback(self.future_callback)
 
     def set_turn_constant(self):
         req = SetFloat32.Request()
@@ -552,7 +686,7 @@ class AutonomyGUI(Node, QWidget):
         self.RoverStateMapYaw.setText(f'Map Yaw: {msg.map_yaw}')
         return
 
-    # Gui Functions
+    # GUI Graphics Functions
     def update_leg_subselection(self):
         if self.GNSSRadioButton.isChecked():
             self.leg_type = 'GNSS'
@@ -562,10 +696,25 @@ class AutonomyGUI(Node, QWidget):
             self.leg_type = 'ArUco'
             self.tag_id = None
             self.legsubselectionStackedWidget.setCurrentIndex(1)
+
+            # Clear the Object radio buttons for update_tag_selection function to work
+            self.WaterBottleRadioButton.setAutoExclusive(False)
+            self.WaterBottleRadioButton.setChecked(False)
+            self.WaterBottleRadioButton.setAutoExclusive(True)
+            self.MalletRadioButton.setAutoExclusive(False)
+            self.MalletRadioButton.setChecked(False)
+            self.MalletRadioButton.setAutoExclusive(True)
+
         elif self.ObjectRadioButton.isChecked():
             self.leg_type = 'Object'
             self.tag_id = None
             self.legsubselectionStackedWidget.setCurrentIndex(2)
+
+            # Clear the Aruco radio buttons for update_tag_selection function to work
+            for i in range(1, 4):
+                getattr(self, f'Tag{i}RadioButton').setAutoExclusive(False)
+                getattr(self, f'Tag{i}RadioButton').setChecked(False)
+                getattr(self, f'Tag{i}RadioButton').setAutoExclusive(True)
         return
 
     def update_tag_selection(self):
@@ -577,24 +726,13 @@ class AutonomyGUI(Node, QWidget):
             self.tag_id = '3'
         elif self.WaterBottleRadioButton.isChecked():
             self.tag_id = 'bottle'
-        elif self.HammerRadioButton.isChecked():
+        elif self.MalletRadioButton.isChecked():
             self.tag_id = 'mallet'
         else:
             self.tag_id = None
         return
-    
-    # Service calls generic callback
-    def future_callback(future):
-        # try:
-        #     response = future.result()
-        #     if response.success:
-        #         self.error_label.setText(success_msg)
-        #     else:
-        #         self.error_label.setText(error_msg)
-        # except Exception as e:
-        #     self.error_label.setText(f'Service call failed: {str(e)}')
-        pass
 
+# This gets the 0, 0 coordinates of the mapviz map
 def get_coordinates(file_path, location):
     # Read the YAML file
     with open(file_path, 'r') as file:

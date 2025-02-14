@@ -1,12 +1,12 @@
 import rclpy
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
-from rover_msgs.srv import PlanPath, OrderPath
-from rover_msgs.msg import RoverStateSingleton, PointList
+from rover_msgs.srv import PlanPath, OrderPath, OrderAutonomyWaypoint
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, PointList
 from ublox_read_2.msg import PositionVelocityTime
 from nav_msgs.msg import Path
 from geometry_msgs.msg import Point, PoseStamped, Pose, Quaternion
-from std_msgs.msg import Header
+from std_msgs.msg import Header, Int8
 from std_srvs.srv import SetBool 
 import os
 import yaml
@@ -45,8 +45,9 @@ class PathPlanner(Node):
         # self.location = (38.4231, -110.7851) # NOTE: hanksville placeholder
 
         # Services
-        # This service plans the order of waypoints to visit
-        self.plan_order_service = self.create_service(OrderPath, 'plan_order', self.plan_order)
+        # Plans order of waypoints to visit mapviz version and Autonomy Wayponit version
+        self.plan_order_service = self.create_service(OrderAutonomyWaypoint, '/plan_order', self.plan_order)
+        self.plan_order_mapviz_service = self.create_service(OrderPath, '/plan_order_mapviz', self.plan_order_mapviz)
         # This service plans a path from start to goal using slope as cost
         self.plan_path_service = self.create_service(PlanPath, 'plan_path', self.plan_path)
         # This service sends planned waypoint path to the state machine when "send waypoints" is selected in Autonomy GUI
@@ -182,33 +183,72 @@ class PathPlanner(Node):
             self.path_needed = False
 
             # Publish waypoints along path to /mapviz/path topic
-            path_msg = Path()
-            path_msg.header.frame_id = 'map'
-            path_msg.header.stamp = self.get_clock().now().to_msg()
-            for n in waypoints:
-                lat, lon = self.eMapper.xy_to_latlon(n[1], n[0])
-                utm_coords = utm.from_latlon(lat, lon)
-                x = utm_coords[0] - self.utm_easting_zero
-                y = utm_coords[1] - self.utm_northing_zero
-                path_msg.poses.append(
-                    PoseStamped(
-                        header=Header(frame_id='map'),
-                        pose=Pose(
-                            position=Point(x=x, y=y, z=0.0),
-                            orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
-                        )
-                    )
-                )
+            # path_msg = Path()
+            # path_msg.header.frame_id = 'map'
+            # path_msg.header.stamp = self.get_clock().now().to_msg()
+            # for n in waypoints:
+            #     lat, lon = self.eMapper.xy_to_latlon(n[1], n[0])
+            #     utm_coords = utm.from_latlon(lat, lon)
+            #     x = utm_coords[0] - self.utm_easting_zero
+            #     y = utm_coords[1] - self.utm_northing_zero
+            #     path_msg.poses.append(
+            #         PoseStamped(
+            #             header=Header(frame_id='map'),
+            #             pose=Pose(
+            #                 position=Point(x=x, y=y, z=0.0),
+            #                 orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+            #             )
+            #         )
+            #     )
 
-            self.mapviz_path.publish(path_msg) #TODO: verify that the path pops up on mapviz **Current Task
+            # self.mapviz_path.publish(path_msg) #TODO: verify that the path pops up on mapviz **Current Task
 
 
     # Plan Waypoint Order Service Callback
     def plan_order(self, request, response):
         '''
         Plan the order of waypoints to visit
-            Pass in: the waypoints in lat/lon format
-            Returns: the optimal order of waypoints in lat/lon format
+            Pass in: List of AutonomyTaskInfo messages with poses in lat/lon format
+            Returns: List of AutonomyTaskInfo messages with waypoints reordered
+            NOTE: will take too long for more than 8 waypoints
+        '''
+        self.get_logger().info('Planning Order')
+        in_ids_order = request.ids
+        in_order = request.task_list
+        if len(in_order) > 8:
+            response.success = False #TODO: verify that "success" can be set to False
+            self.get_logger().info("Too many waypoints") #TODO: get this message somewhere useful
+            return response
+        
+        wp = []
+        for n in in_order:
+            wp.append(self.eMapper.latlon_to_xy(n.latitude, n.longitude))
+        start = [self.eMapper.latlon_to_xy(self.location[0], self.location[1])]
+
+
+        _, ids = self.path_planner.plan_wp_order(start, wp)
+
+        for n in ids:
+
+            # Grab the original lat lon coords in order they were planned
+            lat = in_order[n].latitude
+            lon = in_order[n].longitude
+            id = in_order[n].tag_id
+
+            # Append the waypoints to the response in the order they should be visited
+            response.ids.append(Int8(data=in_ids_order[n].data))
+            response.task_list.append(AutonomyTaskInfo(latitude=lat, longitude=lon, tag_id=id))
+
+        response.success = True
+        response.message = str("Waypoints order planned")
+        return response
+
+    # Plan Waypoint Order Service Callback for mapviz
+    def plan_order_mapviz(self, request, response):
+        '''
+        Plan the order of waypoints to visit
+            Pass in: Path message with poses in lat/lon format
+            Returns: Path message with waypoints reordered
             NOTE: will take too long for more than 8 waypoints
         '''
         in_path = request.path

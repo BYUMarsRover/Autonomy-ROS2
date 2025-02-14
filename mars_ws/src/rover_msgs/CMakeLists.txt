@@ -65,6 +65,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CameraControlResponse.srv"
   "srv/AutonomyAbort.srv"
   "srv/AutonomyWaypoint.srv"
+  "srv/OrderAutonomyWaypoint.srv"
   "srv/AutonomyWaypointResponse.srv"
   "srv/SetFloat32.srv"
   "srv/PlanPath.srv"

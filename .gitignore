@@ -4,3 +4,8 @@
 **/build_isolated
 **/install_isolated
 **/devel_isolated
+
+hanksville_full.asc
+
+.vscode
+.DS_Store

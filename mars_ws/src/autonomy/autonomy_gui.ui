@@ -8,7 +8,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>1200</width>
     <height>800</height>
    </rect>
   </property>
@@ -29,27 +29,18 @@
      <!-- Everything Widget Properties -->
      <property name="minimumSize">
       <size>
-       <width>800</width>
+       <width>1200</width>
        <height>800</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>800</width>
+       <width>1200</width>
        <height>800</height>
       </size>
      </property>
      <!-- Layout Widget -->
      <widget class="QWidget" name="layoutWidget">
-      <!-- Layout Widget Properties -->
-      <!-- <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>800</width>
-        <height>600</height>
-       </rect>
-      </property> -->
       <!-- Layout Widget Layout -->
       <layout class="QVBoxLayout" name="verticalLayout_17">
        <property name="alignment">
@@ -82,21 +73,11 @@
           <set>Qt::AlignTop</set>
          </property>
          <!-- Column 1 Item -->
-         <item>
+         <item alignment="Qt::AlignTop">
           <widget class="QWidget" name="column1_container">
-           <property name="minimumSize">
-            <size>
-             <width>350</width>
-             <height>500</height>
-            </size>
+           <property name="minimumWidth">
+            <number>400</number>
            </property>
-           <property name="maximumSize">
-            <size>
-             <width>350</width>
-             <height>500</height>
-            </size>
-           </property>
-           <!-- Column 1 Layout (Leg Info Column) -->
            <layout class="QVBoxLayout" name="verticalLayout_12">
             <property name="alignment">
              <set>Qt::AlignTop</set>
@@ -110,9 +91,6 @@
               </property>
               <property name="scaledContents">
                <bool>false</bool>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignTop</set>
               </property>
              </widget>
             </item>
@@ -197,7 +175,7 @@
               </item>
               <!-- Plan Order Button -->
               <item>
-               <widget class="QPushButton" name="PlanOrderButton">
+               <widget class="QPushButton" name="PlanOrderMapvizButton">
                 <property name="text">
                  <string>Plan Order</string>
                 </property>
@@ -326,11 +304,11 @@
                      </property>
                     </widget>
                    </item>
-                   <!-- Hammer Radio Button Item -->
+                   <!-- Mallet Radio Button Item -->
                    <item>
-                    <widget class="QRadioButton" name="HammerRadioButton">
+                    <widget class="QRadioButton" name="MalletRadioButton">
                      <property name="text">
-                      <string>Hammer</string>
+                      <string>Mallet</string>
                      </property>
                     </widget>
                    </item>
@@ -339,6 +317,446 @@
                 </widget>
                </item>
               </layout>
+             </widget>
+            </item>
+            <!-- Add Waypoint Button -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_10">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Add Waypoint Button -->
+              <item>
+               <widget class="QPushButton" name="AddWaypointButton">
+                <property name="text">
+                 <string>Add Waypoint</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Remove Waypoint Button -->
+              <item>
+               <widget class="QPushButton" name="RemoveSelectedWaypointButton">
+                <property name="text">
+                 <string>Remove Selected WP</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Plan Order Button -->
+            <item>
+             <widget class="QPushButton" name="PlanOrderButton">
+              <property name="text">
+               <string>Plan Order</string>
+              </property>
+             </widget>
+            </item>
+            <!-- Waypoint List Interface -->
+            <item>
+             <!-- Waypoint List Horizontal Box -->
+             <layout class="QHBoxLayout" name="WaypointListLayout">
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <!-- Waypoint List -->
+              <!-- Column 1 Order and Radio Buttons -->
+              <item>
+               <widget class="QWidget" name="WaypointListRadioButtons">
+                <property name="minimumSize">
+                 <size>
+                    <width>60</width>
+                    <height>200</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                    <width>60</width>
+                    <height>200</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="WaypointListRadioButtonsLayout">
+                 <item>
+                  <widget class="QLabel" name="OrderLabel">
+                   <property name="text">
+                    <string>Order</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="WP1RadioButton">
+                   <property name="text"><string>1</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="WP2RadioButton">
+                   <property name="text"><string>2</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="WP3RadioButton">
+                   <property name="text"><string>3</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="WP4RadioButton">
+                   <property name="text"><string>4</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="WP5RadioButton">
+                   <property name="text"><string>5</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="WP6RadioButton">
+                   <property name="text"><string>6</string></property>
+                  </widget>
+                 </item><item>
+                  <widget class="QRadioButton" name="WP7RadioButton">
+                   <property name="text"><string>7</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="WP8RadioButton">
+                   <property name="text"><string>8</string></property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <!-- Column 2 Waypoint -->
+              <item>
+               <widget class="QWidget" name="WaypointListWaypoint">
+                <property name="minimumSize">
+                 <size>
+                    <width>40</width>
+                    <height>200</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                    <width>40</width>
+                    <height>200</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="WaypointListWaypointLayout">
+                 <item>
+                  <widget class="QLabel" name="WPLabel">
+                   <property name="text">
+                    <string>WP</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="WP1Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="WP2Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="WP3Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="WP4Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="WP5Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="WP6Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item><item>
+                  <widget class="QLabel" name="WP7Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="WP8Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <!-- Column 3 Tag ID -->
+              <item>
+               <widget class="QWidget" name="WaypointListTagID">
+                <property name="minimumSize">
+                 <size>
+                    <width>80</width>
+                    <height>200</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                    <width>80</width>
+                    <height>200</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="WaypointListTagIDLayout">
+                 <item>
+                  <widget class="QLabel" name="TagIDLabel">
+                   <property name="text">
+                    <string>Tag ID</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="TagID1Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="TagID2Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="TagID3Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="TagID4Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="TagID5Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="TagID6Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item><item>
+                  <widget class="QLabel" name="TagID7Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="TagID8Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <!-- Column 4 Lat -->
+              <item>
+               <widget class="QWidget" name="WaypointListLat">
+                <property name="minimumSize">
+                 <size>
+                    <width>80</width>
+                    <height>200</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                    <width>80</width>
+                    <height>200</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="WaypointListLatLayout">
+                 <item>
+                  <widget class="QLabel" name="LatLabel">
+                   <property name="text">
+                    <string>Lat</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lat1Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lat2Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lat3Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lat4Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lat5Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lat6Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item><item>
+                  <widget class="QLabel" name="Lat7Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lat8Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <!-- Column 5 Lon -->
+              <item>
+               <widget class="QWidget" name="WaypointListLon">
+                <property name="minimumSize">
+                 <size>
+                    <width>80</width>
+                    <height>200</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                    <width>80</width>
+                    <height>200</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="WaypointListLonLayout">
+                 <item>
+                  <widget class="QLabel" name="LonLabel">
+                   <property name="text">
+                    <string>Lon</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lon1Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lon2Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lon3Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lon4Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lon5Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lon6Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item><item>
+                  <widget class="QLabel" name="Lon7Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Lon8Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <!-- Column 6 Status -->
+              <item>
+               <widget class="QWidget" name="WaypointListStatus">
+                <property name="minimumSize">
+                 <size>
+                    <width>80</width>
+                    <height>200</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                    <width>80</width>
+                    <height>200</height>
+                 </size>
+                </property>
+                <layout class="QVBoxLayout" name="WaypointListStatusLayout">
+                 <item>
+                  <widget class="QLabel" name="StatusLabel">
+                   <property name="text">
+                    <string>Status</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Status1Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Status2Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Status3Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Status4Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Status5Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Status6Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item><item>
+                  <widget class="QLabel" name="Status7Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="Status8Label">
+                   <property name="text"><string>...</string></property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Plan Path to Selected Waypoint Button -->
+            <item>
+             <widget class="QPushButton" name="PlanPathButton">
+              <property name="text">
+               <string>Plan Path to Selected Waypoint</string>
+              </property>
              </widget>
             </item>
             <!-- Send Waypoint and Clear Waypoints Buttons -->
@@ -357,9 +775,9 @@
               </item>
               <!-- Clear Waypoint Button -->
               <item>
-               <widget class="QPushButton" name="RemoveWaypointButton">
+               <widget class="QPushButton" name="ClearWaypointButton">
                 <property name="text">
-                 <string>Remove Last Waypoint</string>
+                 <string>Clear Waypoint</string>
                 </property>
                </widget>
               </item>
@@ -501,7 +919,6 @@
          <!-- Column 2 Item -->
          <item>
           <widget class="QWidget" name="column2_container">
-           <!-- Sizing Properties of the right column -->
            <property name="minimumSize">
             <size>
              <width>450</width>
@@ -1005,6 +1422,62 @@
                </layout>
               </item>
              </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        <!-- Vertical Dividing Line (divides the 2 columns)-->
+         <item>
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+        <!-- Column 3 Item -->
+         <item alignment="Qt::AlignTop">
+          <widget class="QWidget" name="column3_container">
+           <property name="minimumSize">
+            <size>
+             <width>250</width>
+             <height>500</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>250</width>
+             <height>500</height>
+            </size>
+           </property>
+           <!-- Column 3 Layout (Previous State Column) -->
+           <layout class="QVBoxLayout" name="verticalLayout_13">
+            <property name="alignment">
+             <set>Qt::AlignTop</set>
+            </property>
+            <!-- Right Column Label Item -->
+            <item alignment="Qt::AlignTop">
+             <!-- Right Column Label Widget (Previous States) -->
+             <widget class="QLabel" name="LegInfoLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Previous States&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="PreviousStatesList">
+              <property name="text">
+               <string>Waiting...</string>
+              </property>
+              <property name="alignment">
+                <set>Qt::AlignLeft</set>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>

@@ -32,7 +32,9 @@ class MegaMiddleman(Node):
         self.connect()
 
         # Timer for relay_mega
-        self.create_timer(0.1, self.relay_mega)  # 10 Hz
+        self.create_timer(0.001, self.relay_mega)  # 10 Hz
+        self.get_logger().info("MegaMiddle Man started")
+        self.buffer = ""
 
     def connect(self):
         failure_count = 0
@@ -84,7 +86,7 @@ class MegaMiddleman(Node):
     def send_elevator(self, msg):
         eleva_params = [msg.elevator_speed, msg.elevator_direction]
         eleva_msg = "$ELEVA," + ",".join(str(int(param)) for param in eleva_params) + "*"
-        self.write_debug("Orin: Sending elevator message to Arduino.")
+        self.write_debug(f"Orin: Sending elevator message to Arduino. {eleva_msg}")
         self.serial_write(eleva_msg)
 
     def send_clicker(self, msg):
@@ -108,36 +110,53 @@ class MegaMiddleman(Node):
 
     def read_nmea(self):
         try:
-            x = self.ser.read(1).decode('ascii').strip()
-            if not x:
-                self.write_debug("Orin: Nothing to read")
-                return 0, ""
-        except:
-            self.write_debug("WARNING: Read failure")
+            # Read all available data from the serial buffer
+            available_data = self.ser.read(self.ser.in_waiting).decode('ascii', errors='ignore')
+
+            if available_data:
+                self.buffer += available_data
+            else:
+                return 0, ""  # No data available to read
+        except Exception as e:
+            self.write_debug(f"WARNING: Read failure - {str(e)}")
             self.ser.reset_input_buffer()
             return -1, ""
 
-        self.write_debug("Orin: Reading a new message from the Arduino starting with " + x)
-        if x != '$':
-            self.ser.reset_input_buffer()
-            return -1, ""
+        # Process any complete NMEA sentences in the buffer
+        return self.process_buffer()
 
-        try:
-            mega_msg = self.ser.read_until(b'*').decode('ascii').strip()
-        except:
-            self.write_debug("WARNING: Read failure")
-            self.ser.reset_input_buffer()
-            return
+    def process_buffer(self):
+        messages = []
+        while True:
+            # Find the first valid sentence
+            start_idx = self.buffer.find('$')
+            end_idx = self.buffer.find('*')
 
-        if ',' in mega_msg:
-            msg_parts = mega_msg.split(',', 1)
-            tag, data = msg_parts[0], msg_parts[1][0:-2]
+            # If no full sentence found, exit the loop
+            if start_idx == -1 or end_idx == -1 or end_idx < start_idx:
+                break
+
+            # Extract the message (without the $ and * and checksum)
+            mega_msg = self.buffer[start_idx + 1:end_idx]
+
+            # Split by the comma to separate the tag and data
+            if ',' in mega_msg:
+                tag, data = mega_msg.split(',', 1)
+                data = data[:-2]  # Exclude checksum part (if present)
+            else:
+                tag, data = mega_msg, ""
+
+            # Store the message and remove the processed part from the buffer
+            messages.append((tag, data))
+            self.buffer = self.buffer[end_idx + 3:]  # Remove the processed sentence
+
+        # If we found any complete messages, return them
+        if messages:
+            for tag, data in messages:
+                self.write_debug(f"Orin: Reading a message from the Arduino w/ tag: {tag}, and data: {data}")
+            return tag, data
         else:
-            tag, data = mega_msg, ""
-        self.write_debug(f"Orin: Reading a message from the Arduino w/ tag: {tag}, and data: {data}")
-
-        self.ser.reset_input_buffer()
-        return tag, data
+            return 0, ""  # No complete message found
 
     def relay_mega(self):
         tag, msg = self.read_nmea()
