@@ -175,7 +175,7 @@
               </item>
               <!-- Plan Order Button -->
               <item>
-               <widget class="QPushButton" name="PlanOrderButton">
+               <widget class="QPushButton" name="PlanOrderMapvizButton">
                 <property name="text">
                  <string>Plan Order</string>
                 </property>
@@ -304,11 +304,11 @@
                      </property>
                     </widget>
                    </item>
-                   <!-- Hammer Radio Button Item -->
+                   <!-- Mallet Radio Button Item -->
                    <item>
-                    <widget class="QRadioButton" name="HammerRadioButton">
+                    <widget class="QRadioButton" name="MalletRadioButton">
                      <property name="text">
-                      <string>Hammer</string>
+                      <string>Mallet</string>
                      </property>
                     </widget>
                    </item>
@@ -342,6 +342,14 @@
                </widget>
               </item>
              </layout>
+            </item>
+            <!-- Plan Order Button -->
+            <item>
+             <widget class="QPushButton" name="PlanOrderButton">
+              <property name="text">
+               <string>Plan Order</string>
+              </property>
+             </widget>
             </item>
             <!-- Waypoint List Interface -->
             <item>
