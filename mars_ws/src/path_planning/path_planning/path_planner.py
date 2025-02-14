@@ -7,6 +7,7 @@ from ublox_read_2.msg import PositionVelocityTime
 from nav_msgs.msg import Path
 from geometry_msgs.msg import Point, PoseStamped, Pose, Quaternion
 from std_msgs.msg import Header
+from std_srvs.srv import SetBool 
 import os
 import yaml
 import utm
@@ -37,21 +38,19 @@ class PathPlanner(Node):
         self.waypoint_pub = self.create_publisher(PointList, '/navigation/waypoints', 10)
 
         # Subscribers
-        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)   # NOTE: self.location is defined in rover_state_singleton_callback
-        # self.location = (40.3224, -111.6436) # NOTE: gravel pits placeholder
+        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10) 
         self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.update_location, 10) #GPS info from rover
-        # TODO: subscription to know the current lat lon position of the rover
         self.location = None        #initialize location
         # self.location = (40.3224, -111.6436) # NOTE: gravel pits placeholder    
         # self.location = (38.4231, -110.7851) # NOTE: hanksville placeholder
 
         # Services
         # This service plans the order of waypoints to visit
-        # self.plan_order_service = self.create_service(PointList, 'plan_order', self.plan_order) #TODO: I don't believe that this has been developed
         self.plan_order_service = self.create_service(OrderPath, 'plan_order', self.plan_order)
         # This service plans a path from start to goal using slope as cost
-        self.plan_path_service = self.create_service(PlanPath, 'plan_path', self.plan_path) #TODO: implement path planning points into state machine
-
+        self.plan_path_service = self.create_service(PlanPath, 'plan_path', self.plan_path)
+        # This service sends planned waypoint path to the state machine when "send waypoints" is selected in Autonomy GUI
+        self.send_waypoints = self.create_service(SetBool, 'send_waypoints', self.send_waypoints)
         # Clients
 
         # Timer for the loop function
@@ -168,14 +167,11 @@ class PathPlanner(Node):
             point_list_msg = PointList()
             point_list_msg.points = points
             point_list_msg.tag_id = str(self.goal_tag_id)
-            # self.get_logger().info(f"points {points}")
-            # self.get_logger().info(f"point_list_msg {point_list_msg}")
-            # yaml_message = yaml.dump({"points": [{"x": p.x, "y": p.y, "z": p.z} for p in points]})
-            # self.get_logger().info(f"YAML-formatted point_list_msg:\n{yaml_message}")
+
 
             # Publish the PointList
-            self.waypoint_pub.publish(point_list_msg)
-            # self.get_logger().info(f"Publishing waypoints: {points}")
+            self.point_list_msg = point_list_msg
+            # self.waypoint_pub.publish(point_list_msg)
 
             # Get explored nodes
             explored_nodes = self.path_planner.get_explored_nodes()
@@ -252,6 +248,7 @@ class PathPlanner(Node):
 
     # Plan Path Service Callback
     def plan_path(self, request, response):
+
         '''
         This Service sets a flag for the loop function 
         to plan a path which will get published to the 
@@ -269,6 +266,14 @@ class PathPlanner(Node):
 
         response.received = True
         return response
+    
+    def send_waypoints(self, request, response):
+        if self.point_list_msg:
+            self.waypoint_pub.publish(self.point_list_msg)
+            self.get_logger().info(f"Publishing waypoints")
+        else:
+            self.get_logger().info(f"No waypoints to publish")
+
     
 def get_coordinates(file_path, location):
     # Read the YAML file
