@@ -80,7 +80,7 @@ class AutonomyStateMachine(Node):
 
         # Declare Parameters
         self.declare_parameter('distance_tolerance', 1.0)
-        self.declare_parameter('obj_distance_tolerance', 1.0) # TODO: Tune & in the yaml
+        self.declare_parameter('obj_distance_tolerance', 1.5) # TODO: Tune & in the yaml
         self.declare_parameter('aruco_distance_tolerance', 5.0)
         self.declare_parameter('abort_distance_tolerance', 2.0)
         self.declare_parameter('hex_search_radius', 17.0)
