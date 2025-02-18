@@ -81,7 +81,7 @@ class AutonomyStateMachine(Node):
         # Declare Parameters
         self.declare_parameter('distance_tolerance', 1.0)
         self.declare_parameter('obj_distance_tolerance', 1.0) # TODO: Tune & in the yaml
-        self.declare_parameter('aruco_distance_tolerance', 5.0)
+        self.declare_parameter('aruco_distance_tolerance', 2.0)
         self.declare_parameter('abort_distance_tolerance', 2.0)
         self.declare_parameter('hex_search_radius', 17.0)
         self.declare_parameter('navigate_speed', 1.0)
@@ -145,6 +145,7 @@ class AutonomyStateMachine(Node):
         self.curr_heading = 0
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)  
         self.tag_id = TagID.GPS_ONLY
+        self.a_task_complete = False
 
         # Data structure to hold all of the waypoints at a time
         self.waypoints: deque[AutonomyTaskInfo] = deque()
@@ -421,14 +422,21 @@ class AutonomyStateMachine(Node):
 
         if self.enabled:
             if self.state == State.MANUAL:
-                self.rover_nav_state.navigation_state = RoverState.TELEOPERATION_STATE
+                if self.a_task_complete:
+                    #Keep the LED Green by keeping it in arrival state if a task has been completed
+                    self.rover_nav_state.navigation_state = RoverState.ARRIVAL_STATE
+                else:
+                    self.rover_nav_state.navigation_state = RoverState.TELEOPERATION_STATE
                 self.correct_aruco_tag_found = False
                 self.correct_obj_found = False
 
-            elif self.state == State.SEARCH_FOR_WRONG_TAG:
+            #This SEARCH_FOR_WRONG_STATE state is used to ensure that after finishing one aruco tag task, the rover will
+            #backup if it sees the wrong tag, to ensure it does not run into the aruco stand before starting the next task
+            elif self.state == State.SEARCH_FOR_WRONG_TAG: 
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
                 if self.wrong_aruco_tag_found and self.aruco_tag_distance < self.wrong_aruco_backup_distance:
                     self.drive_controller.issue_drive_cmd(-2.0, 0.0)
+                    #TODO: Consider adding angular velocity to this command to ensure the rover backs up in such a way that it will not hit the stand
                 else:
                     self.drive_controller.issue_drive_cmd(0.0, 0.0)
                     self.state = State.START_POINT_NAVIGATION
@@ -473,15 +481,19 @@ class AutonomyStateMachine(Node):
                 msg = String()
                 if self.aruco_spin_stop:
                     msg.data = "aruco spin Stopping"
+                    # If the rover has spun self.aruco_spin_step_size and is stopped, wait for self.aruco_spin_delay_time seconds to look for a tag
                     if time.time() - self.aruco_spin_stop_time > self.aruco_spin_delay_time:
                         self.aruco_spin_stop = False
                         self.aruco_spin_target_angle = self.wrap(self.aruco_spin_target_angle + self.aruco_spin_step_size, 0)
                         self.drive_controller.issue_drive_cmd(0.0, self.aruco_spin_speed)
                 else:
                     msg.data = "Here 1"
+                    # If the rover is back at its start heading (360 degrees), move to hex search
                     if abs(self.wrap(self.aruco_spin_start_heading - self.aruco_spin_target_angle, 0)) < 0.01:
                         self.drive_controller.issue_drive_cmd(0, self.aruco_spin_speed)
                         self.state = State.START_HEX_SEARCH
+                    
+                    # If the rover has spun self.aruco_spin_step_size, stop the rover and look for tag
                     if self.wrap(self.curr_heading - self.aruco_spin_target_angle, 0) > 0:
                         msg.data = "Here 2"
                         self.aruco_spin_stop = True
@@ -542,6 +554,7 @@ class AutonomyStateMachine(Node):
                 self.rover_nav_state.navigation_state = RoverState.ARRIVAL_STATE
                 self.drive_controller.issue_drive_cmd(0, 0)
                 self.drive_controller.stop()
+                self.a_task_complete = True
 
                 self.correct_aruco_tag_found = False
                 self.correct_obj_found = False
