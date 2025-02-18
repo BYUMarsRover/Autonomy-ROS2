@@ -166,8 +166,12 @@ class AutonomyStateMachine(Node):
         elif task_info.tag_id == '3':
             self.tag_id = TagID.AR_TAG_3
         elif task_info.tag_id == 'bottle':
+            # Toggle object detection on
+            self.toggle_object_detection(True)
             self.tag_id = TagID.BOTTLE
         elif task_info.tag_id == 'mallet':
+            # Toggle object detection on
+            self.toggle_object_detection(True)
             self.tag_id = TagID.MALLET
     
     def set_all_tasks_callback(self, request: AutonomyWaypoint.Request, response: AutonomyWaypoint.Response) -> AutonomyWaypoint.Response:
@@ -238,13 +242,15 @@ class AutonomyStateMachine(Node):
             else:
                 self.get_logger().error('Object detection service not available after maximum retries. Giving up.')
 
+    # Generic service call method
     def send_request(self, data):
         # Create and send a request
         request = SetBool.Request()
         request.data = data
         future = self.object_detect_client.call_async(request)
-        # future.add_done_callback(self.handle_response)
+        future.add_done_callback(self.handle_response)
 
+    # Callback for handling the generic service call function (send_request)
     def handle_response(self, future):
         try:
             response = future.result()
@@ -545,6 +551,9 @@ class AutonomyStateMachine(Node):
 
                 self.correct_aruco_tag_found = False
                 self.correct_obj_found = False
+                
+                self.toggle_object_detection(False)
+
 
                 # Pop off the completed task
                 if len(self.waypoints) > 0:
