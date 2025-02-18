@@ -1,6 +1,6 @@
 ## Autonomy-ROS2 Guide
 
-This README gives a simple guide to and overview of the Autonomy-ROS2 repository.
+A simple guide to working with the Autonomy-ROS2 repository.
 
 --
 
@@ -41,6 +41,22 @@ This README gives a simple guide to and overview of the Autonomy-ROS2 repository
 - `Autonomy-ROS2/mega`: Contains the code used to flash the onboard Arduino Mega microcontroller. This code can be uploaded to the Mega using the Arduino IDE.
 
 - `Autonomy-ROS2/ros1_bridge`: Contains the code for running the ROS 1 - ROS 2 bridge. It has a seperate, more complicated Docker image and ROS workspace setup. For more information on how to work with the bridge, refer to the `ros1_bridge/README.md` file.
+
+--
+
+**Helpful Resources:**
+
+GitHub Quickstart Tutorial - [https://docs.github.com/en/get-started/start-your-journey/hello-world](https://docs.github.com/en/get-started/start-your-journey/hello-world)
+
+Docker Concepts and Tutorials - [https://docs.docker.com/get-started/introduction/whats-next/](https://docs.docker.com/get-started/introduction/whats-next/)
+
+ROS 2 Concepts - [https://docs.ros.org/en/humble/Concepts/Basic.html](https://docs.ros.org/en/humble/Concepts/Basic.html)
+
+ROS 2 CLI Tool Tutorials - [https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools.html](https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools.html)
+
+ROS 2 Code Development Tutorials - [https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries.html](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries.html)
+
+Robotics in ROS 2 Tutorials - [https://github.com/henki-robotics/robotics_essentials_ros2/tree/main](https://github.com/henki-robotics/robotics_essentials_ros2/tree/main)
 
 --
 
