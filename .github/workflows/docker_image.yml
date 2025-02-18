@@ -36,7 +36,6 @@ jobs:
       uses: docker/build-push-action@v6
       with:
        context: "{{defaultContext}}:docker"
-       platforms: linux/amd64 
-       # As of Feb 2025, a QEMU error occurs when you add linux/arm64 above
+       platforms: linux/amd64,linux/arm64
        push: true
        tags: ${{ secrets.DOCKERHUB_USERNAME }}/autonomy_ros2:latest
