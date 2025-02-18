@@ -1,12 +1,6 @@
 # Created by Nelson Durrant, Oct 2024
 FROM ros:humble-ros-base
 
-# Quick fix for libc error
-RUN rm /var/lib/dpkg/info/libc-bin.*
-RUN apt clean
-RUN apt update
-RUN apt install libc-bin
-
 # Update and upgrade
 RUN apt update && apt upgrade -y
 
