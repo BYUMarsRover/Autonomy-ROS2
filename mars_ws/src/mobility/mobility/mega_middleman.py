@@ -117,9 +117,11 @@ class MegaMiddleman(Node):
                 self.buffer += available_data
             else:
                 return 0, ""  # No data available to read
+            #TODO Exception specific for if the device is disconnected or not
         except Exception as e:
             self.write_debug(f"WARNING: Read failure - {str(e)}")
-            self.ser.reset_input_buffer()
+            
+            # self.ser.reset_input_buffer()
             return -1, ""
 
         # Process any complete NMEA sentences in the buffer
@@ -159,19 +161,22 @@ class MegaMiddleman(Node):
             return 0, ""  # No complete message found
 
     def relay_mega(self):
-        tag, msg = self.read_nmea()
+        if self.disconnected:
+            self.get_logger().info("Waiting for Mega Connection...", throttle_duration_sec=2.0)
+        else:
+            tag, msg = self.read_nmea()
 
-        if tag == "IRLIG":
-            try:
-                sensor_data = UInt16MultiArray(data=[int(x) for x in msg.split(',')])
-                self.pub_IR.publish(sensor_data)
-            except ValueError:
-                self.write_debug("Orin: Failed to parse IR data")
-                self.get_logger().warn("Failed to parse IR data")
-        elif tag == "DEBUG":
-            self.pub_Debug.publish(String(data=msg))
-        elif tag == -1:
-            self.write_debug("Orin: Read corrupt or incomplete message.")
+            if tag == "IRLIG":
+                try:
+                    sensor_data = UInt16MultiArray(data=[int(x) for x in msg.split(',')])
+                    self.pub_IR.publish(sensor_data)
+                except ValueError:
+                    self.write_debug("Orin: Failed to parse IR data")
+                    self.get_logger().warn("Failed to parse IR data")
+            elif tag == "DEBUG":
+                self.pub_Debug.publish(String(data=msg))
+            elif tag == -1:
+                self.write_debug("Orin: Read corrupt or incomplete message.")
 
     def write_debug(self, msg):
         self.pub_Debug.publish(String(data=msg))
