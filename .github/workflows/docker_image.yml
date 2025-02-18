@@ -1,3 +1,4 @@
+# Created by Nelson Durrant, Nov 2024
 name: Docker Image CI (autonomy_ros2)
 
 on:
@@ -32,6 +33,7 @@ jobs:
       uses: docker/build-push-action@v6
       with:
        context: "{{defaultContext}}:docker"
-       platforms: linux/amd64,linux/arm64
+       platforms: linux/amd64 
+       # A QEMU error occurs when you add linux/arm64 above, Feb 2025
        push: true
        tags: ${{ secrets.DOCKERHUB_USERNAME }}/autonomy_ros2:latest
