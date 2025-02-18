@@ -2,11 +2,10 @@
 FROM ros:humble-ros-base
 
 # Quick fix for libc error
-RUN mv /var/lib/dpkg/info/libc-bin.* /tmp/
-RUN dpkg --remove --force-remove-reinstreq libc-bin
-RUN dpkg --purge libc-bin
+RUN rm /var/lib/dpkg/info/libc-bin.*
+RUN apt clean
+RUN apt update
 RUN apt install libc-bin
-RUN mv /tmp/libc-bin.* /var/lib/dpkg/info/
 
 # Update and upgrade
 RUN apt update && apt upgrade -y
