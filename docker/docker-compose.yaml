@@ -11,7 +11,6 @@ services:
     privileged: true
     volumes:
       - ../mars_ws:/home/marsrover/mars_ws
-      - $HOME/.Xauthority:/root/.Xauthority:rw
       - /etc/localtime:/etc/localtime:ro # Syncs the container's time with the host
       - /run/udev:/run/udev:ro
       - /dev:/dev:rw
