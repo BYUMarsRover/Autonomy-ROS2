@@ -1,5 +1,4 @@
 # Created by Nelson Durrant, Nov 2024
-
 name: Docker Image CI (autonomy_ros2)
 
 on:
