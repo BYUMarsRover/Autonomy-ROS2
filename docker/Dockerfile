@@ -1,5 +1,6 @@
 # Created by Nelson Durrant, Oct 2024
 FROM ros:humble-ros-base
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Update and upgrade
 RUN apt update && apt upgrade -y
@@ -45,14 +46,15 @@ USER root
 RUN chown -R marsrover: /usr/local
 USER marsrover
 
-##############################################################################
-# IMPORTANT! When adding dependencies or commands below this point in the
-# Dockerfile, please document your changes following this format:
+###############################################################
+# IMPORTANT! When adding dependencies or Dockerfile commands
+# below, please document your changes following this format:
 #     
 #     # What do these commands do? - Name, Month Year
 #     # Why do we need them? Which ROS 2 nodes require them?
 #     < Add Dockerfile commands here >
-##############################################################################
+#
+###############################################################
 
 RUN pip3 install utm
 
