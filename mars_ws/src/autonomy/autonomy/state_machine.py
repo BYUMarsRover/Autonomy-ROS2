@@ -88,6 +88,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('aruco_speed', 0.3)
         self.declare_parameter('aruco_spin_speed', 30.0)
         self.declare_parameter('object_alpha_lpf', 0.5)
+        self.declare_parameter('obj_enable_distance', 25.0) #TODO: tune distance from GNSS coordinate that object deteciton is enabled
         self.declare_parameter('aruco_alpha_lpf', 0.5)
         self.declare_parameter('aruco_spin_step_size', 0.6981)
         self.declare_parameter('aruco_spin_delay_time', 1.2)
@@ -108,6 +109,7 @@ class AutonomyStateMachine(Node):
         self.aruco_speed = self.get_parameter('aruco_speed').get_parameter_value().double_value
         self.aruco_spin_speed = self.get_parameter('aruco_spin_speed').get_parameter_value().double_value
         self.obj_alpha_lpf = self.get_parameter('object_alpha_lpf').get_parameter_value().double_value
+        self.obj_enable_distance = self.get_parameter('obj_enable_distance').get_parameter_value().double_value # object detection gets enabled only when within a certain distance of the coordinate to conserve computational resources
         self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value
         self.aruco_spin_step_size = self.get_parameter('aruco_spin_step_size').get_parameter_value().double_value
         self.aruco_spin_delay_time = self.get_parameter('aruco_spin_delay_time').get_parameter_value().double_value
@@ -166,12 +168,8 @@ class AutonomyStateMachine(Node):
         elif task_info.tag_id == '3':
             self.tag_id = TagID.AR_TAG_3
         elif task_info.tag_id == 'bottle':
-            # Toggle object detection on
-            self.toggle_object_detection(True)
             self.tag_id = TagID.BOTTLE
         elif task_info.tag_id == 'mallet':
-            # Toggle object detection on
-            self.toggle_object_detection(True)
             self.tag_id = TagID.MALLET
     
     def set_all_tasks_callback(self, request: AutonomyWaypoint.Request, response: AutonomyWaypoint.Response) -> AutonomyWaypoint.Response:
@@ -450,6 +448,8 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.POINT_NAVIGATION:
                 self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
+                if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.obj_enable_distance:
+                    self.toggle_object_detection(True)
                 if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.dist_tolerance:
                     if self.tag_id == TagID.GPS_ONLY:
                         self.get_logger().info('GPS Task is complete!')
@@ -551,7 +551,7 @@ class AutonomyStateMachine(Node):
 
                 self.correct_aruco_tag_found = False
                 self.correct_obj_found = False
-                
+
                 self.toggle_object_detection(False)
 
 
