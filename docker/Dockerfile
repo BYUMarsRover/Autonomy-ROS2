@@ -105,4 +105,4 @@ USER marsrover
 # Needed for the joystick control on the base station
 USER root
 RUN apt update && apt install -y ros-humble-joy
-USER marsrover
+USER marsrover 
