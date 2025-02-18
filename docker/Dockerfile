@@ -87,16 +87,16 @@ RUN apt update && apt install -y \
     ros-humble-robot-localization \
     ros-humble-tf-transformations
 
+# For some reason, the below doesn't build.
 # Install mapviz and related packages
-USER root
-RUN apt update && apt install -y \
-    ros-humble-mapviz \
-    # For some reason, the below doesn't build.
-    # ros-humble-mapviz-plugins \
-    # ros-humble-tile-map \
-    # ros-humble-multires-image \
-    ros-humble-rosapi
-USER marsrover
+# USER root
+# RUN apt update && apt install -y \
+#     ros-humble-mapviz \
+#     ros-humble-mapviz-plugins \
+#     ros-humble-tile-map \
+#     ros-humble-multires-image \
+#     ros-humble-rosapi
+# USER marsrover
 
 # Install domain bridge package - Nelson Durrant, Jan 2025
 # Necessary dependency for running the domain bridge scripts
