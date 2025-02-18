@@ -2,7 +2,7 @@
 FROM ros:humble-ros-base
 
 # Update and upgrade
-RUN apt update && apt upgrade -y
+RUN apt update && apt upgrade -y --no-install-recommends libc-bin
 
 # Install general dependencies
 RUN apt update && apt install -y \
