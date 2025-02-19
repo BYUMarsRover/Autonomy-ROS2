@@ -12,6 +12,7 @@
     aruco_spin_speed: 30.0
     aruco_gate_spin_speed: 10.0
     object_alpha_lpf: 0.5
+    obj_enable_distance: 30.0
     aruco_alpha_lpf: 0.5
     aruco_spin_step_size: 0.6981
     aruco_spin_delay_time: 1.2
