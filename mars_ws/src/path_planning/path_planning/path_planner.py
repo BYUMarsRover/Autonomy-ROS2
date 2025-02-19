@@ -49,7 +49,7 @@ class PathPlanner(Node):
         self.plan_order_service = self.create_service(OrderAutonomyWaypoint, '/plan_order', self.plan_order)
         self.plan_order_mapviz_service = self.create_service(OrderPath, '/plan_order_mapviz', self.plan_order_mapviz)
         # This service plans a path from start to goal using slope as cost
-        self.plan_path_service = self.create_service(PlanPath, 'plan_path', self.plan_path)
+        self.plan_path_service = self.create_service(PlanPath, '/plan_path', self.plan_path)
         # This service sends planned waypoint path to the state machine when "send waypoints" is selected in Autonomy GUI
         self.send_waypoints = self.create_service(SetBool, 'send_waypoints', self.send_waypoints)
         # Clients
@@ -159,7 +159,11 @@ class PathPlanner(Node):
             for waypoint in waypoints:
                 x, y = waypoint  # Unpack (x, y) tuple
                 latlon = self.eMapper.xy_to_latlon(x, y)  # Convert xy to lat/lon
+                message = AutonomyTaskInfo()
                 point = Point()
+                # message.lattitude = float(latlon[0])
+                # message.longitude = float(latlon[1])
+                # message.tag_id = self.goal_tag_id
                 point.x = float(latlon[0])  # Latitude
                 point.y = float(latlon[1])  # Longitude
                 points.append(point)
@@ -310,9 +314,15 @@ class PathPlanner(Node):
     def send_waypoints(self, request, response):
         if self.point_list_msg:
             self.waypoint_pub.publish(self.point_list_msg)
-            self.get_logger().info(f"Publishing waypoints")
+            self.get_logger().info("Publishing waypoints")
+            response.success = True  # Correct attribute name
+            response.message = "Waypoints published successfully"
         else:
-            self.get_logger().info(f"No waypoints to publish")
+            self.get_logger().info("No waypoints to publish")
+            response.success = False  # Indicate failure
+            response.message = "No waypoints available to publish"
+        return response
+
 
     
 def get_coordinates(file_path, location):

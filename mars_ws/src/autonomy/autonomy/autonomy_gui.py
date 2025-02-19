@@ -27,7 +27,7 @@ from std_srvs.srv import SetBool
 from std_msgs.msg import Header, Int8
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
-from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloat32, OrderAutonomyWaypoint
+from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloat32, OrderAutonomyWaypoint, PlanPath
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors
 from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
 from ament_index_python.packages import get_package_share_directory
@@ -63,6 +63,7 @@ class AutonomyGUI(Node, QWidget):
         self.SendWaypointButton.clicked.connect(self.send_waypoint)
         self.ClearWaypointButton.clicked.connect(self.clear_waypoint)
 
+        # mapviz
         self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
         self.PlanOrderMapvizButton.clicked.connect(self.plan_order_mapviz_service_call)
         self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
@@ -77,6 +78,7 @@ class AutonomyGUI(Node, QWidget):
         self.RemoveSelectedWaypointButton.clicked.connect(self.remove_selected_waypoint)
         for i in range(1, 8):
             getattr(self, f'WP{i}RadioButton').toggled.connect(self.update_selected_waypoint)
+        self.PlanPathButton.clicked.connect(self.plan_path)
         self.selected_waypoint = None
 
         # GUI Input Fields
@@ -106,7 +108,10 @@ class AutonomyGUI(Node, QWidget):
         self.state_machine_list_string = ''
         self.autopilot_cmds_msg = None
         self.waypoints = [] # Stores the waypoints in the format [waypoint_number, tag_id, latitude, longitude, status]
-        self.current_path = AutonomyWaypoint().Request()
+        self.current_path = AutonomyWaypoint.Request()
+
+        # This should return a list like this: [lat, lon] and can be used for the plan path to selected waypoint
+        # lat, lon = self.waypoints[self.selected_waypoint - 1][2:4]
 
         ################# ROS Communication #################
 
@@ -138,6 +143,7 @@ class AutonomyGUI(Node, QWidget):
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
         self.set_turn_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_turn_constant')
         self.set_speed_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_speed')
+        self.plan_path_client = self.create_client(PlanPath, '/plan_path')
 
         # Timer to run check if we have recieved information from various sources recently
         self.timepoints_timer = self.create_timer(0.5, self.check_timepoints)
@@ -479,6 +485,25 @@ class AutonomyGUI(Node, QWidget):
             if getattr(self, f'WP{i}RadioButton').isChecked():
                 self.selected_waypoint = i
                 break
+    
+    # This sends a command to find the path
+    def plan_path(self):
+        if not self.plan_path_client.wait_for_service(timeout_sec=2.0):
+            self.get_logger().error("Plan Path service is unavailable.")
+            return
+        if self.selected_waypoint is None:
+            self.error_label.setText('No waypoint selected')
+            return
+        print(f"selected waypoint index: {self.selected_waypoint -1}")
+        waypoint = self.waypoints[self.selected_waypoint -1]
+        request = PlanPath.Request()
+        request.goal = Point()
+        request.goal.x = waypoint[2]
+        request.goal.y = waypoint[3]
+        request.tag_id = waypoint[1]
+        future = self.plan_path_client.call_async(request)
+        print(f"Tag ID: {request.tag_id}, Latitude: {request.goal.x}, Longitude: {request.goal.y}")
+        
 
     # This updated the display of the waypoint list in the gui
     def update_waypoint_list(self):
