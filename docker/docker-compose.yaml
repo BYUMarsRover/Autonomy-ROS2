@@ -4,6 +4,7 @@ services:
   autonomy_ros2:
     image: byuawesomerover/autonomy_ros2:latest
     container_name: autonomy_ros2
+    build: .
     user: marsrover
     network_mode: host
     # environment:
