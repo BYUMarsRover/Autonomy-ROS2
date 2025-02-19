@@ -80,7 +80,7 @@ def generate_fake_point_cloud():
 
     # # Define the slope angle in degrees
     # slope_angle_degrees = 17
-    # slope_angle_radians = np.radians(slope_angle_degrees)
+    # slope_angle_radians =pcl np.radians(slope_angle_degrees)
 
     # # Compute the z coordinate based on the slope (e.g., along the x-axis)
     # # z = x * tan(slope_angle)

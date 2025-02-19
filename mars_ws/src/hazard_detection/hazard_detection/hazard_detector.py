@@ -3,24 +3,26 @@ from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2, Imu
 from std_msgs.msg import String
 from .pcl_helper import *
+from .rotation_helper import *
 import numpy as np
+from numpy import sin, cos, sqrt
 from scipy.spatial.transform import Rotation as R
 import open3d as o3d
-from rover_msgs.msg import Hazard, HazardArray
+from rover_msgs.msg import Hazard, HazardArray, RoverStateSingleton
 
 class HazardDetector(Node):
     def __init__(self):
         super().__init__('hazard_detector')
         
         #Parameters
-        self.declare_parameter('height_threshold', 0.5) #Height of hazard to detect
-        self.declare_parameter('slope_threshold', 15.0) #Height of max slope of ground
+        self.declare_parameter('height_threshold', 0.5) #Height of hazard to detect, in meters
+        self.declare_parameter('slope_threshold', 15.0) #Height of max slope of ground, in degrees
         self.declare_parameter('voxel_grid_size', .1)
         self.declare_parameter('ground_distance_threshold', .05) #Increase if the ground is pretty rocky
         self.declare_parameter('bounding_box_start_point', [-0.5, 0.0, 0.5]) #X, Y, Z- X is up the mast, Y is to the right from the rovers perspective, and Z is out away from the rover, all in the Lidars' orientation
-        self.declare_parameter('bounding_box_length', 3.0)  
-        self.declare_parameter('bounding_box_width', 1.5)  
-        self.declare_parameter('bounding_box_height', 1.0)
+        self.declare_parameter('bounding_box_length', 3.0)  #in front of the rover
+        self.declare_parameter('bounding_box_width', 2.0)   #to the left and right of the rover
+        self.declare_parameter('bounding_box_height', 1.0)  #above the rover
         self.declare_parameter('epsilon_clustering_density', 1.0)  #Change if the density of the points is not large enough to detect hazards
         self.declare_parameter('min_points_to_cluster', 10) #Increase if we are getting false positives for hazard detection, decrease if we aren't detecting anything
         
@@ -37,7 +39,7 @@ class HazardDetector(Node):
         self.min_points_to_cluster = self.get_parameter('min_points_to_cluster').value
 
         #Initialize other variables
-        self.orientation = None   
+        self.imu_orientation = None   
 
         #Subscribers
         self.subscriber = self.create_subscription(
@@ -52,6 +54,12 @@ class HazardDetector(Node):
             self.imu_callback,
             10
         )
+        self.rover_state_singletong_subscriber = self.create_subscription(
+            RoverStateSingleton, 
+            '/odometry/rover_state_singleton', 
+            self.rover_state_singleton_callback, 
+            10
+        )
 
         #Publishers
         self.publisher = self.create_publisher(HazardArray, '/hazards', 10)
@@ -60,7 +68,10 @@ class HazardDetector(Node):
 
 
     def imu_callback(self, msg):
-        self.orientation = msg.orientation
+        self.imu_orientation = msg.orientation
+
+    def rover_state_singleton_callback(self, msg: RoverStateSingleton):
+        self.rover_state_singleton = msg
 
     def point_cloud_callback(self, msg):
         # Convert PointCloud2 to Open3D format and transform to the bounding box frame
@@ -172,10 +183,16 @@ class HazardDetector(Node):
                 hazard = Hazard()
                 hazard.type = Hazard.OBSTACLE
 
-                #TODO: Convert coordinates to NED frame
-                hazard.location_x = np.mean(high_point[:, 0])
-                hazard.location_y = np.mean(high_point[:, 1])
-                hazard.location_z = np.mean(high_point[:, 2])
+                loc_x = np.mean(high_point[:, 0])
+                loc_y = np.mean(high_point[:, 1])
+                loc_z = np.mean(high_point[:, 2])
+                point = np.array([loc_x, loc_y, loc_z])
+                converted_point = convert_from_lidar_to_NED(point)
+                # converted_point = convert_from_ZED_to_NED(converted_point)
+                hazard.location_x = converted_point[0]
+                hazard.location_y = converted_point[1]
+                hazard.location_z = converted_point[2]
+
                 peak_to_peak = np.ptp(high_point, axis=0)
                 hazard.length_x= peak_to_peak[0]
                 hazard.length_y= peak_to_peak[1]
@@ -189,6 +206,7 @@ class HazardDetector(Node):
             message.hazards.append(hazard)
 
         return message
+    
 
 def main(args=None):
     rclpy.init(args=args)
