@@ -6,6 +6,8 @@ services:
     container_name: autonomy_ros2
     user: marsrover
     network_mode: host
+    ports:
+      - "2222:22" # Required for ssh access
     environment:
       DISPLAY: $DISPLAY # Required for GUI applications
     privileged: true
