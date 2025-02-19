@@ -18,7 +18,7 @@ services:
       - /dev:/dev:rw
       - /tmp/.X11-unix:/tmp/.X11-unix # Required for GUI applications
       - /var/run/docker.sock:/var/run/docker.sock # Required for docker in docker
-    command: /bin/bash
     stdin_open: true  # Equivalent to -it in docker run
     tty: true  # Equivalent to -it in docker run
     restart: always  # Optional: Keeps the container running after exit unless you want it to be removed like with --rm
+    command: ["/home/marsrover/mars_ws/startup.sh","/bin/bash"]
