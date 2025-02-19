@@ -56,39 +56,53 @@ USER marsrover
 #
 ###############################################################
 
+# Install GPS to UTM convertor - Daniel Webb, Feb 2025
+# Needed for path planning and state machine logic
 RUN pip3 install utm
 
-# Add OpenCV dependency -- needed for aruco detect
+# Install OpenCV - Gabe Slade, Feb 2025
+# Used for detecting and locating aruco tags
 USER root
 RUN apt update && apt install -y libopencv-dev 
 USER marsrover
 
-# "transforms3d" uses a function depreciated in numpy 2.0
+# Downgrade numpy - Nelson Durrant, Feb 2025
+# "transforms3d" (quaternion conversion) uses a function depreciated in numpy 2.0
 RUN pip3 uninstall -y numpy
 RUN pip3 install numpy==1.26.0
 
-# Install pydantic version 1.10.9; used by usb_cam launch file
+# Install pydantic 1.10.9 - Daniel Webb, Feb 2025
+# Necessary dependency for usb_cam launch file
 RUN pip3 install pydantic==1.10.9
 
-RUN pip3 install odpslides
+# Install pyserial - Braden Meyers, Feb 2025
+# Needed for parsing serial communication from the mega
 RUN pip3 install pyserial
 
-RUN pip3 install roboticstoolbox-python
-
+# Install rviz - Gabe Slade, Feb 2025
+# Needed in order to display various system GUIs
 USER root
 RUN apt update && apt install -y \
     ros-humble-rviz-common
+USER marsrover
 
-# Install USB Camera Package
-RUN apt update && apt install -y ros-humble-usb-cam
+# Install ROS 2 usb-cam package - Daniel Webb, Feb 2025
+# Needed to interface with the camera for aruco tag detection
+USER root
+RUN apt update && apt install -y \
+    ros-humble-usb-cam
+USER marsrover
 
-# Tmux used for rinning the pipline
+# Install ROS 2 SLAM packages - Braden Meyers, Feb 2025
+# Needed to fuse the magnetometer and visual odom data
+USER root
 RUN apt update && apt install -y \
     ros-humble-robot-localization \
     ros-humble-tf-transformations
+USER marsrover
 
-# For some reason, the below doesn't build.
-# Install mapviz and related packages
+# Install mapviz - Sarah Sanderson, Feb 2025
+# Necessary packages to run the mapviz viewer
 # USER root
 # RUN apt update && apt install -y \
 #     ros-humble-mapviz \
@@ -98,7 +112,7 @@ RUN apt update && apt install -y \
 #     ros-humble-rosapi
 # USER marsrover
 
-# Install domain bridge package - Nelson Durrant, Jan 2025
+# Install domain bridge package - Nelson Durrant, Feb 2025
 # Necessary dependency for running the domain bridge scripts
 USER root
 RUN apt update && apt install -y ros-humble-domain-bridge
