@@ -16,8 +16,8 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 RUN usermod -aG video marsrover
 RUN usermod -aG dialout marsrover
 RUN echo 'marsrover:marsrover' | chpasswd
-USER marsrover
-WORKDIR /home/marsrover
+# USER marsrover
+# WORKDIR /home/marsrover
 
 # Docker ssh configuration
 RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
