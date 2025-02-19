@@ -5,24 +5,23 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Update and upgrade
 RUN apt update && apt upgrade -y
 
-# Install general dependencies
-RUN apt update && apt install -y \
-    sudo \
-    curl \
-    vim \
-    tmux \
-    docker.io \
-    python3-pip \
-    libboost-dev
-
 # Set up the direct Docker ssh connection
-RUN sudo apt update && apt install -y \
-    openssh-server \
-    && mkdir -p /var/run/sshd
+RUN sudo apt update && apt install -y openssh-server
+RUN mkdir -p /var/run/sshd
+
+# Set up a new user
+RUN useradd -ms /bin/bash marsrover
+RUN usermod -aG sudo marsrover
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN usermod -aG video marsrover
+RUN usermod -aG dialout marsrover
+RUN echo 'marsrover:marsrover' | chpasswd
+USER marsrover
+WORKDIR /home/marsrover
+
+# Docker ssh configuration
 RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 RUN sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-
-# Expose a different port for ssh
 RUN sed -i 's/\(^Port\)/#\1/' /etc/ssh/sshd_config && echo Port 2233 >> /etc/ssh/sshd_config
 
 EXPOSE 2233
@@ -35,15 +34,15 @@ RUN apt update && apt install -y \
     xauth \
     ros-humble-rqt*
 
-# Set up a new user
-RUN useradd -ms /bin/bash marsrover
-RUN usermod -aG sudo marsrover
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-RUN usermod -aG video marsrover
-RUN usermod -aG dialout marsrover
-RUN echo 'marsrover:marsrover' | chpasswd
-USER marsrover
-WORKDIR /home/marsrover
+# Install general dependencies
+RUN apt update && apt install -y \
+    sudo \
+    curl \
+    vim \
+    tmux \
+    docker.io \
+    python3-pip \
+    libboost-dev
 
 # Set up automatic ROS 2 sourcing and colorized output
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
@@ -54,9 +53,9 @@ RUN echo "export RCUTILS_COLORIZED_OUTPUT=1" >> ~/.bashrc
 RUN echo "tmux attach-session -t autonomy_ros2" >> ~/.bashrc
 
 # Quick permissions fix (might be too heavy-handed)
-USER root
-RUN chown -R marsrover: /usr/local
-USER marsrover
+# USER root
+# RUN chown -R marsrover: /usr/local
+# USER marsrover
 
 ###############################################################
 # IMPORTANT! When adding dependencies or Dockerfile commands
