@@ -23,6 +23,6 @@ case $1 in
   *)
     printInfo "Loading the Autonomy ROS2 image..."
     docker compose -f docker/docker-compose.yaml up -d
-    docker exec -it autonomy_ros2 bash
+    # docker exec -it autonomy_ros2 bash
     ;;
 esac
