@@ -168,9 +168,11 @@ class HazardDetector(Node):
     
         if high_points:
             for high_point in high_points:
-                # Create a hazard message for each high point by averaging the x, y, z coordinates
+                # Create a hazard message for each cluster of high points by averaging the x, y, z coordinates
                 hazard = Hazard()
                 hazard.type = Hazard.OBSTACLE
+
+                #TODO: Convert coordinates to NED frame
                 hazard.location_x = np.mean(high_point[:, 0])
                 hazard.location_y = np.mean(high_point[:, 1])
                 hazard.location_z = np.mean(high_point[:, 2])
