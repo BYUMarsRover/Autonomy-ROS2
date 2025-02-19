@@ -11,10 +11,15 @@ RUN apt update && apt install -y \
     curl \
     vim \
     tmux \
-    mosh \
     docker.io \
     python3-pip \
     libboost-dev
+
+# Set up the direct Docker ssh connection
+RUN sudo apt update && apt install -y \
+    openssh-server \
+    && mkdir -p /run/sshd
+EXPOSE 22
 
 # Install graphical interface dependencies
 RUN apt update && apt install -y \
@@ -32,6 +37,8 @@ RUN apt update && apt install -y \
 # Set up a new user
 RUN useradd -ms /bin/bash marsrover
 RUN usermod -aG sudo marsrover
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN usermod -aG video marsrover
 RUN usermod -aG dialout marsrover
 RUN echo 'marsrover:marsrover' | chpasswd
 USER marsrover
@@ -39,7 +46,11 @@ WORKDIR /home/marsrover
 
 # Set up automatic ROS 2 sourcing and colorized output
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
-RUN export "RCUTILS_COLORIZED_OUTPUT=1" >> ~/.bashrc
+RUN echo "source /home/marsrover/mars_ws/install/setup.bash" >> ~/.bashrc
+RUN echo "export RCUTILS_COLORIZED_OUTPUT=1" >> ~/.bashrc
+
+# Enter tmux session on Docker entry
+RUN echo "tmux attach-session -t autonomy_ros2" >> ~/.bashrc
 
 # Quick permissions fix (might be too heavy-handed)
 USER root
