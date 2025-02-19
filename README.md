@@ -30,20 +30,6 @@ A simple guide to working with the Autonomy-ROS2 repository.
 
 --
 
-**Structure:**
-
-- `Autonomy-ROS2/.github`: Contains a pull request template and the GitHub Actions workflow for building and deploying our custom ROS 2 Docker image. 
-
-- `Autonomy-ROS2/docker`: Contains the Dockerfile and docker compose file for building and running our custom ROS 2 Docker image. If you need to add dependencies to the image, simply add them to `docker/Dockerfile`, push them to the main branch, and the GitHub Actions workflow will automatically rebuild and redeploy the image to Docker Hub.
-
-- `Autonomy-ROS2/mars_ws`: The ROS 2 workspace we use for building and running ROS 2 packages. You can add custom ROS 2 packages to the `src` folder in this workspace and build them using the `colcon` build system.
-
-- `Autonomy-ROS2/mega`: Contains the code used to flash the onboard Arduino Mega microcontroller. This code can be uploaded to the Mega using the Arduino IDE.
-
-- `Autonomy-ROS2/ros1_bridge`: Contains the code for running the ROS 1 - ROS 2 bridge. It has a seperate, more complicated Docker image and ROS workspace setup. For more information on how to work with the bridge, refer to the `ros1_bridge/README.md` file.
-
---
-
 **Helpful Resources:**
 
 GitHub Quickstart Tutorial - [https://docs.github.com/en/get-started/start-your-journey/hello-world](https://docs.github.com/en/get-started/start-your-journey/hello-world)
