@@ -5,4 +5,5 @@
 **/install_isolated
 **/devel_isolated
 
+.DS_Store
 .vscode
