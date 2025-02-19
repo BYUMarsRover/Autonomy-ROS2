@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets, uic
 from python_qt_binding.QtCore import QObject, Signal
 import rclpy
 from rover_msgs.srv import CameraControl
-from rover_msgs.msg import ScienceToolPosition, ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceFADIntensity, Camera, RoverStateSingleton
+from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceFADIntensity, Camera, RoverStateSingleton
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.pyplot as plt
@@ -15,7 +15,7 @@ import sys
 
 class Signals(QObject):
     sensor_signal = Signal(ScienceSensorValues)
-    auger_position = Signal(ScienceToolPosition)
+    # auger_position = Signal(ScienceToolPosition)
     sensor_save_signal = Signal(ScienceSaveSensor)
     notes_save_signal = Signal(ScienceSaveNotes)
     fad_intensity_signal = Signal(ScienceFADIntensity)
@@ -111,13 +111,13 @@ class science_GUI(Node):
         self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
 
         self.signals.sensor_signal.connect(self.update_sensor_values)
-        self.signals.auger_position.connect(self.update_auger_position)
+        # self.signals.auger_position.connect(self.update_auger_position)
         self.signals.sensor_save_signal.connect(self.pub_save_sensor.publish)
         self.signals.notes_save_signal.connect(self.pub_save_notes.publish)
         self.signals.fad_intensity_signal.connect(self.update_fad_intensity_value)
 
         self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.sensor_signal_callback, 10)
-        self.science_auger_position = self.create_subscription(ScienceToolPosition, '/science_auger_position', self.signals.auger_position.emit, 10)
+        # self.science_auger_position = self.create_subscription(ScienceToolPosition, '/science_auger_position', self.signals.auger_position.emit, 10)
         self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
         self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
 
@@ -314,18 +314,18 @@ class science_GUI(Node):
         self.qt.lbl_heading.setText(heading)
         self.qt.lbl_coordinates.setText(coordinates)
 
-    def update_auger_position(self, msg):
-        """
-        Updates the augur display.
+    # def update_auger_position(self, msg):
+    #     """
+    #     Updates the augur display.
 
-        This is like this because the photoresistors are backwards on the board.
-        """
-        if msg.position == 0:
-            self.qt.lcd_auger.display(2)
-        elif msg.position == 1:
-            self.qt.lcd_auger.display(1)
-        else:
-            self.qt.lcd_auger.display(-1)
+    #     This is like this because the photoresistors are backwards on the board.
+    #     """
+    #     if msg.position == 0:
+    #         self.qt.lcd_auger.display(2)
+    #     elif msg.position == 1:
+    #         self.qt.lcd_auger.display(1)
+    #     else:
+    #         self.qt.lcd_auger.display(-1)
 
     def fad_detector_calibration(self, event=None): #Written by chat
         print('Calibrate FADD')
@@ -369,16 +369,29 @@ class science_GUI(Node):
     
 def main(args=None):
     rclpy.init(args=args)
-    # app = QtWidgets.QApplication(sys.argv)
-    # window = science_GUI()
-
+    
+    # Create the Qt application
     app = QtWidgets.QApplication(sys.argv)
-    gui = science_GUI() #To prevent interference from python garbage collector
+    gui = science_GUI()  # Initialize your GUI
+
+    # Start the ROS 2 spin loop in a separate thread or via a timer
+    def spin_ros():
+        rclpy.spin_once(gui, timeout_sec=0.1)  # This will process ROS callbacks
+
+    # Set up a timer to periodically call spin_ros inside the Qt event loop
+    timer = gui.qt.startTimer(100)  # Spin ROS every 100ms
+    
+    # Override the timer event to call spin_ros
+    def timer_event(event):
+        spin_ros()  # Call spin_ros to process any incoming ROS messages
+
+    gui.qt.timerEvent = timer_event  # Assign the timer event handler
+
+    # Start the Qt event loop
     app.exec_()
+
     rclpy.shutdown()
 
-    # gui.qt.show()
-    # sys.exit(app.exec_())
 
 if __name__ == "__main__":
     main()
