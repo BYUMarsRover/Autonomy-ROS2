@@ -19,19 +19,17 @@ RUN apt update && apt install -y \
 RUN sudo apt update && apt install -y \
     openssh-server \
     && mkdir -p /run/sshd
+RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+RUN sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
 EXPOSE 22
 
 # Install graphical interface dependencies
 RUN apt update && apt install -y \
-    libx11-dev \
-    libxext-dev \
-    libxrender-dev \
-    libxrandr-dev \
-    qtbase5-dev \
-    libqt5x11extras5 \
-    python3-gi \
-    gir1.2-gtk-3.0 \
     x11-apps \
+    x11-utils \
+    x11-xserver-utils \
+    xauth \
     ros-humble-rqt*
 
 # Set up a new user
