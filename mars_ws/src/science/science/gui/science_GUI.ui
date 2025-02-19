@@ -337,7 +337,7 @@
   <widget class="QRadioButton" name="fad_radio">
    <property name="geometry">
     <rect>
-     <x>650</x>
+     <x>620</x>
      <y>220</y>
      <width>131</width>
      <height>31</height>
@@ -511,9 +511,9 @@
   <widget class="QLineEdit" name="le_fad">
    <property name="geometry">
     <rect>
-     <x>610</x>
+     <x>600</x>
      <y>90</y>
-     <width>211</width>
+     <width>111</width>
      <height>131</height>
     </rect>
    </property>
@@ -740,6 +740,42 @@ p, li { white-space: pre-wrap; }
     <string>Estimated Value</string>
    </property>
   </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>750</x>
+     <y>90</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enter % life</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_fad">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>110</y>
+     <width>121</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_fad_calibration">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>130</y>
+     <width>121</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enter calibration point</string>
+   </property>
+  </widget>
   <zorder>groupBox</zorder>
   <zorder>lcd_moist</zorder>
   <zorder>lcd_auger</zorder>
@@ -778,6 +814,9 @@ p, li { white-space: pre-wrap; }
   <zorder>temperature_poly_label</zorder>
   <zorder>textBrowser</zorder>
   <zorder>label_8</zorder>
+  <zorder>label_9</zorder>
+  <zorder>lineEdit_fad</zorder>
+  <zorder>pushButton_fad_calibration</zorder>
  </widget>
  <resources/>
  <connections/>

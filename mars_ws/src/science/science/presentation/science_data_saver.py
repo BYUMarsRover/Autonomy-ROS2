@@ -40,13 +40,14 @@ class ScienceDataSaver(Node):
             self.sensor_values[1].append(msg.temperature)
 
     def fad_value_callback(self, msg: ScienceFADIntensity):
-        self.fad_count = (self.fad_count + 1) % 60
+        # self.fad_count = (self.fad_count + 1) % 60
 
-        if self.saving_sensor_values[2] and self.fad_count == 0:
+        # if self.saving_sensor_values[2] and self.fad_count == 0:
+        if self.saving_sensor_values[2]:
             self.sensor_values[2].append(msg.intensity_avg)
 
     def save_sensor_callback(self, msg: ScienceSaveSensor):
-        print('Recieved.')
+        print('Recieved ScienceSaveSensor message.')
         self.saving_sensor_values[msg.position] = msg.save
 
         if msg.site != self.curr_site_num:

@@ -37,14 +37,16 @@ class science_GUI(Node):
 
         self.base_ip = self.get_base_ip()
         self.cli = self.create_client(CameraControl, 'camera_control')
-        if not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Camera control not available, waiting...')
-        self.req = CameraControl.Request()
-        self.future = self.cli.call_async(self.req)
+        # if not self.cli.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info('Camera control not available, waiting...')
+        # self.req = CameraControl.Request()
+        # self.future = self.cli.call_async(self.req)
 
         self.temperature = 1
         self.moisture = 0
         self.fad = 2
+
+        self.save_interval = 10
 
         self.fad_calibration_interval = 2
         self.site_number = 1
@@ -76,16 +78,15 @@ class science_GUI(Node):
             self.temperature_coefficients = []
             print("Temperature coefficients file does not exist. Please use the show graph button to store coefficients.")
 
-        if self.future.result() is not None:
-            self.get_logger().info(f"{self.future.result()}")
-        else:
-            self.get_logger().error(f"Service call failed {self.future.exception()}")
+        # if self.future.result() is not None:
+        #     self.get_logger().info(f"{self.future.result()}")
+        # else:
+        #     self.get_logger().error(f"Service call failed {self.future.exception()}")
 
     def initialize_timers(self):
-        self.save_interval = 10
-        self.moisture_timer = self.create_timer(self.save_interval, self.stop_moist_saver)
+        self.moisture_timer = self.create_timer(self.save_interval, self.stop_moist_saver)#These are probably redundant in ros2
         self.temp_timer = self.create_timer(self.save_interval, self.stop_temp_saver)
-        self.fad_timer = self.create_timer(self.save_interval, self.stop_fad_saver)
+        
 
     def task_launcher_init(self):
         self.signals = Signals()
@@ -115,11 +116,15 @@ class science_GUI(Node):
         self.signals.notes_save_signal.connect(self.pub_save_notes.publish)
         self.signals.fad_intensity_signal.connect(self.update_fad_intensity_value)
 
-        self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.signals.sensor_signal.emit, 10)
+        self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.sensor_signal_callback, 10)
         self.science_auger_position = self.create_subscription(ScienceToolPosition, '/science_auger_position', self.signals.auger_position.emit, 10)
         self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
         self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
 
+    def sensor_signal_callback(self, msg):
+        print("Got to callback")
+        self.signals.sensor_signal.emit(msg)
+    
     def toggle_sensor_save(self, p):
         """
         Called when any sensor radio button is called (moist, temp, fad)
@@ -129,11 +134,21 @@ class science_GUI(Node):
 
         print('Toggling Saving Sensor', p)
         self.sensor_saving[p] = not self.sensor_saving[p]
-        if (p == 0):
-            self.sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_moisture.text()), save=self.sensor_saving[p])
-        elif (p == 1):
-            self.sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_temperature.text()), save=self.sensor_saving[p])
-        self.signals.sensor_save_signal.emit(self.sensor_message)
+        if (p == 0): # Moisture radio button
+            sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_moisture.text()), save=self.sensor_saving[p])
+        elif (p == 1): # Temp radio button
+            sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_temperature.text()), save=self.sensor_saving[p])
+        else:  # fad radio button
+            if self.qt.fad_radio.isChecked():
+                self.fad_timer = self.create_timer(self.save_interval, self.stop_fad_saver)
+                print("made timer for FAD")
+            if (self.qt.lineEdit_fad.text() != ''):
+                sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_fad.text()), save=self.sensor_saving[p])
+            else:
+                #Find how do get logger
+                sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=3.141592, save=self.sensor_saving[p])
+
+        self.signals.sensor_save_signal.emit(sensor_message)
 
     def stop_temp_saver(self):
         self.temp_timer.cancel()
@@ -144,7 +159,9 @@ class science_GUI(Node):
         self.qt.moist_radio.setChecked(False)
 
     def stop_fad_saver(self):
-        self.fad_timer.cancel()
+        # self.fad_timer.cancel()
+        print("Attempting to uncheck the FAD")
+        self.fad_timer = None
         self.qt.fad_radio.setChecked(False)
 
     def increment_site_number(self):
@@ -164,6 +181,7 @@ class science_GUI(Node):
         print('Notes sent.')
 
     def update_sensor_values(self, msg):
+        print("updating LCD displays")
         temperature = msg.temperature
         moisture = msg.moisture
 
@@ -281,6 +299,7 @@ class science_GUI(Node):
         self.qt.textBrowser.setPlainText(sensor + f" reading is {result}")
         
     def update_fad_intensity_value(self, msg):
+        #Insert code to send reading to save?
         print('Displaying intensity!', msg)
         self.qt.le_fad.setPlaceholderText(str(msg))
 
@@ -308,15 +327,39 @@ class science_GUI(Node):
         else:
             self.qt.lcd_auger.display(-1)
 
-    def fad_detector_calibration(self, event=None):
+    def fad_detector_calibration(self, event=None): #Written by chat
         print('Calibrate FADD')
-        site_name = 'fad_calibration'
-        camera = Camera()
-        camera.client_address = "{}@{}".format(os.getlogin(), self.base_ip)
-        camera.camera_name = 'fadCam'
-        response = self.camera_control(camera=camera, site_name=site_name, calibrate=True)
+        if not self.cli.service_is_ready():
+            self.get_logger().error("Camera control service is not available. Try again in a bit")
+            return
 
-        self.update_fad_intensity_value(response.intensity)
+        self.req = CameraControl.Request()
+        self.req.camera.client_address = "{}@{}".format(os.getlogin(), self.base_ip)
+        self.req.camera.camera_name = 'fadCam'
+        self.req.site_name = 'fad_calibration'
+        self.req.calibrate = True
+
+        # Call the service asynchronously
+        self.future = self.cli.call_async(self.req)
+        self.future.add_done_callback(self.handle_fad_response)
+
+    def handle_fad_response(self, future): #written by chat
+        try:
+            response = future.result()
+            self.get_logger().info(f"FAD Intensity: {response.intensity}")
+            self.update_fad_intensity_value(response)
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {str(e)}")
+
+
+        # print('Calibrate FADD')
+        # site_name = 'fad_calibration'
+        # camera = Camera()
+        # camera.client_address = "{}@{}".format(os.getlogin(), self.base_ip)
+        # camera.camera_name = 'fadCam'
+        # response = self.camera_control(camera=camera, site_name=site_name, calibrate=True)
+
+        # self.update_fad_intensity_value(response.intensity)
 
     def get_base_ip(self):
         ip = os.getenv("BASE_ADDRESS")
@@ -326,11 +369,16 @@ class science_GUI(Node):
     
 def main(args=None):
     rclpy.init(args=args)
-    app = QtWidgets.QApplication(sys.argv)
-    window = science_GUI()
+    # app = QtWidgets.QApplication(sys.argv)
+    # window = science_GUI()
 
-    window.qt.show()
-    sys.exit(app.exec_())
+    app = QtWidgets.QApplication(sys.argv)
+    gui = science_GUI() #To prevent interference from python garbage collector
+    app.exec_()
+    rclpy.shutdown()
+
+    # gui.qt.show()
+    # sys.exit(app.exec_())
 
 if __name__ == "__main__":
     main()
