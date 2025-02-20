@@ -46,10 +46,10 @@ case "$1" in
     "autonomy")
         printInfo "Setting up the autonomy task..."
         # Send tmux commands to the rover's Docker container over SSH
-        ssh marsrover@192.168.1.120 -p 2233 "tmux split-window -h -t rover_runtime"
-        ssh marsrover@192.168.1.120 -p 2233 "tmux select-pane -t rover_runtime.1"
-        ssh marsrover@192.168.1.120 -p 2233 "tmux send-keys -t rover_runtime.1 \
-            'ros2 launch start rover_task_autonomy_new_launch.py'" # NO ENTER 
+        sshpass -p "marsrover" ssh marsrover@192.168.1.120 -p 2233 "\
+            tmux split-window -h -t rover_runtime; \
+            tmux select-pane -t rover_runtime.1; \
+            tmux send-keys -t rover_runtime.1 'ros2 launch start rover_task_autonomy_new_launch.py'" # NO ENTER 
         ;;
     "servicing")
         printWarning "Not implemented yet"
