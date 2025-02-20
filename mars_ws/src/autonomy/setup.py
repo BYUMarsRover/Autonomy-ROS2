@@ -11,7 +11,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
+        ('share/' + package_name + '/launch', glob('launch/*launch.py')),
         ('share/' + package_name + '/params', glob('params/*.yaml')),
 
     ],
@@ -27,6 +27,9 @@ setup(
             'fiducial_data = autonomy.fiducial_data:main', 
             'drive_controller_api = autonomy.drive_controller_api:main',
             'state_machine = autonomy.state_machine:main',
+            'autonomy_gui = autonomy.autonomy_gui:main',
+            'dummy_object_publisher = autonomy.dummy_object_publisher:main',
+            'dummy_ar_tag_publisher = autonomy.dummy_ar_tag_publisher:main',
         ],
     },
 )

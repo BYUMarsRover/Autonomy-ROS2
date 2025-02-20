@@ -1,0 +1,74 @@
+# Created by Nelson Durrant, Jan 2025
+# 
+# IMPORTANT: I set up this bridge in an attempt to limit communication between nodes on the rover
+# and base station due to antenna bandwidth constraints. IT DID NOT WORK FOR THAT. We actually
+# noted a large increase in bandwidth usage when running the bridge. I'm leaving the code here
+# for reference in the future, but it is not recommended for use in the current project.
+# - Nelson Durrant, Jan 2025
+
+name: mars_bridge
+from_domain: 2 # Domain ID for base station
+to_domain: 3 # Domain ID for rover
+topics:
+  # Heartbeat topics
+  heartbeat_base:
+    type: rover_msgs/msg/Heartbeat
+    bidirectional: True
+  heartbeat_rover:
+    type: rover_msgs/msg/Heartbeat
+    bidirectional: True
+  # Ublox RTK GPS topics
+  base/Ephemeris:
+    type: ublox_read_2/msg/Ephemeris
+    bidirectional: True
+  base/GlonassEphemeris:
+    type: ublox_read_2/msg/GlonassEphemeris
+    bidirectional: True
+  base/Obs:
+    type: ublox_read_2/msg/ObsVec
+    bidirectional: True
+  base/PosVelEcef:
+    type: ublox_read_2/msg/PosVelEcef
+    bidirectional: True
+  base/PosVelTime:
+    type: ublox_read_2/msg/PositionVelocityTime
+    bidirectional: True
+  base/RTCMInput:
+    type: ublox_read_2/msg/RTCMInput
+    bidirectional: True
+  base/RelPos:
+    type: ublox_read_2/msg/RelPos
+    bidirectional: True
+  base/RelPosFlags:
+    type: ublox_read_2/msg/RelPosFlags
+    bidirectional: True
+  base/SatelliteStatus:
+    type: ublox_read_2/msg/SatelliteStatus
+    bidirectional: True
+  base/SurveyStatus:
+    type: ublox_read_2/msg/SurveyStatus
+    bidirectional: True
+  base/base/PosVelEcef:
+    type: ublox_read_2/msg/PosVelEcef
+    bidirectional: True
+  base/base/PosVelTime:
+    type: ublox_read_2/msg/PositionVelocityTime
+    bidirectional: True
+  rover/PosVelTime:
+    type: ublox_read_2/msg/PositionVelocityTime
+    bidirectional: True
+  # Joystick drive control topics
+  mobility/joy_drive_enabled:
+    type: std_msgs/msg/Bool
+    bidirectional: True
+  mobility/teleop_drive_cmds:
+    type: rover_msgs/msg/IWCMotors
+    bidirectional: True
+  # Status update topics (?)
+  # Not quite sure what these are for
+  nav_status:
+    type: rover_msgs/msg/NavStatus
+    bidirectional: True
+  rover_status:
+    type: rover_msgs/msg/RoverState
+    bidirectional: True

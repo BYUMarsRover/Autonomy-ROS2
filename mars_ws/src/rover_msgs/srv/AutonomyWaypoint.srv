@@ -1,7 +1,10 @@
 # Received by autonomy/src/state_machine_new.py
 # 
-# Contains a list of AutonomyTaskInfo messages. The purpose is to allow the 
-# GUI to send a list of all waypoints to the rover at the same time.
+# Contains a list of AutonomyTaskInfo messages.
+# 
+# The autonomy gui uses this message to send all of the intermediary 
+# latitude and longitude points corresponding to the best path 
+# topographically as planned by the path_planner node.
 
 AutonomyTaskInfo[] task_list
 ---

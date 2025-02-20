@@ -1,6 +1,6 @@
-## Containerized ROS 1 Bridge Guide
+## Simple ROS 1 Bridge Guide
 
-This guide outlines the steps to set up and run the containerized ROS 1 bridge.
+This guide outlines the steps to set up and run a containerized bridge between ROS 1 Noetic and ROS 2 Humble. It allows for the inclusion of custom message types.
 
 --
 
@@ -12,15 +12,15 @@ This guide outlines the steps to set up and run the containerized ROS 1 bridge.
 
 - Edit the `TEST_MSG_TYPE` and `TEST_MSG_DATA` variables at the beginning of `test_bridge.sh` to match the desired custom message type.
 
-- Edit the `ROS_MASTER_URI` environment variable in `run_bridge.sh` to match the ROS 1 configuration.
+- Edit the `ROS_MASTER_URI` environment variable in `run_bridge.sh` to match the ROS 1 master configuration.
 
 --
 
 **Building and Testing the Bridge:**
 
-- Run `bash compose.sh` to launch and enter the Docker container.
+- Run `bash compose.sh` to launch and enter the Docker container. (Only the arm64 image is currently pushed to Docker Hub. To run it on amd64 architecture, you will need to build the image locally.)
 
-- Run `bash build_bridge.sh` inside the container to build the bridge.
+- Run `bash build_bridge.sh` inside the container to build the bridge. (This will take a long time to run after making changes. Like 2-3 hours.)
 
 - Run `bash test_bridge.sh` inside the container to verify the bridge works.
 

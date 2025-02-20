@@ -1,16 +1,26 @@
+#Params are in m and radians
 /**:
   ros__parameters:
     distance_tolerance: 1.0
+    obj_distance_tolerance: 1.0 #TODO: Tune
     abort_distance_tolerance: 5.0
     aruco_distance_tolerance: 2.0
     hex_search_radius: 17.3
     navigate_speed: 1.0
+    object_speed: 0.3
     aruco_speed: 0.3
     aruco_spin_speed: 30.0
     aruco_gate_spin_speed: 10.0
+    object_alpha_lpf: 0.5
+    obj_enable_distance: 30.0
     aruco_alpha_lpf: 0.5
     aruco_spin_step_size: 0.6981
     aruco_spin_delay_time: 1.2
     wrong_aruco_backup_distance: 7.0
     aruco_gate_approach_distance: 6.0
     hex_seach_angle_difference: 50.0
+
+fiducial_data:
+  ros__parameters:
+    simulation: false     #Run in simulation mode
+    target_ar_tag_id: -1  #Target AR Tag ID

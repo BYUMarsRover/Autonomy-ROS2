@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>mapviz_tf</name>
+  <version>0.0.0</version>
+  <description>The mapviz_tf package</description>
+  <maintainer email="wyomike2020@gmail.com">Michael Crandall</maintainer>
+  <license>BYU YOU CANT HAVE IT</license>
+
+<!--Sarah 10/22/2024: Updated dependencies with the new simplified form -->
+  <depend>python3-rospkg</depend>
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>swri_transform_util</depend>
+
+  <build_depend>mapviz</build_depend>
+  <build_depend>mapviz_plugins</build_depend>
+  <build_depend>tile_map</build_depend>
+
+  <test_depend>ament_cmake_test</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

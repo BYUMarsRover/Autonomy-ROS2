@@ -10,7 +10,7 @@ from rover_msgs.msg import RoverStateSingleton
 from sensor_msgs.msg import NavSatFix
 
 
-ROS_RATE = 15.0
+ROS_RATE = 10.0
 
 
 HANK_LAT=38.406441
@@ -41,7 +41,7 @@ class DummySingletonPublisher(Node):
     def __init__(self):
         super().__init__('dummy_singleton_publisher')
         self.singleton_publisher = self.create_publisher(
-            RoverStateSingleton, '/odometry/rover_state_singleton', 1)  # Publishes the singleton message
+            RoverStateSingleton, '/odometry/rover_state_singleton', 10)  # Publishes the singleton message
         
         self.timer = self.create_timer(1.0 / ROS_RATE, self.publish_singleton_data) # Publish at 15Hz
 
@@ -49,6 +49,8 @@ class DummySingletonPublisher(Node):
         self.deg = np.linspace(0, 360, num=HEADING_PRECISION) # heading
         self.latitude = LAT_INIT
         self.longitude = LONG_INIT
+        print("LAT_INIT: ", LAT_INIT)
+        print("LONG_INIT: ", LONG_INIT)
 
         self.latitude_unfilt = LAT_INIT
         self.longitude_unfilt = LONG_INIT
@@ -59,7 +61,7 @@ class DummySingletonPublisher(Node):
 
         self.map_roll = 0
         self.map_pitch = 0
-        self.map_yaw = 0
+        self.map_yaw = 180.0
 
         self.odom_roll = 0
         self.odom_pitch = 0
@@ -93,13 +95,19 @@ class DummySingletonPublisher(Node):
         self.filter_gps = NavSatFix()
 
     def publish_singleton_data(self):
-        self._inc_counters()
+        # self._inc_counters()
 
-        self.filter_gps.latitude, self.filter_gps.longitude = self._generate_lat_long(
-            self.ll_counter)
-        self.gps.latitude, self.gps.longitude = self._generate_unfiltered_lat_long(
-            self.ll_counter)
-        self.map_yaw = self._generate_heading(self.heading_counter)
+        # self.filter_gps.latitude, self.filter_gps.longitude = self._generate_lat_long(
+        #     self.ll_counter)
+        # self.gps.latitude, self.gps.longitude = self._generate_unfiltered_lat_long(
+        #     self.ll_counter)
+        # self.map_yaw = self._generate_heading(self.heading_counter)
+
+        self.gps.latitude = self.latitude
+        self.gps.longitude = self.longitude
+        self.filter_gps.latitude = self.latitude
+        self.filter_gps.longitude = self.longitude
+        self.map_yaw -= 0.3 # -0.1 * ROS_RATE degrees per second
 
         msg = RoverStateSingleton(
             map_yaw=self.map_yaw,

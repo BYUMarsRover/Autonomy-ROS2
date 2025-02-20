@@ -10,6 +10,8 @@ from ublox_read_2.msg import PositionVelocityTime
 class PositionVelocityTimeTranslator(Node):
     """
     Description: 
+    Node that takes in ublox PositionVelocityTime messages and sends out
+    NavSatFix messages that are used by the ukf navsat transform node.
     """
     def __init__(self):
         super().__init__('position_velocity_time_translator')
@@ -21,8 +23,8 @@ class PositionVelocityTimeTranslator(Node):
         self.lla_publisher = self.create_publisher(NavSatFix, '/ins/lla', 10)  # Creates a publisher to NavSatFix
 
     def ublox_callback(self, message):
-        h_var = self.ublox_accuracy_to_variance(message.hAcc)  # Horizontal covariance
-        v_var = self.ublox_accuracy_to_variance(message.vAcc)  # Vertical covariance
+        h_var = self.ublox_accuracy_to_variance(message.h_acc)  # Horizontal covariance
+        v_var = self.ublox_accuracy_to_variance(message.v_acc)  # Vertical covariance
 
         # fixMe
         # The following line is a sanity test, I will comment it out/delete it after I am sure it
