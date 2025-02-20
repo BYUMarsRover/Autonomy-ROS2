@@ -3,8 +3,7 @@
 #
 # Runs automatic commands on Docker container startup
 # - This script won't throw any errors, but the container will crash immediately
-# - Be very careful editing it
-
+# - Be very careful editing it!
 
 # Are we running on Jetson Orin architecture (the rover)?
 if [ "$(uname -m)" == "aarch64" ]; then
@@ -15,7 +14,7 @@ if [ "$(uname -m)" == "aarch64" ]; then
 
     # Launch ROS 2 nodes on system startup
     tmux send-keys -t rover_runtime.0 "ros2 launch mobility rover_xbox_launch.py" Enter
-    
+
     # Full color and mouse options
     tmux set-option -g default-terminal "screen-256color"
     tmux set -g mouse on

@@ -134,5 +134,5 @@ USER marsrover
 # Install gpsd-client - Braden Meyers, Feb 2025
 # Needed to publish raw gps data if we use gpsd
 USER root
-RUN apt update && apt install -y gpsd-client
+RUN apt update && apt install -y gpsd-clients
 USER marsrover
