@@ -50,6 +50,7 @@ WORKDIR /home/$NAME
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 RUN echo "source /home/$NAME/mars_ws/install/setup.bash" >> ~/.bashrc
 RUN echo "export RCUTILS_COLORIZED_OUTPUT=1" >> ~/.bashrc
+RUN touch ~/.hushlogin
 
 # Quick permissions fix (might be too heavy-handed)
 USER root
