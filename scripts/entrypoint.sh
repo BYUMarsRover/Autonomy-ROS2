@@ -1,5 +1,5 @@
 #!/bin/bash
-# Created by Nelson Durrant, Feb 2025
+# Created by Nelson Durrant & Braden Meyers, Feb 2025
 #
 # Runs automatic commands on Docker container startup
 # - WARNING! This script won't throw any errors, but if it
