@@ -15,6 +15,16 @@ RUN sed -i 's/\(^Port\)/#\1/' /etc/ssh/sshd_config && echo Port 2233 >> /etc/ssh
 
 EXPOSE 2233
 
+# Set up the direct Docker ssh connection
+RUN sudo apt update && apt install -y openssh-server
+RUN mkdir -p /var/run/sshd
+
+RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+RUN sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+RUN sed -i 's/\(^Port\)/#\1/' /etc/ssh/sshd_config && echo Port 2233 >> /etc/ssh/sshd_config
+
+EXPOSE 2233
+
 # Install general dependencies
 RUN apt update && apt install -y \
     sudo \
@@ -66,9 +76,9 @@ USER marsrover
 #
 ###############################################################
 
-# Install GPS to UTM convertor - Daniel Webb, Feb 2025
-# Needed for path planning and state machine logic
-RUN pip3 install utm
+# # Install GPS to UTM convertor - Daniel Webb, Feb 2025
+# # Needed for path planning and state machine logic
+# RUN pip3 install utm
 
 # Install OpenCV - Gabe Slade, Feb 2025
 # Used for detecting and locating aruco tags
