@@ -42,7 +42,7 @@ RUN usermod -aG sudo $NAME
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 RUN usermod -aG video $NAME
 RUN usermod -aG dialout $NAME
-RUN echo '$NAME:$NAME' | chpasswd
+RUN echo "$NAME:$NAME" | chpasswd
 USER $NAME
 WORKDIR /home/$NAME
 
