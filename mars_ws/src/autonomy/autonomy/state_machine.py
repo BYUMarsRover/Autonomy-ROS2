@@ -119,7 +119,7 @@ class AutonomyStateMachine(Node):
         # self.aruco_gate_spin_speed = rospy.get_param('aruco_gate_spin_speed').get_parameter_value().double_value
 
         #Initialize variables
-        self.rover_nav_state = NavState()
+        self.nav_state = NavState()
         self.drive_controller = DriveControllerAPI(self)
         self.state = State.MANUAL
         self.enabled = False
@@ -428,16 +428,16 @@ class AutonomyStateMachine(Node):
             if self.state == State.MANUAL:
                 if self.a_task_complete:
                     #Keep the LED Green by keeping it in arrival state if a task has been completed
-                    self.rover_nav_state.navigation_state = NavState.ARRIVAL_STATE
+                    self.nav_state.navigation_state = NavState.ARRIVAL_STATE
                 else:
-                    self.rover_nav_state.navigation_state = NavState.TELEOPERATION_STATE
+                    self.nav_state.navigation_state = NavState.TELEOPERATION_STATE
                 self.correct_aruco_tag_found = False
                 self.correct_obj_found = False
 
             #This SEARCH_FOR_WRONG_STATE state is used to ensure that after finishing one aruco tag task, the rover will
             #backup if it sees the wrong tag, to ensure it does not run into the aruco stand before starting the next task
             elif self.state == State.SEARCH_FOR_WRONG_TAG: 
-                self.rover_nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.wrong_aruco_tag_found and self.aruco_tag_distance < self.wrong_aruco_backup_distance:
                     self.drive_controller.issue_drive_cmd(-2.0, 0.0)
                     #TODO: Consider adding angular velocity to this command to ensure the rover backs up in such a way that it will not hit the stand
@@ -446,7 +446,7 @@ class AutonomyStateMachine(Node):
                     self.state = State.START_POINT_NAVIGATION
 
             elif self.state == State.START_POINT_NAVIGATION:
-                self.rover_nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 self.get_logger().info("Starting commands")
                 self.set_autopilot_speed(self.navigate_speed)
                 self.get_logger().info("Set speed command")
@@ -455,7 +455,7 @@ class AutonomyStateMachine(Node):
                 self.state = State.POINT_NAVIGATION
 
             elif self.state == State.POINT_NAVIGATION:
-                self.rover_nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.obj_enable_distance:
                     self.toggle_object_detection(True)
                 if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.dist_tolerance:
@@ -474,7 +474,7 @@ class AutonomyStateMachine(Node):
                     self.state = State.OBJECT_NAVIGATE
 
             elif self.state == State.START_SPIN_SEARCH:
-                self.rover_nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 self.aruco_spin_start_heading = self.wrap(self.curr_heading, 0)
                 self.aruco_spin_stop = False
                 self.aruco_spin_target_angle = self.wrap(self.curr_heading + self.aruco_spin_step_size, 0)
@@ -483,7 +483,7 @@ class AutonomyStateMachine(Node):
                 self.state = State.SPIN_SEARCH
 
             elif self.state == State.SPIN_SEARCH:
-                self.rover_nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 msg = String()
                 if self.aruco_spin_stop:
                     msg.data = "aruco spin Stopping"
@@ -513,7 +513,7 @@ class AutonomyStateMachine(Node):
                 self.debug_pub.publish(msg)
 
             elif self.state == State.START_HEX_SEARCH:
-                self.rover_nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 self.hex_search_point = GPSTools.heading_distance_to_lat_lon(
                     self.hex_center_point,
                     self.hex_search_point_num * self.hex_seach_angle_difference,
@@ -523,7 +523,7 @@ class AutonomyStateMachine(Node):
                 self.state = State.HEX_SEARCH
 
             elif self.state == State.HEX_SEARCH:
-                self.rover_nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if GPSTools.distance_between_lat_lon(self.current_point, self.hex_search_point) < self.dist_tolerance:
                     self.state = State.START_SPIN_SEARCH
                     self.hex_search_point_num += 1
@@ -536,7 +536,7 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.ARUCO_NAVIGATE:
                 self.set_autopilot_speed(self.aruco_speed)
-                self.rover_nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.correct_aruco_tag_found: #f we have seen the correct tag in the last second, navigate using angle and distance
                     self.drive_controller.issue_aruco_autopilot_cmd(self.aruco_tag_angle, self.aruco_tag_distance)
                 else: #if we have not seen the correct tag in the last second, navigate to the last known position
@@ -548,7 +548,7 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.OBJECT_NAVIGATE:
                 self.set_autopilot_speed(self.object_speed)
-                self.rover_nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.correct_obj_found:
                     self.drive_controller.issue_aruco_autopilot_cmd(self.obj_angle, self.obj_distance)
                 if self.obj_distance < self.obj_dist_tolerance:
@@ -557,7 +557,7 @@ class AutonomyStateMachine(Node):
                     self.drive_controller.stop()
 
             elif self.state == State.TASK_COMPLETE:
-                self.rover_nav_state.navigation_state = NavState.ARRIVAL_STATE
+                self.nav_state.navigation_state = NavState.ARRIVAL_STATE
                 self.drive_controller.issue_drive_cmd(0, 0)
                 self.drive_controller.stop()
                 self.a_task_complete = True
@@ -576,13 +576,13 @@ class AutonomyStateMachine(Node):
                 self.state = State.MANUAL
 
             elif self.state == State.START_ABORT_STATE:
-                self.rover_nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 self.set_autopilot_speed(self.navigate_speed)
                 self.drive_controller.issue_path_cmd(self.abort_lat, self.abort_lon)
                 self.state = State.ABORT_STATE
 
             elif self.state == State.ABORT_STATE:
-                self.rover_nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if GPSTools.distance_between_lat_lon(self.current_point, self.abort_point) < self.abort_dist_tolerance:
                     self.get_logger().info("Reached abort point!")
                     self.state = State.MANUAL
@@ -598,9 +598,9 @@ class AutonomyStateMachine(Node):
                 self.drive_controller.issue_drive_cmd(0, 0)
                 self.drive_controller.stop()
             self.state = State.MANUAL
-            self.rover_nav_state.navigation_state = NavState.TELEOPERATION_STATE
+            self.nav_state.navigation_state = NavState.TELEOPERATION_STATE
 
-        self.nav_state_pub.publish(self.rover_nav_state)
+        self.nav_state_pub.publish(self.nav_state)
         self.publish_status()
 
     def publish_status(self):
