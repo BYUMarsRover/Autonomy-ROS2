@@ -1,7 +1,7 @@
 #!/bin/bash
 # Created by Braden Meyers, Feb 2025
 #
-# Launches the zed driver over SSH using tmux
+# Launches the ZED over SSH using the 'foxy_runtime' tmux session
 
 function printInfo {
   # print blue
