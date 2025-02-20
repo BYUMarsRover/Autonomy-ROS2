@@ -2,6 +2,7 @@
 # Created by Nelson Durrant, Feb 2025
 #
 # Launches tasks over SSH using the 'rover_runtime' tmux session
+# - This allows us to stream the GUI from inside the Docker container
 
 function printInfo {
   # print blue
