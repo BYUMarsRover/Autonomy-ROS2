@@ -1,5 +1,4 @@
 # Created by Nelson Durrant, Oct 2024
-
 services:
   ros1_bridge:
     image: byuawesomerover/ros1_bridge:latest
