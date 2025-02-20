@@ -20,7 +20,7 @@ function printError {
 }
 
 # Check for an SSH connection to the rover's Docker container
-if ! ssh marsrover@192.168.1.120 -p 2233 "echo 'SSH connection successful'" &> /dev/null
+if ! sshpass -p "marsrover" ssh marsrover@192.168.1.120 -p 2233 "echo" &> /dev/null
 then
     printError "No available SSH connection to the rover's Docker container"
     echo "Here's some debugging suggestions:"
@@ -32,7 +32,7 @@ then
 fi
 
 # Check if tmux is running on the rover's Docker container
-if ! ssh marsrover@192.168.1.120 -p 2233 "tmux has-session -t rover_runtime" &> /dev/null
+if ! sshpass -p "marsrover" ssh marsrover@192.168.1.120 -p 2233 "tmux has-session -t rover_runtime" &> /dev/null
 then
     printError "No tmux session found in the rover's Docker container"
     echo "Here's some debugging suggestions:"
