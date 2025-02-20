@@ -7,17 +7,14 @@ services:
     build: .
     user: marsrover
     network_mode: host
-    # environment:
-      # DISPLAY: $DISPLAY # Required for GUI applications
     privileged: true
     volumes:
       - ../mars_ws:/home/marsrover/mars_ws
       - /etc/localtime:/etc/localtime:ro # Syncs the container's time with the host
       - /run/udev:/run/udev:ro
       - /dev:/dev:rw
-      - /tmp/.X11-unix:/tmp/.X11-unix # Required for GUI applications
       - /var/run/docker.sock:/var/run/docker.sock # Required for docker in docker
     stdin_open: true  # Equivalent to -it in docker run
     tty: true  # Equivalent to -it in docker run
-    # restart: always  # Optional: Keeps the container running after exit unless you want it to be removed like with --rm
+    restart: always  # Optional: Keeps the container running after exit unless you want it to be removed like with --rm
     command: ["/bin/bash", "-c", "/home/marsrover/mars_ws/scripts/startup.sh", "/bin/bash"]
