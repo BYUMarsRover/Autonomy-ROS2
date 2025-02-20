@@ -19,20 +19,25 @@ function printError {
   echo -e "\033[0m\033[31m[ERROR] $1\033[0m"
 }
 
+ROVER_IP_ADDRESS=192.168.1.120
+DOCKER_SSH_PORT=2233
+
 # Check for an SSH connection to the rover's Docker container
-if ! sshpass -p "marsrover" ssh marsrover@192.168.1.120 -p 2233 "echo" &> /dev/null
+if ! sshpass -p "marsrover" ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "echo" &> /dev/null
 then
     printError "No available SSH connection to the rover's Docker container"
     echo "Here's some debugging suggestions:"
     echo "  - Ensure the rover is powered on"
-    echo "  - Ensure the rover is connected to the right network"
+    echo "  - Ensure the rover is connected with a static IP address"
+    echo "  - Ensure the rover's computer has a green light"
+    echo "  - Ensure the rocket antennas are connected"
     echo "  - Ensure the rover's Docker container is running"
 
     exit
 fi
 
 # Check if tmux is running on the rover's Docker container
-if ! sshpass -p "marsrover" ssh marsrover@192.168.1.120 -p 2233 "tmux has-session -t rover_runtime" &> /dev/null
+if ! sshpass -p "marsrover" ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "tmux has-session -t rover_runtime" &> /dev/null
 then
     printError "No tmux session found in the rover's Docker container"
     echo "Here's some debugging suggestions:"
@@ -46,7 +51,7 @@ case "$1" in
     "autonomy")
         printInfo "Setting up the autonomy task..."
         # Send tmux commands to the rover's Docker container over SSH
-        sshpass -p "marsrover" ssh marsrover@192.168.1.120 -p 2233 "\
+        sshpass -p "marsrover" ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "\
             tmux split-window -h -t rover_runtime; \
             tmux select-pane -t rover_runtime.1; \
             tmux send-keys -t rover_runtime.1 'ros2 launch start rover_task_autonomy_new_launch.py'" # NO ENTER 
@@ -67,4 +72,4 @@ case "$1" in
 esac
 
 # Attach to the 'rover_runtime' tmux session
-sshpass -p "marsrover" ssh -t -X marsrover@192.168.1.120 -p 2233 'tmux attach -t rover_runtime'
+sshpass -p "marsrover" ssh -t -X marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
