@@ -2,8 +2,7 @@
 # Created by Nelson Durrant & Braden Meyers, Feb 2025
 #
 # Runs automatic commands on Docker container startup
-# - WARNING! This script won't throw any errors, but if it
-#   doesn't work, the container will crash immediately
+# - This script won't throw any errors, but the container will crash immediately
 # - Be very careful editing it
 
 # Full color and mouse options

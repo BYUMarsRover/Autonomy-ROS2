@@ -20,7 +20,7 @@ function printError {
 }
 
 # Check for an SSH connection to the rover's Docker container
-if ! ssh -q marsrover@192.168.1.120 -p 2233
+if ! ssh marsrover@192.168.1.120 -p 2233 "echo 'SSH connection successful'" &> /dev/null
 then
     printError "No available SSH connection to the rover's Docker container"
     echo "Here's some debugging suggestions:"

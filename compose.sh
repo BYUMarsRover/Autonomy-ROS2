@@ -1,7 +1,7 @@
 #!/bin/bash
 # Created by Nelson Durrant, Oct 2024
 #
-# Manages our Docker containers and the 'rover_dev' tmux session
+# Manages Docker containers and the 'rover_dev' tmux session
 
 function printInfo {
   # print blue
@@ -30,7 +30,7 @@ case $1 in
     # Skip 'rover_dev' tmux session creation on the rover
     if [ ! "$(uname -m)" == "aarch64" ]; then
 
-      # Check if the 'rover_dev' tmux session exists
+      # Check if a 'rover_dev' tmux session already exists
       if [ "$(docker exec -it autonomy_ros2 tmux list-sessions | grep rover_dev)" == "" ]; then
         # If not, create a new 'rover_dev' tmux session
         printWarning "Creating a new tmux session..."
