@@ -125,8 +125,14 @@ USER root
 RUN apt update && apt install -y ros-humble-domain-bridge
 USER marsrover
 
-# # Install the joy package - Alyssa Fielding, Feb 2025
-# # Needed for the joystick control on the base station
+# Install the joy package - Alyssa Fielding, Feb 2025
+# Needed for the joystick control on the base station
 USER root
 RUN apt update && apt install -y ros-humble-joy
 USER marsrover 
+
+# Install gpsd-client - Braden Meyers, Feb 2025
+# Needed to publish raw gps data if we use gpsd
+USER root
+RUN apt update && apt install -y gpsd-client
+USER marsrover
