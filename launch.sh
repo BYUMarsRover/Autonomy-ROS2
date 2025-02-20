@@ -50,6 +50,7 @@ case "$1" in
         ssh marsrover@192.168.1.120 -p 2233 "tmux select-pane -t rover_runtime.1"
         ssh marsrover@192.168.1.120 -p 2233 "tmux send-keys -t rover_runtime.1 \
             'ros2 launch start rover_task_autonomy_new_launch.py'" # NO ENTER 
+        printInfo "Autonomy Setup!"
         ;;
     "servicing")
         printWarning "Not implemented yet"
@@ -68,4 +69,4 @@ case "$1" in
 esac
 
 # Attach to the 'rover_runtime' tmux session
-ssh marsrover@192.168.1.120 -p 2233 tmux attach -t rover_runtime
+ssh -t marsrover@192.168.1.120 -p 2233 'tmux attach -t rover_runtime'
