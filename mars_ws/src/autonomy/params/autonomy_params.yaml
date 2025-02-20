@@ -1,3 +1,4 @@
+#Params are in m and radians
 /**:
   ros__parameters:
     distance_tolerance: 1.0
