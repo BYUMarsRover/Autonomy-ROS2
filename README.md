@@ -34,6 +34,8 @@ A simple guide to working with the Autonomy-ROS2 repository.
 
 GitHub Quickstart Tutorial - [https://docs.github.com/en/get-started/start-your-journey/hello-world](https://docs.github.com/en/get-started/start-your-journey/hello-world)
 
+Tmux Cheat Sheet - [https://tmuxcheatsheet.com/](https://tmuxcheatsheet.com/)
+
 Docker Concepts and Tutorials - [https://docs.docker.com/get-started/introduction/whats-next/](https://docs.docker.com/get-started/introduction/whats-next/)
 
 ROS 2 Concepts - [https://docs.ros.org/en/humble/Concepts/Basic.html](https://docs.ros.org/en/humble/Concepts/Basic.html)
