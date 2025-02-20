@@ -61,9 +61,8 @@ case "$1" in
         printWarning "Not implemented yet"
         ;;
     *)
-        printError "No task specified"
-        printError "Specify a task using 'bash launch.sh <task>' (ex. 'bash launch.sh autonomy')"
-        exit
+        printWarning "No task specified, simply entering the current tmux session"
+        printWarning "Specify a task using 'bash launch.sh <task>' (ex. 'bash launch.sh autonomy')"
         ;;
 esac
 
