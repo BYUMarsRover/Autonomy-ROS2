@@ -37,24 +37,24 @@ RUN apt update && apt install -y \
     ros-humble-rqt*
 
 # Set up a new user
-RUN useradd -ms /bin/bash ${NAME}
-RUN usermod -aG sudo ${NAME}
+RUN useradd -ms /bin/bash $NAME
+RUN usermod -aG sudo $NAME
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-RUN usermod -aG video ${NAME}
-RUN usermod -aG dialout ${NAME}
-RUN echo '${NAME}:${NAME}' | chpasswd
-USER ${NAME}
-WORKDIR /home/${NAME}
+RUN usermod -aG video $NAME
+RUN usermod -aG dialout $NAME
+RUN echo '$NAME:$NAME' | chpasswd
+USER $NAME
+WORKDIR /home/$NAME
 
 # Set up automatic ROS 2 sourcing and colorized output
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
-RUN echo "source /home/${NAME}/mars_ws/install/setup.bash" >> ~/.bashrc
+RUN echo "source /home/$NAME/mars_ws/install/setup.bash" >> ~/.bashrc
 RUN echo "export RCUTILS_COLORIZED_OUTPUT=1" >> ~/.bashrc
 
 # Quick permissions fix (might be too heavy-handed)
 USER root
-RUN chown -R ${NAME}: /usr/local
-USER ${NAME}
+RUN chown -R $NAME: /usr/local
+USER $NAME
 
 ###############################################################
 # IMPORTANT! When adding dependencies or Dockerfile commands
@@ -74,7 +74,7 @@ RUN pip3 install utm
 # Used for detecting and locating aruco tags
 USER root
 RUN apt update && apt install -y libopencv-dev 
-USER ${NAME}
+USER $NAME
 
 # Downgrade numpy - Nelson Durrant, Feb 2025
 # "transforms3d" (quaternion conversion) uses a function depreciated in numpy 2.0
@@ -94,14 +94,14 @@ RUN pip3 install pyserial
 USER root
 RUN apt update && apt install -y \
     ros-humble-rviz-common
-USER ${NAME}
+USER $NAME
 
 # Install ROS 2 usb-cam package - Daniel Webb, Feb 2025
 # Needed to interface with the camera for aruco tag detection
 USER root
 RUN apt update && apt install -y \
     ros-humble-usb-cam
-USER ${NAME}
+USER $NAME
 
 # Install ROS 2 SLAM packages - Braden Meyers, Feb 2025
 # Needed to fuse the magnetometer and visual odom data
@@ -109,7 +109,7 @@ USER root
 RUN apt update && apt install -y \
     ros-humble-robot-localization \
     ros-humble-tf-transformations
-USER ${NAME}
+USER $NAME
 
 # Install mapviz - Sarah Sanderson, Feb 2025
 # Necessary packages to run the mapviz viewer
@@ -120,22 +120,22 @@ USER ${NAME}
 #     ros-humble-tile-map \
 #     ros-humble-multires-image \
 #     ros-humble-rosapi
-# USER ${NAME}
+# USER $NAME
 
 # Install domain bridge package - Nelson Durrant, Feb 2025
 # Necessary dependency for running the domain bridge scripts
 USER root
 RUN apt update && apt install -y ros-humble-domain-bridge
-USER ${NAME}
+USER $NAME
 
 # Install the joy package - Alyssa Fielding, Feb 2025
 # Needed for the joystick control on the base station
 USER root
 RUN apt update && apt install -y ros-humble-joy
-USER ${NAME} 
+USER $NAME 
 
 # Install gpsd-client - Braden Meyers, Feb 2025
 # Needed to publish raw gps data if we use gpsd
 USER root
 RUN apt update && apt install -y gpsd-clients
-USER ${NAME}
+USER $NAME
