@@ -8,7 +8,6 @@ from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node
 import os
 
 def generate_launch_description():
@@ -52,18 +51,15 @@ def generate_launch_description():
         )
     )
 
-    # XBOX CONTROLS from the rover 
-    include_xbox = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(
-            get_package_share_directory('mobility'), 'launch', 'xbox_drive_launch.py'))
-    )
-
-
-    include_rover_state_singleton_creator_new = Node(
-        package='odometry',
-        executable='rover_state_singleton_creator_new',
-        name='rover_state_singleton_creator_new',
-        output='screen'
+    # Start localization in odometry
+    include_estimation = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('odometry'),
+                'launch',
+                'estimation_new_launch.py'
+            )
+        )
     )
 
     return LaunchDescription([
@@ -71,6 +67,6 @@ def generate_launch_description():
         include_rover_common,
         include_autonomy,
         include_autopilot_drive,
-        include_rover_state_singleton_creator_new,
-        include_xbox
+        include_estimation
+        
     ])
