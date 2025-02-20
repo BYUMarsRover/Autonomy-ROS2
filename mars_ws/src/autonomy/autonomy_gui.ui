@@ -973,63 +973,6 @@
               </property>
              </widget>
             </item>
-            <!-- State Machine previous and current Main states Item -->
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_5">
-              <!-- Vertical Box that has the PREVIOUS state -->
-              <item>
-               <layout class="QVBoxLayout" name="verticalLayout_11">
-                <item>
-                 <widget class="QLabel" name="PreviousMainStateLabel">
-                  <property name="text">
-                   <string>Previous Main State</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="PreviousMainStateDisplay">
-                  <property name="text">
-                   <string>None</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <!-- Vertical Dividing Line (divides previous and current state columns) -->
-              <item>
-               <widget class="Line" name="line">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-               </widget>
-              </item>
-              <!-- Vertical Box that has the CURRENT state -->
-              <item>
-               <layout class="QVBoxLayout" name="verticalLayout_11">
-                <item>
-                 <widget class="QLabel" name="CurrentMainStateLabel">
-                  <property name="text">
-                   <string>Current Main State</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="CurrentMainStateDisplay">
-                  <property name="text">
-                   <string>None</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </item>
             <!-- State Machine previous and current Navigation states Item -->
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_5">
