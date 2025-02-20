@@ -44,6 +44,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Camera.msg"
   "msg/DeviceList.msg"
   "msg/ScienceFADIntensity.msg"
+  "msg/ScienceSaveFAD.msg"
   "msg/Heartbeat.msg"
   "msg/HeartbeatStatusRover.msg"
   "msg/HeartbeatStatusBase.msg"
