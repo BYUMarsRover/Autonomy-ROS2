@@ -5,7 +5,6 @@
 # - This script won't throw any errors, but the container will crash immediately
 # - Be very careful editing it!
 
-
 # Are we running on Jetson Orin architecture (the rover)?
 if [ "$(uname -m)" == "aarch64" ]; then
 
