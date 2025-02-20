@@ -68,4 +68,4 @@ case "$1" in
 esac
 
 # Attach to the 'rover_runtime' tmux session
-ssh marsrover@192.168.1.120 -p 2233 tmux attach -t rover_runtime
+ssh -t marsrover@192.168.1.120 -p 2233 'tmux attach -t rover_runtime'
