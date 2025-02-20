@@ -192,7 +192,7 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
             pose_pub_->publish(fta);
         }
 
-        if (publish_images_ && image_pub_.getNumSubscribers() > 0) {
+        if (publish_images_) {
             image_pub_.publish(cv_ptr->toImageMsg());
         }
     } catch (cv_bridge::Exception& e) {

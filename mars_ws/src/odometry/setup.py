@@ -35,6 +35,7 @@ setup(
             'rover_state_singleton_creator_new = odometry.rover_state_singleton_creator_new:main',
             'position_velocity_time_translator = odometry.position_velocity_time_translator:main',
             'dummy_singleton_publisher = odometry.dummy_singleton_publisher:main',
+            'global_heading_tf_publisher = odometry.global_heading_tf_publisher:main',
         ],
     },
 )
