@@ -28,8 +28,7 @@ from std_msgs.msg import Header, Int8
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloat32, OrderAutonomyWaypoint
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, RoverState, NavStatus, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors
-from ublox_read_2.msg import PositionVelocityTime #TODO: Uncomment this and get ublox_read_2 working, delete PositionVelocityTime from rover_msgs
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors
 from ament_index_python.packages import get_package_share_directory
 
 import threading
@@ -106,7 +105,7 @@ class AutonomyGUI(Node, QWidget):
         self.state_machine_list_string = ''
         self.autopilot_cmds_msg = None
         self.waypoints = [] # Stores the waypoints in the format [waypoint_number, tag_id, latitude, longitude, status]
-        self.current_path = AutonomyWaypoint().Request()
+        # self.current_path = AutonomyWaypoint().Request()
 
         ################# ROS Communication #################
 
@@ -114,18 +113,17 @@ class AutonomyGUI(Node, QWidget):
         self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
 
         # Subscribers
-        self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station
-        self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover
+        # self.create_subscription(PositionVelocityTime, '/base/PosVelTime', self.base_GPS_info_callback, 10) #GPS info from base station NOTE: Depreciated
+        # self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_GPS_info_callback, 10) #GPS info from rover NOTE: Depreciated
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10) #Rover GPS and Heading
-        self.create_subscription(RoverState, "/rover_status", self.rover_state_callback, 10) #Rover state (speed, direction, navigation state)
-        self.create_subscription(NavStatus, '/nav_status', self.rover_nav_status_callback, 10) #Autonomy State machine status
+        self.create_subscription(NavState, '/nav_state', self.nav_state_callback, 10) # Navigation state (speed, direction, navigation state)
+        self.create_subscription(RoverState, '/rover_state', self.rover_state_callback, 10) # Autonomy State machine state
         self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10) #Aruco Detection
         self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10) #Object Detection
         self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, 10) #What mobility/path_manager is publishing
         self.create_subscription(MobilityVelocityCommands, '/mobility/rover_vel_cmds', self.vel_cmds_callback, 10) #What mobility/autopilot_manager is publishing
         self.create_subscription(MobilityDriveCommand, '/mobility/wheel_vel_cmds', self.wheel_vel_cmds_callback, 10) #What mobility/wheel_manager is publishing
-        self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, 1)
-
+        self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, 1) 
 
         # Services
 
@@ -183,60 +181,59 @@ class AutonomyGUI(Node, QWidget):
         return
 
     ################# Callbacks for Subscribers #################
-    def base_GPS_info_callback(self, msg):
-        self.base_GPS_info = msg
-        self.base_numSV = msg.num_sv
-        base_year = msg.year
-        base_month = msg.month
-        base_day = msg.day
-        base_hour = msg.hour
-        base_min = msg.min
-        base_sec = msg.sec
-        # Update Gui Fields
-        self.BaseSats.setText(f'Sat #: {self.base_numSV}')
-        self.BaseDate.setText(f'Date: {base_month}/{base_day}/{base_year}')
-        self.BaseTime.setText(f'Time: {base_hour}:{base_min}:{base_sec}')
-        self.BaseLat.setText(f'Lat: {round(msg.lla[0], 6)}')
-        self.BaseLon.setText(f'Lon: {round(msg.lla[1], 6)}')
-        return
+    # def base_GPS_info_callback(self, msg): # NOTE: Depreciated
+    #     self.base_GPS_info = msg
+    #     self.base_numSV = msg.num_sv
+    #     base_year = msg.year
+    #     base_month = msg.month
+    #     base_day = msg.day
+    #     base_hour = msg.hour
+    #     base_min = msg.min
+    #     base_sec = msg.sec
+    #     # Update Gui Fields
+    #     self.BaseSats.setText(f'Sat #: {self.base_numSV}')
+    #     self.BaseDate.setText(f'Date: {base_month}/{base_day}/{base_year}')
+    #     self.BaseTime.setText(f'Time: {base_hour}:{base_min}:{base_sec}')
+    #     self.BaseLat.setText(f'Lat: {round(msg.lla[0], 6)}')
+    #     self.BaseLon.setText(f'Lon: {round(msg.lla[1], 6)}')
+    #     return
 
-    def rover_GPS_info_callback(self, msg):
-        self.rover_GPS_info = msg
-        self.rover_numSV = msg.num_sv
-        rover_year = msg.year
-        rover_month = msg.month
-        rover_day = msg.day
-        rover_hour = msg.hour
-        rover_min = msg.min
-        rover_sec = msg.sec
-        # Update Gui Fields
-        self.RoverSats.setText(f'Sat #: {self.rover_numSV}')
-        self.RoverDate.setText(f'Date: {rover_month}/{rover_day}/{rover_year}')
-        self.RoverTime.setText(f'Time: {rover_hour}:{rover_min}:{rover_sec}')
-        self.RoverLat.setText(f'Lat: {round(msg.lla[0], 6)}')
-        self.RoverLon.setText(f'Lon: {round(msg.lla[1], 6)}')
-        return
+    # def rover_GPS_info_callback(self, msg): # NOTE: Depreciated
+    #     self.rover_GPS_info = msg
+    #     self.rover_numSV = msg.num_sv
+    #     rover_year = msg.year
+    #     rover_month = msg.month
+    #     rover_day = msg.day
+    #     rover_hour = msg.hour
+    #     rover_min = msg.min
+    #     rover_sec = msg.sec
+    #     # Update Gui Fields
+    #     self.RoverSats.setText(f'Sat #: {self.rover_numSV}')
+    #     self.RoverDate.setText(f'Date: {rover_month}/{rover_day}/{rover_year}')
+    #     self.RoverTime.setText(f'Time: {rover_hour}:{rover_min}:{rover_sec}')
+    #     self.RoverLat.setText(f'Lat: {round(msg.lla[0], 6)}')
+    #     self.RoverLon.setText(f'Lon: {round(msg.lla[1], 6)}')
+    #     return
 
-    def rover_state_callback(self, msg): #rover status (speed, direction, navigation state)
+    def nav_state_callback(self, msg): #rover status (speed, direction, navigation state)
         self.rover_state_msg = msg
         self.speed = msg.speed
         self.direction = msg.direction
-        navigation_state = msg.navigation_state
-        if navigation_state == 0:
-            self.navigation_state = 'AUTONOMOUS'
-        elif navigation_state == 1:
-            self.navigation_state = 'TELEOPERATION'
-        elif navigation_state == 2:
-            self.navigation_state = 'ARRIVAL'
+        nav_state = msg.navigation_state
+        if nav_state == 0:
+            self.nav_state = 'AUTONOMOUS'
+        elif nav_state == 1:
+            self.nav_state = 'TELEOPERATION'
+        elif nav_state == 2:
+            self.nav_state = 'ARRIVAL'
         else:
-            self.navigation_state = 'UNKNOWN'
-        #update gui fields
-        #self.RoverState.setText(self.navigation_state)
-        #self.RoverSpeed.setText(self.speed)
-        #self.RoverDirection.setText(self.direction)
+            self.nav_state = 'UNKNOWN'
+        # Update GUI fields
+        self.PreviousNavStateDisplay.setText(self.CurrentNavStateDisplay.text())
+        self.CurrentNavStateDisplay.setText(self.nav_state)
         return
 
-    def rover_nav_status_callback(self, msg): #State machine status (state, auto_enable)
+    def rover_state_callback(self, msg): #State machine status (state, auto_enable)
         #Update previous state and state list
         if self.state_machine_state != None and msg.state != self.state_machine_state:
             self.state_machine_list_string = f'{msg.state}\n' + self.state_machine_list_string

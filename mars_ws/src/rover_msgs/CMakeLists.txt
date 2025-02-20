@@ -32,7 +32,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MobilityAutopilotCommand.msg"
   "msg/MobilityGPSWaypoint2Follow.msg"
   "msg/MobilityVelocityCommands.msg"
-  "msg/NavStatus.msg"
+  "msg/NavState.msg"
   "msg/ObjectDetection.msg"
   "msg/ObjectDetections.msg"
   "msg/ObstacleInfo.msg"
