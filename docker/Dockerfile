@@ -76,9 +76,9 @@ USER marsrover
 #
 ###############################################################
 
-# # Install GPS to UTM convertor - Daniel Webb, Feb 2025
-# # Needed for path planning and state machine logic
-# RUN pip3 install utm
+# Install GPS to UTM convertor - Daniel Webb, Feb 2025
+# Needed for path planning and state machine logic
+RUN pip3 install utm
 
 # Install OpenCV - Gabe Slade, Feb 2025
 # Used for detecting and locating aruco tags
