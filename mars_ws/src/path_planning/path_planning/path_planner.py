@@ -79,7 +79,7 @@ class PathPlanner(Node):
         self.utm_zone_letter = utm_coords[3]
 
     def rover_state_singleton_callback(self, msg):
-        self.location = (msg.latitude, msg.longitude)
+        self.location = (msg.gps.latitude, msg.gps.longitude)
         return
 
     def loop(self):
