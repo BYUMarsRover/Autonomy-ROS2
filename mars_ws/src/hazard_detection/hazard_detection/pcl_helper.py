@@ -95,7 +95,7 @@ def generate_fake_point_cloud():
     non_ground = np.hstack((non_ground, heights))
 
     #Extra non_ground
-    non_ground2 = np.random.uniform(-1, 1, (300, 2))  # 200 non-ground points
+    non_ground2 = np.random.uniform(0, 2, (300, 2))  # 200 non-ground points
     heights2 = np.random.uniform(-0.5, 3, (non_ground2.shape[0], 1))  # z values for non-ground
     non_ground2 = np.hstack((non_ground2, heights2))
 

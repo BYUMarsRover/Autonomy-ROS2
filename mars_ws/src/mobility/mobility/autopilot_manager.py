@@ -13,7 +13,7 @@ from rclpy.node import Node
 import numpy as np
 import time
 
-from rover_msgs.msg import RoverStateSingleton, MobilityAutopilotCommand, MobilityVelocityCommands, ZedObstacles
+from rover_msgs.msg import RoverStateSingleton, MobilityAutopilotCommand, MobilityVelocityCommands, HazardArray, Hazard
 from rover_msgs.srv import SetFloat32
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Twist
@@ -79,11 +79,16 @@ class AutopilotManager(Node):
         self.slow_down = 0.0
         self.too_close_limit = 0.0  # TODO: Choose a reasonable value
         self.detections = []
+        self.avoidance_heading = 0.0
+        self.heading_alpha = 0.0
+        self.obstacle_found = False
+        self.scaling_factor = 0.0
+        self.critical_distance = 1.0
 
         # ROS subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
         self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, 10)
-        self.create_subscription(ZedObstacles, '/zed/obstacles', self.obstacle_callback, 10)
+        self.create_subscription(HazardArray, '/hazards', self.obstacle_callback, 10)
 
         # ROS publishers
         self.rover_vel_cmds_pub = self.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', 10)
@@ -106,7 +111,13 @@ class AutopilotManager(Node):
         self.distance = msg.distance_to_target
 
         # self.des_heading = wrap(msg.course_angle + self.heading_plus, 0)
-        self.des_heading = wrap(msg.course_angle, 0)
+        if self.obstacle_found:
+            #figure out new heading to avoid obstacle
+            new_heading  = msg.course_angle * (1 - self.heading_alpha) + self.avoidance_heading * self.heading_alpha
+            self.des_heading = wrap(new_heading, 0)
+        else:
+            self.des_heading = wrap(msg.course_angle, 0)
+
         self.curr_heading = wrap(self.curr_heading, 0)
         self.course_error = wrap(self.des_heading - self.curr_heading, 0)
 
@@ -122,19 +133,43 @@ class AutopilotManager(Node):
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
         self.curr_heading = np.deg2rad(msg.map_yaw)
 
-    def obstacle_callback(self, msg: ZedObstacles):
-        if len(msg.x_coord) == 0:
-            return
+    def obstacle_callback(self, msg):
+        self.obstacle_found = False
+        if len(msg.hazards) == 1:
 
-        x_coord = msg.x_coord[0]
-        dist = msg.dist[0]
-        side = 1 if x_coord > 100 else -1
+            self.obstacle_found = True #TODO: Add a timer to this so that we can avoid the obstacle for a certain amount of time
+            hazard = msg.hazards[0]
+            if hazard.type == Hazard.OBSTACLE:
 
-        self.heading_plus += side
-        if abs(dist) < self.too_close_limit:
-            self.slow_down += 1
+                #Calculate the distance to the obstacle
+                dist = np.sqrt(hazard.location_x**2 + hazard.location_y**2)
+                max_obs_radius = np.sqrt(hazard.length_x**2 + hazard.length_y**2)*.6 #.6 is a fudge factor
+                self.scaling_factor = self.critical_distance + max_obs_radius #the bigger the obstacle, the more space we want to give it
 
-        self.detections.append((time.time_ns(), side))
+                angle_to_obstacle = np.arctan2(hazard.location_y, hazard.location_x)
+
+                if(hazard.location_y > 0): #obtacle is on the right
+                    self.avoidance_heading = angle_to_obstacle - np.pi/2
+                    
+                elif(hazard.location_y <= 0): #obstacle is on the left
+                    self.avoidance_heading = angle_to_obstacle + np.pi/2
+
+                #Calculate the alpha value to to avoid the obstacle
+                self.heading_alpha = self.scaling_factor / dist #the closer we are to the obstacle, the more we want to avoid it
+                
+                
+        #If there are multiple hazards, we need to decide which way we want to try to avoid it
+        # else:
+        #     for hazard in msg.hazards:
+        #         if hazard.hazard_type == Hazard.HAZARD_OBSTACLE:
+
+        #             #Calculate the distance to the obstacle
+        #             dist = np.sqrt(hazard.x**2 + hazard.y**2)
+
+        #             #calculate the volume of the obstacle
+        #             volume = hazard.length * hazard.width * hazard.height
+                    
+        #             self.obstacle_avoidance(hazard)
 
     def heading_decay(self):
         if not self.detections:

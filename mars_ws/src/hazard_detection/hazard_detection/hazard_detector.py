@@ -187,7 +187,7 @@ class HazardDetector(Node):
                 loc_y = np.mean(high_point[:, 1])
                 loc_z = np.mean(high_point[:, 2])
                 point = np.array([loc_x, loc_y, loc_z])
-                converted_point = convert_from_lidar_to_NED(point)
+                converted_point = convert_from_lidar_to_NED(point, self.rover_state_singleton.map_yaw)
                 # converted_point = convert_from_ZED_to_NED(converted_point)
                 hazard.location_x = converted_point[0]
                 hazard.location_y = converted_point[1]
