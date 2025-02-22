@@ -58,6 +58,14 @@ def generate_launch_description():
             parameters=[autonomy_params_file]
         ),
 
+         Node(
+            package='autonomy',
+            executable='autonomy_gui',
+            name='autonomy_gui',
+            output='screen',
+            parameters=[autonomy_params_file]
+        ),
+
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join( 
                 get_package_share_directory('path_planning'), 'launch', 'path_planner_launch.py'))

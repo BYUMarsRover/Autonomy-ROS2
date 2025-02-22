@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections  #NOTE** had PointList
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from std_srvs.srv import SetBool
 from std_msgs.msg import String
@@ -16,6 +16,7 @@ class State(Enum):
     MANUAL = "MANUAL"
     SEARCH_FOR_WRONG_TAG = "SEARCH_FOR_WRONG_TAG"
     START_POINT_NAVIGATION = "START_POINT_NAVIGATION"
+    WAYPOINT_NAVIGATION = "WAYPOINT_NAVIGATION"
     POINT_NAVIGATION = "POINT_NAVIGATION"
     START_SPIN_SEARCH = "START_SPIN_SEARCH"
     SPIN_SEARCH = "SPIN_SEARCH"
@@ -53,6 +54,8 @@ class AutonomyStateMachine(Node):
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
         self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10)
         self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10)
+        # self.create_subscription(PointList, '/navigation/waypoints', self.waypoint_callback, 10) #NOTE**
+        self.create_subscription(PointList, '/navigation/waypoints/autonomy', self.waypoint_list_callback, 10) #NOTE**
 
         # Publishers
         self.aruco_pose_pub = self.create_publisher(FiducialData, '/autonomy/aruco_pose', 10)
@@ -192,6 +195,23 @@ class AutonomyStateMachine(Node):
         response.message = 'Adding waypoints was successful'
         self.get_logger().info(f"Response: success={response.success}, message='{response.message}'")
         return response
+
+    # def waypoint_callback(self, msg: PointList): #NOTE**
+    #     self.get_logger().info("waypoint callback")
+    #     self.pointlist = msg
+    #     self.waypoints = [
+    #     AutonomyTaskInfo(latitude=p.x, longitude=p.y, tag_id=msg.tag_id) for p in msg.points
+    # ] 
+    #     self.tag_id = msg.tag_id
+    #     self.get_logger().info(f"Waypoints: {self.waypoints}")
+    #     self.get_logger().info(f"Tag ID {self.tag_id}")
+    #     # self.waypoints = self.pointlist.points
+
+    def waypoint_list_callback(self, msg: PointList): #NOTE**
+        self.waypoints = msg.task_list
+        self.tag_id = msg.tag_id
+        self.get_logger().info(f"Waypoints: {self.waypoints}")
+        self.get_logger().info(f"Tag ID {self.tag_id}")
 
     def set_current_task(self):
         '''
@@ -409,11 +429,13 @@ class AutonomyStateMachine(Node):
             self.get_logger().info("Service /mobility/speed_factor not available!")
             return False
         print("Service is live")
+        self.get_logger().error("Service is live")
 
         # Create a request object
         self.autopilot_speed_request = SetFloat32.Request()  # Create a request instance
         self.autopilot_speed_request.data = speed
         print("Executing service...")
+        self.get_logger().error("Executing service")
         
         # Send the request and wait for the response
         self.get_logger().info("Sending request to autopilot_speed_request")
@@ -449,10 +471,28 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 self.get_logger().info("Starting commands")
                 self.set_autopilot_speed(self.navigate_speed)
-                self.get_logger().info("Set speed command")
+                self.get_logger().info(f"Number of waypoints {len(self.waypoints)}")
+                self.target_latitude = self.waypoints[0].latitude #NOTE**
+                self.target_longitude = self.waypoints[0].longitude #NOTE**
+                self.target_point = GPSCoordinate(self.target_latitude, self.target_longitude, 0) #NOTE**
                 self.drive_controller.issue_path_cmd(self.target_latitude, self.target_longitude)
-                self.get_logger().info("Sent Path command")
-                self.state = State.POINT_NAVIGATION
+                self.state = State.WAYPOINT_NAVIGATION
+
+            elif self.state == State.WAYPOINT_NAVIGATION: #NOTE**
+                self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
+                if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.dist_tolerance:
+                    if len(self.waypoints) > 1:
+                        self.waypoints.pop(0)
+                        self.get_logger().info("Popped waypoint!")
+                        self.state = State.START_POINT_NAVIGATION
+                    else:
+                        self.get_logger().info("finished!")
+                        self.state = State.POINT_NAVIGATION
+                if self.correct_aruco_tag_found:
+                    self.state = State.ARUCO_NAVIGATE
+                elif self.correct_obj_found:
+                    self.state = State.OBJECT_NAVIGATE
+
 
             elif self.state == State.POINT_NAVIGATION:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
@@ -484,7 +524,7 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.SPIN_SEARCH:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                msg = String()
+                msg = String() # For Debugging TODO: remove
                 if self.aruco_spin_stop:
                     msg.data = "aruco spin Stopping"
                     # If the rover has spun self.aruco_spin_step_size and is stopped, wait for self.aruco_spin_delay_time seconds to look for a tag
@@ -510,7 +550,7 @@ class AutonomyStateMachine(Node):
                     self.state = State.ARUCO_NAVIGATE
                 elif self.correct_obj_found:
                     self.state = State.OBJECT_NAVIGATE
-                self.debug_pub.publish(msg)
+                self.debug_pub.publish(msg) # For debugging TODO: Remove
 
             elif self.state == State.START_HEX_SEARCH:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE

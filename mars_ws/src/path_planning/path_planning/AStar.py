@@ -283,6 +283,8 @@ def visualize_path(path, cost_map, map_type='Slope', waypoints=None, explored_no
     plt.title(map_type + ' Map')
     plt.xlabel('X Coordinate')
     plt.ylabel('Y Coordinate')
+    #TODO: make the map bigger, add the text to the bottom of the map pop-up
+    # between 9-10 and 3-4 for screen recording 
     legend = ['Start', 'Goal', 'Path']
 
     plt.plot(path[0][1], path[0][0], 'o', color='orange', markersize=8, label='Start', zorder=4)
