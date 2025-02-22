@@ -72,6 +72,7 @@ class ScienceSerialInterface(Node):
         except Exception as e:
             print("Error: scienceArduinoNano not yet ready")
             print(str(e))
+            sys.stdout.flush()
             self.get_logger().error("Error: scienceArduinoNano not yet ready")
             self.get_logger().error(str(e))
             rclpy.shutdown()
