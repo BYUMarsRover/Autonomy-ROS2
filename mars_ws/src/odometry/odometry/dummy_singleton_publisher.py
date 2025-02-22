@@ -61,7 +61,7 @@ class DummySingletonPublisher(Node):
 
         self.map_roll = 0
         self.map_pitch = 0
-        self.map_yaw = 90.0
+        self.map_yaw = 180.0
 
         self.odom_roll = 0
         self.odom_pitch = 0

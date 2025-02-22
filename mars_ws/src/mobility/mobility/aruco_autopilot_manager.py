@@ -76,9 +76,12 @@ class ArucoAutopilotManager(Node):
         self.distance = msg.distance_to_target
         self.angle_to_target = wrap(msg.angle_to_target, 0)
 
-        limit = 8 / 180 * np.pi
-        if abs(self.angle_to_target) > limit:
-            self.distance = 0
+        # This was used to make it so the rover would either only turn or only drive forward
+        # This is not needed anymore because the PID controllers can handle it
+        # TODO: We just need to tune the gains for the controller for good performance
+        # limit = 8 / 180 * np.pi
+        # if abs(self.angle_to_target) > limit:
+        #     self.distance = 0
 
         lin_vel = self.linear_controller.update_with_error(self.distance)
         angular_vel = self.angular_controller.update_with_error(self.angle_to_target)

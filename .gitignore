@@ -5,6 +5,7 @@
 **/install_isolated
 **/devel_isolated
 
-.DS_Store
-.vscode
 hanksville_full.asc
+
+.vscode
+.DS_Store
