@@ -54,8 +54,6 @@ class AutonomyStateMachine(Node):
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
         self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10)
         self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10)
-        # self.create_subscription(PointList, '/navigation/waypoints', self.waypoint_callback, 10) #NOTE**
-        self.create_subscription(PointList, '/navigation/waypoints/autonomy', self.waypoint_list_callback, 10) #NOTE**
 
         # Publishers
         self.aruco_pose_pub = self.create_publisher(FiducialData, '/autonomy/aruco_pose', 10)
@@ -66,8 +64,8 @@ class AutonomyStateMachine(Node):
         # Services
         self.srv_switch_auto = self.create_service(SetBool, '/autonomy/enable_autonomy', self.enable)
         self.srv_switch_abort = self.create_service(AutonomyAbort, '/autonomy/abort_autonomy', self.abort)
-        self.task_srvs = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.set_all_tasks_callback)
-        self.clear_waypoint_service = self.create_service(SetBool, '/AU_clear_waypoint_service', self.clear_waypoint)
+        self.srv_receive_waypoint = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.receive_waypoint)
+        self.srv_clear_waypoint = self.create_service(SetBool, '/AU_clear_waypoint_service', self.clear_waypoint)
 
         
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
@@ -176,12 +174,13 @@ class AutonomyStateMachine(Node):
         elif task_info.tag_id == 'mallet':
             self.tag_id = TagID.MALLET
     
-    def set_all_tasks_callback(self, request: AutonomyWaypoint.Request, response: AutonomyWaypoint.Response) -> AutonomyWaypoint.Response:
-        self.get_logger().info('in set_all_tasks_callback')
+    # Service callback to receive waypoints in the form messages
+    def receive_waypoint(self, request: AutonomyWaypoint.Request, response: AutonomyWaypoint.Response) -> AutonomyWaypoint.Response:
+        self.get_logger().info('in receive_waypoint')
 
-        tasks = request.task_list
-        for task in tasks:
-            self.waypoints.append(task) # Append new waypoints to the deque
+        waypoints = request.task_list
+        for wp in waypoints:
+            self.waypoints.append(wp) # Append new waypoints to the deque
 
         self.get_logger().info(f'Waypoints: {self.waypoints}')
 
@@ -196,24 +195,7 @@ class AutonomyStateMachine(Node):
         self.get_logger().info(f"Response: success={response.success}, message='{response.message}'")
         return response
 
-    # def waypoint_callback(self, msg: PointList): #NOTE**
-    #     self.get_logger().info("waypoint callback")
-    #     self.pointlist = msg
-    #     self.waypoints = [
-    #     AutonomyTaskInfo(latitude=p.x, longitude=p.y, tag_id=msg.tag_id) for p in msg.points
-    # ] 
-    #     self.tag_id = msg.tag_id
-    #     self.get_logger().info(f"Waypoints: {self.waypoints}")
-    #     self.get_logger().info(f"Tag ID {self.tag_id}")
-    #     # self.waypoints = self.pointlist.points
-
-    def waypoint_list_callback(self, msg: PointList): #NOTE**
-        self.waypoints = msg.task_list
-        self.tag_id = msg.tag_id
-        self.get_logger().info(f"Waypoints: {self.waypoints}")
-        self.get_logger().info(f"Tag ID {self.tag_id}")
-
-    def set_current_task(self):
+    def set_current_task(self): # NOTE: Depreciate?
         '''
         Sets current task to be the next one in the deque. Note that this also assumes that the TASK_COMPLETE task has popped
         the first waypoint off the front of the deque.
@@ -479,7 +461,7 @@ class AutonomyStateMachine(Node):
                 self.state = State.WAYPOINT_NAVIGATION
 
             elif self.state == State.WAYPOINT_NAVIGATION: #NOTE**
-                self.rover_nav_state.navigation_state = RoverState.AUTONOMOUS_STATE
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.dist_tolerance:
                     if len(self.waypoints) > 1:
                         self.waypoints.pop(0)
@@ -646,7 +628,7 @@ class AutonomyStateMachine(Node):
     def publish_status(self):
         msg = RoverState()
         msg.state = str(self.state.name.upper())
-        self.status_pub.publish(msg)
+        self.rover_state_pub.publish(msg)
 
 
 def main(args=None):

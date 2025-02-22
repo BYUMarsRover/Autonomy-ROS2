@@ -2,10 +2,9 @@ import rclpy
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 from rover_msgs.srv import PlanPath, OrderPath, OrderAutonomyWaypoint, AutonomyWaypoint
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, PointList
-from ublox_read_2.msg import PositionVelocityTime
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton
 from nav_msgs.msg import Path
-from geometry_msgs.msg import Point, PoseStamped, Pose, Quaternion
+from geometry_msgs.msg import Point, PoseStamped, Pose
 from std_msgs.msg import Header, Int8
 from std_srvs.srv import SetBool 
 import os
@@ -33,32 +32,37 @@ class PathPlanner(Node):
         super().__init__('path_planner')
         self.get_logger().info("Path Planner Node Started")
 
+        # Initialize waypoints message that will hold the planned path in lat/lon format ready to send ot the state machine
+        self.waypoints = None
+
+        # Initialize path needed flag
+        self.path_needed = False
+
         # Publishers
+        self.path_plan_response_pub = self.create_publisher(PlanPath.Response, '/path_plan_response', 10) # for notifying the gui the success status of an attempted path plan
         self.mapviz_path = self.create_publisher(Path, '/mapviz/path', 10)
-        # self.waypoint_pub = self.create_publisher(PointList, '/navigation/waypoints', 10)
-        self.waypoint_pub_autonomy = self.create_publisher(PointList, '/navigation/waypoints/autonomy',10)
 
         # Subscribers
-        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10) 
-        self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.update_location, 10) #GPS info from rover
-        self.location = None        #initialize location
-        # self.location = (40.3224, -111.6436) # NOTE: gravel pits placeholder    
-        # self.location = (38.4231, -110.7851) # NOTE: hanksville placeholder
+        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
+        self.location = None # initialize location
+        # self.location = (40.3224, -111.6436) # NOTE: gravel pits placeholder TODO: remove
+        # self.location = (38.4231, -110.7851) # NOTE: hanksville placeholder TODO: remove
 
         # Services
-        # Plans order of waypoints to visit mapviz version and Autonomy Wayponit version
+        # Plans order of waypoints to visit mapviz version and Autonomy Waypoint version
         self.plan_order_service = self.create_service(OrderAutonomyWaypoint, '/plan_order', self.plan_order)
-        self.plan_order_mapviz_service = self.create_service(OrderPath, '/plan_order_mapviz', self.plan_order_mapviz)
+        self.plan_order_mapviz_service = self.create_service(OrderPath, '/plan_order_mapviz', self.plan_order_mapviz) #TODO: Depreciate this
         # This service plans a path from start to goal using slope as cost
         self.plan_path_service = self.create_service(PlanPath, '/plan_path', self.plan_path)
-        # This service sends planned waypoint path to the state machine when "send waypoints" is selected in Autonomy GUI
-        self.send_waypoints_service = self.create_service(SetBool, 'send_waypoints', self.send_waypoints)
+        # This service triggers the AU_waypoint_service sending the path to the state machine when "send waypoints" is clicked in Autonomy GUI
+        self.send_path_service = self.create_service(SetBool, '/send_path_service', self.send_path)
 
         # Clients
+        # This client is used to add the self.waypoints to the state machine
         self.send_path_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
 
         # Timer for the loop function
-        self.timer = self.create_timer(0.2, self.loop) # Perform the loop function at 5Hz
+        self.timer = self.create_timer(0.2, self.loop) # Perform the loop function at 5Hz TODO: tune this
 
         ################ Mapviz Communication Setup ################# #TODO: Look into this please!
 
@@ -76,71 +80,33 @@ class PathPlanner(Node):
         self.utm_northing_zero = utm_coords[1]
         self.utm_zone_number = utm_coords[2]
         self.utm_zone_letter = utm_coords[3]
-        # # Initialize Mapper object with asc file
-        # # Gravel Pit Map
-        # if self.location[0] > 40.3166 and self.location[0] < 40.323302 and self.location[1] > -111.649553 and self.location[1] < -111.6369:
-        #     self.get_logger().info("Welcome to the gravel pit! Path Planning is ready.")
-        #     file_path=os.path.join(get_package_share_directory('path_planning'), 'data', 'gravel_pits.asc')
-        #     self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='T') # TODO: verify zone and zone_letter
-        #     # self.eMapper.chop_map(200, 700, 0, 500)
-        # # Hanksville Map
-        # elif self.location[0] > 38.392509 and self.location[0] < 38.450525 and self.location[1] > -110.804971 and self.location[1] <  -110.773991:
-        #     self.get_logger().info("Welcome to Hanksville! Path Planning is ready.")
-        #     file_path=os.path.join(get_package_share_directory('path_planning'), 'data', 'hanksville_full.asc')
-        #     self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='S')
-        # else:
-        #     print("Current location not supported")
-        #     self.get_logger().warn("Current location not supported for path planning")
 
-        self.initialize_mapper()
+        # self.initialize_mapper() # NOTE: not to be done until the rover is publishing state information
 
-    def rover_state_singleton_callback(self, msg):
-        self.location = (msg.gps.latitude, msg.gps.longitude)
-        return
 
     def initialize_mapper(self):
         # Ensure location is set before using it
         if self.location is None:
             self.get_logger().warn("Location is not yet available. Deferring mapper initialization.")
-            self.path_needed = False
             return
 
-        # Check location and initialize the appropriate mapper
+        # Check rover location and initialize using the appropriate elevation map
         if 40.3166 < self.location[0] < 40.323302 and -111.649553 < self.location[1] < -111.6369:
-            self.get_logger().info("Welcome to the gravel pit! Path Planning is ready.")
+            self.get_logger().info("Welcome to the gravel pit!")
             file_path = os.path.join(get_package_share_directory('path_planning'), 'data', 'gravel_pits.asc')
             self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='T')
         elif 38.392509 < self.location[0] < 38.450525 and -110.804971 < self.location[1] < -110.773991:
-            self.get_logger().info("Welcome to Hanksville! Path Planning is ready.")
-            file_path = os.path.join(get_package_share_directory('path_planning'), 'data', 'hanksville_full.asc')
+            self.get_logger().info("Welcome to Hanksville!")
+            file_path = os.path.join(get_package_share_directory('path_planning'), 'data', 'hanksville_full.asc') # TODO: change this to a chop of the hanksville_full file (too big to load into the AStarPlanner)
             self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='S')
         else:
             self.get_logger().warn("Current location not supported for path planning.")
             return
         
-                # Initialize PathPlanner object with elevation map, elevation weight, and slope degree threshold
+        # Initialize PathPlanner object with elevation map, elevation weight, and slope threshold (degrees)
         self.path_planner = AStarPlanner(cost_map=self.eMapper.map, ew=30., e_thresh=10)
+        self.get_logger().info('Path Planning is ready!')
         self.path_needed = False
-
-    def check_location(self, goal):
-        # Check location
-        if 40.3166 < goal[0] < 40.323302 and -111.649553 < goal[1] < -111.6369:
-            self.get_logger().info("Gravel Pits destination set")
-        elif 38.392509 < goal[0] < 38.450525 and -110.804971 < goal[1] < -110.773991:
-            self.get_logger().info("Hanksville destination set")
-        else:
-            self.get_logger().warn("Current location not supported for path planning.")
-            return
-        self.goal = self.eMapper.latlon_to_xy(goal[0], goal[1])
-        self.get_logger().info("Initializing path planner")
-        self.waypoints = []  # Reset waypoints list
-        self.path_needed = True
-
-
-    def update_location(self, msg):
-        self.location = (msg.lla[0], msg.lla[1])
-        # self.location = (msg.latitude, msg.longitude)
-        
 
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
         self.curr_latitude = msg.gps.latitude
@@ -149,59 +115,40 @@ class PathPlanner(Node):
             self.location = (self.curr_latitude, self.curr_longitude)
             self.initialize_mapper()
         self.location = (self.curr_latitude, self.curr_longitude)
-        
+        return
 
 
     def loop(self):
         if self.path_needed:
-            self.list = AutonomyWaypoint.Request()  # Reset task list #NOTE**
+            # Initialize waypoint list in lat/lon format ready to be sent to state machine
+            self.waypoints = AutonomyWaypoint.Request()
 
             # Plan path
             path, length = self.path_planner.plan_path(self.start, self.goal)
-            self.get_logger().info("Path planner completed")
+            self.get_logger().info("Path planned!")
 
-            waypoints = self.path_planner.get_path_waypoints(dist_between_wp=10)
-            self.get_logger().info("Waypoints gathered!")
+            # Get waypoints every 10 meters along path in x/y format
+            waypoints_xy = self.path_planner.get_path_waypoints(dist_between_wp=10) #TODO: tune this distance between points
 
-            # Get waypoints along path
-            task_list = self.list.task_list #NOTE**
-            for waypoint in waypoints:
-                x, y = waypoint  # Unpack (x, y) tuple
-                latlon = self.eMapper.xy_to_latlon(x, y)  # Convert xy to lat/lon
-                message = AutonomyTaskInfo()
-                message.latitude = float(latlon[0])
-                message.longitude = float(latlon[1])
-                message.tag_id = self.goal_tag_id
-                task_list.append(message)
+            # Append coordinates to the waypoint list in lat/lon format
+            for xy in waypoints_xy:
+                x, y = xy  # Unpack (x, y) tuple
+                lat, lon = self.eMapper.xy_to_latlon(x, y)  # Convert xy to lat/lon
+                self.waypoints.task_list.append(AutonomyTaskInfo(latitude=float(lat), longitude=float(lon), tag_id=self.tag_id))
 
             # Get explored nodes
             explored_nodes = self.path_planner.get_explored_nodes()
 
             # Visualize path
-            visualize_path(path, self.eMapper.grad_map, waypoints=waypoints, explored_nodes=explored_nodes)
+            visualize_path(path, self.eMapper.grad_map, waypoints=waypoints_xy, explored_nodes=explored_nodes)
+
+            # Notify the gui that the path is planned
+            response = PlanPath.Response()
+            response.success = True
+            response.message = "Path planned"
+            self.path_plan_response_pub.publish(response)
 
             self.path_needed = False
-
-            # Publish waypoints along path to /mapviz/path topic  #TODO: remove
-            # path_msg = Path()
-            # path_msg.header.frame_id = 'map'
-            # path_msg.header.stamp = self.get_clock().now().to_msg()
-            # for n in waypoints:
-            #     lat, lon = self.eMapper.xy_to_latlon(n[1], n[0])
-            #     utm_coords = utm.from_latlon(lat, lon)
-            #     x = utm_coords[0] - self.utm_easting_zero
-            #     y = utm_coords[1] - self.utm_northing_zero
-            #     path_msg.poses.append(
-            #         PoseStamped(
-            #             header=Header(frame_id='map'),
-            #             pose=Pose(
-            #                 position=Point(x=x, y=y, z=0.0),
-            #                 orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
-            #             )
-            #         )
-            #     )
-
-            # self.mapviz_path.publish(path_msg) #TODO: verify that the path pops up on mapviz **Current Task
 
 
     # Plan Waypoint Order Service Callback
@@ -289,33 +236,46 @@ class PathPlanner(Node):
     # Plan Path Service Callback
     def plan_path(self, request, response):
         '''
-        This Service sets a flag for the loop function 
-        to plan a path which will get published to the 
-        "path" topic when finished
+        This Service sets a flag for the loop function to plan a path 
+        that is stored in self.waypoints in lat/lon format until 
+        requested to be sent to the state machine
 
-        Pass in: start and goal in lat/lon format
+        Pass in: goal in lat/lon format
         '''
         # Convert lat/lon to x/y for path planning
-        # start = (request.start.x, request.start.y) #NOTE:**
-        goal = (request.goal.x, request.goal.y)
-        self.goal_tag_id = request.tag_id 
-        # self.start = self.eMapper.latlon_to_xy(start[0], start[1])
+        self.goal = self.eMapper.latlon_to_xy(request.goal.latitude, request.goal.longitude)
         self.start = self.eMapper.latlon_to_xy(self.curr_latitude, self.curr_longitude)
-        self.check_location(goal)
+        self.tag_id = request.goal.tag_id
 
-        response.received = True
-        return response
-    
-    def send_waypoints(self, request, response): #NOTE**
-        if self.list:
-            # self.waypoint_pub_autonomy.publish(self.list)
-            self.get_logger().info("Publishing waypoints")
-            response.success = True  # Correct attribute name
-            response.message = "Waypoints published successfully"
-            future = self.send_path_client.call_async(self.list)
-            
+        # Check if the goal coordinate is within the elevation map
+        response.success = False
+        if self.goal[0] is None and self.start[0] is None:
+            response.message = 'Rover & Coordinate outside elevation map, proceed without path planning'
+        elif self.goal[0] is None:
+            response.message = 'Coordinate outside elevation map, proceed without path planning'
+        elif self.start[0] is None:
+            response.message = 'Rover outside elevation map, proceed without path planning'
         else:
-            self.get_logger().info("No waypoints to publish")
+            self.path_needed = True # Set flag to plan path in loop function
+            # Indicate that the goal has been received and the path is being planned
+            response.success = True
+            response.message = 'Received, planning path...'
+            return response
+    
+    # Sends the path to the state machine
+    def send_path(self, request, response):
+        # Error Handling
+        if not self.send_path_client.wait_for_service(timeout_sec=1.0):
+            response.success = False
+            response.message = "/AU_waypoint_service not available"
+            return response
+        
+        if self.waypoints is not None:
+            response.success = True
+            response.message = "Sending Waypoint (path included)"
+            future = self.send_path_client.call_async(self.waypoints)
+            # TODO: add a done callback
+        else:
             response.success = False  # Indicate failure
             response.message = "No waypoints available to publish"
         return response
