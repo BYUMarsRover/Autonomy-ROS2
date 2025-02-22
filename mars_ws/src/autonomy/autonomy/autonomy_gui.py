@@ -242,7 +242,7 @@ class AutonomyGUI(Node, QWidget):
             self.nav_state = 'TELEOPERATION'
         elif nav_state == 2:
             self.nav_state = 'ARRIVAL'
-            self.waypoints[self.selected_waypoint -1][4] = 'COMPLETE' # FIXME - this will only work if the correct waypoint is selected in the gui when the task is completed
+            # self.waypoints[self.selected_waypoint -1][4] = 'COMPLETE' # FIXME - this will only work if the correct waypoint is selected in the gui when the task is completed
         else:
             self.nav_state = 'UNKNOWN'
         # Update GUI fields
