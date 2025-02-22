@@ -6,8 +6,11 @@ from ament_index_python.packages import get_package_share_directory
 namespace = 'mobility'
 def generate_launch_description():
     # Path to parameter files
-    mobility_params_dir = get_package_share_directory('mobility')
-    mobility_params = os.path.join(mobility_params_dir, 'params', 'autopilot_params.yaml')
+    mobility_params = os.path.join(
+        get_package_share_directory('mobility'),
+        'params',
+        'autopilot_params.yaml'
+    )
 
     return LaunchDescription([
         # Wheel Manager Node
@@ -16,7 +19,7 @@ def generate_launch_description():
             executable='wheel_manager',
             name='wheel_manager',
             output='screen',
-            namespace=namespace,
+            namespace=namespace
         ),
 
         # Drive Manager Node
@@ -26,7 +29,7 @@ def generate_launch_description():
             name='drive_manager',
             output='screen',
             parameters=[mobility_params],
-            namespace=namespace,
+            namespace=namespace
         ),
 
         # Autopilot Manager Node
@@ -36,7 +39,7 @@ def generate_launch_description():
             name='autopilot_manager',
             output='screen',
             parameters=[mobility_params],
-            namespace=namespace,
+            namespace=namespace
         ),
 
         # Aruco Autopilot Manager Node
@@ -46,7 +49,7 @@ def generate_launch_description():
             name='aruco_autopilot_manager',
             output='screen',
             parameters=[mobility_params],
-            namespace=namespace,
+            namespace=namespace
         ),
 
         # Path Manager Node
@@ -55,6 +58,6 @@ def generate_launch_description():
             executable='path_manager',
             name='path_manager',
             output='screen',
-            namespace=namespace,
+            namespace=namespace
         ),
     ])

@@ -1,10 +1,9 @@
-# Receieved by src/path_planning/src/a_star.py
-#
-# This message file allows a node to send a set of waypoints to the path_planning
-# module. The path planning module will then plan a path between all of the waypoints.
-# Note that the two arrays below are paired. The value at index 0 of north_coords is
-# combined with the value at index 0 of east_coords to generate the first waypoint.
+
+# This message if for sending autonomy waypoint information
+
+# This is used by AutonomyWaypoint.srv to send waypoints to the state machine.
+# See AutonomyWaypoint.srv for more details
 
 float64 latitude    # latitude
-float64 longitude    # longitude
-string tag_id #aruco tag id
+float64 longitude   # longitude
+string tag_id       # tag id - 'GPS_only', '1', '2', '3', 'bottle', 'mallet'
