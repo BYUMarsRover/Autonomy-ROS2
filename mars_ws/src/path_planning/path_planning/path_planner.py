@@ -15,6 +15,18 @@ from .e_mapping import Mapper
 
 from .AStar import *
 
+'''
+Created by: Daniel Webb
+Date: 11/24/2024
+
+Path Planner Node for managing the interface between the path planning algorithm and the state machina and mapviz
+    Features:
+        - Uses the AStar object to plan the best path between two points based on a cost map and distance
+        - Uses the Mapper object to store a local elevation map and convert between lat/lon and x/y coordinates
+        - Uses the AStar object to plan the order of waypoints to visit based on total path length TODO: modify the AStar object to take into account elevation change between waypoints
+
+'''
+
 class PathPlanner(Node):
     def __init__(self):
         super().__init__('path_planner')
