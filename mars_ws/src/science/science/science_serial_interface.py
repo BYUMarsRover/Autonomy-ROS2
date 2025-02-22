@@ -7,6 +7,7 @@ SUBSCRIBED TO:
 """
 
 import rclpy
+import sys
 from rclpy.node import Node
 from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues
 from std_msgs.msg import Bool
@@ -72,6 +73,7 @@ class ScienceSerialInterface(Node):
         except Exception as e:
             print("Error: scienceArduinoNano not yet ready")
             print(str(e))
+            sys.stdout.flush()
             self.get_logger().error("Error: scienceArduinoNano not yet ready")
             self.get_logger().error(str(e))
             rclpy.shutdown()
