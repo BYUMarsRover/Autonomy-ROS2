@@ -54,7 +54,8 @@ class AutonomyStateMachine(Node):
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
         self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10)
         self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10)
-        self.create_subscription(PointList, '/navigation/waypoints', self.waypoint_callback, 10)
+        # self.create_subscription(PointList, '/navigation/waypoints', self.waypoint_callback, 10)
+        self.create_subscription(PointList, '/navigation/waypoints/autonomy', self.waypoint_list_callback, 10)
 
         # Publishers
         self.aruco_pose_pub = self.create_publisher(FiducialData, "/autonomy/aruco_pose", 10)
@@ -195,17 +196,22 @@ class AutonomyStateMachine(Node):
         self.get_logger().info(f"Response: success={response.success}, message='{response.message}'")
         return response
 
-    def waypoint_callback(self, msg: PointList):
-        self.get_logger().info("waypoint callback")
-        self.pointlist = msg
-        self.waypoints = [
-        AutonomyTaskInfo(latitude=p.x, longitude=p.y, tag_id=msg.tag_id) for p in msg.points
-    ] 
+    # def waypoint_callback(self, msg: PointList):
+    #     self.get_logger().info("waypoint callback")
+    #     self.pointlist = msg
+    #     self.waypoints = [
+    #     AutonomyTaskInfo(latitude=p.x, longitude=p.y, tag_id=msg.tag_id) for p in msg.points
+    # ] 
+    #     self.tag_id = msg.tag_id
+    #     self.get_logger().info(f"Waypoints: {self.waypoints}")
+    #     self.get_logger().info(f"Tag ID {self.tag_id}")
+    #     # self.waypoints = self.pointlist.points
+
+    def waypoint_list_callback(self, msg: PointList):
+        self.waypoints = msg.task_list
         self.tag_id = msg.tag_id
         self.get_logger().info(f"Waypoints: {self.waypoints}")
         self.get_logger().info(f"Tag ID {self.tag_id}")
-        # self.waypoints = self.pointlist.points
-
 
     def set_current_task(self):
         '''

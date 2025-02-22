@@ -131,12 +131,12 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(MobilityDriveCommand, '/mobility/wheel_vel_cmds', self.wheel_vel_cmds_callback, 10) #What mobility/wheel_manager is publishing
         self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, 1)
 
-
         # Services
 
         # Clients
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
-        self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
+        # self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
+        self.send_waypoint_client = self.create_client(SetBool, 'send_waypoints')
         self.clear_waypoint_client = self.create_client(SetBool, '/AU_clear_waypoint_service')
         self.plan_order_client = self.create_client(OrderAutonomyWaypoint, '/plan_order')
         self.plan_order_mapviz_client = self.create_client(OrderPath, '/plan_order_mapviz')
@@ -234,6 +234,7 @@ class AutonomyGUI(Node, QWidget):
             self.navigation_state = 'TELEOPERATION'
         elif navigation_state == 2:
             self.navigation_state = 'ARRIVAL'
+            self.waypoints[self.selected_waypoint -1][4] = 'complete'
         else:
             self.navigation_state = 'UNKNOWN'
         #update gui fields
@@ -388,15 +389,17 @@ class AutonomyGUI(Node, QWidget):
         else:
             IWC_cmd_string = IWC_cmd_string + f', RRW: -{round(msg.right_rear_speed, 2)}'
 
-        
         self.IWCCmds.setText(IWC_cmd_string)
         
         return
 
     # Callback functions for buttons
+    #TODO: add status complete when the task finishes in autonomy GUI
     def enable_autonomy(self):
         req = SetBool.Request()
         req.data = True
+        self.waypoints[self.selected_waypoint -1][4] = 'in progress'
+        self.update_waypoint_list()
         future = self.enable_autonomy_client.call_async(req)
         self.error_label.setText('Enabling Autonomy...')
 
@@ -494,16 +497,56 @@ class AutonomyGUI(Node, QWidget):
         if self.selected_waypoint is None:
             self.error_label.setText('No waypoint selected')
             return
+        if self.waypoints[self.selected_waypoint -1][4] == 'path ready':
+            return
+        
         print(f"selected waypoint index: {self.selected_waypoint -1}")
         waypoint = self.waypoints[self.selected_waypoint -1]
+        self.waypoints[self.selected_waypoint -1][4] = 'planning path'
+        self.update_waypoint_list()
+
+        # Create a one-time timer and store it so it can be canceled
+        self.timer = self.create_timer(1.0, self.send_plan_path_request_once(waypoint))
+
+    def send_plan_path_request_once(self, waypoint):
+        def callback():
+            if hasattr(self, "timer"):
+                self.timer.cancel()  # Cancel the timer to prevent looping
+            self.send_plan_path_request(waypoint)
+        return callback  # Return the function reference, do not call it immediately
+
+    def send_plan_path_request(self, waypoint):
         request = PlanPath.Request()
         request.goal = Point()
         request.goal.x = waypoint[2]
         request.goal.y = waypoint[3]
         request.tag_id = waypoint[1]
+
         future = self.plan_path_client.call_async(request)
         print(f"Tag ID: {request.tag_id}, Latitude: {request.goal.x}, Longitude: {request.goal.y}")
-        
+
+        future.add_done_callback(lambda f: self.handle_plan_path_response(f, waypoint))
+
+    def handle_plan_path_response(self, future, waypoint):
+        try:
+            result = future.result()
+            waypoint[4] = 'path ready' if result is not None else 'path failed'
+            print("path ready" if result is not None else "path failed")
+            self.update_waypoint_list()
+        except Exception as e:
+            waypoint[4] = 'path failed'
+            self.update_waypoint_list()
+            print(f"Service call failed: {e}")
+        # rclpy.spin_until_future_complete(self, future)  # Wait for the service response
+
+        # # After receiving the response
+        # if future.result() is not None:
+        #     waypoint[4] = 'path ready'
+        #     print("path ready")
+        # else:
+        #     waypoint[4] = 'path failed'
+        #     print("path failed")
+                
 
     # This updated the display of the waypoint list in the gui
     def update_waypoint_list(self):
@@ -599,36 +642,54 @@ class AutonomyGUI(Node, QWidget):
     
     # This sends the waypoint to the state machine
     def send_waypoint(self):
-        #logic for sending waypoint
-        req = AutonomyWaypoint.Request()
-        req.task_list = []
-
-        try:
-            self.get_logger().info(f'Latitude: {self.latitude_input.text()}')
-            self.get_logger().info(f'Longitude: {self.longitude_input.text()}')
-            self.get_logger().info('Sending Waypoint...')
-            lat = float(self.latitude_input.text())
-            lon = float(self.longitude_input.text())
-        except ValueError:
-            self.error_label.setText('Invalid latitude or longitude')
+        #logic for sending the list of waypoints created by path_planning
+        if not self.send_waypoint_client.wait_for_service(timeout_sec=2.0):
+            self.get_logger().error("Send waypoint service unavailable")
             return
-
-        # Create a task and append to the task list
-        task = AutonomyTaskInfo()
-        task.latitude = lat
-        task.longitude = lon
-        if self.tag_id == None:
-            self.error_label.setText('No tag selected')
+        if self.selected_waypoint is None:
+            self.error_label.setText('No waypoint selected')
             return
-        else:
-            task.tag_id = self.tag_id
+        #TODO: add something that makes them know it has to be the most recently calculated path
+        self.waypoints[self.selected_waypoint -1][4] = 'state machine ready'
+        self.update_waypoint_list()
+        request = SetBool.Request()
+        request.data = True
+        future = self.send_waypoint_client.call_async(request)
+        print(f"Sent waypoint")
+        
+        #TODO: is the stuff daniel wrote just to send one waypoint? 
 
-        req.task_list.append(task)
 
-        # Send the Waypoint
-        self.error_label.setText('Sending Waypoint')
-        future = self.send_waypoint_client.call_async(req)
-        return
+        # #logic for sending waypoint
+        # req = AutonomyWaypoint.Request()
+        # req.task_list = []
+
+        # try:
+        #     self.get_logger().info(f'Latitude: {self.latitude_input.text()}')
+        #     self.get_logger().info(f'Longitude: {self.longitude_input.text()}')
+        #     self.get_logger().info('Sending Waypoint...')
+        #     lat = float(self.latitude_input.text())
+        #     lon = float(self.longitude_input.text())
+        # except ValueError:
+        #     self.error_label.setText('Invalid latitude or longitude')
+        #     return
+
+        # # Create a task and append to the task list
+        # task = AutonomyTaskInfo()
+        # task.latitude = lat
+        # task.longitude = lon
+        # if self.tag_id == None:
+        #     self.error_label.setText('No tag selected')
+        #     return
+        # else:
+        #     task.tag_id = self.tag_id
+
+        # req.task_list.append(task)
+
+        # # Send the Waypoint
+        # self.error_label.setText('Sending Waypoint')
+        # future = self.send_waypoint_client.call_async(req)
+        # return
 
     # This removes the waypoint from the state machine
     def clear_waypoint(self):

@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
-from rover_msgs.srv import PlanPath, OrderPath, OrderAutonomyWaypoint
+from rover_msgs.srv import PlanPath, OrderPath, OrderAutonomyWaypoint, AutonomyWaypoint
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, PointList
 from ublox_read_2.msg import PositionVelocityTime
 from nav_msgs.msg import Path
@@ -35,7 +35,8 @@ class PathPlanner(Node):
 
         # Publishers
         self.mapviz_path = self.create_publisher(Path, '/mapviz/path', 10)
-        self.waypoint_pub = self.create_publisher(PointList, '/navigation/waypoints', 10)
+        # self.waypoint_pub = self.create_publisher(PointList, '/navigation/waypoints', 10)
+        self.waypoint_pub_autonomy = self.create_publisher(PointList, '/navigation/waypoints/autonomy',10)
 
         # Subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10) 
@@ -51,8 +52,10 @@ class PathPlanner(Node):
         # This service plans a path from start to goal using slope as cost
         self.plan_path_service = self.create_service(PlanPath, '/plan_path', self.plan_path)
         # This service sends planned waypoint path to the state machine when "send waypoints" is selected in Autonomy GUI
-        self.send_waypoints = self.create_service(SetBool, 'send_waypoints', self.send_waypoints)
+        self.send_waypoints_service = self.create_service(SetBool, 'send_waypoints', self.send_waypoints)
+
         # Clients
+        self.send_path_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
 
         # Timer for the loop function
         self.timer = self.create_timer(0.2, self.loop) # Perform the loop function at 5Hz
@@ -127,6 +130,7 @@ class PathPlanner(Node):
             return
         self.goal = self.eMapper.latlon_to_xy(goal[0], goal[1])
         self.get_logger().info("Initializing path planner")
+        self.waypoints = []  # Reset waypoints list
         self.path_needed = True
 
 
@@ -147,36 +151,25 @@ class PathPlanner(Node):
 
     def loop(self):
         if self.path_needed:
-            # Plan path - pass start and goal coordinates in x, y format using the Mapper function
+            self.list = AutonomyWaypoint.Request()  # Reset task list
+
+            # Plan path
             path, length = self.path_planner.plan_path(self.start, self.goal)
             self.get_logger().info("Path planner completed")
 
             waypoints = self.path_planner.get_path_waypoints(dist_between_wp=10)
             self.get_logger().info("Waypoints gathered!")
 
-            # Get waypoints along path - see AStar.py for function description
-            points = []
+            # Get waypoints along path
+            task_list = self.list.task_list
             for waypoint in waypoints:
                 x, y = waypoint  # Unpack (x, y) tuple
                 latlon = self.eMapper.xy_to_latlon(x, y)  # Convert xy to lat/lon
                 message = AutonomyTaskInfo()
-                point = Point()
-                # message.lattitude = float(latlon[0])
-                # message.longitude = float(latlon[1])
-                # message.tag_id = self.goal_tag_id
-                point.x = float(latlon[0])  # Latitude
-                point.y = float(latlon[1])  # Longitude
-                points.append(point)
-
-            # Create a PointList message
-            point_list_msg = PointList()
-            point_list_msg.points = points
-            point_list_msg.tag_id = str(self.goal_tag_id)
-
-
-            # Publish the PointList
-            self.point_list_msg = point_list_msg
-            # self.waypoint_pub.publish(point_list_msg)
+                message.latitude = float(latlon[0])
+                message.longitude = float(latlon[1])
+                message.tag_id = self.goal_tag_id
+                task_list.append(message)
 
             # Get explored nodes
             explored_nodes = self.path_planner.get_explored_nodes()
@@ -312,11 +305,13 @@ class PathPlanner(Node):
         return response
     
     def send_waypoints(self, request, response):
-        if self.point_list_msg:
-            self.waypoint_pub.publish(self.point_list_msg)
+        if self.list:
+            # self.waypoint_pub_autonomy.publish(self.list)
             self.get_logger().info("Publishing waypoints")
             response.success = True  # Correct attribute name
             response.message = "Waypoints published successfully"
+            future = self.send_path_client.call_async(self.list)
+            
         else:
             self.get_logger().info("No waypoints to publish")
             response.success = False  # Indicate failure
