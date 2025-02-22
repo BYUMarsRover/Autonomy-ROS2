@@ -72,8 +72,8 @@ class ScienceSerialInterface(Node):
         self.sub_science_serial_override = self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
 
         self.info_publisher = self.create_publisher(ScienceSensorValues, '/science_sensor_values', 10)
-        # self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
-        self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
+        self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
+        # self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
         # self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
 
         self.create_timer(100e-3, self.read_serial) # 10 Hz
