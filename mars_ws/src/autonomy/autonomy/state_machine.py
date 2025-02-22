@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections  #NOTE** had PointList
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from std_srvs.srv import SetBool
 from std_msgs.msg import String
@@ -80,6 +80,7 @@ class AutonomyStateMachine(Node):
         self.retry_count = 0
 
         # Declare Parameters
+        self.declare_parameter('path_waypoint_distance_tolerance', 4.0)
         self.declare_parameter('distance_tolerance', 1.0)
         self.declare_parameter('obj_distance_tolerance', 1.5) # TODO: Tune & in the yaml
         self.declare_parameter('aruco_distance_tolerance', 2.0)
@@ -100,6 +101,7 @@ class AutonomyStateMachine(Node):
         # self.declare_parameter('aruco_gate_approach_distance', 6.0)
 
         # Get Parameters
+        self.path_waypoint_dist_tolerance = self.get_parameter('path_waypoint_distance_tolerance').get_parameter_value().double_value
         self.dist_tolerance = self.get_parameter('distance_tolerance').get_parameter_value().double_value
         self.obj_dist_tolerance = self.get_parameter('obj_distance_tolerance').get_parameter_value().double_value
         self.abort_dist_tolerance = self.get_parameter('abort_distance_tolerance').get_parameter_value().double_value
@@ -176,7 +178,9 @@ class AutonomyStateMachine(Node):
     
     # Service callback to receive waypoints in the form messages
     def receive_waypoint(self, request: AutonomyWaypoint.Request, response: AutonomyWaypoint.Response) -> AutonomyWaypoint.Response:
-        self.get_logger().info('in receive_waypoint')
+        # Clear current waypoint before receiving a new one
+        while len(self.waypoints) > 0:
+            self.waypoints.pop()
 
         waypoints = request.task_list
         for wp in waypoints:
@@ -454,21 +458,21 @@ class AutonomyStateMachine(Node):
                 self.get_logger().info("Starting commands")
                 self.set_autopilot_speed(self.navigate_speed)
                 self.get_logger().info(f"Number of waypoints {len(self.waypoints)}")
-                self.target_latitude = self.waypoints[0].latitude #NOTE**
-                self.target_longitude = self.waypoints[0].longitude #NOTE**
-                self.target_point = GPSCoordinate(self.target_latitude, self.target_longitude, 0) #NOTE**
+                self.target_latitude = self.waypoints[0].latitude
+                self.target_longitude = self.waypoints[0].longitude
+                self.target_point = GPSCoordinate(self.target_latitude, self.target_longitude, 0)
                 self.drive_controller.issue_path_cmd(self.target_latitude, self.target_longitude)
                 self.state = State.WAYPOINT_NAVIGATION
 
-            elif self.state == State.WAYPOINT_NAVIGATION: #NOTE**
+            elif self.state == State.WAYPOINT_NAVIGATION:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.dist_tolerance:
+                if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.path_waypoint_dist_tolerance:
                     if len(self.waypoints) > 1:
                         self.waypoints.pop(0)
-                        self.get_logger().info("Popped waypoint!")
+                        self.get_logger().info("Popped intermediate waypoint!")
                         self.state = State.START_POINT_NAVIGATION
                     else:
-                        self.get_logger().info("finished!")
+                        self.get_logger().info("Approaching coordinate")
                         self.state = State.POINT_NAVIGATION
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE

@@ -677,7 +677,7 @@ class AutonomyGUI(Node, QWidget):
             tag_id, lat, lon = self.waypoints[self.selected_waypoint_to_send -1][1:4] # Extract tag_id and lat/lon of the selected waypoint
             req = AutonomyWaypoint.Request()
             req.task_list.append(AutonomyTaskInfo(tag_id=tag_id, latitude=lat, longitude=lon))
-            future = self.send_waypoint_client.call_async()
+            future = self.send_waypoint_client.call_async(req)
             future.add_done_callback(self.send_waypoint_callback)
 
         self.update_waypoint_list()
@@ -687,14 +687,16 @@ class AutonomyGUI(Node, QWidget):
         try:
             response = future.result()
             if response.success:
-                self.waypoints[self.selected_waypoint_to_send -1][4] = 'DELIVERED'
+                self.waypoints[self.selected_waypoint_to_send -1][4] = 'READY'
                 self.logger_label.setText(response.message)
             else:
-                self.waypoints[self.selected_waypoint_to_send -1][4] = 'SEND FAIL'
+                self.waypoints[self.selected_waypoint_to_send -1][4] = 'SEND FAILURE'
                 self.logger_label.setText(response.message)
         except Exception as e:
             self.get_logger().error(f'Send Waypoint Service call failed! {e}')
             self.logger_label.setText(f'Send Waypoint Service call failed! (see logger)')
+        
+        self.update_waypoint_list()
         return
 
     # This removes the waypoint from the state machine
