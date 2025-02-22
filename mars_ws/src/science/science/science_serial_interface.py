@@ -64,6 +64,16 @@ class ScienceSerialInterface(Node):
     def __init__(self):
         super().__init__('science_serial_interface')
 
+        try:
+            self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
+            # self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE) # - used for testing off of rover
+            self.get_logger().info("Serial port initialized")
+        except Exception as e:
+            self.get_logger().error("Error: scienceArduinoNano not yet ready")
+            self.get_logger().error(str(e))
+            rclpy.shutdown()
+            exit(0)
+
         self.sub_science_serial_drill = self.create_subscription(ScienceActuatorControl, '/science_serial_drill', self.drill_control_callback, 10)
         self.sub_science_serial_probe = self.create_subscription(ScienceActuatorControl, '/science_serial_probe', self.probe_control_callback, 10)
         self.sub_science_serial_auger = self.create_subscription(ScienceActuatorControl, '/science_serial_auger', self.auger_control_callback, 10)
@@ -72,9 +82,6 @@ class ScienceSerialInterface(Node):
         self.sub_science_serial_override = self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
 
         self.info_publisher = self.create_publisher(ScienceSensorValues, '/science_sensor_values', 10)
-        self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
-        # self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
-        # self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
 
         self.create_timer(100e-3, self.read_serial) # 10 Hz
         self.create_timer(1, self.query_temperature) # 1 Hz
