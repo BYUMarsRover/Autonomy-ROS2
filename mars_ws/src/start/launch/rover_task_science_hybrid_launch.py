@@ -14,6 +14,7 @@ def generate_launch_description():
     mapviz_location=os.environ.get('MAPVIZ_LOCATION', '')
     mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value=mapviz_location)
     home_gui_dir = get_package_share_directory('home_gui')
+    peripherals_dir = get_package_share_directory('peripherals')
 
     return LaunchDescription([
         # Start all common launch files on the rover. DO NOT TOUCH
