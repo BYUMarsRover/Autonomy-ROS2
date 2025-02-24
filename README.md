@@ -1,4 +1,4 @@
-**Getting Started:**
+### Getting Started:
 
 - Install WSL2 on your Windows machine by following the instructions [here](https://docs.microsoft.com/en-us/windows/wsl/install).
 
@@ -12,7 +12,7 @@
 
 --
 
-**Contributing:**
+### Contributing:
 
 - **Create a new branch.** Our main code branches are protected, so you'll need to create a new branch. Name your branch with a combination of your name and the feature you are working on (i.e. nelson/repo-docs).
 
@@ -24,7 +24,9 @@
 
 - **Submit a pull request.** Once you have made and tested your changes, create a new pull request. Get another member of the team to review and approve it, and you can merge your new code into the main branch.
 
-**Helpful Resources:**
+--
+
+### Helpful Resources:
 
 GitHub Workflow Tutorial - [https://docs.github.com/en/get-started/start-your-journey/hello-world](https://docs.github.com/en/get-started/start-your-journey/hello-world)
 
