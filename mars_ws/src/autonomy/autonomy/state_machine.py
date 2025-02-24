@@ -268,6 +268,9 @@ class AutonomyStateMachine(Node):
         timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
         is_recent = lambda obj_ts: timestamp - obj_ts <= 1.0
 
+        # Remove objects that haven't been seen in the last second
+        self.known_objects = {k: v for k, v in self.known_objects.items() if is_recent(v[-1])}
+
         correct_label = 0 
         if self.tag_id == TagID.BOTTLE:
             correct_label = 1
@@ -310,7 +313,6 @@ class AutonomyStateMachine(Node):
             else:
                 self.known_objects[obj.id] = [timestamp]
 
-        self.known_objects = {k: v for k, v in self.known_objects.items() if is_recent(v[-1])}
 
     def ar_tag_callback(self, msg: FiducialTransformArray):
         if len(msg.transforms) == 1: 
@@ -588,8 +590,11 @@ class AutonomyStateMachine(Node):
                 self.drive_controller.stop()
                 self.a_task_complete = True
 
+                # Reset the state machine variables
                 self.correct_aruco_tag_found = False
                 self.correct_obj_found = False
+                self.obj_distance = None
+                self.obj_angle = None
 
                 self.toggle_object_detection(False)
 
