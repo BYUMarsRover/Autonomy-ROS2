@@ -106,7 +106,7 @@ class AutonomyGUI(Node, QWidget):
         self.course_heading_error = None
         self.state_machine_list_string = ''
         self.autopilot_cmds_msg = None
-        self.waypoints = [] # Stores the waypoints in the format [waypoint_number, tag_id, latitude, longitude, status]
+        self.waypoints = [] # Stores the waypoints in the format [waypoint][waypoint_number, tag_id, latitude, longitude, status]
 
         # This should return a list like this: [lat, lon] and can be used for the plan path to selected waypoint
         # lat, lon = self.waypoints[self.selected_waypoint - 1][2:4]
@@ -242,7 +242,8 @@ class AutonomyGUI(Node, QWidget):
             self.nav_state = 'TELEOPERATION'
         elif nav_state == 2:
             self.nav_state = 'ARRIVAL'
-            self.waypoints[self.selected_waypoint -1][4] = 'COMPLETE' # FIXME - this will only work if the correct waypoint is selected in the gui when the task is completed
+            if (self.selected_waypoint_to_send is not None):
+                self.waypoints[self.selected_waypoint_to_send -1][4] = 'COMPLETE'
         else:
             self.nav_state = 'UNKNOWN'
         # Update GUI fields
