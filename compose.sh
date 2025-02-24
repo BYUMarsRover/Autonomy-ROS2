@@ -27,24 +27,28 @@ case $1 in
     	printInfo "Loading the Autonomy ROS2 container..."
     	docker compose -f docker/docker-compose.yaml up -d
 
-    	# Skip 'rover_dev' tmux session creation on the rover
+    	# Are we running on Jetson Orin architecture (the rover)?
     	if [ ! "$(uname -m)" == "aarch64" ]; then
 
-		# Check if a 'rover_dev' tmux session already exists
-		if [ "$(docker exec -it autonomy_ros2 tmux list-sessions | grep rover_dev)" == "" ]; then
+			# Check if a 'rover_dev' tmux session already exists
+			if [ "$(docker exec -it autonomy_ros2 tmux list-sessions | grep rover_dev)" == "" ]; then
 
-			# If not, create a new 'rover_dev' tmux session
-			printWarning "Creating a new tmux session..."
-			docker exec -it autonomy_ros2 tmux new-session -d -s rover_dev
-			docker exec -it autonomy_ros2 tmux select-pane -t 0 -T rover_dev
-			docker exec -it autonomy_ros2 tmux send-keys "clear && cat ~/scripts/introduction.txt" Enter
+				# If not, create a new 'rover_dev' tmux session
+				printWarning "Creating a new tmux session..."
+				docker exec -it autonomy_ros2 tmux new-session -d -s rover_dev
+				docker exec -it autonomy_ros2 tmux select-pane -t 0 -T rover_dev
+				docker exec -it autonomy_ros2 tmux send-keys "clear && cat ~/scripts/introduction.txt" Enter
 
-			# Full color and mouse options
-			docker exec -it autonomy_ros2 tmux set-option -g default-terminal "screen-256color"
-			docker exec -it autonomy_ros2 tmux set -g mouse on
+				# Full color and mouse options
+				docker exec -it autonomy_ros2 tmux set-option -g default-terminal "screen-256color"
+				docker exec -it autonomy_ros2 tmux set -g mouse on
+			fi
+			# Attach to the 'rover_dev' tmux session
+			docker exec -it autonomy_ros2 tmux attach -t rover_dev
+		else
+
+			# Enter the 'rover_runtime' tmux session on the rover
+			docker exec -it autonomy_ros2 tmux attach -t rover_runtime
 		fi
-		# Attach to the 'rover_dev' tmux session
-		docker exec -it autonomy_ros2 tmux attach -t rover_dev
-    fi
     ;;
 esac
