@@ -8,7 +8,7 @@
 
 - Run `bash compose.sh` to pull and launch the latest Docker image from DockerHub.
 
-> **NOTE:** If you ever need to restart the container, simply run `bash compose.sh down` to stop the container, and then `bash compose.sh` to start it again.
+  > **NOTE:** If you ever need to restart the container, simply run `bash compose.sh down` to stop the container, and then `bash compose.sh` to start it again.
 
 --
 
