@@ -54,7 +54,7 @@ class DriveManager(Node):
         self.r = 0.8382  # wheel radius (meters)
         self.B = 0.1335  # wheel base distance (meters)
         self.k = 0.5     # parameter for sigmoid function
-        self.turn_constant = 20.0
+        self.turn_constant = 1.0
         self.rover_cmd = MobilityDriveCommand()
         self.enabled = False
 
@@ -78,6 +78,7 @@ class DriveManager(Node):
         return response
 
     def vel_cmds_callback(self, msg): # NOTE: HERE
+        #Postive angle is right turn, negative angle is left turn (NED coordinate frame)
         u_cmd = msg.u_cmd
         omega_cmd = msg.omega_cmd
 
@@ -85,14 +86,12 @@ class DriveManager(Node):
             rw_speed = 0.0
             lw_speed = 0.0
         else:
-            v_l = u_cmd - omega_cmd * self.B / 2 * self.turn_constant # NOTE: turn constant was a quick fix
-            v_r = u_cmd + omega_cmd * self.B / 2 * self.turn_constant
-            # self.get_logger().info(f"IN: vel_cmds_callback, v_l/v_r: {v_l}/{v_r}")
+            v_l = u_cmd + omega_cmd * self.B / 2 * self.turn_constant # NOTE: turn constant was a quick fix
+            v_r = u_cmd - omega_cmd * self.B / 2 * self.turn_constant
             psidot_Ld = v_l / self.r
             psidot_Rd = v_r / self.r
             lw_speed = self.piecewise_sigmoid(psidot_Ld)
             rw_speed = self.piecewise_sigmoid(psidot_Rd)
-            # self.get_logger().info(f"IN: vel_cmds_callback, lw/rw: {lw_speed}/{rw_speed}")
 
         self.rover_cmd.rw = float(rw_speed)
         self.rover_cmd.lw = float(lw_speed)

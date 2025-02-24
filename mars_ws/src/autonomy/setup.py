@@ -28,6 +28,8 @@ setup(
             'drive_controller_api = autonomy.drive_controller_api:main',
             'state_machine = autonomy.state_machine:main',
             'autonomy_gui = autonomy.autonomy_gui:main',
+            'dummy_object_publisher = autonomy.dummy_object_publisher:main',
+            'dummy_ar_tag_publisher = autonomy.dummy_ar_tag_publisher:main',
         ],
     },
 )

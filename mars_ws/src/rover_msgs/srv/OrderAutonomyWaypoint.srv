@@ -1,0 +1,12 @@
+
+# Multiple waypoints are sent from the autonomy_gui to the path_planner and
+# the path planner sends them back in the optimized order
+
+std_msgs/Int8[] ids
+AutonomyTaskInfo[] task_list
+
+---
+std_msgs/Int8[] ids
+AutonomyTaskInfo[] task_list
+bool success
+string message

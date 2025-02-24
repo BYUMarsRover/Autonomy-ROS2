@@ -4,7 +4,7 @@ This guide outlines the steps to set up and run a containerized bridge between R
 
 --
 
-**Preparation:**
+### Preparation:
 
 - Add any custom ROS 1 and ROS 2 message packages to the `ros1_msgs_ws` and `ros2_msgs_ws` workspaces.
 
@@ -16,7 +16,7 @@ This guide outlines the steps to set up and run a containerized bridge between R
 
 --
 
-**Building and Testing the Bridge:**
+### Building and Testing the Bridge:
 
 - Run `bash compose.sh` to launch and enter the Docker container. (Only the arm64 image is currently pushed to Docker Hub. To run it on amd64 architecture, you will need to build the image locally.)
 
@@ -26,7 +26,7 @@ This guide outlines the steps to set up and run a containerized bridge between R
 
 --
   
-**Running the Bridge:**
+### Running the Bridge:
 
 - Start ROS 1 and ROS 2 instances on the host network.
 
