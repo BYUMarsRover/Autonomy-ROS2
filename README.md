@@ -1,4 +1,4 @@
-### Getting Started:
+### Get Started:
 
 - Install WSL2 on your Windows machine by following the instructions [here](https://docs.microsoft.com/en-us/windows/wsl/install).
 
