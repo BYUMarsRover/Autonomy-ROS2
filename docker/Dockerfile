@@ -93,15 +93,13 @@ RUN pip3 install pyserial
 # Install rviz - Gabe Slade, Feb 2025
 # Needed in order to display various system GUIs
 USER root
-RUN apt update && apt install -y \
-    ros-humble-rviz-common
+RUN apt update && apt install -y ros-humble-rviz-common
 USER $NAME
 
 # Install ROS 2 usb-cam package - Daniel Webb, Feb 2025
 # Needed to interface with the camera for aruco tag detection
 USER root
-RUN apt update && apt install -y \
-    ros-humble-usb-cam
+RUN apt update && apt install -y ros-humble-usb-cam
 USER $NAME
 
 # Install ROS 2 SLAM packages - Braden Meyers, Feb 2025

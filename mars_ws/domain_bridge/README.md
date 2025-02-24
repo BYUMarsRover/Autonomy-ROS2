@@ -8,7 +8,7 @@ This guide outlines the steps to set up and run a domain bridge between the rove
 
 --
 
-**Preparation:**
+### Preparation:
 
 - Set desired ROS_DOMAIN_ID values for the rover and base station in the `mars_bridge_config.yaml` file.
 
@@ -16,7 +16,7 @@ This guide outlines the steps to set up and run a domain bridge between the rove
 
 --
   
-**Running the Bridge:**
+### Running the Bridge:
 
 - Launch ROS 2 nodes on the rover and base station with the desired ROS_DOMAIN_ID values, using `export ROS_DOMAIN_ID=<selected_id>`.
 
