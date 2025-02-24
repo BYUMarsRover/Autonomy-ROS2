@@ -72,7 +72,7 @@ def visualize_point_cloud(pc):
 def generate_fake_point_cloud():
     # Create ground plane points (z = 0)
     ground_plane = np.random.uniform(-5, 5, (1000, 2))  # 1000 points on the ground plane
-    ground_plane = np.hstack((ground_plane, np.zeros((ground_plane.shape[0], 1))))
+    ground_plane = np.hstack((np.zeros((ground_plane.shape[0], 1)), ground_plane))
 
     #Uncomment to test a sloped plane
     # # Generate 1000 points for the ground plane (x, y coordinates)
@@ -90,14 +90,14 @@ def generate_fake_point_cloud():
     # ground_plane = np.hstack((ground_plane, z_coordinates.reshape(-1, 1)))
 
     # Create non-ground points (random z values)
-    non_ground = np.random.uniform(-5, 5, (300, 2))  # 200 non-ground points
+    non_ground = np.random.uniform(-5, 5, (300, 2))  # 300 non-ground points
     heights = np.random.uniform(1, 5, (non_ground.shape[0], 1))  # z values for non-ground
-    non_ground = np.hstack((non_ground, heights))
+    non_ground = np.hstack((heights, non_ground))
 
     #Extra non_ground
-    non_ground2 = np.random.uniform(0, 2, (300, 2))  # 200 non-ground points
+    non_ground2 = np.random.uniform(0, 2, (300, 2))  # 300 non-ground points
     heights2 = np.random.uniform(-0.5, 3, (non_ground2.shape[0], 1))  # z values for non-ground
-    non_ground2 = np.hstack((non_ground2, heights2))
+    non_ground2 = np.hstack((heights2, non_ground2))
 
     # Combine ground and non-ground points
     all_points = np.vstack((ground_plane, non_ground, non_ground2))

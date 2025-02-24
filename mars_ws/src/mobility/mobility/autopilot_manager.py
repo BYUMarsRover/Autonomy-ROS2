@@ -157,6 +157,14 @@ class AutopilotManager(Node):
                 #Calculate the alpha value to to avoid the obstacle
                 self.heading_alpha = self.scaling_factor / dist #the closer we are to the obstacle, the more we want to avoid it
                 
+                #print statements
+                self.get_logger().info(f"Hazard Distance: {dist}")
+                self.get_logger().info(f"Angle to Obstacle: {angle_to_obstacle}")
+                self.get_logger().info(f"Max Obs Radius: {max_obs_radius}")
+                self.get_logger().info(f"Scaling Factor: {self.scaling_factor}")
+                self.get_logger().info(f"Avoidance Heading: {self.avoidance_heading}")
+                self.get_logger().info(f"Alpha: {self.heading_alpha}")
+                self.get_logger().info(f"Current Heading: {self.curr_heading}")
                 
         #If there are multiple hazards, we need to decide which way we want to try to avoid it
         # else:
