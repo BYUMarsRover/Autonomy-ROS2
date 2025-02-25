@@ -312,9 +312,9 @@ class AutonomyGUI(Node, QWidget):
     #helper function for autopilot_cmds_callback and vel_cmds_callback
     def setAutopilotString(self, msg):
         if self.course_heading_error is None:
-            autopilot_cmds_string = f'Dist to target: {round(msg.distance_to_target, 2)}m, cw from N: {round(np.rad2deg(msg.course_angle), 2)}°'
+            autopilot_cmds_string = f'E_lin: {round(msg.distance_to_target, 2)}m, cw N: {round(np.rad2deg(msg.course_angle), 2)}°'
         else:
-            autopilot_cmds_string = f'Dist to target: {round(msg.distance_to_target, 2)}m, cw from N: {round(np.rad2deg(msg.course_angle), 2)}°, Heading Err: {round(np.rad2deg(self.course_heading_error), 2)}°'
+            autopilot_cmds_string = f'E_lin: {round(msg.distance_to_target, 2)}m, cw N: {round(np.rad2deg(msg.course_angle), 2)}°, E_ang: {round(np.rad2deg(self.course_heading_error), 2)}°'
         self.gui_setText('AutopilotCmds', autopilot_cmds_string)
         return
     

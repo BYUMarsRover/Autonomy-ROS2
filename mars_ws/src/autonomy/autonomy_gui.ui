@@ -1154,6 +1154,11 @@
                   <property name="text">
                    <string>Waiting...</string>
                   </property>
+                  <property name="font">
+                   <font>
+                     <pointsize>14</pointsize>
+                   </font>
+                  </property>
                   <property name="alignment">
                    <set>Qt::AlignLeft</set>
                   </property>
