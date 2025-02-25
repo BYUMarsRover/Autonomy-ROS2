@@ -24,6 +24,7 @@ setup(
     entry_points={
         'console_scripts': [
             'hazard_detector = hazard_detection.hazard_detector:main',
+            'hazard_avoidance_test = hazard_detection.hazard_avoidance_test:main',
         ],
     },
 )
