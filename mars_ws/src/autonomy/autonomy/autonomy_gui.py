@@ -62,10 +62,10 @@ class AutonomyGUI(Node, QWidget):
         self.SendWaypointButton.clicked.connect(self.send_waypoint)
         self.ClearWaypointButton.clicked.connect(self.clear_waypoint)
 
-        # mapviz #TODO: Depreciate
-        self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
-        self.PlanOrderMapvizButton.clicked.connect(self.plan_order_mapviz_service_call)
-        self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
+        # mapviz #NOTE: Depreciated until mapviz capability added back
+        # self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
+        # self.PlanOrderMapvizButton.clicked.connect(self.plan_order_mapviz_service_call)
+        # self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
 
         # Mobility Control Buttons
         self.SetTurnConstantButton.clicked.connect(self.set_turn_constant)
@@ -118,7 +118,8 @@ class AutonomyGUI(Node, QWidget):
         ################# ROS Communication #################
 
         # Publishers
-        self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
+        #NOTE: Depreciated until mapviz capability added back
+        # self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
 
         # Subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10) #Rover GPS and Heading
@@ -147,45 +148,43 @@ class AutonomyGUI(Node, QWidget):
         self.plan_order_client = self.create_client(OrderAutonomyWaypoint, '/plan_order')
         # Aborts Autonomy mission
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
+        # Requests that the path planner plans the path to the selected waypoint
+        self.plan_path_client = self.create_client(PlanPath, '/plan_path')
 
-        self.plan_order_mapviz_client = self.create_client(OrderPath, '/plan_order_mapviz') #TODO: Depreciate and add to the normal plan order?
+        #NOTE: Depreciated until mapviz capability added back
+        # self.plan_order_mapviz_client = self.create_client(OrderPath, '/plan_order_mapviz')
 
         # Clients used for tunning constants TODO: remove once tuned for competition
         self.set_turn_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_turn_constant')
         self.set_speed_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_speed')
 
-
-        self.plan_path_client = self.create_client(PlanPath, '/plan_path') #NOTE**
-
         # Timer to run check if we have recieved information from various sources recently
+        # for the purpose of clearing the information if it is not recent
         self.timepoints_timer = self.create_timer(0.5, self.check_timepoints)
         self.rover_state_singleton_timepoint = None
 
-        ################# Debug Setup #################
-
-        # NOTE: Empty for now
-
         ################# Mapviz Communication Setup #################
+        #NOTE: Depreciated until mapviz capability added back
 
         # Retrieve Mapviz Location
-        self.declare_parameter('location', 'hanksville')
-        location = self.get_parameter('location').value
+        # self.declare_parameter('location', 'hanksville')
+        # location = self.get_parameter('location').value
 
-        # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
-        mapviz_params_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_params.yaml')
-        lat, lon = get_coordinates(mapviz_params_path, location)
-        # print(f'Lat: {lat}, Lon: {lon}')
+        # # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
+        # mapviz_params_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_params.yaml')
+        # lat, lon = get_coordinates(mapviz_params_path, location)
+        # # print(f'Lat: {lat}, Lon: {lon}')
 
-        # Convert lat/lon to UTM coordinates
-        utm_coords = utm.from_latlon(lat, lon)
-        self.utm_easting_zero = utm_coords[0]
-        self.utm_northing_zero = utm_coords[1]
-        self.utm_zone_number = utm_coords[2]
-        self.utm_zone_letter = utm_coords[3]
+        # # Convert lat/lon to UTM coordinates
+        # utm_coords = utm.from_latlon(lat, lon)
+        # self.utm_easting_zero = utm_coords[0]
+        # self.utm_northing_zero = utm_coords[1]
+        # self.utm_zone_number = utm_coords[2]
+        # self.utm_zone_letter = utm_coords[3]
 
-        # Initialize the current previewed waypoints
-        # Stored in lat/lon format
-        self.current_previewed_waypoints = Path() #NOTE: used by mapviz
+        # # Initialize the current previewed waypoints
+        # # Stored in lat/lon format
+        # self.current_previewed_waypoints = Path() #NOTE: used by mapviz
 
 
     # Clears displays in the gui if information stops being received.
@@ -383,39 +382,40 @@ class AutonomyGUI(Node, QWidget):
         future = self.enable_autonomy_client.call_async(req)
         self.gui_setText('logger_label', 'Disabling Autonomy...')
 
+    #NOTE: Depreciated until mapviz capability added back
     # This sends the waypoint to mapviz for preview
-    def preview_waypoint(self):
-        # Find the x and y to be sent to mapviz
-        lat = float(self.latitude_input.text())
-        lon = float(self.longitude_input.text())
+    # def preview_waypoint(self):
+    #     # Find the x and y to be sent to mapviz
+    #     lat = float(self.latitude_input.text())
+    #     lon = float(self.longitude_input.text())
 
-        current_time = self.get_clock().now().to_msg()
-        self.current_previewed_waypoints.header = Header()
-        self.current_previewed_waypoints.header.stamp = current_time
-        self.current_previewed_waypoints.header.frame_id = "map"
+    #     current_time = self.get_clock().now().to_msg()
+    #     self.current_previewed_waypoints.header = Header()
+    #     self.current_previewed_waypoints.header.stamp = current_time
+    #     self.current_previewed_waypoints.header.frame_id = "map"
 
-        pose_stamped = PoseStamped()
-        pose_stamped.header.stamp = current_time
-        pose_stamped.header.frame_id = "map"
+    #     pose_stamped = PoseStamped()
+    #     pose_stamped.header.stamp = current_time
+    #     pose_stamped.header.frame_id = "map"
 
-        pose_stamped.pose.position.x = lat
-        pose_stamped.pose.position.y = lon
-        pose_stamped.pose.position.z = 0.0
+    #     pose_stamped.pose.position.x = lat
+    #     pose_stamped.pose.position.y = lon
+    #     pose_stamped.pose.position.z = 0.0
 
-        pose_stamped.pose.orientation.x = 0.0
-        pose_stamped.pose.orientation.y = 0.0
-        pose_stamped.pose.orientation.z = 0.0
-        pose_stamped.pose.orientation.w = 1.0
+    #     pose_stamped.pose.orientation.x = 0.0
+    #     pose_stamped.pose.orientation.y = 0.0
+    #     pose_stamped.pose.orientation.z = 0.0
+    #     pose_stamped.pose.orientation.w = 1.0
         
-        self.current_previewed_waypoints.poses.append(pose_stamped)
+    #     self.current_previewed_waypoints.poses.append(pose_stamped)
 
-        self.path_publisher.publish(
-            path_to_utm(self.current_previewed_waypoints, 
-                        self.utm_easting_zero, 
-                        self.utm_northing_zero)
-            )
+    #     self.path_publisher.publish(
+    #         path_to_utm(self.current_previewed_waypoints, 
+    #                     self.utm_easting_zero, 
+    #                     self.utm_northing_zero)
+    #         )
         
-        self.gui_setText('logger_label', 'Waypoint Sent for Preview')
+    #     self.gui_setText('logger_label', 'Waypoint Sent for Preview')
 
     # This adds the waypoint to the waypoint list that is held in the autonomy gui
     def add_waypoint(self):
@@ -584,46 +584,6 @@ class AutonomyGUI(Node, QWidget):
                 self.gui_setText('logger_label', "Failed to plan order")
         except Exception as e:
             self.gui_setText('logger_label', f'Plan Order Service call failed!')
-
-    # This reorders the added waypoints to the optimal order based on path length
-    def plan_order_mapviz_service_call(self):
-        req = OrderPath.Request() # Path
-        req.path = self.current_previewed_waypoints
-
-        future = self.plan_order_mapviz_client.call_async(req)
-        self.gui_setText('logger_label', 'Planning order on mapviz...')
-
-    # This clears all previewed waypoints from mapviz
-    def clear_mapviz(self):
-
-        # Clear the current previewed waypoints
-        while(len(self.current_previewed_waypoints.poses) > 0):
-            self.current_previewed_waypoints.poses.pop()
-
-        msg = Path()
-
-        current_time = self.get_clock().now().to_msg()
-        msg.header = Header()
-        msg.header.stamp = current_time
-        msg.header.frame_id = "map"
-
-        pose_stamped = PoseStamped()
-        pose_stamped.header.stamp = current_time
-        pose_stamped.header.frame_id = "map"
-
-        pose_stamped.pose.position.x = 0.0
-        pose_stamped.pose.position.y = 0.0
-        pose_stamped.pose.position.z = 0.0
-
-        pose_stamped.pose.orientation.x = 0.0
-        pose_stamped.pose.orientation.y = 0.0
-        pose_stamped.pose.orientation.z = 0.0
-        pose_stamped.pose.orientation.w = 1.0
-        
-        msg.poses = [pose_stamped]
-
-        self.path_publisher.publish(msg)
-        self.gui_setText('logger_label', 'Mapviz Cleared')
     
     # Sends the selected waypoint to the state machine either via the path planner node or directly
     def send_waypoint(self):
@@ -807,39 +767,86 @@ class AutonomyGUI(Node, QWidget):
         else:
             self.get_logger().warn(f'Could not find {name} field of gui')
 
+
+    #NOTE All of the following mapviz functions are depreciated until mapviz capability is added back
+    #################################################################################################
+    #NOTE: Depreciated until mapviz capability added back
+    # This reorders the added waypoints to the optimal order based on path length
+    # def plan_order_mapviz_service_call(self):
+    #     req = OrderPath.Request() # Path
+    #     req.path = self.current_previewed_waypoints
+
+    #     future = self.plan_order_mapviz_client.call_async(req)
+    #     self.gui_setText('logger_label', 'Planning order on mapviz...')
+
+    #NOTE: Depreciated until mapviz capability added back
+    # This clears all previewed waypoints from mapviz
+    # def clear_mapviz(self):
+
+    #     # Clear the current previewed waypoints
+    #     while(len(self.current_previewed_waypoints.poses) > 0):
+    #         self.current_previewed_waypoints.poses.pop()
+
+    #     msg = Path()
+
+    #     current_time = self.get_clock().now().to_msg()
+    #     msg.header = Header()
+    #     msg.header.stamp = current_time
+    #     msg.header.frame_id = "map"
+
+    #     pose_stamped = PoseStamped()
+    #     pose_stamped.header.stamp = current_time
+    #     pose_stamped.header.frame_id = "map"
+
+    #     pose_stamped.pose.position.x = 0.0
+    #     pose_stamped.pose.position.y = 0.0
+    #     pose_stamped.pose.position.z = 0.0
+
+    #     pose_stamped.pose.orientation.x = 0.0
+    #     pose_stamped.pose.orientation.y = 0.0
+    #     pose_stamped.pose.orientation.z = 0.0
+    #     pose_stamped.pose.orientation.w = 1.0
+        
+    #     msg.poses = [pose_stamped]
+
+    #     self.path_publisher.publish(msg)
+    #     self.gui_setText('logger_label', 'Mapviz Cleared')
+
+#NOTE: Depreciated until mapviz capability added back
 # This gets the 0, 0 coordinates of the mapviz map
-def get_coordinates(file_path, location):
-    # Read the YAML file
-    with open(file_path, 'r') as file:
-        data = yaml.safe_load(file)
+# def get_coordinates(file_path, location):
+#     # Read the YAML file
+#     with open(file_path, 'r') as file:
+#         data = yaml.safe_load(file)
     
-    # Navigate to the locations data
-    locations = data['/**']['ros__parameters']['locations']
+#     # Navigate to the locations data
+#     locations = data['/**']['ros__parameters']['locations']
     
-    # Check if the location exists
-    if location in locations:
-        lat = locations[location]['latitude']
-        lon = locations[location]['longitude']
-        return lat, lon
-    else:
-        return None
+#     # Check if the location exists
+#     if location in locations:
+#         lat = locations[location]['latitude']
+#         lon = locations[location]['longitude']
+#         return lat, lon
+#     else:
+#         return None
     
+#NOTE: Depreciated until mapviz capability added back
 # Converts a path from UTM to lat/lon
-def path_to_latlon(path, utm_easting_zero, utm_northing_zero, utm_zone_number, utm_zone_letter):
-    latlon_path = Path()
-    latlon_path.header = path.header
-    for pose in path.poses:
-        lat, lon = utm.to_latlon(pose.pose.position.x + utm_easting_zero, pose.pose.position.y + utm_northing_zero, utm_zone_number, utm_zone_letter)
-        latlon_path.poses.append(
-            PoseStamped(
-                header=pose.header, 
-                pose=Pose(
-                    position=Point(x=lat, y=lon, z=0.0),
-                    orientation=pose.pose.orientation
-                )
-            )
-        )
-    return latlon_path
+# def path_to_latlon(path, utm_easting_zero, utm_northing_zero, utm_zone_number, utm_zone_letter):
+#     latlon_path = Path()
+#     latlon_path.header = path.header
+#     for pose in path.poses:
+#         lat, lon = utm.to_latlon(pose.pose.position.x + utm_easting_zero, pose.pose.position.y + utm_northing_zero, utm_zone_number, utm_zone_letter)
+#         latlon_path.poses.append(
+#             PoseStamped(
+#                 header=pose.header, 
+#                 pose=Pose(
+#                     position=Point(x=lat, y=lon, z=0.0),
+#                     orientation=pose.pose.orientation
+#                 )
+#             )
+#         )
+#     return latlon_path
 
 # Converts a path from lat/lon to UTM
 def path_to_utm(path, utm_easting_zero, utm_northing_zero):
