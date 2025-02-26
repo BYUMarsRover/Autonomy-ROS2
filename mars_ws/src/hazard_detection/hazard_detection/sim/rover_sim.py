@@ -5,7 +5,7 @@ import time
 class RoverVisualizer:
     def __init__(self):
         self.fig, self.ax = plt.subplots()
-        self.rover = {'position': (0, 0), 'orientation': -np.pi / 2}  # Facing north (positive x)
+        self.rover = {'position': (0, 0), 'orientation': -np.pi / 2}  # Facing north (positive y)
         self.target = (5, 5)  # (x, y)
         self.hazards = []  # List of (x, y, width, height)
         self.init_velocity_display()
@@ -73,7 +73,8 @@ class RoverVisualizer:
         return np.sqrt((self.target[0] - self.rover['position'][0])**2 + (self.target[1] - self.rover['position'][1])**2)
 
     def get_rover_orientation(self):
-        return self.rover['orientation']
+        #return as an angle from North, need to add pi/2
+        return self.rover['orientation'] + np.pi/2
     
     def set_rover_position(self, x, y, orientation):
         self.rover['position'] = (x, y)
@@ -85,6 +86,12 @@ class RoverVisualizer:
     
     def set_target(self, x, y):
         self.target = (x, y)
+        self.update_display()
+
+    
+    def add_hazard(self, x, y, width=1, height=1):
+        """Adds an obstacle to the environment."""
+        self.obstacles.append((x, y, width, height))
         self.update_display()
     
     def get_hazard_locations(self):
