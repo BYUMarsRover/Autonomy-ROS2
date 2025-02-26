@@ -78,7 +78,9 @@ class HazardAvoidanceTest(Node):
 
     def check_hazard_in_box(self, haz_x, haz_y, rov_x, rov_y, rov_orientation):
         #Check if hazard is in the bounding box
+        
         hazard_in_box = False
+        
         # Calculate the bounding box coordinates
         half_length = self.bounding_box_length / 2
         half_width = self.bounding_box_width / 2
@@ -106,6 +108,7 @@ class HazardAvoidanceTest(Node):
         return
     
     def autopilot_cmds_callback(self, msg):
+        #As soon as we recieve one autopilot cmd via terminal, we will start the simulation
 
         # Create a timer to call `state_loop` every 0.1 seconds (10 Hz)
         self.create_timer(self.time_step, self.updateSimulationLoop)
@@ -117,13 +120,15 @@ class HazardAvoidanceTest(Node):
         #Initialize the simulation
         self.vis = RoverVis()
         self.vis.set_rover_position(0, 0, 0) #Start with the rover at the origin with orientation of 0
-        self.vis.set_target(self.distance_to_target, self.course_angle)
+        
+        target_x = self.distance_to_target * cos(self.course_angle)
+        target_y = self.distance_to_target * sin(self.course_angle)
+        self.vis.set_target(target_x, target_y)
         
         #Set the hazard Location
         self.haz_length_x = 1.5
         self.haz_length_y = 1.5
-        self.vis.set_haazards(2, 5, width=self.haz_length_x, height=self.haz_length_y)
-    
+        self.vis.set_hazards(2, 5, width=self.haz_length_x, height=self.haz_length_y)
 
         return
 
