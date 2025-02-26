@@ -50,8 +50,8 @@ class RoverSim:
 
     def update_rover(self):
         self.rover_angle += self.angular_velocity
-        self.rover_x += self.velocity * math.cos(self.rover_angle * 2 * math.pi())
-        self.rover_y -= self.velocity * math.sin(self.rover_angle * 2 * math.pi())
+        self.rover_x += self.velocity * math.cos(self.rover_angle * 2 * math.pi)
+        self.rover_y -= self.velocity * math.sin(self.rover_angle * 2 * math.pi)
 
     def set_velocity(self, velocity, angular_velocity):
         self.velocity = velocity
