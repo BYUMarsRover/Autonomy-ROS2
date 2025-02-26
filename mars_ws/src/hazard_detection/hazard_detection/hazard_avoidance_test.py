@@ -42,7 +42,7 @@ class HazardAvoidanceTest(Node):
         self.vis.set_velocity(self.linear_velocity, self.angular_velocity, self.time_step)
         self.vis.update_display()
 
-        haz_x, haz_y = self.vis.get_hazard_locations()
+        haz_x, haz_y, _, _ = self.vis.get_hazard_locations()
         dist_to_target= self.vis.get_target()
         rov_orientation = self.vis.get_rover_orientation()
         rov_x, rov_y = self.vis.get_rover_position()
@@ -122,7 +122,7 @@ class HazardAvoidanceTest(Node):
         #Set the hazard Location
         self.haz_length_x = 1.5
         self.haz_length_y = 1.5
-        self.vis.add_obstacle(2, 5, width=self.haz_length_x, height=self.haz_length_y)
+        self.vis.set_haazards(2, 5, width=self.haz_length_x, height=self.haz_length_y)
     
 
         return
