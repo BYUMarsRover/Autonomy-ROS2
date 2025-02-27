@@ -129,8 +129,8 @@ class HazardAvoidanceTest(Node):
         self.vis = RoverVis()
         self.vis.set_rover_position(0, 0, 0) #Start with the rover at the origin with orientation of 0
         
-        target_x = self.distance_to_target * cos(self.course_angle)
-        target_y = self.distance_to_target * sin(self.course_angle)
+        target_y = self.distance_to_target * cos(self.course_angle)
+        target_x = self.distance_to_target * sin(self.course_angle)
         self.vis.set_target(target_x, target_y)
         
         #Set the hazard Location
