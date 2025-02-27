@@ -47,7 +47,7 @@ class RoverVisualizer:
         self.ax.clear()
         self.ax.set_xlim(-10, 10)
         self.ax.set_ylim(-10, 10)
-        self.update_velocity_display()
+        self.update_parameter_display()
         
         # Draw rover
         x, y = self.rover['position']
