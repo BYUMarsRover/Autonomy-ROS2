@@ -136,7 +136,7 @@ class HazardAvoidanceTest(Node):
         #Set the hazard Location
         self.haz_length_x = 1.5
         self.haz_length_y = 1.5
-        self.vis.set_hazards(2, 5, width=self.haz_length_x, height=self.haz_length_y)
+        self.vis.add_hazard(2, 5, width=self.haz_length_x, height=self.haz_length_y)
 
         return
     
