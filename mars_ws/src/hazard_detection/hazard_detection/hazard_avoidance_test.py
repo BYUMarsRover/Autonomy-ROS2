@@ -50,7 +50,7 @@ class HazardAvoidanceTest(Node):
         self.vis.set_velocity(self.linear_velocity, self.angular_velocity, self.time_step)
         self.vis.update_display()
 
-        haz_x, haz_y, _, _ = self.vis.get_hazard_locations()
+        haz_x, haz_y = self.vis.get_hazard_locations()
         dist_to_target= self.vis.get_target()
         rov_orientation = self.vis.get_rover_orientation()
         rov_x, rov_y = self.vis.get_rover_position()
