@@ -10,10 +10,10 @@ class RoverVisualizer:
         self.rover = {'position': (0, 0), 'orientation': np.pi / 2}  # Facing north (positive y) 
         self.target = (5, 5)  # (x, y)
         self.hazards = []  # List of (x, y, width, height)
-        self.distance_to_target = 0
-        self.course_angle = 0
-        self.course_heading_error = 0
-        self.orientation = 0
+        self.distance_to_target = 0.0
+        self.course_angle = 0.0
+        self.course_heading_error = 0.0
+        self.orientation = 0.0
         self.init_parameter_display()
 
     def set_velocity(self, linear_vel, angular_vel, dt):
@@ -86,7 +86,7 @@ class RoverVisualizer:
     def get_target(self):
         self.distance_to_target = np.sqrt((self.target[0] - self.rover['position'][0])**2 + (self.target[1] - self.rover['position'][1])**2)
         if self.y == 0:
-            self.course_angle = 0
+            self.course_angle = 0.0
         else:
             self.course_angle = np.arctan(self.x/self.y)
         return self.distance_to_target, self.course_angle 
