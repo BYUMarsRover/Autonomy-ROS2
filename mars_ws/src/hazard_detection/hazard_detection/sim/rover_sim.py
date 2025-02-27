@@ -75,8 +75,8 @@ class RoverVisualizer:
         return np.sqrt((self.target[0] - self.rover['position'][0])**2 + (self.target[1] - self.rover['position'][1])**2)
 
     def get_rover_orientation(self):
-        #return as an angle from North, need to add pi/2
-        return self.rover['orientation'] + np.pi/2
+        #return as an angle from North, need to subtract pi/2
+        return self.rover['orientation'] - np.pi/2
     
     def set_rover_position(self, x, y, orientation):
         self.rover['position'] = (x, y)
