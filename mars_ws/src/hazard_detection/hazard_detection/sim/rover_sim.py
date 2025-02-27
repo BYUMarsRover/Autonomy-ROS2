@@ -92,8 +92,8 @@ class RoverVisualizer:
 
     
     def add_hazard(self, x, y, width=1, height=1):
-        """Adds an obstacle to the environment."""
-        self.obstacles.append((x, y, width, height))
+        """Adds an hazard to the environment."""
+        self.hazards.append((x, y, width, height))
         self.update_display()
     
     def get_hazard_locations(self):
