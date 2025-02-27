@@ -10,10 +10,10 @@ class RoverVisualizer:
         self.rover = {'position': (0, 0), 'orientation': np.pi / 2}  # Facing north (positive y) 
         self.target = (5, 5)  # (x, y)
         self.hazards = []  # List of (x, y, width, height)
-        self.distance_to_target 
-        self.course_angle
-        self.course_heading_error
-        self.orientation
+        self.distance_to_target = 0
+        self.course_angle = 0
+        self.course_heading_error = 0
+        self.orientation = 0
         self.init_parameter_display()
 
     def set_velocity(self, linear_vel, angular_vel, dt):
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     visualizer.start()
     # Set a fixed target position
     target_x, target_y = 5, 5
-    visualizer.set_target(target_x, target_y)
+    visualizer.set_target(target_x, target_y,)
 
     dt = 0.1  # Time step
 
