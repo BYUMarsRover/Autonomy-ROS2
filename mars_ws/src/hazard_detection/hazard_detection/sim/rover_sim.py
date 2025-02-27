@@ -18,8 +18,8 @@ class RoverVisualizer:
         self.x = self.rover['position'][0]
         self.y = self.rover['position'][1]
         self.theta = self.rover['orientation']
-        self.set_rover_position(self.x + self.linear_vel * np.cos(orientation) * dt, 
-                                self.y + self.linear_vel* np.sin(orientation) * dt, self.theta + self.angular_vel * dt)
+        self.set_rover_position(self.x + self.linear_vel * np.cos(self.theta) * dt, 
+                                self.y + self.linear_vel* np.sin(self.theta) * dt, self.theta + self.angular_vel * dt)
     
     def init_velocity_display(self):
         self.velocity_texts = []
