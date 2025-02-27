@@ -46,6 +46,8 @@ Diff Drive w ros2_controls Tutorial - [https://control.ros.org/rolling/doc/ros2_
 
 GPS Navigation w Nav2 Tutorial - [https://docs.nav2.org/tutorials/docs/navigation2_with_gps.html](https://docs.nav2.org/tutorials/docs/navigation2_with_gps.html)
 
+Nav2 w ZED Odometry Tutorial - [https://docs.nav2.org/tutorials/docs/integrating_vio.html#overview](https://docs.nav2.org/tutorials/docs/integrating_vio.html#overview)
+
 --
 
 Created by Nelson Durrant, Feb 2025.
