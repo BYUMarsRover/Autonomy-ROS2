@@ -85,7 +85,10 @@ class RoverVisualizer:
 
     def get_target(self):
         self.distance_to_target = np.sqrt((self.target[0] - self.rover['position'][0])**2 + (self.target[1] - self.rover['position'][1])**2)
-        self.course_angle = np.arctan(self.x/self.y)
+        if self.y == 0:
+            self.course_angle = 0
+        else:
+            self.course_angle = np.arctan(self.x/self.y)
         return self.distance_to_target, self.course_angle 
 
     def get_rover_orientation(self):
