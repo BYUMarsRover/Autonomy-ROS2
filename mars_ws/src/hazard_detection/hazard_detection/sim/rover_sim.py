@@ -4,6 +4,8 @@ import time
 
 class RoverVisualizer:
     def __init__(self):
+        self.linear_vel = 0
+        self.angular_vel = 0
         self.fig, self.ax = plt.subplots()
         self.rover = {'position': (0, 0), 'orientation': -np.pi / 2}  # Facing north (positive y)
         self.target = (5, 5)  # (x, y)
