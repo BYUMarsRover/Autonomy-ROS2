@@ -61,7 +61,7 @@ class HazardAvoidanceTest(Node):
             hazard.length_z = 0
             hazard.type = Hazard.OBSTACLE
             self.hazard_msg.hazards.append(hazard)
-            self.publisher.publish(self.hazard_msg)
+            self.publisher.publish(hazard_msg)
 
         #Publish the new dist to target and course angle
         autopilot_msg = MobilityAutopilotCommand()
