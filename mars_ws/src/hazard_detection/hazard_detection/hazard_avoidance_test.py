@@ -1,9 +1,10 @@
 import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import MobilityAutopilotCommand, MobilityVelocityCommands, HazardArray, Hazard, RoverStateSingleton
-from sim.rover_sim import RoverVisualizer as RoverVis
+from hazard_detection.sim.rover_sim import RoverVisualizer as RoverVis
 import numpy as np
 from numpy import sin, cos, sqrt
+from std_srvs.srv import SetBool
 
 class HazardAvoidanceTest(Node):
     def __init__(self):
@@ -28,12 +29,19 @@ class HazardAvoidanceTest(Node):
         self.autopilot_cmds_pub = self.create_publisher(MobilityAutopilotCommand, '/mobility/autopilot_cmds', 10)
         self.singleton_publisher = self.create_publisher(RoverStateSingleton, '/odometry/rover_state_singleton', 10) 
 
+        #Service Clients
+        self.autopilot_manager_client = self.create_client(SetBool, '/mobility/autopilot_manager/enabled')
+
         #Initialize variables
         self.time_step = 0.1
         self.linear_velocity = 0
         self.angular_velocity = 0
         self.bounding_box_length = 3.0
         self.bounding_box_width = 2.0
+
+        self._toggle_enable_autopilot_manager(True)
+
+        self.get_logger().info('Hazard Avoidance Test Node Initialized')
 
 
     def updateSimulationLoop(self):
@@ -131,6 +139,15 @@ class HazardAvoidanceTest(Node):
         self.vis.set_hazards(2, 5, width=self.haz_length_x, height=self.haz_length_y)
 
         return
+    
+
+    def _toggle_enable_autopilot_manager(self, enable: bool):
+        client = self.autopilot_manager_client
+        while not client.wait_for_service(timeout_sec=1.0):
+            self.node.get_logger().info('Waiting for service /mobility/autopilot_manager/enabled...')
+        request = SetBool.Request()
+        request.data = enable
+        future = client.call_async(request)
 
 
 def main(args=None):
