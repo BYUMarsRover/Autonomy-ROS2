@@ -99,9 +99,9 @@ class RoverVisualizer:
     def get_hazard_locations(self):
         """Returns a list of (x, y) positions of all hazards."""
         # for one hazard
-        if self.hazards.length > 1:
+        if len(self.hazards) > 1:
             return [(hx, hy) for hx, hy, _, _ in self.hazards] # multiple hazards
-        elif self.hazards.length == 1:
+        elif len(self.hazards) == 1:
             hx, hy, _, _ = self.hazards[0]
             return hx, hy
         else:
