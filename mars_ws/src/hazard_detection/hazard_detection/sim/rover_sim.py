@@ -7,28 +7,40 @@ class RoverVisualizer:
         self.linear_vel = 0
         self.angular_vel = 0
         self.fig, self.ax = plt.subplots()
-        self.rover = {'position': (0, 0), 'orientation': -np.pi / 2}  # Facing north (positive y)
+        self.rover = {'position': (0, 0), 'orientation': np.pi / 2}  # Facing north (positive y) 
         self.target = (5, 5)  # (x, y)
         self.hazards = []  # List of (x, y, width, height)
-        self.init_velocity_display()
+        self.distance_to_target 
+        self.course_angle
+        self.course_heading_error
+        self.orientation
+        self.init_parameter_display()
 
     def set_velocity(self, linear_vel, angular_vel, dt):
         self.linear_vel = linear_vel
         self.angular_vel = angular_vel
         self.x = self.rover['position'][0]
         self.y = self.rover['position'][1]
-        self.theta = self.rover['orientation']
-        self.set_rover_position(self.x + self.linear_vel * np.cos(self.theta) * dt, 
-                                self.y + self.linear_vel* np.sin(self.theta) * dt, self.theta + self.angular_vel * dt)
+        self.orientation = self.rover['orientation']
+        self.set_rover_position(self.x + self.linear_vel * np.cos(self.orientation) * dt, 
+                                self.y + self.linear_vel* np.sin(self.orientation) * dt, self.orientation + self.angular_vel * dt)
     
-    def init_velocity_display(self):
+    def init_parameter_display(self):
         self.velocity_texts = []
         self.velocity_texts.append(self.fig.text(0.75, 0.9, "Linear Velocity: 0.0 m/s", fontsize=12, bbox=dict(facecolor='white', edgecolor='black')))
         self.velocity_texts.append(self.fig.text(0.75, 0.85, "Angular Velocity: 0.0 rad/s", fontsize=12, bbox=dict(facecolor='white', edgecolor='black')))
-    
-    def update_velocity_display(self):
+        self.velocity_texts.append(self.fig.text(0.75, 0.9, "Orientation: 0.0 rad", fontsize=12, bbox=dict(facecolor='white', edgecolor='black')))
+        self.velocity_texts.append(self.fig.text(0.75, 0.9, "Course Angle : 0.0 rad", fontsize=12, bbox=dict(facecolor='white', edgecolor='black')))
+        self.velocity_texts.append(self.fig.text(0.75, 0.9, "Course Heading Error : 0.0 rad", fontsize=12, bbox=dict(facecolor='white', edgecolor='black')))
+        self.velocity_texts.append(self.fig.text(0.75, 0.85, "Distance to Target: 0.0 rad/s", fontsize=12, bbox=dict(facecolor='white', edgecolor='black')))
+
+    def update_parameter_display(self):
         self.velocity_texts[0].set_text(f"Linear Velocity: {self.linear_vel:.2f} m/s")
         self.velocity_texts[1].set_text(f"Angular Velocity: {self.angular_vel:.2f} rad/s")
+        self.velocity_texts[0].set_text(f"Orientation: {self.orientation:.2f} rad")
+        self.velocity_texts[1].set_text(f"Course Angle: {self.angular_vel:.2f} rad")
+        self.velocity_texts[1].set_text(f"Course Heading Error: {self.angular_vel:.2f} rad")
+        self.velocity_texts[1].set_text(f"Distance to Target: {self.angular_vel:.2f} rad/s")
         plt.draw()
             
     def draw(self):
@@ -72,7 +84,9 @@ class RoverVisualizer:
         plt.pause(0.01)  # Allows real-time updates
 
     def get_target(self):
-        return np.sqrt((self.target[0] - self.rover['position'][0])**2 + (self.target[1] - self.rover['position'][1])**2)
+        self.distance_to_target = np.sqrt((self.target[0] - self.rover['position'][0])**2 + (self.target[1] - self.rover['position'][1])**2)
+        self.course_angle = np.arctan(self.x/self.y)
+        return self.distance_to_target, self.course_angle 
 
     def get_rover_orientation(self):
         #return as an angle from North, need to add pi/2
@@ -86,10 +100,13 @@ class RoverVisualizer:
     def get_rover_position(self):
         return self.rover['position'][0], self.rover['position'][1]
     
-    def set_target(self, x, y):
+    def set_target(self, x, y, distance_to_target, course_angle):
+        self.distance_to_target = distance_to_target
+        self.course_angle = course_angle
+        self.course_heading_error = self.orientation - self.course_angle - np.pi / 2 
+        #have to subtract 90 deg to get orientation and course angle in same reference frame
         self.target = (x, y)
         self.update_display()
-
     
     def add_hazard(self, x, y, width=1, height=1):
         """Adds an hazard to the environment."""
