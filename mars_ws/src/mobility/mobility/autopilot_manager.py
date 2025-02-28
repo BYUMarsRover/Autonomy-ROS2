@@ -115,6 +115,7 @@ class AutopilotManager(Node):
             #figure out new heading to avoid obstacle
             new_heading  = msg.course_angle * (1 - self.heading_alpha) + self.avoidance_heading * self.heading_alpha
             self.des_heading = wrap(new_heading, 0)
+
         else:
             self.des_heading = wrap(msg.course_angle, 0)
 
@@ -124,7 +125,10 @@ class AutopilotManager(Node):
         lin_vel = self.linear_controller.update_with_error(self.distance)
         angular_vel = self.angular_controller.update_with_error(self.course_error)
 
-        self.rover_vel_cmd.u_cmd = lin_vel
+        if self.obstacle_found:
+            self.rover_vel_cmd.u_cmd = lin_vel * .2
+        else:
+            self.rover_vel_cmd.u_cmd = lin_vel
         self.rover_vel_cmd.omega_cmd = angular_vel
         self.rover_vel_cmd.course_heading_error = self.course_error
 

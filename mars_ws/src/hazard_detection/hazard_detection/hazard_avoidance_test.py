@@ -36,7 +36,7 @@ class HazardAvoidanceTest(Node):
         self.time_step = 0.1
         self.linear_velocity = 0
         self.angular_velocity = 0
-        self.bounding_box_length = 3.0
+        self.bounding_box_length = 3.75
         self.bounding_box_width = 2.0
         self.vis = None
 
@@ -59,6 +59,7 @@ class HazardAvoidanceTest(Node):
         self.get_logger().info(f'Distance to Target: {np.round(dist_to_target, 3)}')
         self.get_logger().info(f'Course Angle: {np.round(course_angle, 3)}')
 
+        #TODO: Add timer to autopilot manager. Update hazard location from middle to closest point, commit to main
 
         hazard_in_box = self.check_hazard_in_box(haz_x, haz_y, rov_x, rov_y, rov_orientation)
         
@@ -73,7 +74,7 @@ class HazardAvoidanceTest(Node):
             hx_rov = hx * np.cos(rov_orientation) + hy * np.sin(rov_orientation)
             hy_rov = -hx * np.sin(rov_orientation) + hy * np.cos(rov_orientation)
 
-            self.get_logger().info('Hazard in bounding box. H_x: %f, H_y: %f', hx_rov, hy_rov)
+            self.get_logger().info(f'Hazard in bounding box. H_x: {hx_rov}, H_y: {hy_rov}')
 
             hazard_msg = HazardArray()
             hazard = Hazard()
@@ -147,7 +148,7 @@ class HazardAvoidanceTest(Node):
 
             #Initialize the simulation
             self.vis = RoverVis()
-            self.vis.set_rover_position(0, 0, 0) #Start with the rover at the origin with orientation of 0
+            self.vis.set_rover_position(0, 0, np.pi/3) #Start with the rover at the origin with orientation of 0
             
             target_x = distance_to_target * sin(course_angle)
             target_y = distance_to_target * cos(course_angle)
@@ -168,6 +169,7 @@ class HazardAvoidanceTest(Node):
         request = SetBool.Request()
         request.data = enable
         future = client.call_async(request)
+
 
 
 def main(args=None):

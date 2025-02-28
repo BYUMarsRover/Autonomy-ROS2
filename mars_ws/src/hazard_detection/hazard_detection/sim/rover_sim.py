@@ -10,7 +10,7 @@ class RoverVisualizer:
         self.distance_to_target = 0.0
         self.course_angle = 0.0
         self.course_heading_error = 0.0
-        self.orientation = 0.0 #rover's orientation from x, Positve being CCW
+        self.orientation = np.pi/2 #rover's orientation from x, Positve being CCW
         self.x = 0 #rovers x position
         self.y = 0 #rovers y position
 
