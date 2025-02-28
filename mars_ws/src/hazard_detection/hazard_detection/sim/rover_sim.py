@@ -48,7 +48,7 @@ class RoverVisualizer:
 
     def get_rover_orientation(self):
         """Returns the rover's orientation as an angle from North."""
-        return -(self.rover['orientation'] - np.pi / 2)
+        return self.wrap(-(self.rover['orientation'] - np.pi / 2), 0)
 
     # ---- Display and Drawing ---- #
 
@@ -151,13 +151,13 @@ class RoverVisualizer:
         self.get_rover_position() # update rover position so that self.y != 0 accidently
         x, y = self.rover['position']
 
-        if y == 0:
-            self.course_angle = 0.0
-        else:
-            self.course_angle = np.arctan2(x,y) + np.pi / 2 # test this value
+        self.course_angle = np.arctan2(self.target[0] - x, self.target[1] - y)
         self.distance_to_target = np.sqrt((self.target[0] - self.rover['position'][0])**2 + (self.target[1] - self.rover['position'][1])**2)
+
+        #calcualte orientation from North, going clockwise
+        self.orientation = -(self.rover['orientation'] - np.pi/2)
         self.course_heading_error = self.orientation - self.course_angle - np.pi / 2
-        self.orientation = -(self.rover['orientation'] - np.pi/2) 
+         
         return self.distance_to_target, self.course_angle 
 
     def add_hazard(self, x, y, width=1, height=1):
@@ -190,6 +190,13 @@ class RoverVisualizer:
         """Removes a hazard at a specified location."""
         self.hazards = [(ox, oy, w, h) for ox, oy, w, h in self.hazards if (ox, oy) != (x, y)]
         self.update_display()
+
+    def wrap(self, chi_1, chi_2):
+        while chi_1 - chi_2 > np.pi:
+            chi_1 -= 2.0 * np.pi
+        while chi_1 - chi_2 < -np.pi:
+            chi_1 += 2.0 * np.pi
+        return chi_1
 
     # ---- Simulation Control ---- #
 
