@@ -217,9 +217,9 @@ if __name__ == "__main__":
     x, y, orientation = 0, 0, 0
     linear_velocity = 0.5
     angular_velocity = 0.5
-    dt = 0.1
+    dt = 0.5
 
-    for _ in range(100):
+    for _ in range(200):
         visualizer.set_velocity(linear_velocity, angular_velocity, dt)
         orientation += angular_velocity * dt
         x += linear_velocity * np.cos(orientation) * dt
