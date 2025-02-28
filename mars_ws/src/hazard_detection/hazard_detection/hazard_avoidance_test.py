@@ -54,6 +54,12 @@ class HazardAvoidanceTest(Node):
         rov_orientation = self.vis.get_rover_orientation()
         rov_x, rov_y = self.vis.get_rover_position()
 
+
+        self.get_logger().info(f'Rover Orientation: {np.round(rov_orientation, 3)}')
+        self.get_logger().info(f'Distance to Target: {np.round(dist_to_target, 3)}')
+        self.get_logger().info(f'Course Angle: {np.round(course_angle, 3)}')
+
+
         hazard_in_box = self.check_hazard_in_box(haz_x, haz_y, rov_x, rov_y, rov_orientation)
         
         if hazard_in_box:
@@ -145,7 +151,7 @@ class HazardAvoidanceTest(Node):
             
             target_x = distance_to_target * sin(course_angle)
             target_y = distance_to_target * cos(course_angle)
-            self.vis.set_target(target_x, target_y, distance_to_target, course_angle)
+            self.vis.set_target(target_x, target_y)
             
             #Set the hazard Location
             self.haz_length_x = 1.5
