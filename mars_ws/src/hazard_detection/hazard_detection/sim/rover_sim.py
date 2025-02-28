@@ -200,9 +200,12 @@ if __name__ == "__main__":
     dt = 0.1
 
     for _ in range(100):
+        visualizer.set_velocity(linear_velocity, angular_velocity, dt)
         orientation += angular_velocity * dt
         x += linear_velocity * np.cos(orientation) * dt
         y += linear_velocity * np.sin(orientation) * dt
+
+        # linear_velocity = linear_velocity - .1
 
         visualizer.set_rover_position(x, y, orientation)
         time.sleep(dt)
