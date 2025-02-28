@@ -21,8 +21,8 @@
     base_alt: 1399.787   #meters
 
     #if surveyed, the survey time and survey accuracy minimums
-    Surveytime: 30
-    Surveyacc: 5000000
+    Surveytime: 30 # seconds
+    Surveyacc: 5000000 #meters or centimeters??
 
     #GNSS message output rate
     message_rate: 10
