@@ -78,7 +78,7 @@ class RoverVisualizer:
         params = [
             f"Linear Velocity: {self.linear_vel:.2f} m/s",
             f"Angular Velocity: {self.angular_vel:.2f} rad/s",
-            f"Orientation: {self.orientation:.2f} rad",
+            f"Orientation: {self.get_rover_orientation():.2f} rad",
             f"Course Angle: {self.course_angle:.2f} rad",
             f"Course Heading Error: {self.course_heading_error:.2f} rad",
             f"Distance to Target: {self.distance_to_target:.2f} m"
