@@ -58,10 +58,21 @@ class HazardAvoidanceTest(Node):
         
         if hazard_in_box:
             #Update hazard according to the simulation and publish
+            
+
+            # #return the hazard in the rover frame
+            hx= haz_x - self.rover['position'][0]
+            hy = haz_y - self.rover['position'][1]
+            #rotate the hazard to the rover frame
+            hx_rov = hx * np.cos(self.rover['orientation']) + hy * np.sin(self.rover['orientation'])
+            hy_rov = -hx * np.sin(self.rover['orientation']) + hy * np.cos(self.rover['orientation'])
+
+            self.get_logger().info('Hazard in bounding box. H_x: %f, H_y: %f', hx_rov, hy_rov)
+
             hazard_msg = HazardArray()
             hazard = Hazard()
-            hazard.location_x = haz_x
-            hazard.location_y = haz_y
+            hazard.location_x = hx_rov
+            hazard.location_y = hy_rov
             hazard.location_z = 0.0
             hazard.length_x = self.haz_length_x
             hazard.length_y = self.haz_length_y

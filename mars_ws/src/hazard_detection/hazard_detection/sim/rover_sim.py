@@ -124,9 +124,14 @@ class RoverVisualizer:
         elif len(self.hazards) == 1:
             hx, hy, _, _ = self.hazards[0]
 
-            #return the hazard in the rover frame
-            haz_x = hx - self.rover['position'][0]
-            haz_y = hy - self.rover['position'][1]
+            return hx, hy
+        
+            # #return the hazard in the rover frame
+            # haz_x = hx - self.rover['position'][0]
+            # haz_y = hy - self.rover['position'][1]
+            # #rotate the hazard to the rover frame
+            # haz_x = haz_x * np.cos(self.rover['orientation']) + haz_y * np.sin(self.rover['orientation'])
+            # haz_y = -haz_x * np.sin(self.rover['orientation']) + haz_y * np.cos(self.rover['orientation'])
 
             return haz_x, haz_y
         else:
