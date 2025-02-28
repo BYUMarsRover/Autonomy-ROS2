@@ -96,7 +96,7 @@ class HazardAvoidanceTest(Node):
 
         #publish the orientation of the rover
         state_singleton_msg = RoverStateSingleton()
-        state_singleton_msg.map_yaw = rov_orientation # TODO: needs to be in degrees
+        state_singleton_msg.map_yaw = np.rad2deg(rov_orientation) 
         self.singleton_publisher.publish(state_singleton_msg)
 
         return
@@ -148,7 +148,7 @@ class HazardAvoidanceTest(Node):
 
             #Initialize the simulation
             self.vis = RoverVis()
-            self.vis.set_rover_position(0, 0, np.pi/3) #Start with the rover at the origin with orientation of 0
+            self.vis.set_rover_position(0, 0, 0) #Start with the rover at the origin with orientation of 0
             
             target_x = distance_to_target * sin(course_angle)
             target_y = distance_to_target * cos(course_angle)

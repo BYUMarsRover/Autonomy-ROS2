@@ -119,8 +119,12 @@ class AutopilotManager(Node):
         else:
             self.des_heading = wrap(msg.course_angle, 0)
 
+        self.get_logger().info(f'Desired Heading: {self.des_heading}')
+        self.get_logger().info(f'Current Heading: {self.curr_heading}')
+
         self.curr_heading = wrap(self.curr_heading, 0)
         self.course_error = wrap(self.des_heading - self.curr_heading, 0)
+        # self.get_logger().info(f"Course Error: {self.course_error}")
 
         lin_vel = self.linear_controller.update_with_error(self.distance)
         angular_vel = self.angular_controller.update_with_error(self.course_error)
