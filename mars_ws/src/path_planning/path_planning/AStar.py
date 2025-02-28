@@ -280,22 +280,26 @@ class AStarNode:
                 + self.e*self.ew
 
 def visualize_path(path, cost_map, map_type='Slope', waypoints=None, explored_nodes=None):
-    plt.figure(figsize=(10, 6))
-    plt.imshow(cost_map, cmap='terrain')
-    plt.colorbar(label=map_type)
-    plt.title(map_type + ' Map')
-    plt.xlabel('X Coordinate')
-    plt.ylabel('Y Coordinate')
-    #TODO: make the map bigger, add the text to the bottom of the map pop-up
-    # between 9-10 and 3-4 for screen recording 
+    plt.style.use('dark_background')
+    plt.figure(figsize=(10, 10))
+    if map_type == 'Slope':
+        plt.imshow(np.arctan(cost_map)*180/np.pi, cmap='jet')
+        cbr =plt.colorbar(label=map_type + ' (degrees)')
+    else:
+        plt.imshow(cost_map, cmap='jet')
+        cbr =plt.colorbar(label=map_type + ' (m)')
+    cbr.ax.yaxis.label.set_size(14)
+    plt.title(map_type + ' Map', fontsize=22)
+    plt.xlabel('X Relative UTM (m)', fontsize=18)
+    plt.ylabel('Y Relative UTM (m)', fontsize=18)
     legend = ['Start', 'Goal', 'Path']
 
-    plt.plot(path[0][1], path[0][0], 'o', color='orange', markersize=8, label='Start', zorder=4)
+    plt.plot(path[0][1], path[0][0], 'o', color='red', markersize=8, label='Start', zorder=4)
     plt.plot(path[-1][1], path[-1][0], 'o', color='lime', markersize=8, label='Goal', zorder=4)
-    plt.plot([x[1] for x in path], [x[0] for x in path], 'r-', zorder=2)
+    plt.plot([x[1] for x in path], [x[0] for x in path], '#d9987a', zorder=2)
     
     if waypoints is not None:
-        plt.scatter([x[1] for x in waypoints], [x[0] for x in waypoints], color='yellow', s=8, marker='o', zorder=3)
+        plt.scatter([x[1] for x in waypoints], [x[0] for x in waypoints], color='#d9987a', s=10, marker='o', zorder=3)
         legend.append('Waypoints')
     if explored_nodes is not None:
 
