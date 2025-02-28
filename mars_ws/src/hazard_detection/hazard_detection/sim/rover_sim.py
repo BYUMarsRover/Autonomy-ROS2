@@ -153,9 +153,21 @@ class RoverVisualizer:
         self.update_display()
 
     def get_hazard_locations(self):
-        """Returns a list of hazard positions."""
-        return [(hx, hy) for hx, hy, _, _ in self.hazards]
+        """Returns a list of (x, y) positions of all hazards."""
+        # for one hazard
+        if len(self.hazards) > 1:
+            return [(hx, hy) for hx, hy, _, _ in self.hazards] # multiple hazards
+        elif len(self.hazards) == 1:
+            hx, hy, _, _ = self.hazards[0]
 
+            #return the hazard in the rover frame
+            haz_x = hx - self.rover['position'][0]
+            haz_y = hy - self.rover['position'][1]
+
+            return haz_x, haz_y
+        else:
+            return None
+            
     def remove_hazard(self, x, y):
         """Removes a hazard at a specified location."""
         self.hazards = [(ox, oy, w, h) for ox, oy, w, h in self.hazards if (ox, oy) != (x, y)]

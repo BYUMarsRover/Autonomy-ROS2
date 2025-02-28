@@ -40,8 +40,6 @@ class HazardAvoidanceTest(Node):
         self.bounding_box_width = 2.0
         self.vis = None
 
-        self._toggle_enable_autopilot_manager(True)
-
         self.get_logger().info('Hazard Avoidance Test Node Initialized')
 
 
@@ -64,12 +62,12 @@ class HazardAvoidanceTest(Node):
             hazard = Hazard()
             hazard.location_x = haz_x
             hazard.location_y = haz_y
-            hazard.location_z = 0
+            hazard.location_z = 0.0
             hazard.length_x = self.haz_length_x
             hazard.length_y = self.haz_length_y
-            hazard.length_z = 0
+            hazard.length_z = 0.0
             hazard.type = Hazard.OBSTACLE
-            self.hazard_msg.hazards.append(hazard)
+            hazard_msg.hazards.append(hazard)
             self.publisher.publish(hazard_msg)
 
         #Publish the new dist to target and course angle
@@ -120,6 +118,9 @@ class HazardAvoidanceTest(Node):
         #As soon as we recieve one autopilot cmd via terminal, we will start the simulation
 
         if self.vis is None: #only do it on the first message
+            #Enable the autopilot manager
+            self._toggle_enable_autopilot_manager(True)
+
             # Create a timer to call `state_loop` every 0.1 seconds (10 Hz)
             self.create_timer(self.time_step, self.updateSimulationLoop)
 
