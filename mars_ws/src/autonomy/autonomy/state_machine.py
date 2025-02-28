@@ -12,6 +12,8 @@ import numpy as np
 import time
 from collections import deque
 
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
+
 class State(Enum):
     MANUAL = "MANUAL"
     SEARCH_FOR_WRONG_TAG = "SEARCH_FOR_WRONG_TAG"
@@ -50,16 +52,22 @@ class AutonomyStateMachine(Node):
         # Create a timer to call `state_loop` every 0.1 seconds (10 Hz)
         self.create_timer(0.1, self.state_loop)
 
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
+
         # Subscribers
-        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
-        self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10)
-        self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10)
+        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, qos_profile)
+        self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, qos_profile)
+        self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, qos_profile)
 
         # Publishers
-        self.aruco_pose_pub = self.create_publisher(FiducialData, '/autonomy/aruco_pose', 10)
-        self.nav_state_pub = self.create_publisher(NavState, '/nav_state', 10) # Naviation State
-        self.rover_state_pub = self.create_publisher(RoverState, '/rover_state', 10) # State Machine State
-        self.debug_pub = self.create_publisher(String, '/state_machine_debug', 10)
+        # self.aruco_pose_pub = self.create_publisher(FiducialData, '/autonomy/aruco_pose', qos_profile)
+        self.nav_state_pub = self.create_publisher(NavState, '/nav_state', qos_profile) # Naviation State
+        self.rover_state_pub = self.create_publisher(RoverState, '/rover_state', qos_profile) # State Machine State
+        self.debug_pub = self.create_publisher(String, '/state_machine_debug', qos_profile)
 
         # Services
         self.srv_switch_auto = self.create_service(SetBool, '/autonomy/enable_autonomy', self.enable)

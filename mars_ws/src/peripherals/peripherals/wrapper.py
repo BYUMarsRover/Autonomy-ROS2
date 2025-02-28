@@ -15,20 +15,26 @@ import queue
 gripper = 0
 navigation_state = -1
 q = queue.Queue()
-
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 
 class RoverStatusNode(Node):
     def __init__(self):
         super().__init__('rover_status_listener')
+
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
         
         # Publishers
-        self.battery_pub = self.create_publisher(RawBattery, '/raw_battery_info', 10)
+        self.battery_pub = self.create_publisher(RawBattery, '/raw_battery_info', qos_profile)
         
         # Subscribers
-        self.create_subscription(NavState, '/nav_state', self.led_callback, 10)
-        self.create_subscription(Gripper, '/gripper', self.gripper_callback, 10)
-        self.create_subscription(Laser, '/laser_state', self.laser_callback, 10)
-        self.create_subscription(Clicker, '/click', self.click_callback, 10)
+        self.create_subscription(NavState, '/nav_state', self.led_callback, qos_profile)
+        self.create_subscription(Gripper, '/gripper', self.gripper_callback, qos_profile)
+        self.create_subscription(Laser, '/laser_state', self.laser_callback, qos_profile)
+        self.create_subscription(Clicker, '/click', self.click_callback, qos_profile)
 
         # Arduino serial setup
         try:

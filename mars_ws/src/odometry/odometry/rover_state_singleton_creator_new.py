@@ -22,6 +22,8 @@ from rover_msgs.msg import RoverStateSingleton
 from sensor_msgs.msg import NavSatFix, Imu
 import numpy as np
 
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
+
 np.float = float # Bug fix hack
 
 def euler_from_quaternion(quat):
@@ -82,6 +84,12 @@ class RoverStateSingletonCreator(Node):
     def __init__(self):
         super().__init__('rover_state_singleton_creator')
 
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
+
         # TF listner
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -90,15 +98,15 @@ class RoverStateSingletonCreator(Node):
         # USED THIS SUBSCRIBER when trusting the zed orientation
         # self.zed_orientation_subscription = self.create_subscription(Odometry, "/zed/odom", self.convert_map, 10)  # Subscribes to the ZED orientation data
         # USED THIS SUBSCRIBER WHEN trusting the filter madgewick
-        self.imu_filter_sub = self.create_subscription(Vector3Stamped, "/imu/rpy/filtered", self.set_map_yaw, 10)
+        self.imu_filter_sub = self.create_subscription(Vector3Stamped, "/imu/rpy/filtered", self.set_map_yaw, qos_profile)
 
         # TODO: Chekc the filtered GPS subscription
-        self.unfiltered_gps_subscription = self.create_subscription(NavSatFix, "/fix", self.convert_unfiltered_gps, 10)  # Subscribes to the filtered GPS data from the UKF output
-        # self.gps_subscription = self.create_subscription(NavSatFix, "/ins/lla", self.convert_gps, 10) # Subscribes to unfiltered GPS data
-        self.gps_subscription = self.create_subscription(NavSatFix, "/zed/global", self.convert_gps, 10) # Subscribes to zed filtered GPS data
+        self.unfiltered_gps_subscription = self.create_subscription(NavSatFix, "/fix", self.convert_unfiltered_gps, qos_profile)  # Subscribes to the filtered GPS data from the UKF output
+        # self.gps_subscription = self.create_subscription(NavSatFix, "/ins/lla", self.convert_gps, qos_profile) # Subscribes to unfiltered GPS data
+        self.gps_subscription = self.create_subscription(NavSatFix, "/zed/global", self.convert_gps, qos_profile) # Subscribes to zed filtered GPS data
 
         # Publishers
-        self.singleton_publisher = self.create_publisher(RoverStateSingleton, '/odometry/rover_state_singleton', 10) # Publishes the singleton message
+        self.singleton_publisher = self.create_publisher(RoverStateSingleton, '/odometry/rover_state_singleton', qos_profile) # Publishes the singleton message
 
         # timer
         self.transform_lookup = self.create_timer(10.0, self.transform_check)

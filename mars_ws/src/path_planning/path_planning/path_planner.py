@@ -15,6 +15,8 @@ from .e_mapping import Mapper
 
 from .AStar import *
 
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
+
 '''
 Created by: Daniel Webb
 Date: 11/24/2024
@@ -38,12 +40,18 @@ class PathPlanner(Node):
         # Initialize path needed flag
         self.path_needed = False
 
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
+
         # Publishers
-        self.path_plan_response_pub = self.create_publisher(PlanPath.Response, '/path_plan_response', 10) # for notifying the gui the success status of an attempted path plan
-        self.mapviz_path = self.create_publisher(Path, '/mapviz/path', 10)
+        self.path_plan_response_pub = self.create_publisher(PlanPath.Response, '/path_plan_response', qos_profile) # for notifying the gui the success status of an attempted path plan
+        self.mapviz_path = self.create_publisher(Path, '/mapviz/path', qos_profile)
 
         # Subscribers
-        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
+        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, qos_profile)
         self.location = None # initialize location
         # self.location = (40.3224, -111.6436) # NOTE: gravel pits placeholder TODO: remove
         # self.location = (38.4231, -110.7851) # NOTE: hanksville placeholder TODO: remove

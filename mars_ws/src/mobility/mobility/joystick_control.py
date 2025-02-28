@@ -7,6 +7,8 @@ from std_msgs.msg import Bool
 from rover_msgs.msg import IWCMotors, Elevator
 from mobility.controllers.teleop_controllers import TankController, ArcadeController
 
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
+
 # TODO: put these inside a yaml
 # Button and axis mappings
 A, B, X, Y, LB, RB = 0, 1, 2, 3, 4, 5
@@ -32,6 +34,12 @@ class XBOX(Node):
     def __init__(self):
         super().__init__('xbox_drive')
 
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
+
         # Subscribers
         self.sub_joy_sub = self.create_subscription(
             Joy,
@@ -44,17 +52,17 @@ class XBOX(Node):
         self.joy_drive_enabled_pub = self.create_publisher(
             Bool,
             '/mobility/joy_drive_enabled',
-            10
+            qos_profile
         )
         self.teleop_drive_cmds_pub = self.create_publisher(
             IWCMotors,
             '/mobility/teleop_drive_cmds',
-            10
+            qos_profile
         )
         self.elevator_pub = self.create_publisher(
             Elevator,
             '/elevator',
-            10
+            qos_profile
         )
 
         self.drive_enabled = False

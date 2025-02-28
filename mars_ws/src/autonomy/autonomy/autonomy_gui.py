@@ -33,6 +33,8 @@ from ament_index_python.packages import get_package_share_directory
 
 import threading
 
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
+
 
 class AutonomyGUI(Node, QWidget):
     def __init__(self):
@@ -113,20 +115,25 @@ class AutonomyGUI(Node, QWidget):
 
         ################# ROS Communication #################
 
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
         # Publishers
-        self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
+        self.path_publisher = self.create_publisher(Path, '/mapviz/path', qos_profile)
 
         # Subscribers
-        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10) #Rover GPS and Heading
-        self.create_subscription(NavState, '/nav_state', self.nav_state_callback, 10) # Navigation state (speed, direction, navigation state)
-        self.create_subscription(RoverState, '/rover_state', self.rover_state_callback, 10) # Autonomy State machine state
-        self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10) #Aruco Detection
-        self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10) #Object Detection
-        self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, 10) #What mobility/path_manager is publishing
-        self.create_subscription(MobilityVelocityCommands, '/mobility/rover_vel_cmds', self.vel_cmds_callback, 10) #What mobility/autopilot_manager is publishing
-        self.create_subscription(MobilityDriveCommand, '/mobility/wheel_vel_cmds', self.wheel_vel_cmds_callback, 10) #What mobility/wheel_manager is publishing
-        self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, 1) 
-        self.create_subscription(PlanPath.Response, '/path_plan_response', self.plan_path_response_callback, 10) # Allows the path planner node to notify when the path is ready
+        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, qos_profile) #Rover GPS and Heading
+        self.create_subscription(NavState, '/nav_state', self.nav_state_callback, qos_profile) # Navigation state (speed, direction, navigation state)
+        self.create_subscription(RoverState, '/rover_state', self.rover_state_callback, qos_profile) # Autonomy State machine state
+        self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, qos_profile) #Aruco Detection
+        self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, qos_profile) #Object Detection
+        self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, qos_profile) #What mobility/path_manager is publishing
+        self.create_subscription(MobilityVelocityCommands, '/mobility/rover_vel_cmds', self.vel_cmds_callback, qos_profile) #What mobility/autopilot_manager is publishing
+        self.create_subscription(MobilityDriveCommand, '/mobility/wheel_vel_cmds', self.wheel_vel_cmds_callback, qos_profile) #What mobility/wheel_manager is publishing
+        self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, qos_profile) 
+        self.create_subscription(PlanPath.Response, '/path_plan_response', self.plan_path_response_callback, qos_profile) # Allows the path planner node to notify when the path is ready
 
         # Services
 

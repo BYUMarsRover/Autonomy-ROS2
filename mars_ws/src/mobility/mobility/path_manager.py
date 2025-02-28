@@ -21,6 +21,7 @@ import numpy as np
 # Import GPSTools from utils
 from mobility.utils.GPSTools import *
 
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 
 class PathManager(Node):
 
@@ -28,6 +29,12 @@ class PathManager(Node):
 
     def __init__(self) -> None:
         super().__init__('path_manager')
+
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
 
         self.current_point = None # Constantly updated by the rover_state_singleton_callback function
         self.desired_point = None # Updated by the waypoint_2_follow_callback function
@@ -38,8 +45,8 @@ class PathManager(Node):
         self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable)
 
         # ROS 2 Publishers
-        self.autopilot_cmds_pub = self.create_publisher(MobilityAutopilotCommand, '/mobility/autopilot_cmds', 10)
-        self.debug_pub = self.create_publisher(String, '/mobility/PathManagerDebug', 10)
+        self.autopilot_cmds_pub = self.create_publisher(MobilityAutopilotCommand, '/mobility/autopilot_cmds', qos_profile)
+        self.debug_pub = self.create_publisher(String, '/mobility/PathManagerDebug', qos_profile)
 
         timer_period = 0.1
         self.pub_timer = self.create_timer(timer_period, self.publish_autopilot_cmd)
@@ -51,13 +58,13 @@ class PathManager(Node):
             MobilityGPSWaypoint2Follow,
             '/mobility/waypoint2follow',
             self.waypoint_2_follow_callback,
-            10
+            qos_profile
         )
         self.rover_state_singleton_sub = self.create_subscription(
             RoverStateSingleton,
             '/odometry/rover_state_singleton',
             self.rover_state_singleton_callback,
-            10
+            qos_profile
         )
         self.zed_obstacles_sub = self.create_subscription(
             ZedObstacles,

@@ -5,6 +5,7 @@ import os
 # import beepy as
 import time
 from rover_msgs.msg import RawBattery
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 # from rover_msgs.msg import RoverState, Battery
 #from rover_msgs.msg import Battery
 
@@ -40,11 +41,17 @@ print("Battery Publishing Online")
 class BatteryInfo(Node):
     def __init__(self):
         super().__init__('battery_info')
+         # Create a QoS profile with BestEffort reliability and no history (keep only the latest message)
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
         self.subscription = self.create_subscription(
             RawBattery,
             'raw_battery_info',
             self.checkBattery,
-            1  # QoS profile depth
+            qos_profile  # QoS profile depth
         )
         self.get_logger().info("Battery Publishing Online")
 

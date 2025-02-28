@@ -7,23 +7,31 @@ from rover_msgs.srv import SetFloat32
 from std_srvs.srv import SetBool
 import numpy as np
 
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
+
 class DriveManager(Node):
     def __init__(self):
         super().__init__('drive_manager')
+
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
 
         # Subscribers
         self.vel_cmds_sub = self.create_subscription(
             MobilityVelocityCommands, 
             '/mobility/rover_vel_cmds', 
             self.vel_cmds_callback, 
-            10
+            qos_profile
         )
 
         # Publishers
         self.wheel_vel_cmds_pub = self.create_publisher(
             MobilityDriveCommand, 
             '/mobility/wheel_vel_cmds', 
-            10
+            qos_profile
         )
 
         # Service

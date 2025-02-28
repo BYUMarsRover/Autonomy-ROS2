@@ -12,6 +12,7 @@ from tf2_ros import TransformBroadcaster
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 
 
 def quaternion_from_euler(ai, aj, ak):
@@ -86,6 +87,12 @@ class FramePublisher(Node):
         # Initialize the transform broadcaster
         self.tf_broadcaster = TransformBroadcaster(self)
 
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
+
         # callback function on each message
         # self.global_subscription = self.create_subscription(
         #     Imu,
@@ -97,13 +104,13 @@ class FramePublisher(Node):
             Vector3Stamped,
             '/imu/rpy/filtered',
             self.handle_rpy,
-            1)
+            qos_profile)
 
         self.local_subscription = self.create_subscription(
             Odometry,
             '/zed/odom',
             self.handle_local_heading,
-            1)
+            qos_profile)
         self.local_orientation = Odometry().pose.pose.orientation
 
         self.get_logger().info("STARTING GLOBAL CALIBRATION")

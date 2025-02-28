@@ -19,16 +19,23 @@ from std_srvs.srv import SetBool
 from mobility.utils.wrap import wrap
 from mobility.controllers.pid_control import PIDControl
 
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 
 class ArucoAutopilotManager(Node):
 
     def __init__(self):
         super().__init__('aruco_autopilot_manager')
 
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
+
         # Initialize publishers, subscribers, and services
-        self.rover_vel_cmds_pub = self.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', 10)
+        self.rover_vel_cmds_pub = self.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', qos_profile)
         self.autopilot_cmds_sub = self.create_subscription(
-            MobilityArucoAutopilotCommand, '/mobility/aruco_autopilot_cmds', self.aruco_autopilot_cmds_callback, 10)
+            MobilityArucoAutopilotCommand, '/mobility/aruco_autopilot_cmds', self.aruco_autopilot_cmds_callback, qos_profile)
 
         self.enable_service = self.create_service(SetBool, '/mobility/aruco_autopilot_manager/enabled', self.enable_callback)
         # self.speed_service = self.create_service(SetFloat32, '/mobility/speed_factor', self.set_speed) #NOt working because this is a service in autopilot manager

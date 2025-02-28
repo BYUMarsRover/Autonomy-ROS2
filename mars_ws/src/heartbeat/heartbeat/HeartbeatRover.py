@@ -5,19 +5,27 @@ from rover_msgs.msg import Heartbeat, HeartbeatStatusRover
 from builtin_interfaces.msg import Time
 from . import parameters as p
 
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 
 class RoverHeartbeat(Node):
     def __init__(self):
         super().__init__('rover_heartbeat')
+
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
+
         self.last_received = None
         self.sub_heartbeat = self.create_subscription(
-            Heartbeat, "heartbeat_base", self.update_elapsed_time, 10
+            Heartbeat, "heartbeat_base", self.update_elapsed_time, qos_profile
         )
         self.pub_heartbeat = self.create_publisher(
-            Heartbeat, "heartbeat_rover", 10
+            Heartbeat, "heartbeat_rover", qos_profile
         )
         self.pub_heartbeat_status = self.create_publisher(
-            HeartbeatStatusRover, "heartbeat_status_rover", 10
+            HeartbeatStatusRover, "heartbeat_status_rover", qos_profile
         )
         self.timer = self.create_timer(1.0 / p.RATE, self.ping_and_publish)
 

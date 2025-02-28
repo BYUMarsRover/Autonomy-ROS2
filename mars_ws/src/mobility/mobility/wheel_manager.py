@@ -6,6 +6,7 @@ from rover_msgs.msg import IWCMotors, MobilityDriveCommand
 from std_srvs.srv import SetBool
 # from manager_interface import Manager
 
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 
 class WheelManager(Node):
 
@@ -15,18 +16,24 @@ class WheelManager(Node):
         # Subscribers
         self.IWC_cmd = IWCMotors()
 
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
+
         self.wheel_vel_cmds_sub = self.create_subscription(
             MobilityDriveCommand,
             '/mobility/wheel_vel_cmds',
             self.wheel_vel_cmds_callback,
-            10
+            qos_profile
         )
 
         # Publishers
         self.auto_drive_cmds_pub = self.create_publisher(
             IWCMotors,
             '/mobility/auto_drive_cmds',
-            10
+            qos_profile
         )
 
         # Service

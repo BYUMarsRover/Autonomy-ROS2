@@ -13,7 +13,7 @@ from rclpy.node import Node
 import numpy as np
 import time
 
-from rover_msgs.msg import RoverStateSingleton, MobilityAutopilotCommand, MobilityVelocityCommands, ZedObstacles
+from rover_msgs.msg import RoverStateSingleton, MobilityAutopilotCommand, MobilityVelocityCommands #, ZedObstacles
 from rover_msgs.srv import SetFloat32
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Twist
@@ -22,6 +22,8 @@ from std_srvs.srv import SetBool
 # Import wrap from utils and PIDControl from controllers
 from mobility.utils.wrap import wrap
 from mobility.controllers.pid_control import PIDControl
+
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 
 class AutopilotManager(Node):
 
@@ -80,13 +82,19 @@ class AutopilotManager(Node):
         self.too_close_limit = 0.0  # TODO: Choose a reasonable value
         self.detections = []
 
+        qos_profile = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,  # Keeps only the latest message
+            depth=1,  # Depth of 1 ensures only the latest message is kept
+            reliability=QoSReliabilityPolicy.BEST_EFFORT  # Best effort reliability
+        )
+
         # ROS subscribers
-        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
-        self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, 10)
-        self.create_subscription(ZedObstacles, '/zed/obstacles', self.obstacle_callback, 10)
+        self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, qos_profile)
+        self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, qos_profile)
+       # self.create_subscription(ZedObstacles, '/zed/obstacles', self.obstacle_callback, 10)
 
         # ROS publishers
-        self.rover_vel_cmds_pub = self.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', 10)
+        self.rover_vel_cmds_pub = self.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', qos_profile)
 
         # ROS services
         self.create_service(SetBool, '/mobility/autopilot_manager/enabled', self.enable)
@@ -122,19 +130,19 @@ class AutopilotManager(Node):
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
         self.curr_heading = np.deg2rad(msg.map_yaw)
 
-    def obstacle_callback(self, msg: ZedObstacles):
-        if len(msg.x_coord) == 0:
-            return
+    # def obstacle_callback(self, msg: ZedObstacles):
+    #     if len(msg.x_coord) == 0:
+    #         return
 
-        x_coord = msg.x_coord[0]
-        dist = msg.dist[0]
-        side = 1 if x_coord > 100 else -1
+    #     x_coord = msg.x_coord[0]
+    #     dist = msg.dist[0]
+    #     side = 1 if x_coord > 100 else -1
 
-        self.heading_plus += side
-        if abs(dist) < self.too_close_limit:
-            self.slow_down += 1
+    #     self.heading_plus += side
+    #     if abs(dist) < self.too_close_limit:
+    #         self.slow_down += 1
 
-        self.detections.append((time.time_ns(), side))
+    #     self.detections.append((time.time_ns(), side))
 
     def heading_decay(self):
         if not self.detections:
