@@ -147,6 +147,19 @@ class RoverVisualizer:
         self.update_target_info()
         self.update_display()
 
+    def get_target(self):
+        self.get_rover_position() # update rover position so that self.y != 0 accidently
+        x, y = self.rover['position']
+
+        if y == 0:
+            self.course_angle = 0.0
+        else:
+            self.course_angle = np.arctan2(x,y) + np.pi / 2 # test this value
+        self.distance_to_target = np.sqrt((self.target[0] - self.rover['position'][0])**2 + (self.target[1] - self.rover['position'][1])**2)
+        self.course_heading_error = self.orientation - self.course_angle - np.pi / 2
+        self.orientation = -(self.rover['orientation'] - np.pi/2) 
+        return self.distance_to_target, self.course_angle 
+
     def add_hazard(self, x, y, width=1, height=1):
         """Adds a hazard to the environment."""
         self.hazards.append((x, y, width, height))
