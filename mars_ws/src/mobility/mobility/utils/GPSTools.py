@@ -35,7 +35,7 @@ class GPSTools:
     @staticmethod
     def heading_between_lat_lon(point1, point2):
         """
-        Returns the heading in radians and degrees between two GPS Coordinates
+        Returns the heading in radians and degrees between two GPS Coordinates in NED (North East Down) format.
         :param point1: The origin GPS Coordinate in standard format
         :param point2: The end GPS Coordinate in standard format
         :return: The heading between the GPS Coordinates in radians and degrees
@@ -58,8 +58,8 @@ class GPSTools:
     def course_angle_between_lat_lon(point1, point2):
         """
         Returns the course angle in radians and degrees between two GPS Coordinates.
-        The key difference between course angle and heading is that course angle is expressed as a 
-        right handed rotation in ENU while heading is right handed rotation in NED.
+        The key difference between course angle and heading is that heading is right handed rotation in NED (North East Down)
+        and course angle is negated so a positive angle is ccw from north.
 
         :param point1: The origin GPS Coordinate in standard format
         :param point2: The end GPS Coordinate in standard format

@@ -3,6 +3,7 @@ imu_filter_madgwick:
     fixed_frame: 'odom'
     use_mag: True
     use_magnetic_field_msg: True
-    world_frame: 'nwu'
+    # world_frame: 'nwu' was in the config previously
+    world_frame: 'ned'
     publish_tf: False
     publish_debug_topics: True

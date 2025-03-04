@@ -29,17 +29,17 @@ def generate_launch_description():
         DeclareLaunchArgument('ROVER_ADDRESS', default_value='192.168.1.120'),
 
         # NOTE: Comment not pushed because it is a temporary fix
-        # # Peripherals
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join( 
-        #         peripherals_dir, 'launch', 'peripherals.launch.py'))
-        # ),
-
-        # Heartbeat
+        # Peripherals
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join( 
-                heartbeat_dir, 'launch', 'heartbeat_rover_launch.py'))
+                peripherals_dir, 'launch', 'peripherals.launch.py'))
         ),
+
+        # Heartbeat
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join( 
+        #         heartbeat_dir, 'launch', 'heartbeat_rover_launch.py'))
+        # ),
 
         # # Rover Home GUI
         # IncludeLaunchDescription(
@@ -48,10 +48,10 @@ def generate_launch_description():
         # ),
 
         # Mobility
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(
-                mobility_dir, 'launch', 'rover_drive_launch.py'))
-        ),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join(
+        #         mobility_dir, 'launch', 'rover_drive_launch.py'))
+        # ),
 
         # GPS
         # IncludeLaunchDescription(

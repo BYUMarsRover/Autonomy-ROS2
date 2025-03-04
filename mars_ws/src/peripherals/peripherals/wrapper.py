@@ -5,7 +5,7 @@ This wrapper allows us to merge 2 arduinos into one to allow for more USB ports
 import rclpy
 from rclpy.node import Node
 import serial
-from rover_msgs.msg import RoverState, Battery, Gripper, RawBattery, Laser, Clicker
+from rover_msgs.msg import NavState, Battery, Gripper, RawBattery, Laser, Clicker
 import time
 import threading
 import queue
@@ -22,11 +22,11 @@ class RoverStatusNode(Node):
         super().__init__('rover_status_listener')
         
         # Publishers
-        self.battery_pub = self.create_publisher(RawBattery, 'raw_battery_info', 10)
+        self.battery_pub = self.create_publisher(RawBattery, '/raw_battery_info', 10)
         
         # Subscribers
-        self.create_subscription(RoverState, 'rover_status', self.led_callback, 10)
-        self.create_subscription(Gripper, 'gripper', self.gripper_callback, 10)
+        self.create_subscription(NavState, '/nav_state', self.led_callback, 10)
+        self.create_subscription(Gripper, '/gripper', self.gripper_callback, 10)
         self.create_subscription(Laser, '/laser_state', self.laser_callback, 10)
         self.create_subscription(Clicker, '/click', self.click_callback, 10)
 

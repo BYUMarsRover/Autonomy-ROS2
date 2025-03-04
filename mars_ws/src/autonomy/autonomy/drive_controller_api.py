@@ -63,7 +63,7 @@ class DriveControllerAPI:
         self.drive_cmds_pub.publish(self.drive_cmd)
 
     def issue_aruco_autopilot_cmd(self, angle: float, distance: float):
-        # ArUco Autopilot Command: Sends movement commands relative to an ArUco marker.
+        # ArUco Autopilot Command: Sends movement commands relative to an ArUco marker/object.
         self._activate_managers([False, False, True, True, True])
         self.aruco_autopilot_cmd.distance_to_target = distance
         self.aruco_autopilot_cmd.angle_to_target = angle

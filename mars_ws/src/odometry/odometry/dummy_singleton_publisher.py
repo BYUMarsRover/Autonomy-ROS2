@@ -24,8 +24,12 @@ BYU_LONG=-111.649276
 
 ROCK_LAT=40.267147
 ROCK_LONG=-111.632455
-LAT_INIT=HANK_LAT
-LONG_INIT=HANK_LONG
+
+# LAT_INIT=HANK_LAT
+# LONG_INIT=HANK_LONG
+
+LAT_INIT=GRAVEL_LAT
+LONG_INIT=GRAVEL_LONG
 
 LL_PRECISION=100
 HEADING_PRECISION=LL_PRECISION
@@ -61,7 +65,7 @@ class DummySingletonPublisher(Node):
 
         self.map_roll = 0
         self.map_pitch = 0
-        self.map_yaw = 90.0
+        self.map_yaw = 180.0
 
         self.odom_roll = 0
         self.odom_pitch = 0
@@ -108,6 +112,10 @@ class DummySingletonPublisher(Node):
         self.filter_gps.latitude = self.latitude
         self.filter_gps.longitude = self.longitude
         self.map_yaw -= 0.3 # -0.1 * ROS_RATE degrees per second
+
+        # Wrap
+        if self.map_yaw < -180:
+            self.map_yaw += 360
 
         msg = RoverStateSingleton(
             map_yaw=self.map_yaw,
