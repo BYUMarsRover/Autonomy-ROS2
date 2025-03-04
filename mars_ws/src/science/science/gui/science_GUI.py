@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets, uic
 from python_qt_binding.QtCore import QObject, Signal
 import rclpy
 from rover_msgs.srv import CameraControl
-from rover_msgs.msg import ScienceToolPosition, ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceFADIntensity, Camera, RoverStateSingleton
+from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.pyplot as plt
@@ -15,8 +15,9 @@ import sys
 
 class Signals(QObject):
     sensor_signal = Signal(ScienceSensorValues)
-    auger_position = Signal(ScienceToolPosition)
+    # auger_position = Signal(ScienceToolPosition)
     sensor_save_signal = Signal(ScienceSaveSensor)
+    FAD_save_signal = Signal(ScienceSaveFAD)
     notes_save_signal = Signal(ScienceSaveNotes)
     fad_intensity_signal = Signal(ScienceFADIntensity)
 
@@ -37,14 +38,16 @@ class science_GUI(Node):
 
         self.base_ip = self.get_base_ip()
         self.cli = self.create_client(CameraControl, 'camera_control')
-        if not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Camera control not available, waiting...')
-        self.req = CameraControl.Request()
-        self.future = self.cli.call_async(self.req)
+        # if not self.cli.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info('Camera control not available, waiting...')
+        # self.req = CameraControl.Request()
+        # self.future = self.cli.call_async(self.req)
 
         self.temperature = 1
         self.moisture = 0
         self.fad = 2
+
+        self.save_interval = 10
 
         self.fad_calibration_interval = 2
         self.site_number = 1
@@ -76,28 +79,30 @@ class science_GUI(Node):
             self.temperature_coefficients = []
             print("Temperature coefficients file does not exist. Please use the show graph button to store coefficients.")
 
-        if self.future.result() is not None:
-            self.get_logger().info(f"{self.future.result()}")
-        else:
-            self.get_logger().error(f"Service call failed {self.future.exception()}")
+        # if self.future.result() is not None:
+        #     self.get_logger().info(f"{self.future.result()}")
+        # else:
+        #     self.get_logger().error(f"Service call failed {self.future.exception()}")
 
     def initialize_timers(self):
-        self.save_interval = 10
-        self.moisture_timer = self.create_timer(self.save_interval, self.stop_moist_saver)
+        self.moisture_timer = self.create_timer(self.save_interval, self.stop_moist_saver)#These are probably redundant in ros2
         self.temp_timer = self.create_timer(self.save_interval, self.stop_temp_saver)
-        self.fad_timer = self.create_timer(self.save_interval, self.stop_fad_saver)
+        
 
     def task_launcher_init(self):
         self.signals = Signals()
 
         self.qt.pushButton_save_notes.clicked.connect(self.save_notes)
-        self.qt.pushButton_fad.clicked.connect(self.fad_detector_calibration)
+        self.qt.pushButton_fad.clicked.connect(self.fad_detector_get_point)
+        self.qt.pushButton_fad_calibration.clicked.connect(self.save_fad)
 
-        self.qt.pushButton_temperature.clicked.connect(lambda: self.graph_sensor_values(1))
         self.qt.pushButton_moisture.clicked.connect(lambda: self.graph_sensor_values(0))
+        self.qt.pushButton_temperature.clicked.connect(lambda: self.graph_sensor_values(1))
+        self.qt.pushButton_fad_graph.clicked.connect(lambda: self.graph_sensor_values(2))
 
-        self.qt.pushButton_temperature_2.clicked.connect(lambda: self.estimate_reading(1))
         self.qt.pushButton_moisture_2.clicked.connect(lambda: self.estimate_reading(0))
+        self.qt.pushButton_temperature_2.clicked.connect(lambda: self.estimate_reading(1))
+        self.qt.pushButton_fad_estimate.clicked.connect(lambda: self.estimate_reading(2))
 
         self.qt.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
         self.qt.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
@@ -108,18 +113,20 @@ class science_GUI(Node):
 
         self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1) #figure this out
         self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
+        self.pub_save_fad = self.create_publisher(ScienceSaveFAD, '/science_save_fad', 1)
 
         self.signals.sensor_signal.connect(self.update_sensor_values)
-        self.signals.auger_position.connect(self.update_auger_position)
+        # self.signals.auger_position.connect(self.update_auger_position)
         self.signals.sensor_save_signal.connect(self.pub_save_sensor.publish)
+        self.signals.FAD_save_signal.connect(self.pub_save_fad.publish)
         self.signals.notes_save_signal.connect(self.pub_save_notes.publish)
         self.signals.fad_intensity_signal.connect(self.update_fad_intensity_value)
 
         self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.signals.sensor_signal.emit, 10)
-        self.science_auger_position = self.create_subscription(ScienceToolPosition, '/science_auger_position', self.signals.auger_position.emit, 10)
+        # self.science_auger_position = self.create_subscription(ScienceToolPosition, '/science_auger_position', self.signals.auger_position.emit, 10)
         self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
         self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
-
+    
     def toggle_sensor_save(self, p):
         """
         Called when any sensor radio button is called (moist, temp, fad)
@@ -129,11 +136,26 @@ class science_GUI(Node):
 
         print('Toggling Saving Sensor', p)
         self.sensor_saving[p] = not self.sensor_saving[p]
-        if (p == 0):
-            self.sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_moisture.text()), save=self.sensor_saving[p])
-        elif (p == 1):
-            self.sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_temperature.text()), save=self.sensor_saving[p])
-        self.signals.sensor_save_signal.emit(self.sensor_message)
+        if (p == 0): # Moisture radio button
+            sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_moisture.text()), save=self.sensor_saving[p])
+        elif (p == 1): # Temp radio button
+            sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_temperature.text()), save=self.sensor_saving[p])
+        else:  # fad radio button, probably going to end up being useless.
+            if self.qt.fad_radio.isChecked():
+                self.fad_timer = self.create_timer(self.save_interval, self.stop_fad_saver)
+                print("made timer for FAD")
+            if (self.qt.lineEdit_fad.text() != ''):
+                sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_fad.text()), save=self.sensor_saving[p])
+            else:
+                #Find how do get logger
+                sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=3.141592, save=self.sensor_saving[p])
+
+        self.signals.sensor_save_signal.emit(sensor_message)
+
+    def save_fad(self):
+        self.sensor_saving[2] = True #2 is the FAD value, consider changing this to a const
+        sensor_message = ScienceSaveFAD(site=self.site_number, intensity=int(self.qt.le_fad.text()), observed=float(self.qt.lineEdit_fad.text()))
+        self.signals.FAD_save_signal.emit(sensor_message)
 
     def stop_temp_saver(self):
         self.temp_timer.cancel()
@@ -144,7 +166,9 @@ class science_GUI(Node):
         self.qt.moist_radio.setChecked(False)
 
     def stop_fad_saver(self):
-        self.fad_timer.cancel()
+        # self.fad_timer.cancel()
+        print("Attempting to uncheck the FAD")
+        self.fad_timer = None
         self.qt.fad_radio.setChecked(False)
 
     def increment_site_number(self):
@@ -164,6 +188,7 @@ class science_GUI(Node):
         print('Notes sent.')
 
     def update_sensor_values(self, msg):
+        # print("updating LCD displays")
         temperature = msg.temperature
         moisture = msg.moisture
 
@@ -179,17 +204,18 @@ class science_GUI(Node):
         match(position):
             case 0:
                 file_name = "moisture-plot-1.txt"
-                file_path = os.path.join(self.science_data_path, file_name)
                 coefficients_file = "moisture_coefficients.txt"
-                coefficients_path = os.path.join(self.science_data_path, coefficients_file)
             case 1:
                 file_name = "temperature-plot-1.txt"
-                file_path = os.path.join(self.science_data_path, file_name)
                 coefficients_file = "temperature_coefficients.txt"
-                coefficients_path = os.path.join(self.science_data_path, coefficients_file)
+            case 2:
+                file_name = "fad-plot-1.txt"
+                coefficients_file = "fad_coefficients.txt"
             case _: #Wildcard, acts like else
                 print("Err: this sensor does not have data to graph")
                 return
+        file_path = os.path.join(self.science_data_path, file_name)
+        coefficients_path = os.path.join(self.science_data_path, coefficients_file)
 
         #Check file existence
         if not os.path.exists(file_path):
@@ -220,16 +246,16 @@ class science_GUI(Node):
             plt.scatter(dummy_analog,dummy_manuals)
             plt.pause(0.5)
             # Have it ask you to save the point or delete after showing you an updated graph.
-
-            keep = "y"
-            if not (keep == "y" or keep =="Y" or keep == "[Y]" or keep == "[y]" or keep == ""):
-                manual_points.pop()
-                analog_vals.pop()
-                plt.cla()
-                plt.scatter(dummy_analog,dummy_manuals)
-                plt.xlabel("Arduino Digital Readout")
-                plt.ylabel("Reference Temperature (deg C)")
-                plt.pause(0.5)
+            # Need to decide if this is useful or not
+            # keep = "y"
+            # if not (keep == "y" or keep =="Y" or keep == "[Y]" or keep == "[y]" or keep == ""):
+            #     manual_points.pop()
+            #     analog_vals.pop()
+            #     plt.cla()
+            #     plt.scatter(dummy_analog,dummy_manuals)
+            #     plt.xlabel("Arduino Digital Readout")
+            #     plt.ylabel("Reference Temperature (deg C)")
+            #     plt.pause(0.5)
         #Add something so you can decide what order polynomial you want.
         order = int(input("What order polynomial do you want to fit? [0 - 6]\n"))
         P0 = np.zeros((1,6-order))
@@ -260,16 +286,33 @@ class science_GUI(Node):
         match(position):
             case 0:
                 coefficients_file = "moisture_coefficients.txt"
-                coefficients_path = os.path.join(self.science_data_path, coefficients_file)
-                x = self.qt.lineEdit_moisture_2.text()
+                try:
+                    val = self.qt.lineEdit_moisture_2.text()
+                    x = float(val)/1023
+                except (ValueError):
+                    self.get_logger().error(f"{val} is not a valid number")
+                    return
             case 1:
                 coefficients_file = "temperature_coefficients.txt"
-                coefficients_path = os.path.join(self.science_data_path, coefficients_file)
-                x = self.qt.lineEdit_temperature_2.text()
+                try:
+                    val = self.qt.lineEdit_moisture_2.text()
+                    x = float(val)/1023
+                except (ValueError):
+                    self.get_logger().error(f"{val} is not a valid number")
+                    return
+            case 2:
+                coefficients_file = "fad_coefficients.txt"
+                try:
+                    val = self.qt.lineEdit_moisture_2.text()
+                    x = float(val)/1023
+                except (ValueError):
+                    self.get_logger().error(f"{val} is not a valid number")
+                    return
             case _: #Wildcard, acts like else. This should never happen.
                 print("Err: this sensor does not have data to graph")
                 return
-
+        coefficients_path = os.path.join(self.science_data_path, coefficients_file)
+        
         with open(coefficients_path, 'r') as f:
             coefs = f.read().split()
             result = 0
@@ -277,12 +320,15 @@ class science_GUI(Node):
                 result += (float(coefs[i]) * (float(x)**i))
         sensor = "None"
         if position == 0: sensor = "Moisture"
-        else: sensor = "Temperature"
+        elif position == 1: sensor = "Temperature"
+        elif position == 2: sensor = "FAD"
+        else: sensor = "Unknown sensor"
         self.qt.textBrowser.setPlainText(sensor + f" reading is {result}")
         
     def update_fad_intensity_value(self, msg):
-        print('Displaying intensity!', msg)
-        self.qt.le_fad.setPlaceholderText(str(msg))
+        #Insert code to send reading to save?
+        # print('Displaying intensity!', msg)
+        self.qt.le_fad.setText(str(msg.intensity_avg))
 
     def update_pos_vel_time(self, msg):
         altitude = f'{msg.gps.altitude} ft'
@@ -295,28 +341,52 @@ class science_GUI(Node):
         self.qt.lbl_heading.setText(heading)
         self.qt.lbl_coordinates.setText(coordinates)
 
-    def update_auger_position(self, msg):
-        """
-        Updates the augur display.
+    # def update_auger_position(self, msg):
+    #     """
+    #     Updates the augur display.
 
-        This is like this because the photoresistors are backwards on the board.
-        """
-        if msg.position == 0:
-            self.qt.lcd_auger.display(2)
-        elif msg.position == 1:
-            self.qt.lcd_auger.display(1)
-        else:
-            self.qt.lcd_auger.display(-1)
+    #     This is like this because the photoresistors are backwards on the board.
+    #     """
+    #     if msg.position == 0:
+    #         self.qt.lcd_auger.display(2)
+    #     elif msg.position == 1:
+    #         self.qt.lcd_auger.display(1)
+    #     else:
+    #         self.qt.lcd_auger.display(-1)
 
-    def fad_detector_calibration(self, event=None):
-        print('Calibrate FADD')
-        site_name = 'fad_calibration'
-        camera = Camera()
-        camera.client_address = "{}@{}".format(os.getlogin(), self.base_ip)
-        camera.camera_name = 'fadCam'
-        response = self.camera_control(camera=camera, site_name=site_name, calibrate=True)
+    def fad_detector_get_point(self, event=None): #Written by chat
+        print('Calibrate FAD')
+        if not self.cli.service_is_ready():
+            self.get_logger().error("Camera control service is not available. Try again in a bit")
+            return
 
-        self.update_fad_intensity_value(response.intensity)
+        self.req = CameraControl.Request()
+        self.req.camera.client_address = "{}@{}".format(os.getlogin(), self.base_ip)
+        self.req.camera.camera_name = 'fadCam'
+        self.req.site_name = 'fad_calibration'
+        self.req.calibrate = True
+
+        # Call the service asynchronously
+        self.future = self.cli.call_async(self.req)
+        self.future.add_done_callback(self.handle_fad_response)
+
+    def handle_fad_response(self, future): #written by chat
+        try:
+            response = future.result()
+            self.get_logger().info(f"FAD Intensity: {response.intensity}")
+            self.update_fad_intensity_value(response)
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {str(e)}")
+
+
+        # print('Calibrate FADD')
+        # site_name = 'fad_calibration'
+        # camera = Camera()
+        # camera.client_address = "{}@{}".format(os.getlogin(), self.base_ip)
+        # camera.camera_name = 'fadCam'
+        # response = self.camera_control(camera=camera, site_name=site_name, calibrate=True)
+
+        # self.update_fad_intensity_value(response.intensity)
 
     def get_base_ip(self):
         ip = os.getenv("BASE_ADDRESS")
@@ -326,11 +396,29 @@ class science_GUI(Node):
     
 def main(args=None):
     rclpy.init(args=args)
+    
+    # Create the Qt application
     app = QtWidgets.QApplication(sys.argv)
-    window = science_GUI()
+    gui = science_GUI()  # Initialize your GUI
 
-    window.qt.show()
-    sys.exit(app.exec_())
+    # Start the ROS 2 spin loop in a separate thread or via a timer
+    def spin_ros():
+        rclpy.spin_once(gui, timeout_sec=0.1)  # This will process ROS callbacks
+
+    # Set up a timer to periodically call spin_ros inside the Qt event loop
+    timer = gui.qt.startTimer(100)  # Spin ROS every 100ms
+    
+    # Override the timer event to call spin_ros
+    def timer_event(event):
+        spin_ros()  # Call spin_ros to process any incoming ROS messages
+
+    gui.qt.timerEvent = timer_event  # Assign the timer event handler
+
+    # Start the Qt event loop
+    app.exec_()
+
+    rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()

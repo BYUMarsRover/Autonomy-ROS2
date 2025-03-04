@@ -6,6 +6,7 @@ from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.substitutions import FindPackageShare
+from ament_index_python.packages import get_package_share_directory
 import os
 
 def generate_launch_description():
@@ -13,12 +14,11 @@ def generate_launch_description():
     mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value=mapviz_location)
 
     return LaunchDescription([
-        # Start all common launch files on the base station. DO NOT TOUCH
+        # Start all common launch files on roverDeviceListthe base station. DO NOT TOUCH
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([
-                FindPackageShare("start"), "/launch/base_common_launch.py"
-            ])
-        ),
+            PythonLaunchDescriptionSource(os.path.join(
+                get_package_share_directory('home_gui'), 'launch', 'base_home_gui.launch.py'))
+            ),   
 
         # Start launch files specific to the Science Task on the base station
         IncludeLaunchDescription(

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import rclpy
-from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceFADIntensity
+from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceFADIntensity, ScienceSaveFAD
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 
@@ -12,9 +12,10 @@ class ScienceDataSaver(Node):
         super().__init__('data_saver')
 
         self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.sensor_values_callback, 10)
-        self.science_fad_value = self.create_subscription(ScienceFADIntensity, '/science_fad_value', self.fad_value_callback, 10)
+        self.science_save_fad = self.create_subscription(ScienceSaveFAD, '/science_save_fad', self.fad_value_callback, 10)
         self.science_save_sensor = self.create_subscription(ScienceSaveSensor, '/science_save_sensor', self.save_sensor_callback, 10)
         self.science_save_notes = self.create_subscription(ScienceSaveNotes, '/science_save_notes', self.save_notes, 10)
+        
 
         self.sensor_values = [[], [], []]
         self.saving_sensor_values = [False, False, False]
@@ -29,8 +30,8 @@ class ScienceDataSaver(Node):
         print('Science Data Save Started.')
 
     def sensor_values_callback(self, msg: ScienceSensorValues):
-        # Prevents the sensor data from getting saved constantly, only saved every 60 calls
-        self.sensor_count = (self.sensor_count + 1) % 60
+        # Prevents the sensor data from getting saved constantly, only saved every 5 calls - maybe implement in the GUI
+        self.sensor_count = (self.sensor_count + 1) % 5
         # self.sensor_count = 0 #For testing purposes, go back to the mod 60 for actual stuff
         print(self.saving_sensor_values, self.sensor_count, self.sensor_values)
         if self.saving_sensor_values[0] and self.sensor_count == 0:
@@ -39,14 +40,20 @@ class ScienceDataSaver(Node):
         if self.saving_sensor_values[1] and self.sensor_count == 0:
             self.sensor_values[1].append(msg.temperature)
 
-    def fad_value_callback(self, msg: ScienceFADIntensity):
-        self.fad_count = (self.fad_count + 1) % 60
+    def fad_value_callback(self, msg: ScienceSaveFAD):#temporarily set to just use site 1, we've not done anything with other sites anyways.
+        file_name =  f'site-1/' + f'{self.sensor_map[2]}-plot-{self.file_num}.txt'
+        file_path = os.path.join(self.DIR, file_name)
 
-        if self.saving_sensor_values[2] and self.fad_count == 0:
-            self.sensor_values[2].append(msg.intensity_avg)
+        print(f'Saving FAD Values.')
+        print(msg.intensity, msg.observed)
+        print(file_path)
+        with open(file_path, "a") as f:
+            f.write(str(msg.intensity) + " " + str(msg.observed))
+        print("Sensor Values Saved.")
+        # self.sensor_values[2].append(msg.intensity)
 
     def save_sensor_callback(self, msg: ScienceSaveSensor):
-        print('Recieved.')
+        print('Recieved ScienceSaveSensor message.')
         self.saving_sensor_values[msg.position] = msg.save
 
         if msg.site != self.curr_site_num:

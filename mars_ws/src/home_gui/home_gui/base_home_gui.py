@@ -120,6 +120,12 @@ class HomeGuiUI(Node, QWidget):
         signal.signal(signal.SIGINT, self.handler_stop_signals)
         signal.signal(signal.SIGTERM, self.handler_stop_signals)
 
+        self.ros_spin_thread = threading.Thread(target=self.ros_spin, daemon=True)
+        self.ros_spin_thread.start()
+
+    def ros_spin(self):
+        rclpy.spin(self)
+
     def error(self, message, title='Error'):
         self.get_logger().error(message)
 

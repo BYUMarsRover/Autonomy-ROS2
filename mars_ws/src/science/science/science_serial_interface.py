@@ -7,8 +7,10 @@ SUBSCRIBED TO:
 """
 
 import rclpy
+import sys
 from rclpy.node import Node
-from rover_msgs.msg import ScienceAugerOn, ScienceToolPosition, ScienceLinearActuatorDirection, ScienceCacheDoor, ScienceSensorValues, ScienceSecondaryCachePosition
+from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues
+from std_msgs.msg import Bool
 import serial
 import struct
 
@@ -30,7 +32,7 @@ UPDATE_AUGER_CONTROL_COMMAND_WORD = 0x86
 UPDATE_DRILL_CONTROL_COMMAND_WORD = 0xAA
 
 UPDATE_PRIMARY_CACHE_DOOR_CONTROL_COMMAND_WORD = 0x87
-UPDATE_SECONDARY_CACHE_DOOR_CONTROL_COMMAND_WORD = 0x88
+# UPDATE_SECONDARY_CACHE_DOOR_CONTROL_COMMAND_WORD = 0x88  #Unused secondary cache door, removed for 2024/2025 module design
 UPDATE_SECONDARY_CACHE_CONTROL_COMMAND_WORD = 0x89
 
 RESPONSE_ECHO_LEN_INDEX = 1
@@ -44,6 +46,8 @@ GET_HUM_COMMAND_WORD = 0x10
 
 PROBE_TOOL_INDEX = 0
 AUGER_TOOL_INDEX = 1
+
+SENSOR_ERR_CODE = -1
 
 BAUD_RATE = 115200
 
@@ -61,20 +65,32 @@ class ScienceSerialInterface(Node):
     def __init__(self):
         super().__init__('science_serial_interface')
 
-        self.science_serial_auger = self.create_subscription(ScienceAugerOn, '/science_serial_auger', self.auger_on_callback, 10)
-        self.science_tool_position = self.create_subscription(ScienceToolPosition, '/science_tool_position', self.tool_position_callback, 10)
-        self.science_serial_la = self.create_subscription(ScienceLinearActuatorDirection, '/science_serial_la', self.linear_actuator_callback, 10)
-        self.science_serial_primary_cache_door = self.create_subscription(ScienceCacheDoor, '/science_serial_primary_cache_door', self.primary_cache_door_callback, 10)
-        self.science_serial_secondary_cache_door = self.create_subscription(ScienceCacheDoor, '/science_serial_secondary_cache_door', self.secondary_cache_door_callback, 10)
-        self.science_serial_secondary_cache = self.create_subscription(ScienceSecondaryCachePosition, '/science_serial_secondary_cache', self.secondary_cache_position_callback, 10)
+        try:
+            self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
+            # self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE) # - used for testing off of rover
+            self.get_logger().info("Serial port initialized")
+            print("Serial port initialized")
+        except Exception as e:
+            print("Error: scienceArduinoNano not yet ready")
+            print(str(e))
+            sys.stdout.flush()
+            self.get_logger().error("Error: scienceArduinoNano not yet ready")
+            self.get_logger().error(str(e))
+            rclpy.shutdown()
+            exit(0)
+
+        self.sub_science_serial_drill = self.create_subscription(ScienceActuatorControl, '/science_serial_drill', self.drill_control_callback, 10)
+        self.sub_science_serial_probe = self.create_subscription(ScienceActuatorControl, '/science_serial_probe', self.probe_control_callback, 10)
+        self.sub_science_serial_auger = self.create_subscription(ScienceActuatorControl, '/science_serial_auger', self.auger_control_callback, 10)
+        self.sub_science_serial_primary_cache_door = self.create_subscription(ScienceActuatorControl, '/science_serial_primary_cache_door', self.primary_cache_door_control_callback, 10)
+        self.sub_science_serial_secondary_cache = self.create_subscription(ScienceActuatorControl, '/science_serial_secondary_cache', self.secondary_cache_control_callback, 10)
+        self.sub_science_serial_override = self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
 
         self.info_publisher = self.create_publisher(ScienceSensorValues, '/science_sensor_values', 10)
-        # self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
-        self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
 
         self.create_timer(100e-3, self.read_serial) # 10 Hz
         self.create_timer(1, self.query_temperature) # 1 Hz
-        self.create_timer(1, self.read_serial) # 1 Hz
+        self.create_timer(1, self.query_humidity) # 1 Hz
 
         # Caches for control purposes
         self.current_tool_index = 0
@@ -86,37 +102,35 @@ class ScienceSerialInterface(Node):
         self.temperature = None
         self.humidity = None
 
+        # State Variable
+        self.override_bit = False
 
-    def auger_on_callback(self, msg: ScienceAugerOn):
-        self.write_serial([UPDATE_DRILL_CONTROL_COMMAND_WORD, 0x01, signed_to_unsigned(msg.auger_speed)])
+    def set_override_bit_callback(self, msg: Bool): #Control is an int8control = FULL_STEAM_FORWARD if self.secondary_cache_state == True else FULL_STEAM_BACKWARD
+        print("Received override change")
+        self.override_bit = msg.data
+
+    def write_actuator_control(self, command_word, control): #Control is an int8control = FULL_STEAM_FORWARD if self.secondary_cache_state == True else FULL_STEAM_BACKWARD
+        self.write_serial([command_word, 0x01, signed_to_unsigned(control)])
+
+    def drill_control_callback(self, msg: ScienceActuatorControl):
+        print("Doing drill control callback")
+        self.write_actuator_control(UPDATE_DRILL_CONTROL_COMMAND_WORD, msg.control)
     
-    def linear_actuator_callback(self, msg: ScienceLinearActuatorDirection):
-        if current_tool_index == PROBE_TOOL_INDEX: # Update Probe
-            self.write_serial([UPDATE_PROBE_CONTROL_COMMAND_WORD, 0x01, msg.direction])
-        elif current_tool_index == AUGER_TOOL_INDEX: # Update Auger
-            self.write_serial([UPDATE_AUGER_CONTROL_COMMAND_WORD, 0x01, msg.direction])
+    def probe_control_callback(self, msg: ScienceActuatorControl):
+        print("Doing probe linear actuator callback")
+        self.write_actuator_control(UPDATE_PROBE_CONTROL_COMMAND_WORD, msg.control)
 
-    def primary_cache_door_callback(self, msg: ScienceCacheDoor):
-        if msg.position == True: # Extend the trapdoor
-            self.write_serial([UPDATE_PRIMARY_CACHE_DOOR_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_FORWARD])
-        else: # Close the trapdoor
-            self.write_serial([UPDATE_PRIMARY_CACHE_DOOR_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_BACKWARD])
+    def auger_control_callback(self, msg: ScienceActuatorControl):
+        print("Doing auger linear actuator callback")
+        self.write_actuator_control(UPDATE_AUGER_CONTROL_COMMAND_WORD, msg.control)
 
+    def primary_cache_door_control_callback(self, msg: ScienceActuatorControl):
+        print("Doing primary cache door callback")
+        self.write_actuator_control(UPDATE_PRIMARY_CACHE_DOOR_CONTROL_COMMAND_WORD, msg.control)
 
-    def secondary_cache_door_callback(self, msg: ScienceCacheDoor):
-        if msg.position == True: # Extend the trapdoor
-            self.write_serial([UPDATE_SECONDARY_CACHE_DOOR_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_FORWARD])
-        else: # Close the trapdoor
-            self.write_serial([UPDATE_SECONDARY_CACHE_DOOR_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_BACKWARD])
-
-    def tool_position_callback(self, msg: ScienceToolPosition):
-        self.current_tool_index = msg.position
-
-    def secondary_cache_position_callback(self, msg: ScienceSecondaryCachePosition):
-        if msg.secondary_cache_position > 0: # Extend the cache
-            self.write_serial([UPDATE_SECONDARY_CACHE_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_FORWARD])
-        else: # Close the cache
-            self.write_serial([UPDATE_SECONDARY_CACHE_CONTROL_COMMAND_WORD, 0x01, FULL_STEAM_BACKWARD])
+    def secondary_cache_control_callback(self, msg: ScienceActuatorControl):
+        print("Doing secondary cache door callback")
+        self.write_actuator_control(UPDATE_SECONDARY_CACHE_CONTROL_COMMAND_WORD, msg.control)
 
     def write_serial(self, byte_array):
          # Configure a payload with the overhead formatting and send to arduino
@@ -124,16 +138,21 @@ class ScienceSerialInterface(Node):
             # todo proper error message
             print(f"Provided command packet is of size {len(byte_array)}, maximum is {MAXIMUM_PACKET_SIZE}")
         elif self.arduino:
+            byte_array[0] |= 0b01000000 if self.override_bit else 0b00000000  # Set the Override Bit
             byte_array.insert(0, COMMAND_PACKET_HEADER)
             byte_array.append(COMMAND_PACKET_FOOTER)
             self.arduino.write(struct.pack('B' * len(byte_array), *byte_array))
-            print(f"Sending to arduino: {struct.pack('B' * len(byte_array), *byte_array)}")
+            hex_array = [ hex(x) for x in byte_array]
+            print(f"Sending to arduino: {','.join(hex_array)}")
+            # print(byte_array)
             
     def query_temperature(self):
+        print('Doing query temp')
         # ask the arduino to return the temperature as a calibrated float
         self.write_serial([GET_TEMP_COMMAND_WORD, 0x00])
 
     def query_humidity(self):
+        print('Doing query humidity')
         # ask the arduino to return the humidity as a calibrated float
         self.write_serial([GET_HUM_COMMAND_WORD, 0x00])
 
@@ -142,7 +161,7 @@ class ScienceSerialInterface(Node):
         # Returns None, None if no possible packet in the queue
 
         temp = ",".join([ hex(x) for x in queue])
-        print(f"Looking for packet in [{temp}]")
+        # print(f"Looking for packet in [{temp}]")
 
         if len(queue) > RESPONSE_ECHO_LEN_INDEX:
             # The echo length should be loaded
@@ -154,17 +173,17 @@ class ScienceSerialInterface(Node):
 
                 if (len(queue) > RESPONSE_FOOTER_BASE_INDEX + echo_length + error_length):
                     # The footer byte should now be present
-                    print("Possible packet identified")
+                    # print("Possible packet identified")
                     return (echo_length, error_length)
 
                 else:
-                    print("Not long enough to contain footer length")
+                    # print("Not long enough to contain footer length")
                     return (None, None)
             else:
-                print("Not long enough to contain error length")
+                # print("Not long enough to contain error length")
                 return (None, None)
         else:
-            print("Not long enough to contain echo length")
+            # print("Not long enough to contain echo length")
             return (None, None)
 
     def read_serial(self):
@@ -172,7 +191,7 @@ class ScienceSerialInterface(Node):
 
         if self.arduino.in_waiting > 0:
             # Attempt a read if there is something in the buffer
-            print(f"Arduino Buffer contains {self.arduino.in_waiting} bytes")
+            # print(f"Arduino Buffer contains {self.arduino.in_waiting} bytes")
 
             for byte in self.arduino.read_all():
                 # Load all bytes into the queue
@@ -203,14 +222,18 @@ class ScienceSerialInterface(Node):
 
                 else:
                     # Bad packet, pop bytes until a new header byte is reached
-                    print("Bad packet")
+                    # print("Bad packet")
                     while True:
                         self.read_queue = self.read_queue[1:]
                         if len(self.read_queue) == 0 or self.read_queue[0] == RESPONSE_PACKET_HEADER:
                             break
 
     def publish_sensors_value(self):
-        self.info_publisher.publish(ScienceSensorValues({ 'temperature': self.temperature, 'mositure': self.humidity}))
+        if (self.temperature is None):
+            self.temperature = SENSOR_ERR_CODE
+        if (self.humidity is None):
+            self.humidity = SENSOR_ERR_CODE
+        self.info_publisher.publish(ScienceSensorValues(temperature=int(self.temperature),moisture=int(self.humidity)))
 
     def process_packet(self, response_packet, formatting_data):
         # Process a valid response packet
@@ -221,16 +244,23 @@ class ScienceSerialInterface(Node):
         error_code = response_packet[RESPONSE_ECHO_MESSAGE_START_INDEX + echo_length]
         error_message = response_packet[RESPONSE_ERROR_MESSAGE_START_BASE_INDEX + echo_length: RESPONSE_ERROR_MESSAGE_START_BASE_INDEX + echo_length + error_length]
 
-        print(f'Received Reponse Packet:\n\tEcho: [{",".join([ hex(x) for x in response_packet])}]\n\tError Code: {error_code}\n\tError Message: [{",".join([ hex(x) for x in error_message])}]')
+        # print(f'Received Reponse Packet:\n\tEcho: [{",".join([ hex(x) for x in response_packet])}]\n\tError Code: {error_code}\n\tError Message: [{",".join([ hex(x) for x in error_message])}]')
+        # print(f'ASCII: {bytes(error_message).decode()}')
+        try:
+            print(f'Received Response Packet:({error_code}) {bytes(error_message).decode()}')
+        except:
+            print(f'Received Response Packet with invalid ascii:({error_code}) {",".join([ hex(x) for x in error_message])}')
 
         function_address = echo_message[1] & 0b11111
         if function_address == (GET_TEMP_COMMAND_WORD & 0b11111):
             # This packet contains temperature data as a float
-            self.temperature = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))
+            self.temperature = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))[0] #For some reason struct.unpack returns a tuple with a single value. Da heck
+            # print(f"Received temp: {self.temperature}")
             self.publish_sensors_value()
         elif function_address == (GET_HUM_COMMAND_WORD & 0b11111):
             # This packet contains humidity data as a float
-            self.humidity = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))
+            self.humidity = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))[0]
+            # print(f"Received humidity: {self.humidity}")
             self.publish_sensors_value()
 
 def main(args=None):
