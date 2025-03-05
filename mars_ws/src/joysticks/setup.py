@@ -25,6 +25,7 @@ setup(
         'console_scripts': [
             'xbox_drive = joysticks.xbox_drive:main',
             'joy_to_xbox = joysticks.joy_xbox_converter:main',
+            'xbox_science = joysticks.xbox_science:main',
         ],
     },
 )
