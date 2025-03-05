@@ -94,8 +94,8 @@ class RoverStateSingletonCreator(Node):
 
         # TODO: Chekc the filtered GPS subscription
         self.unfiltered_gps_subscription = self.create_subscription(NavSatFix, "/fix", self.convert_unfiltered_gps, 10)  # Subscribes to the filtered GPS data from the UKF output
-        # self.gps_subscription = self.create_subscription(NavSatFix, "/ins/lla", self.convert_gps, 10) # Subscribes to unfiltered GPS data
-        self.gps_subscription = self.create_subscription(NavSatFix, "/zed/global", self.convert_gps, 10) # Subscribes to zed filtered GPS data
+        self.gps_subscription = self.create_subscription(NavSatFix, "/ins/lla", self.convert_gps, 10) # Subscribes to unfiltered GPS data
+        # self.gps_subscription = self.create_subscription(NavSatFix, "/zed/global", self.convert_gps, 10) # Subscribes to zed filtered GPS data
 
         # Publishers
         self.singleton_publisher = self.create_publisher(RoverStateSingleton, '/odometry/rover_state_singleton', 10) # Publishes the singleton message

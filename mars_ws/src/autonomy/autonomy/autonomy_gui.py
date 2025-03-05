@@ -107,6 +107,10 @@ class AutonomyGUI(Node, QWidget):
         self.state_machine_list_string = ''
         self.autopilot_cmds_msg = None
         self.waypoints = [] # Stores the waypoints in the format [waypoint_number, tag_id, latitude, longitude, status]
+        self.selected_waypoint = None
+        self.selected_waypoint_to_send = None
+        self.selected_waypoint_for_path_planning = None
+
 
         # This should return a list like this: [lat, lon] and can be used for the plan path to selected waypoint
         # lat, lon = self.waypoints[self.selected_waypoint - 1][2:4]
@@ -191,45 +195,12 @@ class AutonomyGUI(Node, QWidget):
                 self.clear_rover_state_singleton_info()
     
     def clear_rover_state_singleton_info(self):
-        self.RoverStateMapYaw.setText('Map Yaw: ...')
-        self.RoverStateLat.setText('Latitude: ...')
-        self.RoverStateLon.setText('Longitude: ...')
+        self.gui_setText('RoverStateMapYaw', 'Map Yaw: ...')
+        self.gui_setText('RoverStateLat','Latitude: ...')
+        self.gui_setText('RoverStateLon', 'Longitude: ...')
         return
 
     ################# Callbacks for Subscribers #################
-    # def base_GPS_info_callback(self, msg): # NOTE: Depreciated TODO: Replace with only something to update the number of satelites
-    #     self.base_GPS_info = msg
-    #     self.base_numSV = msg.num_sv
-    #     base_year = msg.year
-    #     base_month = msg.month
-    #     base_day = msg.day
-    #     base_hour = msg.hour
-    #     base_min = msg.min
-    #     base_sec = msg.sec
-    #     # Update Gui Fields
-    #     self.BaseSats.setText(f'Sat #: {self.base_numSV}')
-    #     self.BaseDate.setText(f'Date: {base_month}/{base_day}/{base_year}')
-    #     self.BaseTime.setText(f'Time: {base_hour}:{base_min}:{base_sec}')
-    #     self.BaseLat.setText(f'Lat: {round(msg.lla[0], 6)}')
-    #     self.BaseLon.setText(f'Lon: {round(msg.lla[1], 6)}')
-    #     return
-
-    # def rover_GPS_info_callback(self, msg): # NOTE: Depreciated
-    #     self.rover_GPS_info = msg
-    #     self.rover_numSV = msg.num_sv
-    #     rover_year = msg.year
-    #     rover_month = msg.month
-    #     rover_day = msg.day
-    #     rover_hour = msg.hour
-    #     rover_min = msg.min
-    #     rover_sec = msg.sec
-    #     # Update Gui Fields
-    #     self.RoverSats.setText(f'Sat #: {self.rover_numSV}')
-    #     self.RoverDate.setText(f'Date: {rover_month}/{rover_day}/{rover_year}')
-    #     self.RoverTime.setText(f'Time: {rover_hour}:{rover_min}:{rover_sec}')
-    #     self.RoverLat.setText(f'Lat: {round(msg.lla[0], 6)}')
-    #     self.RoverLon.setText(f'Lon: {round(msg.lla[1], 6)}')
-    #     return
 
     def nav_state_callback(self, msg): #rover status (speed, direction, navigation state)
         self.rover_state_msg = msg
@@ -246,22 +217,22 @@ class AutonomyGUI(Node, QWidget):
         else:
             self.nav_state = 'UNKNOWN'
         # Update GUI fields
-        self.PreviousNavStateDisplay.setText(self.CurrentNavStateDisplay.text())
-        self.CurrentNavStateDisplay.setText(self.nav_state)
+        self.gui_setText('PreviousNavStateDisplay', self.CurrentNavStateDisplay.text())
+        self.gui_setText('CurrentNavStateDisplay', self.nav_state)
         return
 
     def rover_state_callback(self, msg): #State machine status (state, auto_enable)
         #Update previous state and state list
         if self.state_machine_state != None and msg.state != self.state_machine_state:
             self.state_machine_list_string = f'{msg.state}\n' + self.state_machine_list_string
-            self.PreviousStatesList.setText(self.state_machine_list_string) 
+            self.gui_setText('PreviousStatesList', self.state_machine_list_string) 
 
             self.prev_state_machine_state = self.state_machine_state
 
         #Show the first state on the previous state column
         if self.state_machine_state == None:
             self.state_machine_list_string = f'{msg.state}\n'
-            self.PreviousStatesList.setText(self.state_machine_list_string)
+            self.gui_setText('PreviousStatesList', self.state_machine_list_string)
 
         #Update current state and autonomous enable
         self.state_machine_state = msg.state
@@ -300,7 +271,7 @@ class AutonomyGUI(Node, QWidget):
             else:
                 aruco_text = aruco_text + f"Incorrect tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id}"
             
-            self.ArucoStatus.setText(aruco_text)
+            self.gui_setText('ArucoStatus', aruco_text)
         return
     
     def obj_detect_callback(self, msg):
@@ -330,7 +301,7 @@ class AutonomyGUI(Node, QWidget):
 
             objects_string = objects_string + f'{obj_name}: conf: {obj.confidence}, dist: {obj_distance} m @ {obj_angle} deg \n'
 
-        self.ObjStatus.setText(objects_string)
+        self.gui_setText('ObjStatus', objects_string)
         return
     
     ################# Callbacks for Mobility #################
@@ -345,13 +316,13 @@ class AutonomyGUI(Node, QWidget):
             autopilot_cmds_string = f'Dist to target: {round(msg.distance_to_target, 2)}m, cw from N: {round(np.rad2deg(msg.course_angle), 2)}°'
         else:
             autopilot_cmds_string = f'Dist to target: {round(msg.distance_to_target, 2)}m, cw from N: {round(np.rad2deg(msg.course_angle), 2)}°, Heading Err: {round(np.rad2deg(self.course_heading_error), 2)}°'
-        self.AutopilotCmds.setText(autopilot_cmds_string)
+        self.gui_setText('AutopilotCmds', autopilot_cmds_string)
         return
     
     def vel_cmds_callback(self, msg):
         self.course_heading_error = msg.course_heading_error
         vel_cmds_string = f'Lin Vel: {round(msg.u_cmd, 2)}, Ang Vel: {round(msg.omega_cmd, 2)}'
-        self.VelocityCmds.setText(vel_cmds_string)
+        self.gui_setText('VelocityCmds', vel_cmds_string)
 
         # If we have a course heading error, update the autopilot string
         if self.autopilot_cmds_msg is not None:
@@ -361,7 +332,7 @@ class AutonomyGUI(Node, QWidget):
 
     def wheel_vel_cmds_callback(self, msg):
         wheel_vel_cmds_string = f'LW Speed: {round(msg.lw, 2)}, RW Speed: {round(msg.rw, 2)}'
-        self.WheelVelocityCmds.setText(wheel_vel_cmds_string)
+        self.gui_setText('WheelVelocityCmds', wheel_vel_cmds_string)
         return
 
     def auto_drive_cmds_callback(self, msg):
@@ -393,7 +364,7 @@ class AutonomyGUI(Node, QWidget):
         else:
             IWC_cmd_string = IWC_cmd_string + f', RRW: -{round(msg.right_rear_speed, 2)}'
 
-        self.IWCCmds.setText(IWC_cmd_string)
+        self.gui_setText('IWCCmds', IWC_cmd_string)
         
         return
 
@@ -404,13 +375,13 @@ class AutonomyGUI(Node, QWidget):
         self.waypoints[self.selected_waypoint_to_send -1][4] = 'ACTIVE'
         self.update_waypoint_list()
         future = self.enable_autonomy_client.call_async(req)
-        self.logger_label.setText('Enabling Autonomy...')
+        self.gui_setText('logger_label', 'Enabling Autonomy...')
 
     def disable_autonomy(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_autonomy_client.call_async(req)
-        self.logger_label.setText('Disabling Autonomy...')
+        self.gui_setText('logger_label', 'Disabling Autonomy...')
 
     # This sends the waypoint to mapviz for preview
     def preview_waypoint(self):
@@ -444,16 +415,16 @@ class AutonomyGUI(Node, QWidget):
                         self.utm_northing_zero)
             )
         
-        self.logger_label.setText('Waypoint Sent for Preview')
+        self.gui_setText('logger_label', 'Waypoint Sent for Preview')
 
     # This adds the waypoint to the waypoint list that is held in the autonomy gui
     def add_waypoint(self):
         try:
-            self.logger_label.setText('Adding Waypoint...')
+            self.gui_setText('logger_label', 'Adding Waypoint...')
             lat = float(self.latitude_input.text())
             lon = float(self.longitude_input.text())
         except ValueError:
-            self.logger_label.setText('Invalid latitude or longitude')
+            self.gui_setText('logger_label', 'Invalid latitude or longitude')
             return
         waypoint = [int(len(self.waypoints) + 1), self.tag_id, lat, lon, 'IDLE']
 
@@ -462,11 +433,14 @@ class AutonomyGUI(Node, QWidget):
 
     def remove_selected_waypoint(self):
         if self.selected_waypoint is None:
-            self.logger_label.setText('No waypoint selected')
+            self.gui_setText('logger_label', 'No waypoint selected')
             return
         if self.selected_waypoint > len(self.waypoints):
-            self.logger_label.setText('Empty Waypoint Selected')
+            self.gui_setText('logger_label', 'Empty Waypoint Selected')
             return
+        
+        if self.selected_waypoint_to_send == self.selected_waypoint:
+            self.selected_waypoint_to_send = None
 
         # Update the waypoint numbers
         for i in range(len(self.waypoints)):
@@ -498,13 +472,13 @@ class AutonomyGUI(Node, QWidget):
 
         # Error Handling
         if not self.plan_path_client.wait_for_service(timeout_sec=2.0):
-            self.logger_label.setText("Plan Path service is unavailable.")
+            self.gui_setText('logger_label', "Plan Path service is unavailable.")
             return
         if self.selected_waypoint_for_path_planning is None:
-            self.logger_label.setText('No waypoint selected')
+            self.gui_setText('logger_label', 'No waypoint selected')
             return
         if self.waypoints[self.selected_waypoint_for_path_planning - 1][4] == 'PATH READY':
-            self.logger_label.setText('Path already planned')
+            self.gui_setText('logger_label', 'Path already planned')
             return
 
         tag_id, lat, lon = self.waypoints[self.selected_waypoint_for_path_planning -1][1:4] # Extract tag_id and lat/lon of the selected waypoint
@@ -520,14 +494,14 @@ class AutonomyGUI(Node, QWidget):
         try:
             response = future.result()
             if response.success:
-                self.logger_label.setText(response.message)
+                self.gui_setText('logger_label', response.message)
                 self.waypoints[self.selected_waypoint_for_path_planning - 1][4] = 'PLANNING'
             else:
-                self.logger_label.setText(response.message)
+                self.gui_setText('logger_label', response.message)
                 self.waypoints[self.selected_waypoint_for_path_planning - 1][4] = 'IDLE'
         except Exception as e:
             self.get_logger().error(f'Plan Path Service call failed! {e}')
-            self.logger_label.setText(f'Plan Path Service call failed! (See Logger)')
+            self.gui_setText('logger_label', f'Plan Path Service call failed! (See Logger)')
 
         self.update_waypoint_list()
 
@@ -538,10 +512,10 @@ class AutonomyGUI(Node, QWidget):
                 if wp[4] != 'COMPLETE':
                     wp[4] = 'IDLE'
             self.waypoints[self.selected_waypoint_for_path_planning - 1][4] = 'PATH READY'
-            self.logger_label.setText(msg.message)
+            self.gui_setText('logger_label', msg.message)
         else:
             self.waypoints[self.selected_waypoint_for_path_planning - 1][4] = 'IDLE'
-            self.logger_label.setText(msg.message)
+            self.gui_setText('logger_label', msg.message)
         self.update_waypoint_list()
         return
 
@@ -592,7 +566,7 @@ class AutonomyGUI(Node, QWidget):
             req.task_list.append(task)
 
         future = self.plan_order_client.call_async(req)
-        self.logger_label.setText('Planning order...')
+        self.gui_setText('logger_label', 'Planning order...')
         future.add_done_callback(self.plan_order_service_callback)
     
     def plan_order_service_callback(self, future):
@@ -605,11 +579,11 @@ class AutonomyGUI(Node, QWidget):
                 for i in range(len(response.ids)):
                     self.waypoints[i][0] = response.ids[i].data
                 self.update_waypoint_list()
-                self.logger_label.setText(response.message)
+                self.gui_setText('logger_label', response.message)
             else:
-                self.logger_label.setText("Failed to plan order")
+                self.gui_setText('logger_label', "Failed to plan order")
         except Exception as e:
-            self.logger_label.setText(f'Plan Order Service call failed!')
+            self.gui_setText('logger_label', f'Plan Order Service call failed!')
 
     # This reorders the added waypoints to the optimal order based on path length
     def plan_order_mapviz_service_call(self):
@@ -617,7 +591,7 @@ class AutonomyGUI(Node, QWidget):
         req.path = self.current_previewed_waypoints
 
         future = self.plan_order_mapviz_client.call_async(req)
-        self.logger_label.setText('Planning order on mapviz...')
+        self.gui_setText('logger_label', 'Planning order on mapviz...')
 
     # This clears all previewed waypoints from mapviz
     def clear_mapviz(self):
@@ -649,21 +623,21 @@ class AutonomyGUI(Node, QWidget):
         msg.poses = [pose_stamped]
 
         self.path_publisher.publish(msg)
-        self.logger_label.setText('Mapviz Cleared')
+        self.gui_setText('logger_label', 'Mapviz Cleared')
     
     # Sends the selected waypoint to the state machine either via the path planner node or directly
     def send_waypoint(self):
         self.selected_waypoint_to_send = self.selected_waypoint
         # Error Handling
         if self.selected_waypoint_to_send is None:
-            self.logger_label.setText('No waypoint selected!')
+            self.gui_setText('logger_label', 'No waypoint selected!')
             return
         
         # If the waypoint has a path planned, send the path
         if self.waypoints[self.selected_waypoint_to_send - 1][4] == 'PATH READY':
             self.waypoints[self.selected_waypoint_to_send - 1][4] = 'SENDING'
             if not self.send_path_client.wait_for_service(timeout_sec=2.0) and not self.send_waypoint_client.wait_for_service(timeout_sec=2.0):
-                self.logger_label.setText('Send path service or AU_waypoint_service unavailable!')
+                self.gui_setText('logger_label', 'Send path service or AU_waypoint_service unavailable!')
                 return
             future = self.send_path_client.call_async(SetBool.Request(data=True))
             future.add_done_callback(self.send_waypoint_callback)
@@ -671,7 +645,7 @@ class AutonomyGUI(Node, QWidget):
         # If the waypoint does not have a path planned, send the single waypoint directly
         else:
             if not self.send_waypoint_client.wait_for_service(timeout_sec=2.0):
-                self.logger_label.setText('/AU_waypoint_service service unavailable!')
+                self.gui_setText('logger_label', '/AU_waypoint_service service unavailable!')
                 return
             self.waypoints[self.selected_waypoint_to_send - 1][4] = 'SENDING'
             tag_id, lat, lon = self.waypoints[self.selected_waypoint_to_send -1][1:4] # Extract tag_id and lat/lon of the selected waypoint
@@ -688,13 +662,13 @@ class AutonomyGUI(Node, QWidget):
             response = future.result()
             if response.success:
                 self.waypoints[self.selected_waypoint_to_send -1][4] = 'READY'
-                self.logger_label.setText(response.message)
+                self.gui_setText('logger_label', response.message)
             else:
                 self.waypoints[self.selected_waypoint_to_send -1][4] = 'SEND FAILURE'
-                self.logger_label.setText(response.message)
+                self.gui_setText('logger_label', response.message)
         except Exception as e:
             self.get_logger().error(f'Send Waypoint Service call failed! {e}')
-            self.logger_label.setText(f'Send Waypoint Service call failed! (see logger)')
+            self.gui_setText('logger_label', f'Send Waypoint Service call failed! (see logger)')
         
         self.update_waypoint_list()
         return
@@ -704,18 +678,18 @@ class AutonomyGUI(Node, QWidget):
         req = SetBool.Request()
         req.data = True
         future = self.clear_waypoint_client.call_async(req)
-        self.logger_label.setText('Removing Last Waypoint')
+        self.gui_setText('logger_label', 'Removing Last Waypoint')
         future.add_done_callback(self.clear_waypoint_callback)
 
     def clear_waypoint_callback(self, future):
         try:
             response = future.result()
             if response.success:
-                self.logger_label.setText(response.message)
+                self.gui_setText('logger_label', response.message)
             else:
-                self.logger_label.setText("Failed to remove waypoint")
+                self.gui_setText('logger_label', "Failed to remove waypoint")
         except Exception as e:
-            self.logger_label.setText(f'Remove Waypoint Service call failed!')
+            self.gui_setText('logger_label', f'Remove Waypoint Service call failed!')
 
     # This calls the abort service
     def abort_autonomy(self):
@@ -727,7 +701,7 @@ class AutonomyGUI(Node, QWidget):
             lat = float(self.latitude_input.text())
             lon = float(self.longitude_input.text())
         except ValueError:
-            self.logger_label.setText('Invalid latitude or longitude')
+            self.gui_setText('logger_label', 'Invalid latitude or longitude')
             return
 
         # Create a task and append to the task list
@@ -737,41 +711,41 @@ class AutonomyGUI(Node, QWidget):
 
         # Send the Abort Request
         future = self.abort_autonomy_client.call_async(req)
-        self.logger_label.setText('Attempting Abort')
+        self.gui_setText('logger_label', 'Attempting Abort')
 
     def set_turn_constant(self):
         req = SetFloat32.Request()
         req.data = float(self.TurnConstantInput.text())
         future = self.set_turn_constant_client.call_async(req)
-        self.logger_label.setText('Sending Turn Constant...')
+        self.gui_setText('logger_label', 'Sending Turn Constant...')
         future.add_done_callback(self.set_turn_constant_callback)
 
     def set_turn_constant_callback(self, future):
         try:
             response = future.result()
             if response.success:
-                self.logger_label.setText(response.message)
+                self.gui_setText('logger_label', response.message)
             else:
-                self.logger_label.setText("Failed to send turn constant")
+                self.gui_setText('logger_label', "Failed to send turn constant")
         except Exception as e:
-            self.logger_label.setText(f'Send Turn Constant Service call failed!')
+            self.gui_setText('logger_label', f'Send Turn Constant Service call failed!')
 
     def set_speed_constant(self):
         req = SetFloat32.Request()
         req.data = float(self.SpeedConstantInput.text())
         future = self.set_speed_constant_client.call_async(req)
-        self.logger_label.setText('Sending Speed Constant...')
+        self.gui_setText('logger_label', 'Sending Speed Constant...')
         future.add_done_callback(self.set_speed_constant_callback)
 
     def set_speed_constant_callback(self, future):
         try:
             response = future.result()
             if response.success:
-                self.logger_label.setText(response.message)
+                self.gui_setText('logger_label', response.message)
             else:
-                self.logger_label.setText("Failed! Must be in range (0-10)")
+                self.gui_setText('logger_label', "Failed! Must be in range (0-10)")
         except Exception as e:
-            self.logger_label.setText(f'Send Speed Constant Service call failed!')
+            self.gui_setText('logger_label', f'Send Speed Constant Service call failed!')
 
     def rover_state_singleton_callback(self, msg):
         self.rover_state_singleton_timepoint = self.get_clock().now().to_msg().sec
@@ -825,6 +799,13 @@ class AutonomyGUI(Node, QWidget):
         else:
             self.tag_id = None
         return
+    
+    # NOTE: This function is to fix errors caused by differing gui and ros2 threading protocol causing false positives for gui attribute deletion
+    def gui_setText(self, name, text):
+        if hasattr(self, str(name)):
+            getattr(self, str(name)).setText(text)
+        else:
+            self.get_logger().warn(f'Could not find {name} field of gui')
 
 # This gets the 0, 0 coordinates of the mapviz map
 def get_coordinates(file_path, location):

@@ -25,6 +25,7 @@ if ! ssh marsrover@$ROVER_IP_ADDRESS "echo" &> /dev/null
 then
     printError "No available SSH connection to the rover's computer"
     echo "Here's some debugging suggestions:"
+    echo "  - Make sure the SSH keys are setup by running the setup_ssh.sh script"
     echo "  - Ensure the rover is powered on"
     echo "  - Ensure the rover is connected with a static IP address"
 
@@ -39,6 +40,7 @@ then
     ssh marsrover@$ROVER_IP_ADDRESS "tmux new-session -d -s foxy_runtime; \
         tmux set-option -g default-terminal "screen-256color"; \
         tmux set -g mouse on; \
+        tmux send-keys -t foxy_runtime.0 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
         tmux send-keys -t foxy_runtime.0 'clear' Enter; \
         tmux send-keys -t foxy_runtime.0 'source /opt/ros/foxy/setup.bash' Enter; \
         tmux send-keys -t foxy_runtime.0 'cd ~/foxy_ws && source install/setup.bash' Enter; \
