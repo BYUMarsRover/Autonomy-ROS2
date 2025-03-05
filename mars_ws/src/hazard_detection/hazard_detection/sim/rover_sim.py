@@ -3,7 +3,7 @@ import numpy as np
 import time
 
 class RoverVisualizer:
-    def __init__(self):
+    def __init__(self, rover_width = 1.5, rover_height=1.0):
         """Initialize the rover visualization."""
         self.linear_vel = 0
         self.angular_vel = 0
@@ -13,6 +13,8 @@ class RoverVisualizer:
         self.orientation = np.pi/2 #rover's orientation from x, Positve being CCW
         self.x = 0 #rovers x position
         self.y = 0 #rovers y position
+        self.width = rover_width
+        self.height = rover_height
 
         # Initialize the figure and rover state
         self.fig, self.ax = plt.subplots(figsize=(12, 10))
@@ -98,13 +100,11 @@ class RoverVisualizer:
         self.update_parameter_display()
 
         # Draw the rover
-        width, height = 1.5, 1.0
-
         # Compute rectangle corners
         rect = np.array([
-            [-width / 2, -height / 2], [width / 2, -height / 2],
-            [width / 2, height / 2], [-width / 2, height / 2], 
-            [-width / 2, -height / 2]
+            [-self.width / 2, -self.height / 2], [self.width / 2, -self.height / 2],
+            [self.width / 2, self.height / 2], [-self.width / 2, self.height / 2], 
+            [-self.width / 2, -self.height / 2]
         ])
         R = np.array([[np.cos(self.orientation), -np.sin(self.orientation)], [np.sin(self.orientation), np.cos(self.orientation)]])
         rect = np.dot(rect, R.T) + np.array([self.x, self.y])
@@ -113,8 +113,8 @@ class RoverVisualizer:
         self.ax.plot(self.x, self.y, 'bo', markersize=5)
 
         # Draw small green dot at the front
-        front_x = self.x + (width / 2) * np.cos(self.orientation)
-        front_y = self.y + (width / 2) * np.sin(self.orientation)
+        front_x = self.x + (self.width / 2) * np.cos(self.orientation)
+        front_y = self.y + (self.width / 2) * np.sin(self.orientation)
         self.ax.plot(front_x, front_y, 'go', markersize=5)
 
         # Draw target
@@ -163,18 +163,17 @@ class RoverVisualizer:
         if len(self.hazards) > 1:
             return [(hx, hy) for hx, hy, _, _ in self.hazards] # multiple hazards
         elif len(self.hazards) == 1:
-            hx, hy, _, _ = self.hazards[0]
+            hx, hy, width, height = self.hazards[0]
 
-            return hx, hy
+            haz_x= hx - self.x
+            haz_y= hy - self.y
+
+            rov_orientation = self.get_rover_orientation()
+            hx_rov = haz_x * np.sin(rov_orientation) + haz_y * np.cos(rov_orientation)
+            hy_rov = haz_x * np.cos(rov_orientation) - haz_y * np.sin(rov_orientation)
+
+            return hx_rov, hy_rov, width, height
         
-            # #return the hazard in the rover frame
-            # haz_x = hx - self.rover['position'][0]
-            # haz_y = hy - self.rover['position'][1]
-            # #rotate the hazard to the rover frame
-            # haz_x = haz_x * np.cos(self.rover['orientation']) + haz_y * np.sin(self.rover['orientation'])
-            # haz_y = -haz_x * np.sin(self.rover['orientation']) + haz_y * np.cos(self.rover['orientation'])
-
-            return haz_x, haz_y
         else:
             return None
             
@@ -182,6 +181,10 @@ class RoverVisualizer:
         """Removes a hazard at a specified location."""
         self.hazards = [(ox, oy, w, h) for ox, oy, w, h in self.hazards if (ox, oy) != (x, y)]
         self.update_display()
+
+    def get_rover_dims(self):
+        """Returns the rover's width and height."""
+        return self.width, self.height
 
     def wrap(self, chi_1, chi_2):
         while chi_1 - chi_2 > np.pi:

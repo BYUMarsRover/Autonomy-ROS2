@@ -84,6 +84,9 @@ class AutopilotManager(Node):
         self.obstacle_found = False
         self.scaling_factor = 0.0
         self.critical_distance = 1.0
+        self.time_step = 3.0  # Example time step in seconds
+        self.last_callback_time = self.get_clock().now()  # Store last callback time
+        self.timer = None  # Timer starts as None
 
         # ROS subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
@@ -119,9 +122,6 @@ class AutopilotManager(Node):
         else:
             self.des_heading = wrap(msg.course_angle, 0)
 
-        self.get_logger().info(f'Desired Heading: {self.des_heading}')
-        self.get_logger().info(f'Current Heading: {self.curr_heading}')
-
         self.curr_heading = wrap(self.curr_heading, 0)
         self.course_error = wrap(self.des_heading - self.curr_heading, 0)
         # self.get_logger().info(f"Course Error: {self.course_error}")
@@ -130,7 +130,7 @@ class AutopilotManager(Node):
         angular_vel = self.angular_controller.update_with_error(self.course_error)
 
         if self.obstacle_found:
-            self.rover_vel_cmd.u_cmd = lin_vel * .2
+            self.rover_vel_cmd.u_cmd = lin_vel * .5
         else:
             self.rover_vel_cmd.u_cmd = lin_vel
         self.rover_vel_cmd.omega_cmd = angular_vel
@@ -142,10 +142,21 @@ class AutopilotManager(Node):
         self.curr_heading = np.deg2rad(msg.map_yaw)
 
     def obstacle_callback(self, msg):
+        
+
+        #start a timer to stop avoiding the obstacle after a certain amount of time
+        if self.timer is None:
+            self.timer = self.create_timer(self.time_step, self.toggle_obstacle_avoidance)
+        else:
+            self.timer.cancel()  # Cancel the previous timer
+            self.timer = self.create_timer(self.time_step, self.toggle_obstacle_avoidance)
+
+
         self.obstacle_found = False
         if len(msg.hazards) == 1:
 
-            self.obstacle_found = True #TODO: Add a timer to this so that we can avoid the obstacle for a certain amount of time
+            self.hazard_msg = msg
+            self.obstacle_found = True 
             hazard = msg.hazards[0]
             if hazard.type == Hazard.OBSTACLE:
 
@@ -186,6 +197,12 @@ class AutopilotManager(Node):
         #             volume = hazard.length * hazard.width * hazard.height
                     
         #             self.obstacle_avoidance(hazard)
+
+    def toggle_obstacle_avoidance(self):
+        #It has been self.time_step seconds since the last obstacle detection, so we can stop avoiding the obstacle
+        self.obstacle_found = False
+        #turn off the timer
+        self.timer.cancel()
 
     def heading_decay(self):
         if not self.detections:

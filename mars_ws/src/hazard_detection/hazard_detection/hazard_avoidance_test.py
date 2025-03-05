@@ -36,9 +36,11 @@ class HazardAvoidanceTest(Node):
         self.time_step = 0.1
         self.linear_velocity = 0
         self.angular_velocity = 0
-        self.bounding_box_length = 3.75
+        self.bounding_box_height = 3.0
         self.bounding_box_width = 2.0
         self.vis = None
+        self.rover_height = 0.0
+        self.rover_width = 0.0
 
         self.get_logger().info('Hazard Avoidance Test Node Initialized')
 
@@ -49,43 +51,28 @@ class HazardAvoidanceTest(Node):
         self.vis.set_velocity(self.linear_velocity, self.angular_velocity, self.time_step)
         self.vis.update_display()
 
-        haz_x, haz_y = self.vis.get_hazard_locations()
+        haz_x, haz_y, haz_width, haz_height = self.vis.get_hazard_locations() #In the rover frame
         dist_to_target, course_angle = self.vis.get_target()
         rov_orientation = self.vis.get_rover_orientation()
-        rov_x, rov_y = self.vis.get_rover_position()
 
-
-        self.get_logger().info(f'Rover Orientation: {np.round(rov_orientation, 3)}')
-        self.get_logger().info(f'Distance to Target: {np.round(dist_to_target, 3)}')
-        self.get_logger().info(f'Course Angle: {np.round(course_angle, 3)}')
-
-        #TODO: Add timer to autopilot manager. Update hazard location from middle to closest point, commit to main
-
-        hazard_in_box = self.check_hazard_in_box(haz_x, haz_y, rov_x, rov_y, rov_orientation)
+        haz_max_radius = sqrt((haz_width/2)**2 + (haz_height/2)**2) / 2
+        hazard_in_box = self.check_hazard_in_box(haz_x, haz_y, haz_max_radius)
         
         if hazard_in_box:
-            #Update hazard according to the simulation and publish
-            
 
-            # #return the hazard in the rover frame
-            hx= haz_x - rov_x
-            hy = haz_y - rov_y
-            #rotate the hazard to the rover frame
-            hx_rov = hx * np.cos(rov_orientation) + hy * np.sin(rov_orientation)
-            hy_rov = -hx * np.sin(rov_orientation) + hy * np.cos(rov_orientation)
-
-            self.get_logger().info(f'Hazard in bounding box. H_x: {hx_rov}, H_y: {hy_rov}')
+            self.get_logger().info(f'Hazard in bounding box. H_x: {haz_x}, H_y: {haz_y}')
 
             hazard_msg = HazardArray()
             hazard = Hazard()
-            hazard.location_x = hx_rov
-            hazard.location_y = hy_rov
+            hazard.location_x = haz_x
+            hazard.location_y = haz_y
             hazard.location_z = 0.0
             hazard.length_x = self.haz_length_x
             hazard.length_y = self.haz_length_y
             hazard.length_z = 0.0
             hazard.type = Hazard.OBSTACLE
             hazard_msg.hazards.append(hazard)
+            hazard_msg.header.stamp = self.get_clock().now().to_msg()
             self.publisher.publish(hazard_msg)
 
         #Publish the new dist to target and course angle
@@ -101,29 +88,41 @@ class HazardAvoidanceTest(Node):
 
         return
 
-    def check_hazard_in_box(self, haz_x, haz_y, rov_x, rov_y, rov_orientation):
+    def check_hazard_in_box(self, haz_x, haz_y, haz_max_radius):
         #Check if hazard is in the bounding box
-        
         hazard_in_box = False
+        half_width = self.rover_width / 2
+        half_height = self.rover_height / 2
+
+        # Calculate the corners of the bounding box (rectangle in front of the rover)
+        #X is forward, Y is to the right
         
-        # Calculate the bounding box coordinates
-        half_length = self.bounding_box_length / 2
-        half_width = self.bounding_box_width / 2
+        back_left_y = -self.bounding_box_width/2
+        back_left_x = half_height 
+        back_right_y = self.bounding_box_width/2
+        back_right_x = half_height
+        front_left_y =  -self.bounding_box_width/2
+        front_left_x = half_height + self.bounding_box_height
+        front_right_y = self.bounding_box_width/2
+        front_right_x = half_height + self.bounding_box_height
 
-        # Calculate the corners of the bounding box in the rover's frame
-        front_left_x = rov_x + half_length * cos(rov_orientation) - half_width * sin(rov_orientation)
-        front_left_y = rov_y + half_length * sin(rov_orientation) + half_width * cos(rov_orientation)
-        front_right_x = rov_x + half_length * cos(rov_orientation) + half_width * sin(rov_orientation)
-        front_right_y = rov_y + half_length * sin(rov_orientation) - half_width * cos(rov_orientation)
-        back_left_x = rov_x - half_length * cos(rov_orientation) - half_width * sin(rov_orientation)
-        back_left_y = rov_y - half_length * sin(rov_orientation) + half_width * cos(rov_orientation)
-        back_right_x = rov_x - half_length * cos(rov_orientation) + half_width * sin(rov_orientation)
-        back_right_y = rov_y - half_length * sin(rov_orientation) - half_width * cos(rov_orientation)
-
-        # Check if the hazard is within the bounding box
+        # Check if the hazard is within the bounding box (check all corners)
         if (min(front_left_x, front_right_x, back_left_x, back_right_x) <= haz_x <= max(front_left_x, front_right_x, back_left_x, back_right_x) and
             min(front_left_y, front_right_y, back_left_y, back_right_y) <= haz_y <= max(front_left_y, front_right_y, back_left_y, back_right_y)):
             hazard_in_box = True
+        elif (min(front_left_x, front_right_x, back_left_x, back_right_x) <= haz_x + haz_max_radius <= max(front_left_x, front_right_x, back_left_x, back_right_x) and
+            min(front_left_y, front_right_y, back_left_y, back_right_y) <= haz_y + haz_max_radius <= max(front_left_y, front_right_y, back_left_y, back_right_y)):
+            hazard_in_box = True
+        elif (min(front_left_x, front_right_x, back_left_x, back_right_x) <= haz_x - haz_max_radius <= max(front_left_x, front_right_x, back_left_x, back_right_x) and
+            min(front_left_y, front_right_y, back_left_y, back_right_y) <= haz_y - haz_max_radius <= max(front_left_y, front_right_y, back_left_y, back_right_y)):
+            hazard_in_box = True
+        elif (min(front_left_x, front_right_x, back_left_x, back_right_x) <= haz_x + haz_max_radius <= max(front_left_x, front_right_x, back_left_x, back_right_x) and
+            min(front_left_y, front_right_y, back_left_y, back_right_y) <= haz_y - haz_max_radius <= max(front_left_y, front_right_y, back_left_y, back_right_y)):
+            hazard_in_box = True
+        elif (min(front_left_x, front_right_x, back_left_x, back_right_x) <= haz_x - haz_max_radius <= max(front_left_x, front_right_x, back_left_x, back_right_x) and
+            min(front_left_y, front_right_y, back_left_y, back_right_y) <= haz_y + haz_max_radius <= max(front_left_y, front_right_y, back_left_y, back_right_y)):
+            hazard_in_box = True
+        
 
         return hazard_in_box
 
@@ -155,9 +154,12 @@ class HazardAvoidanceTest(Node):
             self.vis.set_target(target_x, target_y)
             
             #Set the hazard Location
-            self.haz_length_x = 1.5
-            self.haz_length_y = 1.5
+            self.haz_length_x = 1.0
+            self.haz_length_y = 1.0
             self.vis.add_hazard(2, 5, width=self.haz_length_x, height=self.haz_length_y)
+
+            self.rover_width, self.rover_height = self.vis.get_rover_dims()
+            self.get_logger().info('Simulation Initialized')
 
         return
     
