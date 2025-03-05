@@ -30,17 +30,21 @@ class InputButton:
 class InputToggle(InputButton):
     '''When the button is pressed, the control will switch between the provided off and on states'''
 
-    def button_logic(self, msg: Joy, prev_msg: Joy):
+    def __init__(self, button_index, control_on, control_off=0):
+        super().__init__(button_index, control_on, control_off)
+        self.prev_state = True # Handle edge case where user is depressing button on start
+
+    def button_logic(self, msg: Joy):
         # When the button is pressed, toggle between on and off
-        if msg.buttons[self.button_index] != prev_msg.buttons[self.button_index] and msg.buttons[self.button_index]:
+        if msg.buttons[self.button_index] != self.prev_state and msg.buttons[self.button_index]:
             return not self.state
         else:
             return self.state
         
-    def update(self, msg: Joy, prev_msg: Joy):
-        if prev_msg is not None:
-            self.state = self.button_logic(msg, prev_msg)
-            return (self.control_on if self.state else self.control_off)
+    def update(self, msg: Joy):
+        self.state = self.button_logic(msg) # Check for toggle
+        self.prev_state = self.state # Update the state cache
+        return (self.control_on if self.state else self.control_off)
 
 class InputAxis:
     '''When the axis is outside of the deadzone, its control is converted linearly and sent to actuator'''
