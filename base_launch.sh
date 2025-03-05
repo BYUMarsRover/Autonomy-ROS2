@@ -62,13 +62,11 @@ fi
 # Launch the specified task configuration over SSH
 case "$1" in
     "autonomy")
-        printInfo "Setting up the autonomy task..."
+        printInfo "Setting up the base autonomy task..."
         # Send tmux commands to the rover's Docker container over SSH
         ssh marsrover@$IP_ADDRESS -p $DOCKER_SSH_PORT "\
-            tmux split-window -h -t rover_runtime; \
-            tmux select-pane -t rover_runtime.1; \
-            tmux send-keys -t rover_runtime.1 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' \
-            tmux send-keys -t rover_runtime.1 'ros2 launch start base_task_autonomy_new_launch.py'" # NO ENTER 
+            tmux send-keys -t rover_runtime:0.0 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
+            tmux send-keys -t rover_runtime:0.0 'ros2 launch start base_task_autonomy_new_launch.py'" # NO ENTER 
         ;;
     "servicing")
         printWarning "Not implemented yet"
