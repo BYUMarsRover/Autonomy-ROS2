@@ -85,7 +85,7 @@ case "$1" in
         ;;
     *)
         printWarning "No task specified, simply entering the current tmux session..."
-        echo "Specify a task using 'bash launch.sh <task>' (ex. 'bash launch.sh autonomy')"
+        echo "Specify a task using 'bash launch.sh <task>' 
         ;;
 esac
 

@@ -10,9 +10,16 @@ if [ "$(uname -m)" == "aarch64" ]; then
 
     # Start a new 'rover_runtime' tmux session
     tmux new-session -d -s rover_runtime
-    tmux send-keys -t rover_runtime.0 "clear" Enter
-    tmux new-window -t fastdds_server 
-    tmux send-keys -t fastdds_server "fastdds discovery --server-id 0" Enter
+
+    # Send 'clear' command to the first window
+    tmux send-keys -t rover_runtime:0 "clear" Enter
+
+    # Create a new window within the 'rover_runtime' session and name it 'fastdds_server'
+    tmux new-window -t rover_runtime -n fastdds_server
+
+    # Send the 'fastdds discovery' command to the 'fastdds_server' window
+    tmux send-keys -t rover_runtime:fastdds_server "fastdds discovery --server-id 0" Enter
+
 
     #let the discovery server startup before adding nodes
     sleep 3
