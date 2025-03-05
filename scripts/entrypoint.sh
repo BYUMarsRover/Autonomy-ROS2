@@ -25,8 +25,9 @@ if [ "$(uname -m)" == "aarch64" ]; then
     sleep 3
 
     # Launch ROS 2 nodes on system startup
-    tmux send-keys -t rover_runtime.0 "export ROS_DISCOVERY_SERVER=127.0.0.1:11811" Enter
-    tmux send-keys -t rover_runtime.0 "ros2 launch mobility rover_xbox_launch.py" Enter
+
+    tmux send-keys -t rover_runtime:0.0 "export ROS_DISCOVERY_SERVER=127.0.0.1:11811" Enter
+    tmux send-keys -t rover_runtime:0.0 "ros2 launch mobility rover_xbox_launch.py" Enter
 
     # Full color and mouse options
     tmux set-option -g default-terminal "screen-256color"
