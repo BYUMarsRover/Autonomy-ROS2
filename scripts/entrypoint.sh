@@ -6,20 +6,21 @@
 # - Be very careful editing it!
 
 # Are we running on Jetson Orin architecture (the rover)?
+# Start a new 'rover_runtime' tmux session
+tmux new-session -d -s rover_runtime
+
+# Send 'clear' command to the first window
+tmux send-keys -t rover_runtime:0 "clear" Enter
+# Full color and mouse options
+tmux set-option -g default-terminal "screen-256color"
+tmux set -g mouse on
+
 if [ "$(uname -m)" == "aarch64" ]; then
-
-    # Start a new 'rover_runtime' tmux session
-    tmux new-session -d -s rover_runtime
-
-    # Send 'clear' command to the first window
-    tmux send-keys -t rover_runtime:0 "clear" Enter
-
     # Create a new window within the 'rover_runtime' session and name it 'fastdds_server'
     tmux new-window -t rover_runtime -n fastdds_server
 
     # Send the 'fastdds discovery' command to the 'fastdds_server' window
     tmux send-keys -t rover_runtime:fastdds_server "fastdds discovery --server-id 0" Enter
-
 
     #let the discovery server startup before adding nodes
     sleep 3
@@ -29,9 +30,6 @@ if [ "$(uname -m)" == "aarch64" ]; then
     tmux send-keys -t rover_runtime:0.0 "export ROS_DISCOVERY_SERVER=127.0.0.1:11811" Enter
     tmux send-keys -t rover_runtime:0.0 "ros2 launch mobility rover_xbox_launch.py" Enter
 
-    # Full color and mouse options
-    tmux set-option -g default-terminal "screen-256color"
-    tmux set -g mouse on
 fi
 
 # Start the SSH daemon in the Docker container

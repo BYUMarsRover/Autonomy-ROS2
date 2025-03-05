@@ -26,6 +26,7 @@ if ! ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "echo" &> /dev/null
 then
     printError "No available SSH connection to the rover's Docker container"
     echo "Here's some debugging suggestions:"
+    echo "  - Make sure the SSH keys are setup by running the setup_ssh.sh script"
     echo "  - Ensure the rover is powered on"
     echo "  - Ensure the rover is connected with a static IP address"
     echo "  - Ensure the rover's Docker container is running"
@@ -69,11 +70,10 @@ case "$1" in
         printInfo "Setting up the autonomy task..."
         # Send tmux commands to the rover's Docker container over SSH
         ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "\
-            tmux split-window -h -t rover_runtime:0.0; \
-            tmux select-pane -t rover_runtime:0.1; \
-            tmux send-keys -t rover_runtime:0.1 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
-            tmux send-keys -t rover_runtime:0.1 'ros2 launch start rover_task_autonomy_new_launch.py' \
-        " # NO ENTER
+            tmux split-window -h -t rover_runtime; \
+            tmux select-pane -t rover_runtime.1; \
+            tmux send-keys -t rover_runtime.1 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
+            tmux send-keys -t rover_runtime.1 'ros2 launch start rover_task_autonomy_new_launch.py'" # NO ENTER 
         ;;
     "servicing")
         printWarning "Not implemented yet"
