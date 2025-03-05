@@ -24,7 +24,7 @@ aruco_detect_logi:
 
     #from launch file
     image_transport: compressed     #Image transport type
-    publish_images: false             
+    publish_images: true             
     fiducial_len: 0.2               #Fiducial length in meters
     dictionary: 'DICT_4X4_50'       #Dictionary ID for ArUco detection
     do_pose_estimation: true        #Enable pose estimation

@@ -50,14 +50,13 @@ def generate_launch_description():
             respawn_delay=5
         ),
 
-        # REMOVED from Autonomy launch by BRADEN MEYERS FEB 27. LMK if you need it
-        # Node(
-        #     package='autonomy',
-        #     executable='fiducial_data',
-        #     name='fiducial_data',
-        #     output='screen',
-        #     parameters=[autonomy_params_file]
-        # ),
+        Node(
+            package='autonomy',
+            executable='fiducial_data',
+            name='fiducial_data',
+            output='screen',
+            parameters=[autonomy_params_file]
+        ),
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join( 
