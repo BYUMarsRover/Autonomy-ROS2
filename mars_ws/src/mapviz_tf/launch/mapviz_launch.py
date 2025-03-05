@@ -88,9 +88,9 @@ def generate_launch_description():
         ),
 
         # Other nodes
-        Node(package='mapviz_tf', executable='rover_tf_broadcaster', name='rover_tf_broadcaster', output='screen'),
-        Node(package='mapviz_tf', executable='path_to_mapviz', name='path_to_mapviz', output='screen'),
-        Node(package='mapviz_tf', executable='gps_to_mapviz', name='gps_to_mapviz', output='screen'),
-        Node(package='mapviz_tf', executable='click_waypoint', name='waypoint_picker', output='screen'),
-        Node(package='rosapi', executable='rosapi_node', name='rosapi', output='screen'),
+        Node(package='mapviz_tf', executable='rover_tf_broadcaster', name='rover_tf_broadcaster', output='log'),
+        Node(package='mapviz_tf', executable='path_to_mapviz', name='path_to_mapviz', output='log'),
+        Node(package='mapviz_tf', executable='gps_to_mapviz', name='gps_to_mapviz', output='log'),
+        Node(package='mapviz_tf', executable='click_waypoint', name='waypoint_picker', output='log'),
+        Node(package='rosapi', executable='rosapi_node', name='rosapi', output='log'),
     ])

@@ -1,5 +1,4 @@
 # Created by Nelson Durrant, Oct 2024
-
 FROM ros:noetic-ros-base
 
 # Define a username for the new user
@@ -15,7 +14,7 @@ RUN apt update && apt install -y \
 
 # Set up a new user
 RUN useradd -ms /bin/bash ${NAME}
-RUN usermod -aG sudo marsrover
+RUN usermod -aG sudo ${NAME}
 RUN usermod -aG dialout ${NAME}
 RUN echo "${NAME}:${NAME}" | chpasswd
 USER ${NAME}

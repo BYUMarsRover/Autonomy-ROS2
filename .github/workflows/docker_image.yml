@@ -1,13 +1,10 @@
-name: Docker Image CI (autonomy_ros2)
+# Created by Nelson Durrant, Nov 2024
+name: Docker Image CI
 
 on:
   push:
     branches: [ "main" ]
     paths: 
-      - "docker/Dockerfile" 
-  pull_request:
-    branches: [ "main" ]
-    paths:
       - "docker/Dockerfile"
 
 jobs:
@@ -19,6 +16,9 @@ jobs:
     steps:
     - name: Checkout the repo
       uses: actions/checkout@v4
+
+    - name: Quick fix for QEMU error, Feb 2025
+      run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes -c yes
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3

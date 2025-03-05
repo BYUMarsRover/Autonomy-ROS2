@@ -58,6 +58,7 @@ class AStarPlanner:
         Pass in: start and goal points in (x, y) format
         Returns: a list of waypoints in (x, y) format and the path length
         '''
+        self.path = []
 
         # Set start and goal nodes
         self.goal = (goal[::-1])
@@ -173,7 +174,7 @@ class AStarPlanner:
         
         return neighbors
     
-    def get_path_waypoints(self, dist_between_wp=5):
+    def get_path_waypoints(self, dist_between_wp=10):
         '''
         Pass in: desired number of grid units between waypoints
         Returns: a list of waypoints in (x, y) format
@@ -182,17 +183,18 @@ class AStarPlanner:
         '''
         waypoints = []
         last_wp = 0
-        for i in range(4, len(self.path) - 4):
-            p1 = np.array(self.path[i - 4])
+        for i in range(5, len(self.path) - 5):
+            p1 = np.array(self.path[i - 5])
             p2 = np.array(self.path[i])
-            p3 = np.array(self.path[i + 4])
+            p3 = np.array(self.path[i + 5])
             
             # Calculate vectors
             v1 = p2 - p1
             v2 = p3 - p2
             
             # Calculate angle between vectors
-            angle = np.arccos(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
+            angle = np.arccos(np.clip(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)), -1.0, 1.0))
+
             curvature = np.degrees(angle)
             
             if curvature < 20 and last_wp < i - dist_between_wp:
@@ -278,11 +280,14 @@ class AStarNode:
                 + self.e*self.ew
 
 def visualize_path(path, cost_map, map_type='Slope', waypoints=None, explored_nodes=None):
+    plt.figure(figsize=(10, 6))
     plt.imshow(cost_map, cmap='terrain')
     plt.colorbar(label=map_type)
     plt.title(map_type + ' Map')
     plt.xlabel('X Coordinate')
     plt.ylabel('Y Coordinate')
+    #TODO: make the map bigger, add the text to the bottom of the map pop-up
+    # between 9-10 and 3-4 for screen recording 
     legend = ['Start', 'Goal', 'Path']
 
     plt.plot(path[0][1], path[0][0], 'o', color='orange', markersize=8, label='Start', zorder=4)

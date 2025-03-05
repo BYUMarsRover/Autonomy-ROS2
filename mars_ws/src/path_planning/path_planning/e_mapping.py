@@ -79,11 +79,17 @@ class Mapper:
         where x is measured from left to right and y is measured from bottom to top
             For example self.map[0,0] is the top left corner of the map
             (resembles the layout of a 2D numpy array)
+
+            NOTE: Returns None for both x and y if the lat/lon is outside the map
         '''
         x_utm, y_utm, zone, zone_letter = utm.from_latlon(lat, lon)
         x = int((x_utm - self.xll) / self.res)
         y = self.h - int((y_utm - self.yll) / self.res)
-        return x, y
+        
+        if x < 0 or x >= self.map.shape[1] or y < 0 or y >= self.map.shape[0]:
+            return None, None
+        else:
+            return x, y
     
     def display_map(self, map_type='Elevation'):
         '''
