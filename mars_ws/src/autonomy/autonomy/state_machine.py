@@ -338,10 +338,10 @@ class AutonomyStateMachine(Node):
             )
 
             # TODO: Do we need to publish this data? What is using this data?
-            self.aruco_pose = FiducialData()
-            self.aruco_pose.angle_offset = self.aruco_tag_angle
-            self.aruco_pose.dist_to_fiducial = self.aruco_tag_distance
-            self.aruco_pose_pub.publish(self.aruco_pose)
+            # self.aruco_pose = FiducialData()
+            # self.aruco_pose.angle_offset = self.aruco_tag_angle
+            # self.aruco_pose.dist_to_fiducial = self.aruco_tag_distance
+            # self.aruco_pose_pub.publish(self.aruco_pose)
 
             self.ar_callback_see_time = time.time()
 
