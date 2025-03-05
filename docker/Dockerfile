@@ -138,3 +138,10 @@ USER $NAME
 USER root
 RUN apt update && apt install -y gpsd-clients
 USER $NAME
+
+
+# Install libboost for ublox read - Braden Meyers, Mar 2025
+# Needed to run UBLOX_read_2
+USER root
+RUN apt update && apt install -y libboost-all-dev
+USER $NAME
