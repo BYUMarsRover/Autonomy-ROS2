@@ -71,6 +71,7 @@ case "$1" in
         ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "\
             tmux split-window -h -t rover_runtime; \
             tmux select-pane -t rover_runtime.1; \
+            tmux send-keys -t rover_runtime.1 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811'" \
             tmux send-keys -t rover_runtime.1 'ros2 launch start rover_task_autonomy_new_launch.py'" # NO ENTER 
         ;;
     "servicing")
