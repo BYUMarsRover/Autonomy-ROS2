@@ -28,6 +28,7 @@ if ! ssh marsrover@$ROVER_IP_ADDRESS "echo" &> /dev/null
 then
     printError "No available SSH connection to the rover's computer"
     echo "Here's some debugging suggestions:"
+    echo "  - Make sure the SSH keys are setup by running the setup_ssh.sh script"
     echo "  - Ensure the rover is powered on"
     echo "  - Ensure the rover is connected with a static IP address"
 

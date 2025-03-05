@@ -26,6 +26,7 @@ if ! ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "echo" &> /dev/null
 then
     printError "No available SSH connection to the rover's Docker container"
     echo "Here's some debugging suggestions:"
+    echo "  - Make sure the SSH keys are setup by running the setup_ssh.sh script"
     echo "  - Ensure the rover is powered on"
     echo "  - Ensure the rover is connected with a static IP address"
     echo "  - Ensure the rover's Docker container is running"
