@@ -44,15 +44,17 @@ then
     exit
 fi
 
-# Check that only one window is open in the 'rover_runtime' tmux session
-if [ $(ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "tmux list-windows -t rover_runtime | wc -l") -ne 1 ]
-then
-    printWarning "Multiple windows found in the 'rover_runtime' tmux session"
-    echo "Simply entering the current tmux session for cleanup..."
-    ssh -t -X marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
+#TODO FIX THIS LATER
 
-    exit
-fi
+# # Check that only one window is open in the 'rover_runtime' tmux session
+# if [ $(ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "tmux list-windows -t rover_runtime | wc -l") -ne 1 ]
+# then
+#     printWarning "Multiple windows found in the 'rover_runtime' tmux session"
+#     echo "Simply entering the current tmux session for cleanup..."
+#     ssh -t -X marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
+
+#     exit
+# fi
 
 # Check that only one pane is open in the 'rover_runtime' tmux session
 if [ $(ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "tmux list-panes -t rover_runtime | wc -l") -ne 1 ]
@@ -70,10 +72,10 @@ case "$1" in
         printInfo "Setting up the autonomy task..."
         # Send tmux commands to the rover's Docker container over SSH
         ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "\
-            tmux split-window -h -t rover_runtime; \
-            tmux select-pane -t rover_runtime.1; \
-            tmux send-keys -t rover_runtime.1 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
-            tmux send-keys -t rover_runtime.1 'ros2 launch start rover_task_autonomy_new_launch.py'" # NO ENTER 
+            tmux split-window -h -t rover_runtime:0.0; \
+            tmux select-pane -t rover_runtime:0.1; \
+            tmux send-keys -t rover_runtime:0.1 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
+            tmux send-keys -t rover_runtime:0.1 'ros2 launch start rover_task_autonomy_new_launch.py'" # NO ENTER 
         ;;
     "servicing")
         printWarning "Not implemented yet"
@@ -86,7 +88,7 @@ case "$1" in
         ;;
     *)
         printWarning "No task specified, simply entering the current tmux session..."
-        echo "Specify a task using 'bash launch.sh <task>' 
+        echo "Specify a task using 'bash launch.sh <task>' "
         ;;
 esac
 
