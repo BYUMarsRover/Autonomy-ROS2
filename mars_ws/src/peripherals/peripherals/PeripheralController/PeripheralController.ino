@@ -96,6 +96,7 @@ void statusIndicatorTick()
 {
   if (led_mode == AUTONOMOUS) {
     setArrayColor(255,0,0);
+    timerActive = false;
   }
   else if (led_mode == ARRIVAL)
   {
@@ -105,9 +106,9 @@ void statusIndicatorTick()
     }
     if (timerActive && millis() - previousTime >= 5000) {
         Serial.println("5 seconds passed");
-        timerActive = false;
-        previousTime = millis(); // Reset timer safely
-        led_mode = IDLE;
+        // timerActive = false;
+        // previousTime = millis(); // Reset timer safely
+        // led_mode = IDLE;
         setArrayColor(0,255,0);
     }
     // if (statCounter == STATUS_INDICATOR_COUNTER_MAX*0.1) {
@@ -121,11 +122,14 @@ void statusIndicatorTick()
   }
   else if (led_mode == TELEOPERATION) {
     setArrayColor(0,0,255);
+    timerActive = false;
   }
   else {
     setArrayColor(0,0,0);
+    timerActive = false;
   }
 }
+// previousTime = millis(); // Reset timer safely
 
 void batteryTick()
 {
