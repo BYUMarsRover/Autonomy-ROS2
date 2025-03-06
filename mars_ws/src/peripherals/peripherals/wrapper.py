@@ -17,7 +17,7 @@ navigation_state = -1
 q = queue.Queue()
 
 
-class RoverStatusNode(Node):self.nav_state
+class RoverStatusNode(Node):
     def __init__(self):
         super().__init__('rover_status_listener')
         
