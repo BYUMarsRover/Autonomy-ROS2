@@ -105,7 +105,7 @@ void statusIndicatorTick()
         timerActive = true;
         setArrayColor(0,255,0);
     }
-    if (timerActive && millis() - previousTime >= 5000) {
+    if (timerActive && millis() - previousTime >= 2000) {
         Serial.println("5 seconds passed");
         // timerActive = false;
         // previousTime = millis(); // Reset timer safely
@@ -127,7 +127,7 @@ void statusIndicatorTick()
   }
   else if (led_mode == TELEOPERATION) {
     setArrayColor(0,0,255);
-    // timerActive = false;
+    timerActive = false;
   }
   else {
     setArrayColor(0,0,0);
