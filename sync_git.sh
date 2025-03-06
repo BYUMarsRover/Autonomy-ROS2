@@ -48,7 +48,7 @@ ssh marsrover@$ROVER_IP_ADDRESS "tmux new-session -d -s sync_git; \
     tmux send-keys -t sync_git.0 'cd ~/Autonomy-ROS2' Enter; \
     tmux send-keys -t sync_git.0 'git checkout $current_branch' Enter; \
     tmux send-keys -t sync_git.0 'git pull $remote $current_branch' Enter; \
-    tmux send-keys -t sync_git.0 'bash scripts/build.sh'" # NO ENTER
+    tmux send-keys -t sync_git.0 'bash build.sh'" # NO ENTER
 
 # Attach to the 'sync_git' tmux session to view the output
 ssh -t -X marsrover@$ROVER_IP_ADDRESS "tmux attach -t sync_git"

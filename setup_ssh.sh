@@ -87,15 +87,19 @@ case $choice in
         remove_old_ssh_key "$ROVER_IP_ADDRESS" "$DOCKER_SSH_PORT"
         remove_old_ssh_key "localhost" "$DOCKER_SSH_PORT"
 
-        # Test SSH connections and accept new keys automatically
-        $ROVER_CONNECT -o StrictHostKeyChecking=accept-new marsrover@$ROVER_IP_ADDRESS "echo" &> /dev/null
-        $DOCKER_CONNECT -o StrictHostKeyChecking=accept-new marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "echo" &> /dev/null
-        $BASE_CONNECT -o StrictHostKeyChecking=accept-new marsrover@localhost -p $DOCKER_SSH_PORT "echo" &> /dev/null
-
         # Copy the SSH key to all targets
+        # Test SSH connections and accept new keys automatically
+        echo "ROVER COMPUTER PASSWORD"
+        $ROVER_CONNECT -o StrictHostKeyChecking=accept-new marsrover@$ROVER_IP_ADDRESS "echo" &> /dev/null
         ssh-copy-id marsrover@$ROVER_IP_ADDRESS
+
+        echo "ROVER DOCKER COMPUTER PASSWORD"
+        $DOCKER_CONNECT -o StrictHostKeyChecking=accept-new marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "echo" &> /dev/null
         ssh-copy-id -p $DOCKER_SSH_PORT marsrover@$ROVER_IP_ADDRESS
+
+        echo "THIS COMPUTER DOCKER PASSWORD"
         ssh-copy-id -p $DOCKER_SSH_PORT marsrover@localhost
+        $BASE_CONNECT -o StrictHostKeyChecking=accept-new marsrover@localhost -p $DOCKER_SSH_PORT "echo" &> /dev/null
 
         ;;
     *)

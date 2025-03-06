@@ -28,7 +28,7 @@ if [ "$(uname -m)" == "aarch64" ]; then
     # Launch ROS 2 nodes on system startup
 
     tmux send-keys -t rover_runtime:0.0 "export ROS_DISCOVERY_SERVER=127.0.0.1:11811" Enter
-    tmux send-keys -t rover_runtime:0.0 "ros2 launch mobility rover_xbox_launch.py" Enter
+    tmux send-keys -t rover_runtime:0.0 "ros2 launch mobility rover_drive_launch.py" Enter
 
 fi
 
