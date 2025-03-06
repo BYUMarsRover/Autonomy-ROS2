@@ -96,7 +96,7 @@ void statusIndicatorTick()
 {
   if (led_mode == AUTONOMOUS) {
     setArrayColor(255,0,0);
-    timerActive = false;
+    // timerActive = false;
   }
   else if (led_mode == ARRIVAL)
   {
@@ -123,11 +123,11 @@ void statusIndicatorTick()
   }
   else if (led_mode == TELEOPERATION) {
     setArrayColor(0,0,255);
-    timerActive = false;
+    // timerActive = false;
   }
   else {
     setArrayColor(0,0,0);
-    timerActive = false;
+    // timerActive = false;
   }
 }
 // previousTime = millis(); // Reset timer safely
