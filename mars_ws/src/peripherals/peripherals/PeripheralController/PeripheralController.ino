@@ -109,8 +109,8 @@ void statusIndicatorTick()
         Serial.println("5 seconds passed");
         // timerActive = false;
         // previousTime = millis(); // Reset timer safely
-        // led_mode = IDLE;
-        setArrayColor(0,0,0);
+        led_mode = IDLE;
+        // setArrayColor(0,0,0);
     }
     // if (statCounter == STATUS_INDICATOR_COUNTER_MAX*0.1) {
     //   // Need to flash if in arrival state
@@ -120,6 +120,10 @@ void statusIndicatorTick()
     //   setArrayColor(0,0,0);
     // }
     // statCounter++;
+  }
+  else if {led_mode == IDLE}{
+    timerActive = false;
+    setArrayColor(0,0,0);
   }
   else if (led_mode == TELEOPERATION) {
     setArrayColor(0,0,255);
