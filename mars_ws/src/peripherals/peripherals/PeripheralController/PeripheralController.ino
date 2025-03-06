@@ -110,7 +110,7 @@ void statusIndicatorTick()
         // timerActive = false;
         // previousTime = millis(); // Reset timer safely
         // led_mode = IDLE;
-        // setArrayColor(0,0,0);
+        setArrayColor(0,0,0);
     }
     // if (statCounter == STATUS_INDICATOR_COUNTER_MAX*0.1) {
     //   // Need to flash if in arrival state
