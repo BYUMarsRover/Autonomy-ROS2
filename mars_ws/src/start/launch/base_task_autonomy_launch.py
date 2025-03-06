@@ -17,6 +17,8 @@ def generate_launch_description():
     # import environment variables
     mapviz_location=os.environ.get('MAPVIZ_LOCATION', 'hanksville')
     mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value='hanksville')
+    autonomy_params_file = os.path.join(get_package_share_directory('autonomy'), 'params', 'autonomy_params.yaml')
+
 
     # Start all common launch files on the base station
     include_base_common = IncludeLaunchDescription(
@@ -30,16 +32,12 @@ def generate_launch_description():
     )
 
     include_autonomy_gui = Node(
-        package='autonomy',
-        executable='autonomy_gui',
-        name='autonomy_gui',
-        namespace='autonomy',
-        output='screen',
-        parameters=[
-            {'location': LaunchConfiguration('MAPVIZ_LOCATION')}
-        ],
-        additional_env={'MAPVIZ_LOCATION': EnvironmentVariable('MAPVIZ_LOCATION', default_value='hanksville')}
-    )
+            package='autonomy',
+            executable='autonomy_gui',
+            name='autonomy_gui',
+            output='screen',
+            parameters=[autonomy_params_file]
+        )
 
     # Start launch files specific to the Autonomy Task on the base station
     # (The only thing this does is launch the rqt gui)
