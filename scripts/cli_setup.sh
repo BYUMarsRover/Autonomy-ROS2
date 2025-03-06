@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# Function to display usage information
-usage() {
-    echo "Usage: $0 [local|base]"
-    exit 1
-}
-
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 1 ]; then
     usage
