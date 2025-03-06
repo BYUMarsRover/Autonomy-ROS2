@@ -10,7 +10,9 @@ if [ "$clean_build" == "y" ]; then
     docker exec -it autonomy_ros2 bash -c "rm -rf /home/marsrover/mars_ws/build /home/marsrover/mars_ws/install /home/marsrover/mars_ws/log"
 fi
 
+COMMAND="source /opt/ros/humble/setup.bash && cd /home/marsrover/mars_ws && colcon build"
+
 echo "Building the project..."
-docker exec -it autonomy_ros2 bash -c "cd /home/marsrover/mars_ws && colcon build"
+docker exec -it autonomy_ros2 bash -c "$COMMAND"
 
 echo "Build process completed."
