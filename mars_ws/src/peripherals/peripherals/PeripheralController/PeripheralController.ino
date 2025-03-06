@@ -96,7 +96,7 @@ void statusIndicatorTick()
 {
   if (led_mode == AUTONOMOUS) {
     setArrayColor(255,0,0);
-    // timerActive = false;
+    timerActive = false;
   }
   else if (led_mode == ARRIVAL)
   {
@@ -109,7 +109,7 @@ void statusIndicatorTick()
         Serial.println("5 seconds passed");
         // timerActive = false;
         // previousTime = millis(); // Reset timer safely
-        led_mode = IDLE;
+        // led_mode = IDLE;
         // setArrayColor(0,0,0);
     }
     // if (statCounter == STATUS_INDICATOR_COUNTER_MAX*0.1) {
@@ -121,7 +121,7 @@ void statusIndicatorTick()
     // }
     // statCounter++;
   }
-  else if {led_mode == IDLE}{
+  else if (led_mode == IDLE){
     timerActive = false;
     setArrayColor(0,0,0);
   }
