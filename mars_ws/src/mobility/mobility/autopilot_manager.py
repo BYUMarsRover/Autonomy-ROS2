@@ -84,9 +84,11 @@ class AutopilotManager(Node):
         self.obstacle_found = False
         self.scaling_factor = 0.0
         self.critical_distance = 1.0
+        self.target_distance_tolerance = 2.0
         self.time_step = 3.0  # Example time step in seconds
         self.last_callback_time = self.get_clock().now()  # Store last callback time
         self.timer = None  # Timer starts as None
+        self.no_obstacle_alpha = 0.9
 
         # ROS subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
@@ -112,27 +114,32 @@ class AutopilotManager(Node):
     def autopilot_cmds_callback(self, msg: MobilityAutopilotCommand):
         
         self.distance = msg.distance_to_target
+        lin_vel = self.linear_controller.update_with_error(self.distance)
 
         # self.des_heading = wrap(msg.course_angle + self.heading_plus, 0)
         if self.obstacle_found:
             #figure out new heading to avoid obstacle
             new_heading  = msg.course_angle * (1 - self.heading_alpha) + self.avoidance_heading * self.heading_alpha
             self.des_heading = wrap(new_heading, 0)
+            self.rover_vel_cmd.u_cmd = lin_vel * .5
 
         else:
-            self.des_heading = wrap(msg.course_angle, 0)
+            #Low pass filters to smooth out the heading and velocity
+            new_heading  = msg.course_angle * (1 - self.no_obstacle_alpha) + self.des_heading * self.no_obstacle_alpha
+            self.des_heading = wrap(new_heading, 0)
+
+            if self.distance < self.target_distance_tolerance:
+                #If we are close to the target rely on the linear controller to slow down
+                self.rover_vel_cmd.u_cmd = lin_vel
+            else:
+                #Else, rely on our low pass filter to smooth out the velocity
+                self.rover_vel_cmd.u_cmd = lin_vel * (1 - self.no_obstacle_alpha) + self.rover_vel_cmd.u_cmd * self.no_obstacle_alpha
 
         self.curr_heading = wrap(self.curr_heading, 0)
         self.course_error = wrap(self.des_heading - self.curr_heading, 0)
-        # self.get_logger().info(f"Course Error: {self.course_error}")
 
-        lin_vel = self.linear_controller.update_with_error(self.distance)
         angular_vel = self.angular_controller.update_with_error(self.course_error)
-
-        if self.obstacle_found:
-            self.rover_vel_cmd.u_cmd = lin_vel * .5
-        else:
-            self.rover_vel_cmd.u_cmd = lin_vel
+            
         self.rover_vel_cmd.omega_cmd = angular_vel
         self.rover_vel_cmd.course_heading_error = self.course_error
 
@@ -143,7 +150,6 @@ class AutopilotManager(Node):
 
     def obstacle_callback(self, msg):
         
-
         #start a timer to stop avoiding the obstacle after a certain amount of time
         if self.timer is None:
             self.timer = self.create_timer(self.time_step, self.toggle_obstacle_avoidance)

@@ -158,13 +158,14 @@ class RoverVisualizer:
         self.update_display()
 
     def get_hazard_locations(self):
-        """Returns a list of (x, y) positions of all hazards."""
+        """Returns a list of (x, y) positions of all hazards in the rovers frame."""
         # for one hazard
         if len(self.hazards) > 1:
             return [(hx, hy) for hx, hy, _, _ in self.hazards] # multiple hazards
         elif len(self.hazards) == 1:
             hx, hy, width, height = self.hazards[0]
 
+            #Return the hazard in the rover's frame
             haz_x= hx - self.x
             haz_y= hy - self.y
 

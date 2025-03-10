@@ -156,7 +156,7 @@ class HazardAvoidanceTest(Node):
             #Set the hazard Location
             self.haz_length_x = 1.0
             self.haz_length_y = 1.0
-            self.vis.add_hazard(2, 5, width=self.haz_length_x, height=self.haz_length_y)
+            self.vis.add_hazard(0, 7.5, width=self.haz_length_x, height=self.haz_length_y)
 
             self.rover_width, self.rover_height = self.vis.get_rover_dims()
             self.get_logger().info('Simulation Initialized')
