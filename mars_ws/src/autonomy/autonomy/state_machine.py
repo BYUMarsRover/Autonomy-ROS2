@@ -596,7 +596,8 @@ class AutonomyStateMachine(Node):
                 self.obj_distance = None
                 self.obj_angle = None
 
-                self.toggle_object_detection(False)
+                if self.tag_id in [TagID.MALLET, TagID.BOTTLE]:
+                    self.toggle_object_detection(False)
 
 
                 # Pop off the completed task

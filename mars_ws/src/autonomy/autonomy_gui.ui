@@ -1092,144 +1092,183 @@
             </item>
             <!-- Status Items -->
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_">
-              <!-- ObjDetTog status -->
-              <item>
-               <layout class="QVBoxLayout" name="verticalLayout_11">
+             <widget class='QWidget' name='StatusItemsContainerWidget'>
+              <property name='font'>
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_11">
                <!-- Object Detection -->
-                <item>
-                 <widget class="QLabel" name="ObjLabel">
-                  <property name="text">
-                   <string>Object Status:</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="ObjStatus">
-                  <property name="text">
-                   <string>Waiting...</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-                <!-- Aruco Detection -->
-                <item>
-                 <widget class="QLabel" name="ObjLabel">
-                  <property name="text">
-                   <string>Aruco Status:</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="ArucoStatus">
-                  <property name="text">
-                   <string>Waiting...</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-                <!-- Autopilot commands -->
-                <item>
-                 <widget class="QLabel" name="DriveManagerLabel">
-                  <property name="text">
-                   <string>Drive Manager:</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="AutopilotCmds">
-                  <property name="text">
-                   <string>Waiting...</string>
-                  </property>
-                  <property name="font">
-                   <font>
-                     <pointsize>14</pointsize>
-                   </font>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-                <!-- Rover Velocity Commands -->
-                <item>
-                 <widget class="QLabel" name="AutopilotManagerLabel">
-                  <property name="text">
-                   <string>Autopilot Manager:</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="VelocityCmds">
-                  <property name="text">
-                   <string>Waiting...</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-                <!-- Wheel velocity commands -->
-                <item>
-                 <widget class="QLabel" name="DriveManagerLabel">
-                  <property name="text">
-                   <string>Drive Manager:</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="WheelVelocityCmds">
-                  <property name="text">
-                   <string>Waiting...</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-                <!--  IWC Motor Commands-->
-                <item>
-                 <widget class="QLabel" name="WheelManagerLabel">
-                  <property name="text">
-                   <string>Wheel Manager:</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="IWCCmds">
-                  <property name="text">
-                   <string>Waiting...</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignLeft</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
+               <item>
+                <widget class="QLabel" name="ObjLabel">
+                 <property name="text">
+                  <string>Object Status:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeft</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="ObjStatus">
+                 <property name="text">
+                  <string>Waiting...</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeft</set>
+                 </property>
+                </widget>
+               </item>
+               <!-- Horizontal Dividing Line -->
+               <item>
+                <widget class="Line" name="line_3">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <!-- Aruco Detection -->
+               <item>
+                <widget class="QLabel" name="ObjLabel">
+                 <property name="text">
+                  <string>Aruco Status:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeft</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="ArucoStatus">
+                 <property name="text">
+                  <string>Waiting...</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeft</set>
+                 </property>
+                </widget>
+               </item>
+               <!-- Horizontal Dividing Line -->
+               <item>
+                <widget class="Line" name="line_3">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <!-- Mobility Managers Label -->
+                <widget class="QLabel" name="MobilityManagersLabel">
+                 <property name="text">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Mobility Managers&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="scaledContents">
+                   <bool>false</bool>
+                 </property>
+                 <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <!-- Autopilot commands -->
+               <item>
+                <widget class="QLabel" name="DriveManagerLabel">
+                 <property name="text">
+                  <string>Drive Manager:</string>
+                 </property>
+                 <property name='font'>
+                  <font>
+                   <weight>75</weight>
+                   <pointsize>14</pointsize>
+                  </font>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeft</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="AutopilotCmds">
+                 <property name="text">
+                  <string>Waiting...</string>
+                 </property>
+                 <property name='font'>
+                  <font>
+                   <weight>75</weight>
+                   <pointsize>13</pointsize>
+                  </font>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeft</set>
+                 </property>
+                </widget>
+               </item>
+               <!-- Rover Velocity Commands -->
+               <item>
+                <widget class="QLabel" name="AutopilotManagerLabel">
+                 <property name="text">
+                  <string>Autopilot Manager:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeft</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="VelocityCmds">
+                 <property name="text">
+                  <string>Waiting...</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeft</set>
+                 </property>
+                </widget>
+               </item>
+               <!-- Wheel velocity commands -->
+               <item>
+                <widget class="QLabel" name="DriveManagerLabel">
+                 <property name="text">
+                  <string>Drive Manager:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeft</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="WheelVelocityCmds">
+                 <property name="text">
+                  <string>Waiting...</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeft</set>
+                 </property>
+                </widget>
+               </item>
+               <!--  IWC Motor Commands-->
+               <item>
+                <widget class="QLabel" name="WheelManagerLabel">
+                 <property name="text">
+                  <string>Wheel Manager:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeft</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="IWCCmds">
+                 <property name="text">
+                  <string>Waiting...</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeft</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
             </item>
            </layout>
           </widget>

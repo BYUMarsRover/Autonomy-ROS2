@@ -10,6 +10,7 @@ from std_srvs.srv import SetBool
 import os
 import yaml
 import utm
+import time
 
 from .e_mapping import Mapper
 
@@ -136,8 +137,10 @@ class PathPlanner(Node):
             self.waypoints = AutonomyWaypoint.Request()
 
             # Plan path
+            t0 = time.time()
             path_yx, length = self.path_planner.plan_path(self.start, self.goal)
-            self.get_logger().info("Path planned! Length: " + str(length) + " m")
+            tf = time.time()
+            self.get_logger().info(f"Path planned! Length: {length:.3f} m; Time: {tf - t0:.3f} s; s/km: {(tf - t0)/(length/1000):.3f}")
 
             # Get waypoints every 10 meters along path in x/y format
             waypoints_yx = self.path_planner.get_path_waypoints(dist_between_wp=10) #TODO: tune this distance between points

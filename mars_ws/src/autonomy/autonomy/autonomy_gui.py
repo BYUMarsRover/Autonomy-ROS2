@@ -14,13 +14,13 @@ from PyQt5 import uic
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-from subprocess import Popen, PIPE
+# from subprocess import Popen, PIPE
 import sys
 import os
 import numpy as np
 
 # Used by Mapviz and others
-import yaml
+# import yaml
 import utm
 
 from std_srvs.srv import SetBool
@@ -117,6 +117,9 @@ class AutonomyGUI(Node, QWidget):
 
         ################# ROS Communication #################
 
+        # Guard Conditions
+        self.create_guard_condition(self.check_node_statuses)
+
         # Publishers
         #NOTE: Depreciated until mapviz capability added back
         # self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
@@ -186,6 +189,11 @@ class AutonomyGUI(Node, QWidget):
         # # Stored in lat/lon format
         # self.current_previewed_waypoints = Path() #NOTE: used by mapviz
 
+    def check_node_statuses(self):
+        active_nodes = self.get_node_names()
+
+        if '/path_planner' in active_nodes:
+            self.gui_setText('PathPlannerStatus', 'Active')
 
     # Clears displays in the gui if information stops being received.
     def check_timepoints(self):
@@ -212,7 +220,8 @@ class AutonomyGUI(Node, QWidget):
             self.nav_state = 'TELEOPERATION'
         elif nav_state == 2:
             self.nav_state = 'ARRIVAL'
-            # self.waypoints[self.selected_waypoint -1][4] = 'COMPLETE' # FIXME - this will only work if the correct waypoint is selected in the gui when the task is completed
+            if self.selected_waypoint_to_send is not None:
+                self.waypoints[self.selected_waypoint_to_send -1][4] = 'COMPLETE'
         else:
             self.nav_state = 'UNKNOWN'
         # Update GUI fields
@@ -312,9 +321,9 @@ class AutonomyGUI(Node, QWidget):
     #helper function for autopilot_cmds_callback and vel_cmds_callback
     def setAutopilotString(self, msg):
         if self.course_heading_error is None:
-            autopilot_cmds_string = f'E_lin: {round(msg.distance_to_target, 2)}m, cw N: {round(np.rad2deg(msg.course_angle), 2)}°'
+            autopilot_cmds_string = f'E_lin: {msg.distance_to_target:.1f}m, cw N: {np.rad2deg(msg.course_angle):.1f}°'
         else:
-            autopilot_cmds_string = f'E_lin: {round(msg.distance_to_target, 2)}m, cw N: {round(np.rad2deg(msg.course_angle), 2)}°, E_ang: {round(np.rad2deg(self.course_heading_error), 2)}°'
+            autopilot_cmds_string = f'E_lin: {msg.distance_to_target:.1f}m, cw N: {np.rad2deg(msg.course_angle):.1f}°, E_ang: {np.rad2deg(self.course_heading_error):.1f}°'
         self.gui_setText('AutopilotCmds', autopilot_cmds_string)
         return
     
@@ -459,12 +468,14 @@ class AutonomyGUI(Node, QWidget):
             getattr(self, f'WP{i}RadioButton').setChecked(False)
             getattr(self, f'WP{i}RadioButton').setAutoExclusive(True)
 
-    # This finds which toggle button was selected and sets the selected_waypoint variable
+    # This finds which toggle button was selected and sets the selected_waypoint variable if it is a waypoint
     def update_selected_waypoint(self):
         for i in range(1, 9):
-            if getattr(self, f'WP{i}RadioButton').isChecked():
+            if getattr(self, f'WP{i}RadioButton').isChecked() and i <= len(self.waypoints):
                 self.selected_waypoint = i
                 break
+            else:
+                self.selected_waypoint = None
     
     # Commands path planner to plan a path to the waypoint currently selected in the gui
     def request_plan_path(self):
@@ -872,7 +883,7 @@ def main(args=None):
     # Initialize ROS2
     rclpy.init(args=args)
 
-    Popen("pkill gst", shell=True, preexec_fn=os.setsid, stderr=PIPE)
+    # Popen("pkill gst", shell=True, preexec_fn=os.setsid, stderr=PIPE)
     # Create QApplication
     gui_QWidget = QApplication(sys.argv)
 
