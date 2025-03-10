@@ -16,6 +16,9 @@ ROS_RATE = 10.0
 HANK_LAT=38.406441
 HANK_LONG=-110.791932
 
+HANK_AUT_2024_COMP_LAT=38.423216
+HANK_AUT_2024_COMP_LONG=-110.786483
+
 GRAVEL_LAT=40.322415
 GRAVEL_LONG=-111.64317
 
@@ -28,8 +31,11 @@ ROCK_LONG=-111.632455
 # LAT_INIT=HANK_LAT
 # LONG_INIT=HANK_LONG
 
-LAT_INIT=GRAVEL_LAT
-LONG_INIT=GRAVEL_LONG
+# LAT_INIT=GRAVEL_LAT
+# LONG_INIT=GRAVEL_LONG
+
+LAT_INIT= HANK_AUT_2024_COMP_LAT
+LONG_INIT= HANK_AUT_2024_COMP_LONG
 
 LL_PRECISION=100
 HEADING_PRECISION=LL_PRECISION
@@ -44,8 +50,8 @@ class Counter():
 class DummySingletonPublisher(Node):
     def __init__(self):
         super().__init__('dummy_singleton_publisher')
-        self.singleton_publisher = self.create_publisher(
-            RoverStateSingleton, '/odometry/rover_state_singleton', 10)  # Publishes the singleton message
+
+        self.singleton_publisher = self.create_publisher(RoverStateSingleton, '/odometry/rover_state_singleton', 10)  # Publishes the singleton message
         
         self.timer = self.create_timer(1.0 / ROS_RATE, self.publish_singleton_data) # Publish at 15Hz
 
@@ -65,7 +71,7 @@ class DummySingletonPublisher(Node):
 
         self.map_roll = 0
         self.map_pitch = 0
-        self.map_yaw = 180.0
+        self.map_yaw = 0.0
 
         self.odom_roll = 0
         self.odom_pitch = 0
@@ -107,24 +113,51 @@ class DummySingletonPublisher(Node):
         #     self.ll_counter)
         # self.map_yaw = self._generate_heading(self.heading_counter)
 
-        self.gps.latitude = self.latitude
-        self.gps.longitude = self.longitude
-        self.filter_gps.latitude = self.latitude
-        self.filter_gps.longitude = self.longitude
+        # Make the rover move in a circle around the init location
+        # if not hasattr(self, 'angle'):
+        #     self.angle = 0 # North East Down (measured from North cw is positive)
+        # self.angle += 0.4
+        # if self.angle >= 360:
+        #     self.angle = 0
+        # self.latitude, self.longitude = self.rotate()
+
+        # Make the rover spin in place
         self.map_yaw -= 0.3 # -0.1 * ROS_RATE degrees per second
 
         # Wrap
         if self.map_yaw < -180:
             self.map_yaw += 360
 
+        self.gps.latitude = self.latitude
+        self.gps.longitude = self.longitude
+        self.filter_gps.latitude = self.latitude
+        self.filter_gps.longitude = self.longitude
+
         msg = RoverStateSingleton(
             map_yaw=self.map_yaw,
             gps=self.gps,
             filter_gps=self.filter_gps,
         )
-        # print(msg)
         self.singleton_publisher.publish(msg)
 
+    def rotate(self):
+        R = 6378137  # Earth's radius in meters
+        d = 30  # Radius of rotation in meters
+
+        # Convert angle to radians
+        angle_radians = np.deg2rad(self.angle)
+
+        # Calculate the latitude and longitude offsets
+        delta_lat = d*np.cos(angle_radians)/R
+        delta_lon = d*np.sin(angle_radians)/R
+
+        # Calculate new latitude and longitude
+        new_lat = LAT_INIT + np.rad2deg(delta_lat)
+        new_lon = LONG_INIT + np.rad2deg(delta_lon)
+
+        # self.get_logger().info(f'lat: {new_lat}, lon: {new_lon}')
+
+        return new_lat, new_lon
 
     def _inc_counters(self):
         self.ll_counter = self._inc_counter(self.ll_counter)

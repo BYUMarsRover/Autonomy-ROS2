@@ -46,6 +46,7 @@ class Mapper:
         # Gradient Map
         dx, dy = np.gradient(self.map)
         self.grad_map = np.sqrt(dx**2 + dy**2)
+        # self.display_map('Slope')
 
     def chop_map(self, x1, x2, y1, y2):
         '''
@@ -95,16 +96,20 @@ class Mapper:
         '''
         Displays the map using matplotlib
         '''
+        plt.style.use('dark_background')
         if map_type == 'Slope':
-            disp_map = self.grad_map
+            disp_map = np.arctan(self.grad_map)*180/np.pi
+            plt.imshow(disp_map, cmap='jet')
+            cbr = plt.colorbar(label=map_type + '(degrees)')
         else:
             disp_map = self.map
+            plt.imshow(disp_map, cmap='terrain')
+            cbr = plt.colorbar(label=map_type + '(m)')
 
-        plt.imshow(disp_map, cmap='terrain')
-        plt.title(map_type + ' Map')
-        plt.xlabel('X Coordinate')
-        plt.ylabel('Y Coordinate')
-        plt.colorbar(label=map_type)
+        cbr.ax.yaxis.label.set_size(14)
+        plt.title(map_type + ' Map', fontsize=22)
+        plt.xlabel('X Relative UTM (m)', fontsize=18)
+        plt.ylabel('Y Relative UTM (m)', fontsize=18)
         plt.show()
 
     def read_asc_file(self, file_path):
@@ -124,6 +129,8 @@ class Mapper:
 def main():
     # Testing the Mapper class
     mapper = Mapper(file_path=file_path, zone=12, zone_letter='N')
+
+    mapper.display_map('Slope')
 
     # Cheking latlon/xy conversion accuracy
     x, y = 200, 300
