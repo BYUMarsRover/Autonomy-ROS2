@@ -71,6 +71,7 @@ class MegaMiddleman(Node):
     def disconnect(self):
         self.disconnected = True
         self.handshake = False
+        self.ser.close()
     
     def serial_write(self, msg):
         if not self.disconnected:
@@ -173,18 +174,41 @@ class MegaMiddleman(Node):
     def read_nmea(self):
         # Watch for start of new message
         try:
+            # Check if serial is open
+            if not self.ser.is_open:
+                self.get_logger().warn("Serial port is not open.")
+                self.write_debug("WARNING: Serial port is not open")
+                return -1, ""
+
+            # Try reading one byte and decoding it
             x = self.ser.read(1).decode('ascii').strip()
+
+            # Check if data was read
             if not x:
-                # self.write_debug("Orin: Nothing to read")
+                self.get_logger().info("No data read from serial port.")
+                # self.write_debug("Orin: Nothing to read")  # Optional: uncomment if you want this log
                 return 0, ""
-        except:
-            self.get_logger().warn(f"Failed to read from serial - First")
-            self.write_debug("WARNING: Read failure - First")
+
+        except serial.SerialException as e:
+            # Handle SerialException (e.g., if the port is not available)
+            self.get_logger().error(f"SerialException: Failed to read from serial port: {e}")
+            self.write_debug(f"ERROR: SerialException: {e}")
+
+            # Try to reset the input buffer and disconnect
             try:
-                self.ser.reset_input_buffer()
-                self.disconnect()
-            except:
-                self.write_debug("WARNING: Could not flush input buffer")
+                self.ser.reset_input_buffer()  # Reset the buffer
+                self.disconnect()  # Disconnect
+                self.get_logger().info("Serial port input buffer reset and disconnected.")
+            except Exception as reset_e:
+                self.get_logger().warn(f"Could not flush input buffer: {reset_e}")
+                self.write_debug(f"WARNING: Could not flush input buffer: {reset_e}")
+
+            return -1, ""
+
+        except Exception as e:
+            # Catch all other unexpected errors
+            self.get_logger().error(f"Unexpected error: {e}")
+            self.write_debug(f"ERROR: Unexpected error: {e}")
             return -1, ""
         
         # Debug
