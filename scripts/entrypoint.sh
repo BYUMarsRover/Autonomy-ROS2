@@ -6,16 +6,16 @@
 # - Be very careful editing it!
 
 # Are we running on Jetson Orin architecture (the rover)?
-# Start a new 'rover_runtime' tmux session
-tmux new-session -d -s rover_runtime
-
-# Send 'clear' command to the first window
-tmux send-keys -t rover_runtime:0 "clear" Enter
-# Full color and mouse options
-tmux set-option -g default-terminal "screen-256color"
-tmux set -g mouse on
 
 if [ "$(uname -m)" == "aarch64" ]; then
+    # Start a new 'rover_runtime' tmux session
+    tmux new-session -d -s rover_runtime
+
+    # Send 'clear' command to the first window
+    tmux send-keys -t rover_runtime:0 "clear" Enter
+    # Full color and mouse options
+    tmux set-option -g default-terminal "screen-256color"
+    tmux set -g mouse on
     # Create a new window within the 'rover_runtime' session and name it 'fastdds_server'
     tmux new-window -t rover_runtime -n fastdds_server
 

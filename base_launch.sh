@@ -1,6 +1,7 @@
 #!/bin/bash
+# Created by Nelson Durrant, Feb 2025
 #
-# Launches base task in docker container using ssh
+# Launches tasks on the base station over SSH using the 'base_launch' tmux session
 
 function printInfo {
   # print blue
@@ -17,44 +18,16 @@ function printError {
   echo -e "\033[0m\033[31m[ERROR] $1\033[0m"
 }
 
-IP_ADDRESS=localhost
+LOOPBACK_IP_ADDRESS=localhost
+ROVER_IP_ADDRESS=192.168.1.120
 DOCKER_SSH_PORT=2233
 
-# Check for an SSH connection to the rover's Docker container
-if ! ssh marsrover@$IP_ADDRESS -p $DOCKER_SSH_PORT "echo" &> /dev/null
+# Check for an SSH connection to the base station's Docker container
+if ! ssh marsrover@$LOOPBACK_IP_ADDRESS -p $DOCKER_SSH_PORT "echo" &> /dev/null
 then
-    printError "No available SSH connection to the base stations's Docker container"
+    printError "No available SSH connection to the base station's Docker container"
     echo "Here's some debugging suggestions:"
-    echo "  - Make sure the SSH keys are setup by running the setup_ssh.sh script"
-    echo "  - Ensure the base stations's Docker container is running"
-
-fi
-
-# Check if tmux is running on the rover's Docker container
-if ! ssh marsrover@$IP_ADDRESS -p $DOCKER_SSH_PORT "tmux has-session -t rover_runtime" &> /dev/null
-then
-    printError "No tmux session found in the Docker container"
-    echo "Here's some debugging suggestions:"
-    echo "  - Ensure the Docker container is running the 'rover_runtime' tmux session"
-    exit
-fi
-
-# Check that only one window is open in the 'rover_runtime' tmux session
-if [ $(ssh marsrover@$IP_ADDRESS -p $DOCKER_SSH_PORT "tmux list-windows -t rover_runtime | wc -l") -ne 1 ]
-then
-    printWarning "Multiple windows found in the 'rover_runtime' tmux session"
-    echo "Simply entering the current tmux session for cleanup..."
-    ssh -t -X marsrover@$IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
-
-    exit
-fi
-
-# Check that only one pane is open in the 'rover_runtime' tmux session
-if [ $(ssh marsrover@$IP_ADDRESS -p $DOCKER_SSH_PORT "tmux list-panes -t rover_runtime | wc -l") -ne 1 ]
-then
-    printWarning "Multiple panes found in the 'rover_runtime' tmux session"
-    echo "Simply entering the current tmux session for cleanup..."
-    ssh -t -X marsrover@$IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
+    echo "  - Ensure the rover's Docker container is running"
 
     exit
 fi
@@ -62,27 +35,36 @@ fi
 # Launch the specified task configuration over SSH
 case "$1" in
     "autonomy")
-        printInfo "Setting up the base autonomy task..."
-        # Send tmux commands to the rover's Docker container over SSH
-        ssh marsrover@$IP_ADDRESS -p $DOCKER_SSH_PORT "\
-            tmux send-keys -t rover_runtime:0.0 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
-            tmux send-keys -t rover_runtime:0.0 'source ~/mars_ws/install/setup.bash' Enter; \
-            tmux send-keys -t rover_runtime:0.0 'ros2 launch start base_task_autonomy_launch.py'" # NO ENTER 
+        printInfo "Setting up the autonomy task..."
+        # ssh marsrover-docker@$LOOPBACK_IP_ADDRESS -p $DOCKER_SSH_PORT "tmuxp load -d workspaces/autonomy/base_autonomy.yaml"
+
+        ssh marsrover@$LOOPBACK_IP_ADDRESS -p $DOCKER_SSH_PORT "\
+            tmux new-session -d -s base_launch; \
+            tmux send-keys -t base_launch:0.0 'export ROS_DISCOVERY_SERVER=192.168.1.120:11811' Enter; \
+            tmux send-keys -t base_launch:0.0 'source ~/mars_ws/install/setup.bash' Enter; \
+            tmux send-keys -t base_launch:0.0 'export DISPLAY=localhost:10.0' Enter; \
+            tmux send-keys -t base_launch:0.0 'ros2 launch start base_task_autonomy_launch.py'" # NO ENTER 
         ;;
     "servicing")
         printWarning "Not implemented yet"
+        exit
         ;;
     "retrieval")
         printWarning "Not implemented yet"
+        exit
         ;;
     "science")
         printWarning "Not implemented yet"
+        exit
         ;;
     *)
         printWarning "No task specified, simply entering the current tmux session..."
-        echo "Specify a task using 'bash launch.sh <task>' "
+        echo "Specify a task using 'bash launch.sh <task>' (ex. 'bash launch.sh autonomy')"
         ;;
 esac
 
-# Attach to the 'rover_runtime' tmux session
-ssh -t -X marsrover@$IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
+# Attach to the 'base_launch' tmux session
+ssh -t -X marsrover@$LOOPBACK_IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t base_launch'
+
+# Kill the tmux session on exit
+ssh marsrover@$LOOPBACK_IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux kill-session -t base_launch'
