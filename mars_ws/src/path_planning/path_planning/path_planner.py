@@ -10,6 +10,7 @@ from std_srvs.srv import SetBool
 import os
 import yaml
 import utm
+import time
 
 from .e_mapping import Mapper
 
@@ -91,14 +92,26 @@ class PathPlanner(Node):
             return
 
         # Check rover location and initialize using the appropriate elevation map
+
+        # Gravel Pit
         if 40.3166 < self.location[0] < 40.323302 and -111.649553 < self.location[1] < -111.6369:
             self.get_logger().info("Welcome to the gravel pit!")
             file_path = os.path.join(get_package_share_directory('path_planning'), 'data', 'gravel_pits.asc')
             self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='T')
-        elif 38.392509 < self.location[0] < 38.450525 and -110.804971 < self.location[1] < -110.773991:
-            self.get_logger().info("Welcome to Hanksville!")
-            file_path = os.path.join(get_package_share_directory('path_planning'), 'data', 'hanksville_full.asc') # TODO: change this to a chop of the hanksville_full file (too big to load into the AStarPlanner)
+
+        # Hanksville Station
+        elif 38.402 < self.location[0] < 38.409634 and -110.7962 < self.location[1] < -110.786099:
+            self.get_logger().info("Welcome to the Hanksville Station!")
+            file_path = os.path.join(get_package_share_directory('path_planning'), 'data', 'hanksville_station.asc')
             self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='S')
+
+        # 2024 Autonomy Competition Site
+        elif 38.422766 < self.location[0] < 38.427038 and -110.787057 < self.location[1] < -110.782198:
+            self.get_logger().info("Welcome to the 2024 Autonomy Competition Site!")
+            file_path = os.path.join(get_package_share_directory('path_planning'), 'data', '2024_autonomy_competition_site.asc')
+            self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='S')
+
+        # Error Handling for unsupported locations
         else:
             self.get_logger().warn("Current location not supported for path planning.")
             return
@@ -124,23 +137,41 @@ class PathPlanner(Node):
             self.waypoints = AutonomyWaypoint.Request()
 
             # Plan path
-            path, length = self.path_planner.plan_path(self.start, self.goal)
-            self.get_logger().info("Path planned!")
+            t0 = time.time()
+            path_yx, length = self.path_planner.plan_path(self.start, self.goal)
+            tf = time.time()
+            self.get_logger().info(f"Path planned! Length: {length:.3f} m; Time: {tf - t0:.3f} s; s/km: {(tf - t0)/(length/1000):.3f}")
 
             # Get waypoints every 10 meters along path in x/y format
-            waypoints_xy = self.path_planner.get_path_waypoints(dist_between_wp=10) #TODO: tune this distance between points
+            waypoints_yx = self.path_planner.get_path_waypoints(dist_between_wp=10) #TODO: tune this distance between points
 
             # Append coordinates to the waypoint list in lat/lon format
-            for xy in waypoints_xy:
-                x, y = xy  # Unpack (x, y) tuple
+            for i, yx in enumerate(waypoints_yx):
+                y, x = yx  # Unpack (y, x) tuple
                 lat, lon = self.eMapper.xy_to_latlon(x, y)  # Convert xy to lat/lon
+
+                # Code to print distance and heading between waypoints for field testing
+                # if i > 0:
+                #     y0 = waypoints_yx[i - 1][0]
+                #     x0 = waypoints_yx[i - 1][1]
+                #     y1 = waypoints_yx[i][0]
+                #     x1 = waypoints_yx[i][1]
+                #     dx = x1 - x0
+                #     dy = -(y1 - y0)
+                #     theta = np.arctan2(dx, dy)
+                #     if theta < 0:
+                #         theta += 2*np.pi
+                #     dist = np.sqrt(dx**2 + dy**2)
+                #     self.get_logger().info(f'Dist/Heading: {dist} m/{theta*180/np.pi} deg')
+                # self.get_logger().info(f'Waypoint {i}: ({lat}, {lon})')
+
                 self.waypoints.task_list.append(AutonomyTaskInfo(latitude=float(lat), longitude=float(lon), tag_id=self.tag_id))
 
             # Get explored nodes
             explored_nodes = self.path_planner.get_explored_nodes()
 
             # Visualize path
-            visualize_path(path, self.eMapper.grad_map, waypoints=waypoints_xy, explored_nodes=explored_nodes)
+            visualize_path(path_yx, self.eMapper.grad_map, waypoints=waypoints_yx, explored_nodes=explored_nodes)
 
             # Notify the gui that the path is planned
             response = PlanPath.Response()
@@ -242,10 +273,11 @@ class PathPlanner(Node):
 
         Pass in: goal in lat/lon format
         '''
+
+        self.get_logger().info('Plan Path command received')
         # Convert lat/lon to x/y for path planning
         self.goal = self.eMapper.latlon_to_xy(request.goal.latitude, request.goal.longitude)
         self.start = self.eMapper.latlon_to_xy(self.curr_latitude, self.curr_longitude)
-        self.tag_id = request.goal.tag_id
 
         # Check if the goal coordinate is within the elevation map
         response.success = False
@@ -256,11 +288,13 @@ class PathPlanner(Node):
         elif self.start[0] is None:
             response.message = 'Rover outside elevation map, proceed without path planning'
         else:
+            self.tag_id = request.goal.tag_id
             self.path_needed = True # Set flag to plan path in loop function
             # Indicate that the goal has been received and the path is being planned
             response.success = True
             response.message = 'Received, planning path...'
-            return response
+        
+        return response
     
     # Sends the path to the state machine
     def send_path(self, request, response):

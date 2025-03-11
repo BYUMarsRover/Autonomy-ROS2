@@ -71,11 +71,16 @@ class RoverStatusNode(Node):
         while rclpy.ok():
             if self.serial_port.in_waiting:
                 data = self.serial_port.readline().strip()
-                voltage = int(data)
+                # decoded_data = data.decode('utf-8', 'ignore')  # Ignore any decoding errors
+                # clean_data = ''.join(c for c in decoded_data if c.isdigit())
 
-                bat_voltage_msg = RawBattery()
-                bat_voltage_msg.voltage = voltage
-                self.battery_pub.publish(bat_voltage_msg)
+                # Convert to integer
+                # voltage = int(clean_data)
+                # voltage = int(data)
+
+                # bat_voltage_msg = RawBattery()
+                # bat_voltage_msg.voltage = voltage
+                # self.battery_pub.publish(bat_voltage_msg)
                 self.serial_port.flush()
 
     def queue_handler(self):
