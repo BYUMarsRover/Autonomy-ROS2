@@ -234,7 +234,7 @@ class MegaMiddleman(Node):
                 self.get_logger().warn("Failed to parse IR data")
         
         elif(tag == "DEBUG"):
-            self.pub_Debug.publish(msg)
+            self.write_debug(msg)
 
         elif(tag == "HANDS"):
             self.handshake = True
