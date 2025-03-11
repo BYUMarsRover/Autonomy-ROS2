@@ -182,6 +182,7 @@ class MegaMiddleman(Node):
             self.write_debug("WARNING: Read failure - First")
             try:
                 self.ser.reset_input_buffer()
+                self.disconnect()
             except:
                 self.write_debug("WARNING: Could not flush input buffer")
             return -1, ""
