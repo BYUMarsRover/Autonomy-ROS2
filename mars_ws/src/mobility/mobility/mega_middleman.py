@@ -32,6 +32,8 @@ class MegaMiddleman(Node):
         self.handshake = False   # If a Serial object is good to communicate on the port
         self.connect()
 
+        time.sleep(7.0)
+
         # Start writer thread
         self.writer_thread = threading.Thread(target=self.serial_writer_loop, daemon=True)
         self.writer_thread.start()
@@ -176,8 +178,8 @@ class MegaMiddleman(Node):
                 # self.write_debug("Orin: Nothing to read")
                 return 0, ""
         except:
-            self.get_logger().warn(f"Failed to read from serial")
-            self.write_debug("WARNING: Read failure")
+            self.get_logger().warn(f"Failed to read from serial - First")
+            self.write_debug("WARNING: Read failure - First")
             try:
                 self.ser.reset_input_buffer()
             except:
@@ -194,8 +196,8 @@ class MegaMiddleman(Node):
         try:
             mega_msg = self.ser.read_until(b'*').decode('ascii').strip()
         except:
-            self.get_logger().warn(f"Failed to read from serial")
-            self.write_debug("WARNING: Read failure")
+            self.get_logger().warn(f"Failed to read from serial - Second")
+            self.write_debug("WARNING: Read failure - Second")
             try:
                 self.ser.reset_input_buffer()
             except:
