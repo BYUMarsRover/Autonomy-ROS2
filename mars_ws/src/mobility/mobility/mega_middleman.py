@@ -115,6 +115,7 @@ class MegaMiddleman(Node):
                         self.get_logger().warn(f"Orin -> Mega queue is getting too long, culling data.")
                         self.write_debug("Orin: Write queue is getting too long! Culling stale data.")
                         self.serial_queue.queue.clear()
+                        return
 
                     # Send message
                     try:
