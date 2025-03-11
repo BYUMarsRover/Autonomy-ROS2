@@ -157,8 +157,10 @@ class AutopilotManager(Node):
             self.timer.cancel()  # Cancel the previous timer
             self.timer = self.create_timer(self.time_step, self.toggle_obstacle_avoidance)
 
-
         self.obstacle_found = False
+
+        if len(msg.hazards) == 0:
+            self.get_logger().error("No hazards included in hazard message")
         if len(msg.hazards) == 1:
 
             self.hazard_msg = msg
@@ -182,27 +184,29 @@ class AutopilotManager(Node):
                 #Calculate the alpha value to to avoid the obstacle
                 self.heading_alpha = self.scaling_factor / dist #the closer we are to the obstacle, the more we want to avoid it
                 
-                #print statements
-                self.get_logger().info(f"Hazard Distance: {dist}")
-                self.get_logger().info(f"Angle to Obstacle: {angle_to_obstacle}")
-                self.get_logger().info(f"Max Obs Radius: {max_obs_radius}")
-                self.get_logger().info(f"Scaling Factor: {self.scaling_factor}")
-                self.get_logger().info(f"Avoidance Heading: {self.avoidance_heading}")
-                self.get_logger().info(f"Alpha: {self.heading_alpha}")
-                self.get_logger().info(f"Current Heading: {self.curr_heading}")
-                
         #If there are multiple hazards, we need to decide which way we want to try to avoid it
-        # else:
-        #     for hazard in msg.hazards:
-        #         if hazard.hazard_type == Hazard.HAZARD_OBSTACLE:
+        else:
+            self.hazard_msg = msg
+            self.obstacle_found = True 
 
-        #             #Calculate the distance to the obstacle
-        #             dist = np.sqrt(hazard.x**2 + hazard.y**2)
+            #Turn in the direction that has the least average distance to the obstacles
+            average_y = np.mean([hazard.location_y for hazard in msg.hazards])
+            if average_y > 0: #ave obstacle is on the right
+                max_avoidance_heading = np.max([np.arctan2(hazard.location_y, hazard.location_x) for hazard in msg.hazards])
+                self.avoidance_heading = max_avoidance_heading - np.pi/2
 
-        #             #calculate the volume of the obstacle
-        #             volume = hazard.length * hazard.width * hazard.height
+            elif average_y <= 0: #ave obstacle is on the left
+                min_avoidance_heading = np.min([np.arctan2(hazard.location_y, hazard.location_x) for hazard in msg.hazards])
+                self.avoidance_heading = min_avoidance_heading + np.pi/2
+
+            #Calculate the distance to the closest obstacle and the maximum radius of the obstacles
+            min_dist = np.min([np.sqrt(hazard.location_x**2 + hazard.location_y**2) for hazard in msg.hazards])
+            max_obs_radius = np.max([np.sqrt(hazard.length_x**2 + hazard.length_y**2)*.6 for hazard in msg.hazards]) #.6 is a fudge factor
+            self.scaling_factor = self.critical_distance + max_obs_radius #the bigger the obstacle, the more space we want to give it
+
+            #Calculate the alpha value to to avoid the obstacle
+            self.heading_alpha = self.scaling_factor / min_dist #the closer we are to the obstacle, the more we want to avoid it               
                     
-        #             self.obstacle_avoidance(hazard)
 
     def toggle_obstacle_avoidance(self):
         #It has been self.time_step seconds since the last obstacle detection, so we can stop avoiding the obstacle
