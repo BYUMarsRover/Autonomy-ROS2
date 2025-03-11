@@ -39,7 +39,7 @@ class MegaMiddleman(Node):
         self.writer_thread.start()
 
         # Timer for relay_mega
-        self.create_timer(0.001, self.loop)  # 100 Hz
+        self.create_timer(0.01, self.loop)  # 100 Hz
         self.get_logger().info("MegaMiddle Man started")
         self.buffer = ""
 
@@ -73,9 +73,17 @@ class MegaMiddleman(Node):
         self.handshake = False
         self.ser.close()
     
+    
+
     def serial_write(self, msg):
         if not self.disconnected:
             try:
+                # Ensure queue is reasonable
+                if self.serial_queue.qsize() > 10:
+                    self.get_logger().warn(f"Orin -> Mega queue is getting too long, culling data.")
+                    self.write_debug("Orin: Write queue is getting too long! Culling stale data.")
+                    with self.lock:
+                        self.serial_queue.queue.clear()
                 with self.lock:
                     self.serial_queue.put(msg)
                     while not self.serial_queue.empty():
