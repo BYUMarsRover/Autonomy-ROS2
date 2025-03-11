@@ -246,7 +246,9 @@ class MegaMiddleman(Node):
             self.write_debug("Orin: Read corrupt or incomplete message.  (This is expected after a read error)")
 
     def write_debug(self, msg):
-        self.pub_Debug.publish(msg)
+        message = String()
+        message.data = msg
+        self.pub_Debug.publish(message)
 
     def loop(self):
         if self.disconnected:
