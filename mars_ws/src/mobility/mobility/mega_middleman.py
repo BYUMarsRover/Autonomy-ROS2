@@ -75,6 +75,7 @@ class MegaMiddleman(Node):
     def disconnect(self):
         self.disconnected = True
         # self.handshake = False
+        #TODO try excepth here
         self.ser.close()
     
     
