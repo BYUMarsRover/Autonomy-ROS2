@@ -39,7 +39,7 @@ class MegaMiddleman(Node):
         self.writer_thread.start()
 
         # Timer for relay_mega
-        self.create_timer(0.1, self.loop)  # 100 Hz
+        self.create_timer(0.001, self.loop)  # 100 Hz
         self.get_logger().info("MegaMiddle Man started")
 
     def connect(self):
@@ -289,9 +289,6 @@ class MegaMiddleman(Node):
             self.connect()
         else:
             self.relay_mega()
-
-    def write_nonsense(self):
-    	self.serial_write("$ELEVA,0,0,*")
 
 def main(args=None):
     rclpy.init(args=args)
