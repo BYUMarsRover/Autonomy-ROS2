@@ -16,15 +16,6 @@ void loop() {
   // Read and process NMEA data from serial
   readNMEAData();
 
-  // Hardware control
-  handleClickerControl();
-
-  // This is just some defensive programming from chasing down a bug
-  currentYaw = constrain(currentYaw, 125, 625);
-  currentPitch = constrain(currentPitch, 135, 475);
-  // Update the duty cycles for the fpv servos
-  OCR1A = currentYaw;
-  OCR1B = currentPitch;
 
   // Check for disconnect from Orin
   if( currentTime - lastContactTime >= MAXTIMEDIFF ) {
@@ -55,22 +46,12 @@ void loop() {
   //  but this makes the rover more robust to lost commms
   if ((digitalRead(ELEVATOR_TOP_LIMIT_SWITCH)    && wheels.wheelList[6].dir == 1)
   ||  (digitalRead(ELEVATOR_BOTTOM_LIMIT_SWITCH) && wheels.wheelList[6].dir == 0)) {
-    #if DEBUG
-      prepareDebugData("Arduino: We've hit a limit switch between commands!");
-      prepareDebugData(" Dir: ");
-      prepareDebugData(wheels.wheelList[6].dir);
-      prepareDebugData(" (1 is up)");
-    #endif
-
     wheels.wheelList[6].set_speed = STOP_WHEELS;
     wheels.wheelList[6].dir = STOP_WHEELS;
   }
 
   // Handle IR and motor resets at slower rate
   if( currentTime - lastMessageTime >= IRPERIOD ) {
-    sensorArray[0] = analogRead(GRIP_IR1);
-    sensorArray[1] = analogRead(GRIP_IR2);
-    sendIRData();
 
     //Also check motors intermitently for speed
     handleMotorCardErrors();
@@ -78,11 +59,7 @@ void loop() {
     //Also send debug messages intermitently
     // This code is inside the IR condition to make it 
     // trigger less often, in order to spare I/O capacity
-    #if DEBUG
-    if (debugMessage[0] != '\0')
-      sendDebugData();
-    #endif
-    
+
     lastMessageTime = currentTime;
   }
 }

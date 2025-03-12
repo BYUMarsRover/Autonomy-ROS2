@@ -10,16 +10,6 @@ void handleDrive(int speeds[], int dirs[]) {
   wheels.writeParams();
 }
 
-void handleLaser(int laser) {
-  if (laser == 1) {
-    digitalWrite(ARDUINO_LED, HIGH);
-    digitalWrite(LASER_CTRL, HIGH);
-  }
-  else{
-    digitalWrite(ARDUINO_LED, LOW);
-    digitalWrite(LASER_CTRL, LOW);
-  }
-}
 
 void handleElevator(int speed, int dir) {
   // If the top limit switch (active HIGH) is NOT pressed OR if the elevator is moving DOWN (0)
@@ -30,13 +20,6 @@ void handleElevator(int speed, int dir) {
     wheels.wheelList[6].set_speed = speed;
     wheels.wheelList[6].dir = dir;
 
-    #if DEBUG
-      prepareDebugData("Arduino: No limit switch detected. Speed: ");
-      prepareDebugData(speed);
-      prepareDebugData(" | Dir: ");
-      prepareDebugData(dir);
-      prepareDebugData(" (1 is up)");
-    #endif
   }
   // If the top limit switch (active HIGH) IS pressed AND the elevator is moving UP (1)
   // If the bottom limit swtich (active HIGH) is pressed AND the elevator is moving DOWN (0)
@@ -44,48 +27,12 @@ void handleElevator(int speed, int dir) {
     wheels.wheelList[6].set_speed = STOP_WHEELS;
     wheels.wheelList[6].dir = STOP_WHEELS;
 
-    #if DEBUG
-      prepareDebugData("Arduino: We've hit a limit switch! Speed: ");
-      prepareDebugData(speed);
-      prepareDebugData(" | Dir: ");
-      prepareDebugData(dir);
-      prepareDebugData(" (1 is up)");
-    #endif
   }
 
   // Update the wheel parameters based on the received data
   wheels.writeParams();
 }
 
-void handleClickerCommand(bool click) {
-  if (click == 1 && !clicking) {
-    digitalWrite(CLICKER_DIR, HIGH);
-    digitalWrite(CLICKER_ENABLE, HIGH);
-    lastClickForward = currentTime;
-    clicking = true;
-  }
-}
-
-void handleFPV(float yawCmd, float pitchCmd) {
-  // Updates the current duty cycle and ensures servo limits for yaw
-  if (currentYaw + yawCmd > MAX_PWM_DUTY_CYCLE_YAW) {
-    currentYaw = MAX_PWM_DUTY_CYCLE_YAW;
-  } 
-  else if (currentYaw + yawCmd < MIN_PWM_DUTY_CYCLE_YAW) {
-    currentYaw = MIN_PWM_DUTY_CYCLE_YAW;
-  } else {
-    currentYaw += yawCmd;
-  }
-  // Updates the current duty cycle and ensures servo limits for pitch  
-  if (currentPitch - pitchCmd > MAX_PWM_DUTY_CYCLE_PITCH) {
-    currentPitch = MAX_PWM_DUTY_CYCLE_PITCH;
-  } 
-  else if (currentPitch - pitchCmd < MIN_PWM_DUTY_CYCLE_PITCH) {
-    currentPitch = MIN_PWM_DUTY_CYCLE_PITCH;
-  } else {
-    currentPitch -= pitchCmd;
-  }
-}
 
 void handleHeartbeat(float elapsedTime) {
   //Code to check if elapsed time between comms exceeds the value set in
@@ -118,19 +65,6 @@ void killEverything() {
     digitalWrite(LASER_CTRL, LOW);
   }
 
-void handleClickerControl() {
-  if (clicking && ((currentTime > lastClickForward + MAX_CLICK_TIME) || (digitalRead(LIMIT_SWITCH) == HIGH))) {
-      lastClickBackward = currentTime;
-      lastClickDuration = lastClickBackward - lastClickForward;
-      clicking = false;
-      digitalWrite(CLICKER_ENABLE, HIGH);
-      digitalWrite(CLICKER_DIR, LOW);
-  }
-  else if (!clicking && (currentTime > lastClickBackward + min(lastClickDuration, MAX_CLICK_TIME))) {
-      digitalWrite(CLICKER_ENABLE, LOW);
-  }
-}
-
 void handleMotorCardErrors() {
   // Resets motors to avoid error lock
   // We (the 2024 team) believe it is preferrable
@@ -148,10 +82,6 @@ void handleMotorCardErrors() {
           // A power cycle would be prefferable to
           // disable->enable, but the 2023 PCB does
           // not have power cycle capability
-          #if DEBUG
-          prepareDebugData("Arduino: Reseting motor #");
-          prepareDebugData(i);
-          #endif
           digitalWrite(wheels.wheelList[i].enable_pin, LOW);
           motorStatuses[i] = RESETING;
           motorTimers[i] = currentTime + MOTOR_RESET_TIME;
@@ -172,13 +102,6 @@ void handleMotorCardErrors() {
           motorStatuses[i] = RUNNING;
         }
         break;
-      #if DEBUG
-      default:
-        prepareDebugData("Arduino: Motor ");
-        prepareDebugData(i);
-        prepareDebugData(" in a untracked state: ");
-        prepareDebugData(motorStatuses[i]);
-      #endif
     }
   }
 }

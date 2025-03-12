@@ -5,7 +5,7 @@
 
 // Debug code is technically less performant so it may
 // be desirable to disable it when unnecessary
-#define DEBUG true
+//#define DEBUG true
 
 //Constant variable that sets the maximum delay between motor commands
 //If this value is exceeded, it implies that communication has been lost between

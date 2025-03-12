@@ -80,10 +80,6 @@ void openSerial() {
   // Establish handshake
   if (Serial.availableForWrite() > 0)
     Serial.println("$HANDS,*");
-  #if DEBUG
-  prepareDebugData("Arduino: Connection handshake confirmation.");
-  sendDebugData();
-  #endif
 }
 
 void configurePwm() {
