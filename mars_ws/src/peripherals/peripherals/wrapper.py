@@ -82,6 +82,7 @@ class RoverStatusNode(Node):
                 # bat_voltage_msg.voltage = voltage
                 # self.battery_pub.publish(bat_voltage_msg)
                 self.serial_port.flush()
+            time.sleep(0.1)
 
     def queue_handler(self):
         while rclpy.ok():
@@ -91,6 +92,7 @@ class RoverStatusNode(Node):
                     self.serial_port.write(data)
                 except Exception as e:
                     self.get_logger().warn(f"Failed to write to serial: {e}")
+            time.sleep(0.1)
 
 
 def main(args=None):
