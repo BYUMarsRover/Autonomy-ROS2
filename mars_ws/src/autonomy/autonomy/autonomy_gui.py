@@ -62,7 +62,7 @@ class AutonomyGUI(Node, QWidget):
         self.SendWaypointButton.clicked.connect(self.send_waypoint)
         self.ClearWaypointButton.clicked.connect(self.clear_waypoint)
 
-        # mapviz #NOTE: Depreciated until mapviz capability added back
+        # mapviz #NOTE: depricated until mapviz capability added back
         # self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
         # self.PlanOrderMapvizButton.clicked.connect(self.plan_order_mapviz_service_call)
         # self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
@@ -121,7 +121,7 @@ class AutonomyGUI(Node, QWidget):
         self.create_guard_condition(self.check_node_statuses)
 
         # Publishers
-        #NOTE: Depreciated until mapviz capability added back
+        #NOTE: depricated until mapviz capability added back
         # self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
 
         # Subscribers
@@ -154,7 +154,7 @@ class AutonomyGUI(Node, QWidget):
         # Requests that the path planner plans the path to the selected waypoint
         self.plan_path_client = self.create_client(PlanPath, '/plan_path')
 
-        #NOTE: Depreciated until mapviz capability added back
+        #NOTE: depricated until mapviz capability added back
         # self.plan_order_mapviz_client = self.create_client(OrderPath, '/plan_order_mapviz')
 
         # Clients used for tunning constants TODO: remove once tuned for competition
@@ -167,7 +167,7 @@ class AutonomyGUI(Node, QWidget):
         self.rover_state_singleton_timepoint = None
 
         ################# Mapviz Communication Setup #################
-        #NOTE: Depreciated until mapviz capability added back
+        #NOTE: depricated until mapviz capability added back
 
         # Retrieve Mapviz Location
         # self.declare_parameter('location', 'hanksville')
@@ -392,7 +392,7 @@ class AutonomyGUI(Node, QWidget):
         future = self.enable_autonomy_client.call_async(req)
         self.gui_setText('logger_label', 'Disabling Autonomy...')
 
-    #NOTE: Depreciated until mapviz capability added back
+    #NOTE: depricated until mapviz capability added back
     # This sends the waypoint to mapviz for preview
     # def preview_waypoint(self):
     #     # Find the x and y to be sent to mapviz
@@ -782,9 +782,9 @@ class AutonomyGUI(Node, QWidget):
             self.get_logger().warn(f'Could not find {name} field of gui')
 
 
-    #NOTE All of the following mapviz functions are depreciated until mapviz capability is added back
+    #NOTE All of the following mapviz functions are depricated until mapviz capability is added back
     #################################################################################################
-    #NOTE: Depreciated until mapviz capability added back
+    #NOTE: depricated until mapviz capability added back
     # This reorders the added waypoints to the optimal order based on path length
     # def plan_order_mapviz_service_call(self):
     #     req = OrderPath.Request() # Path
@@ -793,7 +793,7 @@ class AutonomyGUI(Node, QWidget):
     #     future = self.plan_order_mapviz_client.call_async(req)
     #     self.gui_setText('logger_label', 'Planning order on mapviz...')
 
-    #NOTE: Depreciated until mapviz capability added back
+    #NOTE: depricated until mapviz capability added back
     # This clears all previewed waypoints from mapviz
     # def clear_mapviz(self):
 
@@ -826,7 +826,7 @@ class AutonomyGUI(Node, QWidget):
     #     self.path_publisher.publish(msg)
     #     self.gui_setText('logger_label', 'Mapviz Cleared')
 
-#NOTE: Depreciated until mapviz capability added back
+#NOTE: depricated until mapviz capability added back
 # This gets the 0, 0 coordinates of the mapviz map
 # def get_coordinates(file_path, location):
 #     # Read the YAML file
@@ -844,7 +844,7 @@ class AutonomyGUI(Node, QWidget):
 #     else:
 #         return None
     
-#NOTE: Depreciated until mapviz capability added back
+#NOTE: depricated until mapviz capability added back
 # Converts a path from UTM to lat/lon
 # def path_to_latlon(path, utm_easting_zero, utm_northing_zero, utm_zone_number, utm_zone_letter):
 #     latlon_path = Path()

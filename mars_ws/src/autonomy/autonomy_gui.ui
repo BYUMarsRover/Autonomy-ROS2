@@ -148,14 +148,15 @@
               </item>
              </layout>
             </item>
+            <!-- Mapviz Depricated until -->
             <!-- Horizontal Box for the Preview, Optimize Path and clear mapviz buttons -->
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
-              <property name="alignment">
+            <!-- <item> -->
+             <!-- <layout class="QHBoxLayout" name="horizontalLayout_3"> -->
+              <!-- <property name="alignment">
                <set>Qt::AlignTop</set>
-              </property>
+              </property> -->
               <!-- Mapviz Label -->
-              <item>
+              <!-- <item>
                <widget class="QLabel" name="MapvizLabel">
                 <property name="alignment">
                  <set>Qt::AlignTop</set>
@@ -164,33 +165,33 @@
                  <string>Mapviz: </string>
                 </property>
                </widget>
-              </item>
+              </item> -->
               <!-- Preview Button -->
-              <item>
+              <!-- <item>
                <widget class="QPushButton" name="PreviewMapvizButton">
                 <property name="text">
                  <string>Preview</string>
                 </property>
                </widget>
-              </item>
+              </item> -->
               <!-- Plan Order Button -->
-              <item>
+              <!-- <item>
                <widget class="QPushButton" name="PlanOrderMapvizButton">
                 <property name="text">
                  <string>Plan Order</string>
                 </property>
                </widget>
-              </item>
+              </item> -->
               <!-- Clear Mapviz Button -->
-              <item>
+              <!-- <item>
                <widget class="QPushButton" name="ClearMapvizButton">
                 <property name="text">
                  <string>Clear</string>
                 </property>
                </widget>
-              </item>
-             </layout>
-            </item>
+              </item> -->
+             <!-- </layout> -->
+            <!-- </item> -->
             <!-- Horizontal box for the leg type entry -->
             <item>
              <widget class="QWidget" name="LegEntryWidget">
