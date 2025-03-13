@@ -67,8 +67,9 @@ class AutonomyStateMachine(Node):
         self.srv_receive_waypoint = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.receive_waypoint)
         self.srv_clear_waypoint = self.create_service(SetBool, '/AU_clear_waypoint_service', self.clear_waypoint)
 
-        
+        #clients
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
+        self.aruco_detect_client = self.create_client(SetBool, '/enable_detections')
         self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
         self.path_manager_client = self.create_client(SetBool, '/mobility/path_manager/enabled')
         self.autopilot_manager_client = self.create_client(SetBool, '/mobility/autopilot_manager/enabled')
@@ -246,6 +247,19 @@ class AutonomyStateMachine(Node):
                 self.create_timer(1.0, lambda: self.toggle_object_detection(data))
             else:
                 self.get_logger().error('Object detection service not available after maximum retries. Giving up.')
+
+    def toggle_aruco_detection(self, data):
+        if self.aruco_detect_client.service_is_ready():
+            self.get_logger().info('Sending aruco detection request...')
+            self.send_request(data)
+            self.retry_count = 0 # Reset retry count
+        else:
+            if self.retry_count < self.max_retries:
+                self.get_logger().warn(f'Service not available. Retrying... ({self.retry_count + 1}/{self.max_retries})')
+                self.retry_count += 1
+                self.create_timer(1.0, lambda: self.toggle_aruco_detection(data))
+            else:
+                self.get_logger().error('Aruco detection service not available after maximum retries. Giving up.')
 
     # Generic service call method
     def send_request(self, data):
@@ -484,9 +498,15 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.POINT_NAVIGATION:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.obj_enable_distance:
+                dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
+
+                #Toggle object detection or aruco detection if within a certain distance of the target point (saves computation time)
+                if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and dist_to_target < self.obj_enable_distance:
                     self.toggle_object_detection(True)
-                if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.dist_tolerance:
+                elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3] and dist_to_target < self.aruco_enable_distance:
+                    self.toggle_aruco_detection(True)
+                
+                if dist_to_target < self.dist_tolerance:
                     if self.tag_id == TagID.GPS_ONLY:
                         self.get_logger().info('GPS Task is complete!')
                         self.state = State.TASK_COMPLETE
@@ -598,6 +618,8 @@ class AutonomyStateMachine(Node):
 
                 if self.tag_id in [TagID.MALLET, TagID.BOTTLE]:
                     self.toggle_object_detection(False)
+                elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3]:
+                    self.toggle_aruco_detection(False)
 
 
                 # Pop off the completed task

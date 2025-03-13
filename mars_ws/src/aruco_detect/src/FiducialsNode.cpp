@@ -17,7 +17,7 @@
 // Constructor implementation
 FiducialsNode::FiducialsNode()
     : Node("fiducials_node"),
-      enable_detections_(true),
+      enable_detections_(false),
       frame_num_(0),
       have_cam_info_(false),
       node_handle_(std::shared_ptr<FiducialsNode>(this, [](auto *) {})),
