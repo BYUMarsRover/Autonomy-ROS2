@@ -380,7 +380,8 @@ class AutonomyGUI(Node, QWidget):
     def enable_autonomy(self):
         req = SetBool.Request()
         req.data = True
-        self.waypoints[self.selected_waypoint_to_send -1][4] = 'ACTIVE'
+        if self.selected_waypoint_to_send is not None:
+            self.waypoints[self.selected_waypoint_to_send -1][4] = 'ACTIVE'
         self.update_waypoint_list()
         future = self.enable_autonomy_client.call_async(req)
         self.gui_setText('logger_label', 'Enabling Autonomy...')
@@ -632,10 +633,12 @@ class AutonomyGUI(Node, QWidget):
         try:
             response = future.result()
             if response.success:
-                self.waypoints[self.selected_waypoint_to_send -1][4] = 'READY'
+                if self.selected_waypoint_to_send is not None:
+                    self.waypoints[self.selected_waypoint_to_send -1][4] = 'READY'
                 self.gui_setText('logger_label', response.message)
             else:
-                self.waypoints[self.selected_waypoint_to_send -1][4] = 'SEND FAILURE'
+                if self.selected_waypoint_to_send is not None:
+                    self.waypoints[self.selected_waypoint_to_send -1][4] = 'SEND FAILURE'
                 self.gui_setText('logger_label', response.message)
         except Exception as e:
             self.get_logger().error(f'Send Waypoint Service call failed! {e}')
