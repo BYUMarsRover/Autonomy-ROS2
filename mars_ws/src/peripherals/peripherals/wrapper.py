@@ -41,28 +41,28 @@ class RoverStatusNode(Node):
         # self.arduino_listener_thread.start()
 
         # Default no-operation values
-        self.gripper = 0
-        self.navigation_state = -1
+        # self.gripper = 0
+        # self.navigation_state = -1
         self.q = queue.Queue()
 
     def led_callback(self, data):
         # Update LED based on the rover state
         data_array = f"L{data.navigation_state};"
-        q.put(data_array)
+        self.q.put(data_array)
 
     def gripper_callback(self, data):
         data_array = f"G{data.gripper}:0;"
         self.get_logger().info(f"Gripper command: {data_array}")
-        q.put(data_array)
+        self.q.put(data_array)
 
     def laser_callback(self, data):
         data_array = "S+;" if data.laser_state else "S-;"
         self.get_logger().info("Laser call to Arduino")
-        q.put(data_array)
+        self.q.put(data_array)
 
     def click_callback(self, data):
         data_array = "S!;"
-        q.put(data_array)
+        self.q.put(data_array)
 
     def arduino_listener(self):
         self.serial_port.flush()
@@ -85,9 +85,9 @@ class RoverStatusNode(Node):
 
     def queue_handler(self):
         while rclpy.ok():
-            if not q.empty():
+            if not self.q.empty():
                 try:
-                    data = q.get(timeout=1).encode("utf-8")
+                    data = self.q.get(timeout=1).encode("utf-8")
                     self.serial_port.write(data)
                 except Exception as e:
                     self.get_logger().warn(f"Failed to write to serial: {e}")
