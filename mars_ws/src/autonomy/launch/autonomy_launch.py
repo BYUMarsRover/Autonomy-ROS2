@@ -30,25 +30,25 @@ def generate_launch_description():
         ),
 
         # Include ArUco detection launch for logi webcam
-        # Node(
-        #     package='aruco_detect',
-        #     executable='aruco_detect',
-        #     name='aruco_detect_logi',
-        #     output=['screen'],
-        #     parameters=[aurco_config_file],
-        #     remappings=[
-        #         ('camera/compressed', '/usb_cam/image_raw/compressed'),
-        #         ('camera_info', '/usb_cam/camera_info'),
-        #         ('/fiducial_transforms', 'aruco_detect_logi/fiducial_transforms'),
-        #         ('/fiducial_vertices', 'aruco_detect_logi/fiducial_vertices'),
-        #         ('/fiducial_data', 'aruco_detect_logi/fiducial_data'),
-        #         ('/fiducial_images', 'aruco_detect_logi/fiducial_images'),
-        #     ],
+        Node(
+            package='aruco_detect',
+            executable='aruco_detect',
+            name='aruco_detect_logi',
+            output=['screen'],
+            parameters=[aurco_config_file],
+            remappings=[
+                ('camera/compressed', '/usb_cam/image_raw/compressed'),
+                ('camera_info', '/usb_cam/camera_info'),
+                ('/fiducial_transforms', 'aruco_detect_logi/fiducial_transforms'),
+                ('/fiducial_vertices', 'aruco_detect_logi/fiducial_vertices'),
+                ('/fiducial_data', 'aruco_detect_logi/fiducial_data'),
+                ('/fiducial_images', 'aruco_detect_logi/fiducial_images'),
+            ],
             
-        #     #WHAT IS THIS?? 
-        #     respawn=True,
-        #     respawn_delay=5
-        # ),
+            #WHAT IS THIS?? 
+            respawn=True,
+            respawn_delay=5
+        ),
 
         # REMOVED from Autonomy launch by BRADEN MEYERS FEB 27. LMK if you need it
         # Node(

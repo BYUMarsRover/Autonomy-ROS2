@@ -10,12 +10,6 @@ import time
 import threading
 import queue
 
-##### Global Variables #####
-# Default no-operation values
-gripper = 0
-navigation_state = -1
-q = queue.Queue()
-
 
 class RoverStatusNode(Node):
     def __init__(self):
@@ -43,8 +37,13 @@ class RoverStatusNode(Node):
         # Start threads
         self.queue_handler_thread = threading.Thread(target=self.queue_handler)
         self.queue_handler_thread.start()
-        self.arduino_listener_thread = threading.Thread(target=self.arduino_listener)
-        self.arduino_listener_thread.start()
+        # self.arduino_listener_thread = threading.Thread(target=self.arduino_listener)
+        # self.arduino_listener_thread.start()
+
+        # Default no-operation values
+        self.gripper = 0
+        self.navigation_state = -1
+        self.q = queue.Queue()
 
     def led_callback(self, data):
         # Update LED based on the rover state
