@@ -92,6 +92,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('aruco_spin_speed', 30.0)
         self.declare_parameter('object_alpha_lpf', 0.5)
         self.declare_parameter('obj_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that object deteciton is enabled
+        self.declare_parameter('aruco_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that aruco deteciton is enabled
         self.declare_parameter('aruco_alpha_lpf', 0.5)
         self.declare_parameter('aruco_spin_step_size', 0.6981)
         self.declare_parameter('aruco_spin_delay_time', 1.2)
@@ -114,6 +115,7 @@ class AutonomyStateMachine(Node):
         self.aruco_spin_speed = self.get_parameter('aruco_spin_speed').get_parameter_value().double_value
         self.obj_alpha_lpf = self.get_parameter('object_alpha_lpf').get_parameter_value().double_value
         self.obj_enable_distance = self.get_parameter('obj_enable_distance').get_parameter_value().double_value # object detection gets enabled only when within a certain distance of the coordinate to conserve computational resources
+        self.aruco_enable_distance = self.get_parameter('aruco_enable_distance').get_parameter_value().double_value # aruco detection gets enabled only when within a certain distance of the coordinate to conserve computational resources
         self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value
         self.aruco_spin_step_size = self.get_parameter('aruco_spin_step_size').get_parameter_value().double_value
         self.aruco_spin_delay_time = self.get_parameter('aruco_spin_delay_time').get_parameter_value().double_value
