@@ -1176,7 +1176,7 @@
                <item>
                 <widget class="QLabel" name="DriveManagerLabel">
                  <property name="text">
-                  <string>Drive Manager:</string>
+                  <string>Drive Manager (Linear/Angular Error):</string>
                  </property>
                  <property name='font'>
                   <font>
