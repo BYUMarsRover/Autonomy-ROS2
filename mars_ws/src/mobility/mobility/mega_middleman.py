@@ -39,7 +39,7 @@ class MegaMiddleman(Node):
         self.writer_thread.start()
 
         # Timer for relay_mega
-        self.create_timer(0.001, self.loop)  # 100 Hz
+        self.create_timer(0.01, self.loop)  # 100 Hz
         self.get_logger().info("MegaMiddle Man started")
 
     def connect(self):
@@ -133,7 +133,7 @@ class MegaMiddleman(Node):
 
 
                     # Give arduino breathing time
-                    time.sleep(0.01) # [s], delay between writes, only blocks write thread not main thread.
+                    time.sleep(0.05) # [s], delay between writes, only blocks write thread not main thread.
                                      # Lowering this value can improve input latency, but lowering it too much
                                      # risks overwhelming the Arduino and causing a I/O timeout -- resulting 
                                      # in a few seconds of disconnect (not worth shaving a few ms of each volley)
@@ -192,7 +192,7 @@ class MegaMiddleman(Node):
 
             # Check if data was read
             if not x:
-                self.get_logger().info("No data read from serial port.")
+                # self.get_logger().info("No data read from serial port.")
                 # self.write_debug("Orin: Nothing to read")  # Optional: uncomment if you want this log
                 return 0, ""
 
