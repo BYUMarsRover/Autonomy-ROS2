@@ -68,6 +68,7 @@ class AutonomyStateMachine(Node):
         self.srv_clear_waypoint = self.create_service(SetBool, '/AU_clear_waypoint_service', self.clear_waypoint)
 
         # Clients
+
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
         self.aruco_detect_client = self.create_client(SetBool, '/enable_detections')
         self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
@@ -115,8 +116,8 @@ class AutonomyStateMachine(Node):
         self.obj_alpha_lpf = self.get_parameter('object_alpha_lpf').get_parameter_value().double_value #alpha value for the low pass filter for the angle and distance to an object after the rover starts seeing the object
         self.obj_enable_distance = self.get_parameter('obj_enable_distance').get_parameter_value().double_value # object detection gets enabled only when within a certain distance of the coordinate to conserve computational resources
         self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value
-        self.aruco_spin_step_size = self.get_parameter('aruco_spin_step_size').get_parameter_value().double_value
-        self.aruco_spin_delay_time = self.get_parameter('aruco_spin_delay_time').get_parameter_value().double_value
+        self.spin_step_size = self.get_parameter('spin_step_size').get_parameter_value().double_value
+        self.spin_delay_time = self.get_parameter('spin_delay_time').get_parameter_value().double_value
         self.wrong_aruco_backup_distance = self.get_parameter('wrong_aruco_backup_distance').get_parameter_value().double_value
         self.hex_seach_angle_difference = self.get_parameter('hex_seach_angle_difference').get_parameter_value().double_value
         # self.aruco_gate_approach_distance = rospy.get_param('aruco_gate_approach_distance').get_parameter_value().double_value
