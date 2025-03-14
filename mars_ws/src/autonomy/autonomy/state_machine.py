@@ -69,6 +69,7 @@ class AutonomyStateMachine(Node):
 
         # Clients
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
+        self.aruco_detect_client = self.create_client(SetBool, '/enable_detections')
         self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
         self.path_manager_client = self.create_client(SetBool, '/mobility/path_manager/enabled')
         self.autopilot_manager_client = self.create_client(SetBool, '/mobility/autopilot_manager/enabled')
@@ -92,6 +93,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('spin_speed', 30.0)
         self.declare_parameter('object_alpha_lpf', 0.5)
         self.declare_parameter('obj_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that object deteciton is enabled
+        self.declare_parameter('aruco_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that aruco deteciton is enabled
         self.declare_parameter('aruco_alpha_lpf', 0.5)
         self.declare_parameter('spin_step_size', 0.6981)
         self.declare_parameter('spin_delay_time', 1.2)
@@ -112,11 +114,13 @@ class AutonomyStateMachine(Node):
         self.spin_speed = self.get_parameter('spin_speed').get_parameter_value().double_value #angular speed during spin search
         self.obj_alpha_lpf = self.get_parameter('object_alpha_lpf').get_parameter_value().double_value #alpha value for the low pass filter for the angle and distance to an object after the rover starts seeing the object
         self.obj_enable_distance = self.get_parameter('obj_enable_distance').get_parameter_value().double_value # object detection gets enabled only when within a certain distance of the coordinate to conserve computational resources
-        self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value # alpha value for the low pass filter for the angle and distance to an aruco tag after the rover starts seeing the aruco tag
-        self.spin_step_size = self.get_parameter('spin_step_size').get_parameter_value().double_value #degrees in radians that the rover turns in spin search, after which the rover stops, looks for a tag/object, and then continues spinning
-        self.spin_delay_time = self.get_parameter('spin_delay_time').get_parameter_value().double_value #time that the rover waits after spinning in spin search looking for tag
-        self.wrong_aruco_backup_distance = self.get_parameter('wrong_aruco_backup_distance').get_parameter_value().double_value #distance that the rover backups up upon starting a new leg, after having just finished an aruco tag leg (so that the rover doesn't run into the aruco stand
-        self.hex_seach_angle_difference = self.get_parameter('hex_seach_angle_difference').get_parameter_value().double_value #angle in degrees between vertex points of the hex search
+        self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value
+        self.aruco_spin_step_size = self.get_parameter('aruco_spin_step_size').get_parameter_value().double_value
+        self.aruco_spin_delay_time = self.get_parameter('aruco_spin_delay_time').get_parameter_value().double_value
+        self.wrong_aruco_backup_distance = self.get_parameter('wrong_aruco_backup_distance').get_parameter_value().double_value
+        self.hex_seach_angle_difference = self.get_parameter('hex_seach_angle_difference').get_parameter_value().double_value
+        # self.aruco_gate_approach_distance = rospy.get_param('aruco_gate_approach_distance').get_parameter_value().double_value
+        # self.aruco_gate_spin_speed = rospy.get_param('aruco_gate_spin_speed').get_parameter_value().double_value
 
         #Initialize variables
         self.nav_state = NavState()
@@ -228,7 +232,7 @@ class AutonomyStateMachine(Node):
     def toggle_object_detection(self, data):
         if self.object_detect_client.service_is_ready():  # Check if service is available
             self.get_logger().info('Sending object detection request...')
-            self.send_request(data)
+            self.send_request(data, self.object_detect_client)
             self.retry_count = 0  # Reset retry count
         else:
             if self.retry_count < self.max_retries:
@@ -238,12 +242,25 @@ class AutonomyStateMachine(Node):
             else:
                 self.get_logger().error('Object detection service not available after maximum retries. Giving up.')
 
+    def toggle_aruco_detection(self, data):
+        if self.aruco_detect_client.service_is_ready():
+            self.get_logger().info('Sending aruco detection request...')
+            self.send_request(data, self.aruco_detect_client)
+            self.retry_count = 0 # Reset retry count
+        else:
+            if self.retry_count < self.max_retries:
+                self.get_logger().warn(f'Service not available. Retrying... ({self.retry_count + 1}/{self.max_retries})')
+                self.retry_count += 1
+                self.create_timer(1.0, lambda: self.toggle_aruco_detection(data))
+            else:
+                self.get_logger().error('Aruco detection service not available after maximum retries. Giving up.')
+
     # Generic service call method
-    def send_request(self, data):
+    def send_request(self, data, client):
         # Create and send a request
         request = SetBool.Request()
         request.data = data
-        future = self.object_detect_client.call_async(request)
+        future = client.call_async(request)
         future.add_done_callback(self.handle_response)
 
     # Callback for handling the generic service call function (send_request)
@@ -475,9 +492,15 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.POINT_NAVIGATION:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.obj_enable_distance:
+                dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
+
+                #Toggle object detection or aruco detection if within a certain distance of the target point (saves computation time)
+                if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and dist_to_target < self.obj_enable_distance:
                     self.toggle_object_detection(True)
-                if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.dist_tolerance:
+                elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3] and dist_to_target < self.aruco_enable_distance:
+                    self.toggle_aruco_detection(True)
+                
+                if dist_to_target < self.dist_tolerance:
                     if self.tag_id == TagID.GPS_ONLY:
                         self.get_logger().info('GPS Task is complete!')
                         self.state = State.TASK_COMPLETE
@@ -589,6 +612,8 @@ class AutonomyStateMachine(Node):
 
                 if self.tag_id in [TagID.MALLET, TagID.BOTTLE]:
                     self.toggle_object_detection(False)
+                elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3]:
+                    self.toggle_aruco_detection(False)
 
 
                 # Pop off the completed task
