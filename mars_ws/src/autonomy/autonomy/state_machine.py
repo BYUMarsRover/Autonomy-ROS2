@@ -240,7 +240,7 @@ class AutonomyStateMachine(Node):
     def toggle_object_detection(self, data):
         if self.object_detect_client.service_is_ready():  # Check if service is available
             self.get_logger().info('Sending object detection request...')
-            self.send_request(data)
+            self.send_request(data, self.object_detect_client)
             self.retry_count = 0  # Reset retry count
         else:
             if self.retry_count < self.max_retries:
@@ -253,7 +253,7 @@ class AutonomyStateMachine(Node):
     def toggle_aruco_detection(self, data):
         if self.aruco_detect_client.service_is_ready():
             self.get_logger().info('Sending aruco detection request...')
-            self.send_request(data)
+            self.send_request(data, self.aruco_detect_client)
             self.retry_count = 0 # Reset retry count
         else:
             if self.retry_count < self.max_retries:
@@ -264,11 +264,11 @@ class AutonomyStateMachine(Node):
                 self.get_logger().error('Aruco detection service not available after maximum retries. Giving up.')
 
     # Generic service call method
-    def send_request(self, data):
+    def send_request(self, data, client):
         # Create and send a request
         request = SetBool.Request()
         request.data = data
-        future = self.object_detect_client.call_async(request)
+        future = client.call_async(request)
         future.add_done_callback(self.handle_response)
 
     # Callback for handling the generic service call function (send_request)
