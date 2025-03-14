@@ -134,7 +134,7 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
         if (do_pose_estimation_) {
             if (!have_cam_info_) {
                 if (frame_num_ > 5) {
-                    RCLCPP_ERROR_THROTTLE(this->get_logger(), *node->get_clock(), 5000, "No camera intrinsics");
+                    RCLCPP_ERROR_THROTTLE(this->get_logger(), this->get_clock(), 5000, "No camera intrinsics");
                 }
                 return;
             }
@@ -155,7 +155,7 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
                             rvecs[i][0], rvecs[i][1], rvecs[i][2]);
 
                 if (std::find(ignore_ids_.begin(), ignore_ids_.end(), ids[i]) != ignore_ids_.end()) {
-                    RCLCPP_INFO_THROTTLE(this->get_logger(), *node->get_clock(), 5000, "Ignoring id %d", ids[i]);
+                    RCLCPP_INFO_THROTTLE(this->get_logger(), this->get_clock(), 5000, "Ignoring id %d", ids[i]);
                     continue;
                 }
 
@@ -196,9 +196,9 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
             image_pub_.publish(cv_ptr->toImageMsg());
         }
     } catch (cv_bridge::Exception& e) {
-        RCLCPP_ERROR_THROTTLE(this->get_logger(), *node->get_clock(), 5000, "cv_bridge exception: %s", e.what());
+        RCLCPP_ERROR_THROTTLE(this->get_logger(), this->get_clock(), 5000, "cv_bridge exception: %s", e.what());
     } catch (cv::Exception& e) {
-        RCLCPP_ERROR_THROTTLE(this->get_logger(), *node->get_clock(), 5000, "OpenCV exception: %s", e.what());
+        RCLCPP_ERROR_THROTTLE(this->get_logger(), this->get_clock(), 5000, "OpenCV exception: %s", e.what());
     }
 }
 
@@ -209,7 +209,7 @@ void FiducialsNode::camInfoCallback(const sensor_msgs::msg::CameraInfo::ConstSha
     }
 
     if (std::all_of(msg->k.begin(), msg->k.end(), [](double k) { return k == 0.0; })) {
-        RCLCPP_WARN_THROTTLE(this->get_logger(), *node->get_clock(), 5000, "CameraInfo message has invalid intrinsics, K matrix all zeros");
+        RCLCPP_WARN_THROTTLE(this->get_logger(), this->get_clock(), 5000, "CameraInfo message has invalid intrinsics, K matrix all zeros");
         return;
     }
 
@@ -278,13 +278,13 @@ void FiducialsNode::handleIgnoreString(const std::string& str) {
         if (dash_pos != std::string::npos) {
             int start = std::stoi(item.substr(0, dash_pos));
             int end = std::stoi(item.substr(dash_pos + 1));
-            RCLCPP_INFO_THROTTLE(this->get_logger(), *node->get_clock(), 5000, "Ignoring fiducial id range %d to %d", start, end);
+            RCLCPP_INFO_THROTTLE(this->get_logger(), this->get_clock(), 5000, "Ignoring fiducial id range %d to %d", start, end);
             for (int j = start; j <= end; j++) {
                 ignore_ids_.push_back(j);
             }
         } else {
             int fid = std::stoi(item);
-            RCLCPP_INFO_THROTTLE(this->get_logger(), *node->get_clock(), 5000, "Ignoring fiducial id %d", fid);
+            RCLCPP_INFO_THROTTLE(this->get_logger(), this->get_clock(), 5000, "Ignoring fiducial id %d", fid);
             ignore_ids_.push_back(fid);
         }
     }
@@ -308,17 +308,17 @@ void FiducialsNode::parseFiducialLenOverride(const std::string& str) {
             if (dash_pos != std::string::npos) {
                 int start = std::stoi(ids_str.substr(0, dash_pos));
                 int end = std::stoi(ids_str.substr(dash_pos + 1));
-                RCLCPP_INFO_THROTTLE(this->get_logger(), *node->get_clock(), 5000, "Setting fiducial id range %d - %d length to %f", start, end, len);
+                RCLCPP_INFO_THROTTLE(this->get_logger(), this->get_clock(), 5000, "Setting fiducial id range %d - %d length to %f", start, end, len);
                 for (int j = start; j <= end; j++) {
                     fiducial_lens_[j] = len;
                 }
             } else {
                 int fid = std::stoi(ids_str);
-                RCLCPP_INFO_THROTTLE(this->get_logger(), *node->get_clock(), 5000, "Setting fiducial id %d length to %f", fid, len);
+                RCLCPP_INFO_THROTTLE(this->get_logger(), this->get_clock(), 5000, "Setting fiducial id %d length to %f", fid, len);
                 fiducial_lens_[fid] = len;
             }
         } else {
-            RCLCPP_ERROR_THROTTLE(this->get_logger(), *node->get_clock(), 5000, "Malformed fiducial_len_override: %s", item.c_str());
+            RCLCPP_ERROR_THROTTLE(this->get_logger(), this->get_clock(), 5000, "Malformed fiducial_len_override: %s", item.c_str());
         }
     }
 }
