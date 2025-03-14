@@ -460,6 +460,19 @@ class AutonomyStateMachine(Node):
                 self.correct_aruco_tag_found = False
                 self.correct_obj_found = False
 
+                # Reset the state machine variables
+                self.correct_aruco_tag_found = False
+                self.correct_obj_found = False
+                self.obj_distance = None
+                self.obj_angle = None
+
+                if self.tag_id in [TagID.MALLET, TagID.BOTTLE]:
+                    self.toggle_object_detection(False)
+                elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3]:
+                    self.toggle_aruco_detection(False)
+
+
+
             #This SEARCH_FOR_WRONG_STATE state is used to ensure that after finishing one aruco tag task, the rover will
             #backup if it sees the wrong tag, to ensure it does not run into the aruco stand before starting the next task
             elif self.state == State.SEARCH_FOR_WRONG_TAG: 
