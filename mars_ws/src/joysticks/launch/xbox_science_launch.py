@@ -9,18 +9,18 @@ def generate_launch_description():
     return LaunchDescription([
         # Declare the parameter for the xbox node
         DeclareLaunchArgument(
-            'xbox_dev',
-             default_value='/dev/rover/js/xbox_one', 
-             description='Xbox controller device path'
-             ),
+            'xbox_controller_science_path',
+            default_value='/dev/rover/js/xbox_360_science', 
+            description='Xbox controller device path'
+        ),
 
         # Launch the joy node (remap "/joy" to "/joy_science_input")
         Node(
             package='joy',
             executable='joy_node',
             name='xbox_node_science',
-            remappings=[('/joy', '/joy_science_input')],
-            parameters=[{'dev': LaunchConfiguration('xbox_dev')}]
+            parameters=[{'dev': LaunchConfiguration('xbox_controller_science_path')}],
+            remappings=[('/joy', '/joy_science_input')]
         ),
 
         # Launch the custom xbox_science node
