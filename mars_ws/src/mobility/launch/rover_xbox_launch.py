@@ -7,23 +7,23 @@ namespace = 'mobility'
 def generate_launch_description():
     return LaunchDescription([
 
-        # Launch the joy_node (renamed to xbox_node_drive)
-        Node(
-            package='joy_linux',
-            executable='joy_linux_node',
-            name='xbox_node_drive',
-            parameters=[{'dev': '/dev/rover/js/xbox_one_drive'}],
-            remappings=[('/joy', '/joy_drive_input')]
-        ),
+        # # Launch the joy_node (renamed to xbox_node_drive)
+        # Node(
+        #     package='joy_linux',
+        #     executable='joy_linux_node',
+        #     name='xbox_node_drive',
+        #     parameters=[{'dev': '/dev/rover/js/xbox_one_drive'}],
+        #     remappings=[('/joy', '/joy_drive_input')]
+        # ),
 
-        # Launch the xbox_drive node
-        Node(
-            package='mobility',
-            executable='joystick',
-            name='xbox_drive',
-            namespace=namespace,
-            # output='screen'
-        ),
+        # # Launch the xbox_drive node
+        # Node(
+        #     package='mobility',
+        #     executable='joystick',
+        #     name='xbox_drive',
+        #     namespace=namespace,
+        #     # output='screen'
+        # ),
         Node(
             package='mobility',
             executable='transition',
