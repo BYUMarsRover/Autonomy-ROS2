@@ -55,12 +55,12 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point):
     pcl_data.points = o3d.utility.Vector3dVector(np_points)
 
     # Generate the fake point cloud
-    fake_pc = generate_fake_point_cloud()
+    # fake_pc = generate_fake_point_cloud()
 
     # Visualize the point cloud
-    visualize_point_cloud(fake_pc)
+    visualize_point_cloud(pcl_data)
 
-    return fake_pc
+    # return fake_pc
     
     return pcl_data
 
