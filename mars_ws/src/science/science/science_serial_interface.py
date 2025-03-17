@@ -9,7 +9,7 @@ SUBSCRIBED TO:
 import rclpy
 import sys
 from rclpy.node import Node
-from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues
+from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues, ScienceSerialPacket
 from std_msgs.msg import Bool
 import serial
 import struct
@@ -85,6 +85,7 @@ class ScienceSerialInterface(Node):
         self.sub_science_serial_primary_cache_door = self.create_subscription(ScienceActuatorControl, '/science_serial_primary_cache_door', self.primary_cache_door_control_callback, 10)
         self.sub_science_serial_secondary_cache = self.create_subscription(ScienceActuatorControl, '/science_serial_secondary_cache', self.secondary_cache_control_callback, 10)
         self.sub_science_serial_override = self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
+        self.sub_science_serial_packet = self.create_subscription(ScienceSerialPacket, '/science_serial_packet', self.receive_serial_packet_callback, 10)
 
         self.info_publisher = self.create_publisher(ScienceSensorValues, '/science_sensor_values', 10)
 
@@ -131,6 +132,11 @@ class ScienceSerialInterface(Node):
     def secondary_cache_control_callback(self, msg: ScienceActuatorControl):
         print("Doing secondary cache door callback")
         self.write_actuator_control(UPDATE_SECONDARY_CACHE_CONTROL_COMMAND_WORD, msg.control)
+
+    # Sends published serial packets from the GUI to the arduino
+    def receive_serial_packet_callback(self, msg: ScienceSerialPacket):
+        packet = [msg.command_word, len(msg.operands)] + msg.bytes
+        self.write_serial(self, packet)
 
     def write_serial(self, byte_array):
          # Configure a payload with the overhead formatting and send to arduino
