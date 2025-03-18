@@ -15,6 +15,7 @@ class RoverStatusNode(Node):
     def __init__(self):
         super().__init__('rover_status_listener')
         
+        self.q = queue.Queue()
         # Publishers
         self.battery_pub = self.create_publisher(RawBattery, '/raw_battery_info', 10)
         
@@ -43,7 +44,7 @@ class RoverStatusNode(Node):
         # Default no-operation values
         # self.gripper = 0
         # self.navigation_state = -1
-        self.q = queue.Queue()
+        
 
     def led_callback(self, data):
         # Update LED based on the rover state
