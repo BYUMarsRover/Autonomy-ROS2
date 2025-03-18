@@ -120,6 +120,7 @@ class AutonomyStateMachine(Node):
         self.spin_delay_time = self.get_parameter('spin_delay_time').get_parameter_value().double_value
         self.wrong_aruco_backup_distance = self.get_parameter('wrong_aruco_backup_distance').get_parameter_value().double_value
         self.hex_seach_angle_difference = self.get_parameter('hex_seach_angle_difference').get_parameter_value().double_value
+        self.aruco_enable_distance = self.get_parameter('aruco_enable_distance').get_parameter_value().double_value
         # self.aruco_gate_approach_distance = rospy.get_param('aruco_gate_approach_distance').get_parameter_value().double_value
         # self.aruco_gate_spin_speed = rospy.get_param('aruco_gate_spin_speed').get_parameter_value().double_value
 
