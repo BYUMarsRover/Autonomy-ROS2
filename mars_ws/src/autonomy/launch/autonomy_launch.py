@@ -14,8 +14,18 @@ def generate_launch_description():
 
     try:
         # Resolve the original device path from the symlink
-        original_path = os.readlink('/dev/rover/cameras/autonomyWebCam')
-        device = {'video_device': original_path}
+        # Path to the symlink
+        udev_path = '/dev/rover/cameras/autonomyWebCam'
+
+        # Read the symlink to get the relative path it points to (e.g. ../../video8)
+        relative_target = os.readlink(udev_path)
+
+        # Resolve the relative path to an absolute path, starting from the symlink's location
+        absolute_target = os.path.join(os.path.dirname(udev_path), relative_target)
+        
+        device = {'video_device': absolute_target}
+
+        print(f"Autonomy Web Cam using: {absolute_target}")
     
     except OSError as e:
         print(f"Error resolving symlink: {e}")
