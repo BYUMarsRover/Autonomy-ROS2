@@ -12,6 +12,16 @@ def generate_launch_description():
     cam_config_path = os.path.join(get_package_share_directory('start'), 'config', 'cam_config', 'head_cam_params.yaml')
     autonomy_params_file = os.path.join(get_package_share_directory('autonomy'), 'params', 'autonomy_params.yaml')
 
+    try:
+        # Resolve the original device path from the symlink
+        original_path = os.readlink('/dev/rover/cameras/autonomyWebCam')
+        device = {'video_device': original_path}
+    
+    except OSError as e:
+        print(f"Error resolving symlink: {e}")
+        return None
+    
+
     return LaunchDescription([
         # Declare launch arguments
         DeclareLaunchArgument('location', default_value='hanksville'),
@@ -23,7 +33,7 @@ def generate_launch_description():
             executable='usb_cam_node_exe',
             name='head_camera',
             namespace ='head_camera',
-            parameters=[cam_config_path],  # Update this path
+            parameters=[cam_config_path, device],  # Update this path #TODO: check if this works
             remappings=[
                 # ('/image_raw', '/head_camera/image_raw')  # Uncomment and adjust if remapping is needed
             ]

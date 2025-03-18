@@ -1,7 +1,8 @@
 /**:
     ros__parameters:
+      # video_device parameter is resolved in the launch file 'autonomy_launch.py'
       # video_device: "/dev/rover/cameras/autonomyWebCam"
-      video_device: "/dev/video4"
+      # video_device: "/dev/video4"
       framerate: 10.0
       io_method: "mmap"
       frame_id: "camera"
