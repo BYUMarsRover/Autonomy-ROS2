@@ -29,14 +29,14 @@ def ros_to_pcl(ros_cloud):
     fake_pc = generate_fake_point_cloud()
 
     # Visualize the point cloud
-    visualize_point_cloud(fake_pc)
+    # visualize_point_cloud(fake_pc)
 
     #return pcl_data
     return fake_pc #Update when actually using a point cloud
 
 def ros_to_pcl_and_transform(ros_cloud, transformation_point):
     """
-    Converts a ROS PointCloud2 message to an Open3D PointCloud and transforms the points.
+    Converts a ROS PointCloud2 message to an Open3D PointCloud and transforms the points so origin is from the start of the bounding box.
      
     :param ros_cloud: ROS PointCloud2 message
     :return: Open3D PointCloud
@@ -58,7 +58,7 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point):
     # fake_pc = generate_fake_point_cloud()
 
     # Visualize the point cloud
-    visualize_point_cloud(pcl_data)
+    # visualize_point_cloud(pcl_data)
 
     # return fake_pc
     

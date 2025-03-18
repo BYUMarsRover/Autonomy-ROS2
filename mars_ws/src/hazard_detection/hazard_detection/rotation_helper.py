@@ -1,9 +1,9 @@
 import numpy as np
 from numpy import sin, cos, sqrt
 
-def convert_from_lidar_to_NED(point, map_yaw):
+def lidar_to_rover_frame(point, map_yaw):
     """
-    Converts a point from the LiDAR frame( X is up, Y is to the right of the rover, and Z is out away from the rover) to the NED (North East Down) frame.
+    Converts a point from the LiDAR frame( X is up, Y is to the right of the rover, and Z is out away from the rover) to the rover frame (x forward, y is right, z is down ).
     """
     #create rotation matrix from LiDAR frame to NED frame
     #Rotate back the current heading, and then rotate -90 degrees about y to the NED frame

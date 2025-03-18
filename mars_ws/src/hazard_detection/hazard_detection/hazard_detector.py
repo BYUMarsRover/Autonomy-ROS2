@@ -15,16 +15,16 @@ class HazardDetector(Node):
         super().__init__('hazard_detector')
         
         #Parameters
-        self.declare_parameter('height_threshold', 0.5) #Height of hazard to detect, in meters
+        self.declare_parameter('height_threshold', 0.3) #Height of hazard to detect, in meters
         self.declare_parameter('slope_threshold', 15.0) #Height of max slope of ground, in degrees
-        self.declare_parameter('voxel_grid_size', .1)
+        self.declare_parameter('voxel_grid_size', .1) #Size of voxel grid cubes for downsampling, in meters
         self.declare_parameter('ground_distance_threshold', .05) #Increase if the ground is pretty rocky
         self.declare_parameter('bounding_box_start_point', [-0.5, 0.0, 0.5]) #X, Y, Z- X is up the mast, Y is to the right from the rovers perspective, and Z is out away from the rover, all in the Lidars' orientation
         self.declare_parameter('bounding_box_length', 3.0)  #in front of the rover
         self.declare_parameter('bounding_box_width', 2.0)   #to the left and right of the rover
         self.declare_parameter('bounding_box_height', 1.0)  #above the rover
-        self.declare_parameter('epsilon_clustering_density', 1.0)  #Change if the density of the points is not large enough to detect hazards
-        self.declare_parameter('min_points_to_cluster', 10) #Increase if we are getting false positives for hazard detection, decrease if we aren't detecting anything
+        self.declare_parameter('epsilon_clustering_density', 0.5)  #Change if the density of the points is not large enough to detect hazards, in meters?
+        self.declare_parameter('min_points_to_cluster', 20) #Increase if we are getting false positives for hazard detection, decrease if we aren't detecting anything
         
 
         self.height_threshold = self.get_parameter('height_threshold').value
@@ -37,6 +37,9 @@ class HazardDetector(Node):
         self.box_height = self.get_parameter('bounding_box_height').value
         self.epsilon_clustering_density = self.get_parameter('epsilon_clustering_density').value
         self.min_points_to_cluster = self.get_parameter('min_points_to_cluster').value
+
+        print('epsilon_clustering_density:', self.epsilon_clustering_density)
+        print('min_points_to_cluster:', self.min_points_to_cluster)
 
         #Initialize other variables
         self.imu_orientation = None   
@@ -74,6 +77,8 @@ class HazardDetector(Node):
         self.rover_state_singleton = msg
 
     def point_cloud_callback(self, msg):
+        #TODO: save the cloud in a queue to be processed in a separate thread outside of the callback
+
         # Convert PointCloud2 to Open3D format and transform to the bounding box frame
         cloud = ros_to_pcl_and_transform(msg, self.bounding_box_start_point)
 
@@ -93,16 +98,20 @@ class HazardDetector(Node):
         #Get cloud of only points in the bounding box
         cloud_bounded = cloud_filtered.select_by_index(np.where(bounding_mask)[0].tolist())
 
-        o3d.visualization.draw_geometries([cloud_bounded])
-
         # Segment ground plane
         plane_model, inliers = cloud_bounded.segment_plane(
             distance_threshold=self.ground_distance_threshold,
-            ransac_n=3,
-            num_iterations=1000
+            ransac_n=3, #Increase if not robust enough 
+            num_iterations=1000 # reduce if processing time is too long
         )
         ground = cloud_bounded.select_by_index(inliers)
         non_ground = cloud_bounded.select_by_index(inliers, invert=True)
+
+        # Visualize ground and non-ground points
+        # print("Ground points:")
+        # o3d.visualization.draw_geometries([ground])
+        # print("Non-ground points:")
+        # o3d.visualization.draw_geometries([non_ground])
 
         # Detect obstacles by height
         high_points = self.detect_high_obstacles(non_ground)
@@ -124,7 +133,7 @@ class HazardDetector(Node):
         self.get_logger().info(f"Detected {len(clusters)} clusters (potential hazards).")
         
         for cluster in clusters:
-            z_max = max(cluster[:, 2])  # Extract Z (height) component
+            z_max = max(cluster[:, 0])  # Extract x (height) component (from lidar frame, x is up the mast)
             if z_max > self.height_threshold:
                 high_points.append(cluster)
 
@@ -133,6 +142,8 @@ class HazardDetector(Node):
         return high_points
 
     def detect_steep_slopes(self, ground_cloud, plane_coefficients):
+        #TODO: Implement slope detection by comparing the angle of the ground plane to the pitch of the rover recieved from rover state singleton
+
         # Calculate plane normal from coefficients (Ax + By + Cz + D = 0)
         normal = np.array(plane_coefficients[:3])
         z_axis = np.array([0, 0, 1])  # Assume Z is vertical
@@ -140,7 +151,7 @@ class HazardDetector(Node):
         # Angle between ground plane and vertical axis
         angle = np.arccos(np.dot(normal, z_axis) / (np.linalg.norm(normal) * np.linalg.norm(z_axis)))
 
-        self.get_logger().info(f"Angle of the ground is: {angle} radians, and the slope threshold is {np.radians(self.slope_threshold)}")
+        # self.get_logger().info(f"Angle of the ground is: {angle} radians, and the slope threshold is {np.radians(self.slope_threshold)}")
         if angle > np.radians(self.slope_threshold):
             return (True, angle)
         return (False, angle)
@@ -174,7 +185,11 @@ class HazardDetector(Node):
         return clusters
 
     def generate_hazard_message(self, high_points, steep_slopes, slope_angle):
-        #TODO Work on this next to have hazards published according to the custom msgs that we made
+        """
+        Generates a HazardArray message based on the detected hazards.
+        Transforms the high points from the LIDAR frame to the rover frame.
+        """
+
         message = HazardArray()
     
         if high_points:
@@ -183,22 +198,20 @@ class HazardDetector(Node):
                 hazard = Hazard()
                 hazard.type = Hazard.OBSTACLE
 
-                loc_x = np.mean(high_point[:, 0])
-                loc_y = np.mean(high_point[:, 1])
-                loc_z = np.mean(high_point[:, 2])
-                point = np.array([loc_x, loc_y, loc_z])
-                converted_point = convert_from_lidar_to_NED(point, self.rover_state_singleton.map_yaw)
-                # converted_point = convert_from_ZED_to_NED(converted_point)
-                hazard.location_x = converted_point[0]
-                hazard.location_y = converted_point[1]
-                hazard.location_z = converted_point[2]
+                #Need to convert from the LIDAR frame(Xup, y is right of the rover, and Z is out away from the rover) to the rover frame (x forward, y is right, z is down)
+                hazard.location_x = np.mean(high_point[:, 2]) #X axis in the rover frame is Z in the LIDAR frame
+                hazard.location_y = np.mean(high_point[:, 1]) #Y axis are the same
+                hazard.location_z = np.mean(-high_point[:, 0]) #Z axis in the rover frame is -X in the LIDAR frame
 
                 peak_to_peak = np.ptp(high_point, axis=0)
-                hazard.length_x= peak_to_peak[0]
-                hazard.length_y= peak_to_peak[1]
-                hazard.length_z= peak_to_peak[2]
+                hazard.length_x= peak_to_peak[2] #X axis in the rover frame is Z in the LIDAR frame
+                hazard.length_y= peak_to_peak[1] #Y axis are the same
+                hazard.length_z= peak_to_peak[0] #Z axis in the rover frame is -X in the LIDAR frame
                 hazard.num_points = len(high_point)
                 message.hazards.append(hazard)
+
+                self.get_logger().info(f"Detected obstacle at ({hazard.location_x}, {hazard.location_y}, {hazard.location_z}) with dimensions ({hazard.length_x}, {hazard.length_y}, {hazard.length_z}) and {hazard.num_points} points.")
+
         if steep_slopes:
             hazard = Hazard()
             hazard.type = Hazard.STEEP_SLOPE
