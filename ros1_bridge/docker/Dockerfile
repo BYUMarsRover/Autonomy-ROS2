@@ -1,5 +1,4 @@
 # Created by Nelson Durrant, Oct 2024
-
 FROM ros:noetic-ros-base
 
 # Define a username for the new user

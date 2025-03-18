@@ -88,12 +88,10 @@ class DriveManager(Node):
         else:
             v_l = u_cmd + omega_cmd * self.B / 2 * self.turn_constant # NOTE: turn constant was a quick fix
             v_r = u_cmd - omega_cmd * self.B / 2 * self.turn_constant
-            # self.get_logger().info(f"IN: vel_cmds_callback, v_l/v_r: {v_l}/{v_r}")
             psidot_Ld = v_l / self.r
             psidot_Rd = v_r / self.r
             lw_speed = self.piecewise_sigmoid(psidot_Ld)
             rw_speed = self.piecewise_sigmoid(psidot_Rd)
-            # self.get_logger().info(f"IN: vel_cmds_callback, lw/rw: {lw_speed}/{rw_speed}")
 
         self.rover_cmd.rw = float(rw_speed)
         self.rover_cmd.lw = float(lw_speed)

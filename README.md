@@ -1,46 +1,48 @@
-## Autonomy-ROS2 Guide
-
-This README gives a simple guide to and overview of the Autonomy-ROS2 repository.
-
---
-
-**Getting Started:**
+### Get Started:
 
 - Install WSL2 on your Windows machine by following the instructions [here](https://docs.microsoft.com/en-us/windows/wsl/install).
 
 - Install Docker Desktop on your Windows machine by following the instructions [here](https://docs.docker.com/desktop/), and enable the WSL 2 backend by following the instructions [here](https://docs.docker.com/desktop/windows/wsl/).
 
-- Open a WSL terminal and clone this repo into your Linux environment using `git clone https://github.com/BYUMarsRover/Autonomy-ROS2.git`.
+- Open a WSL terminal and clone the Autonomy-ROS2 repo into your Linux environment using `git clone https://github.com/BYUMarsRover/Autonomy-ROS2.git`.
 
-- Run `bash compose.sh` to launch and enter the Docker container. This should pull the latest Docker image from Docker Hub, and might take a couple minutes the first time you run it.
+- Run `bash compose.sh` to pull and launch the latest Docker image from DockerHub.
 
-> **NOTE:** 
->
-> `compose.sh` spins up a Docker container from our custom ROS 2 image, which includes all the necessary dependencies needed to run our ROS 2 packages. If you make changes inside the Docker container (i.e. installing packages or modifying files not included as volumes), those changes will not be saved when the container restarts. If you ever need to restart the container, simply run `bash compose.sh down` to stop the container, and then `bash compose.sh` to start it again.
+  > **NOTE:** If you ever need to restart the container, simply run `bash compose.sh down` to stop the container, and then `bash compose.sh` to start it again.
 
 --
 
-**Contributing:**
+### Contributing:
 
-- **Create a new branch.** The main branch of this repository is protected, so you will need to create a new branch to make changes. To do this, run `git checkout -b <branch_name>`. We recommend naming your branch with a combination of your name and the feature you are working on (i.e. `nelson/repo-docs`).
+- **Create a new branch.** Our main code branches are protected, so you'll need to create a new branch. Name your branch with a combination of your name and the feature you are working on (i.e. nelson/repo-docs).
 
-- **Make your changes.** Add new ROS 2 packages to the `mars_ws/src` folder, or modify existing packages as needed. If you need to add dependencies to the Docker image, modify `docker/Dockerfile` (these changes will not be pushed to Docker Hub until you merge your branch into the main branch).
+- **Make your changes.** Develop and debug your new feature or bug fix.
 
-- **Submit a pull request.** Once you have made and tested your changes, make sure they are commited and pushed. Then, navigate to the GitHub repository and create a new pull request. Once another member of the team has reviewed and approved your changes, you can merge them into the main branch.
+  > **NOTE:** If you need to add dependencies, add them to the Dockerfile in your branch and test building the image locally. Once your pull request is merged into main, GitHub CI will automatically build and push the new Docker image to DockerHub.
+
+- **Rebase your branch often.** Keep your branch up-to-date with main by rebasing. This will help prevent merge conflicts down the road.
+
+- **Submit a pull request.** Once you have made and tested your changes, create a new pull request. Get another member of the team to review and approve it, and you can merge your new code into the main branch.
 
 --
 
-**Structure:**
+### Helpful Resources:
 
-- `Autonomy-ROS2/.github`: Contains a pull request template and the GitHub Actions workflow for building and deploying our custom ROS 2 Docker image. 
+Linux Command Line Tutorial - [https://linuxjourney.com/lesson/the-shell](https://linuxjourney.com/lesson/the-shell)
 
-- `Autonomy-ROS2/docker`: Contains the Dockerfile and docker compose file for building and running our custom ROS 2 Docker image. If you need to add dependencies to the image, simply add them to `docker/Dockerfile`, push them to the main branch, and the GitHub Actions workflow will automatically rebuild and redeploy the image to Docker Hub.
+GitHub Basics Tutorial - [https://docs.github.com/en/get-started/start-your-journey/hello-world](https://docs.github.com/en/get-started/start-your-journey/hello-world)
 
-- `Autonomy-ROS2/mars_ws`: The ROS 2 workspace we use for building and running ROS 2 packages. You can add custom ROS 2 packages to the `src` folder in this workspace and build them using the `colcon` build system.
+Docker Concepts and Tutorials - [https://docs.docker.com/get-started/introduction/whats-next/](https://docs.docker.com/get-started/introduction/whats-next/)
 
-- `Autonomy-ROS2/mega`: Contains the code used to flash the onboard Arduino Mega microcontroller. This code can be uploaded to the Mega using the Arduino IDE.
+ROS 2 Concepts - [https://docs.ros.org/en/humble/Concepts/Basic.html](https://docs.ros.org/en/humble/Concepts/Basic.html)
 
-- `Autonomy-ROS2/ros1_bridge`: Contains the code for running the ROS 1 - ROS 2 bridge. It has a seperate, more complicated Docker image and ROS workspace setup. For more information on how to work with the bridge, refer to the `ros1_bridge/README.md` file.
+ROS 2 CLI Tutorials - [https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools.html](https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools.html)
+
+ROS 2 Code Tutorials - [https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries.html](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries.html)
+
+Robotics in ROS 2 Tutorials - [https://github.com/henki-robotics/robotics_essentials_ros2/tree/main](https://github.com/henki-robotics/robotics_essentials_ros2/tree/main)
+
+GPS Navigation w Nav2 Tutorial - [https://docs.nav2.org/tutorials/docs/navigation2_with_gps.html](https://docs.nav2.org/tutorials/docs/navigation2_with_gps.html)
 
 --
 

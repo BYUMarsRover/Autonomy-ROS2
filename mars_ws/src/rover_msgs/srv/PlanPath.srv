@@ -3,9 +3,9 @@
 # start.y = longitude of starting position
 # goal.x = lattitude of goal
 # goal.y = longitude of goal
-# the service returns a bool indicating receipt and publishes the path to a different topic once found
+# the service returns a bool indicating receipt
 
-geometry_msgs/Point start
-geometry_msgs/Point goal
+AutonomyTaskInfo goal
 ---
-bool received
+bool success
+string message

@@ -29,7 +29,6 @@ setup(
     entry_points={
         'console_scripts': [
             'path_planner = path_planning.path_planner:main',
-            'path_planner_gui = path_planning.path_planner_gui:main'
         ],
     },
 )

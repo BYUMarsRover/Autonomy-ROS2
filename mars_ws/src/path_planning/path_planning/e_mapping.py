@@ -46,6 +46,7 @@ class Mapper:
         # Gradient Map
         dx, dy = np.gradient(self.map)
         self.grad_map = np.sqrt(dx**2 + dy**2)
+        # self.display_map('Slope')
 
     def chop_map(self, x1, x2, y1, y2):
         '''
@@ -79,26 +80,36 @@ class Mapper:
         where x is measured from left to right and y is measured from bottom to top
             For example self.map[0,0] is the top left corner of the map
             (resembles the layout of a 2D numpy array)
+
+            NOTE: Returns None for both x and y if the lat/lon is outside the map
         '''
         x_utm, y_utm, zone, zone_letter = utm.from_latlon(lat, lon)
         x = int((x_utm - self.xll) / self.res)
         y = self.h - int((y_utm - self.yll) / self.res)
-        return x, y
+        
+        if x < 0 or x >= self.map.shape[1] or y < 0 or y >= self.map.shape[0]:
+            return None, None
+        else:
+            return x, y
     
     def display_map(self, map_type='Elevation'):
         '''
         Displays the map using matplotlib
         '''
+        plt.style.use('dark_background')
         if map_type == 'Slope':
-            disp_map = self.grad_map
+            disp_map = np.arctan(self.grad_map)*180/np.pi
+            plt.imshow(disp_map, cmap='jet')
+            cbr = plt.colorbar(label=map_type + '(degrees)')
         else:
             disp_map = self.map
+            plt.imshow(disp_map, cmap='terrain')
+            cbr = plt.colorbar(label=map_type + '(m)')
 
-        plt.imshow(disp_map, cmap='terrain')
-        plt.title(map_type + ' Map')
-        plt.xlabel('X Coordinate')
-        plt.ylabel('Y Coordinate')
-        plt.colorbar(label=map_type)
+        cbr.ax.yaxis.label.set_size(14)
+        plt.title(map_type + ' Map', fontsize=22)
+        plt.xlabel('X Relative UTM (m)', fontsize=18)
+        plt.ylabel('Y Relative UTM (m)', fontsize=18)
         plt.show()
 
     def read_asc_file(self, file_path):
@@ -118,6 +129,8 @@ class Mapper:
 def main():
     # Testing the Mapper class
     mapper = Mapper(file_path=file_path, zone=12, zone_letter='N')
+
+    mapper.display_map('Slope')
 
     # Cheking latlon/xy conversion accuracy
     x, y = 200, 300

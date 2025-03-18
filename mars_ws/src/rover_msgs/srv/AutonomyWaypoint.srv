@@ -2,11 +2,10 @@
 # 
 # Contains a list of AutonomyTaskInfo messages.
 # 
-# The autonomy gui uses this message to send all of the intermediary 
-# latitude and longitude points corresponding to the best path 
-# topographically as planned by the path_planner node.
+# The autonomy gui uses this message to send either a single waypoint for a task
+# or a list of waypoints that corresponds to the planned path
 
-AutonomyTaskInfo[] task_list
+AutonomyTaskInfo[] task_list # task_list name is misleading
 ---
 bool success
 string message
