@@ -13,18 +13,21 @@ def generate_launch_description():
     autonomy_params_file = os.path.join(get_package_share_directory('autonomy'), 'params', 'autonomy_params.yaml')
 
     try:
-        # Resolve the original device path from the symlink
         # Path to the symlink
         udev_path = '/dev/rover/cameras/autonomyWebCam'
 
-        # Read the symlink to get the relative path it points to (e.g. ../../video8)
+        # Read the symlink to get the relative path it points to (e.g., ../../video8)
         relative_target = os.readlink(udev_path)
 
-        # Resolve the relative path to an absolute path, starting from the symlink's location
-        absolute_target = os.path.join(os.path.dirname(udev_path), relative_target)
-        
+        # Extract the final component of the relative path (e.g., 'video8')
+        final_device_name = os.path.basename(relative_target)
+
+        # Construct the absolute path in /dev folder (e.g., /dev/video8)
+        absolute_target = os.path.join('/dev', final_device_name)
+
         device = {'video_device': absolute_target}
 
+        # Print the final absolute device path
         print(f"Autonomy Web Cam using: {absolute_target}")
     
     except OSError as e:
