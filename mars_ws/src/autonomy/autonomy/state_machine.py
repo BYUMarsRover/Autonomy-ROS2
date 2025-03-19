@@ -148,6 +148,8 @@ class AutonomyStateMachine(Node):
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)  
         self.tag_id = TagID.GPS_ONLY
         self.a_task_complete = False
+        self.aruco_detect_enabled = False
+        self.obj_detect_enabled = False
 
         # Data structure to hold all of the waypoints at a time
         self.waypoints: deque[AutonomyTaskInfo] = deque()
@@ -236,6 +238,7 @@ class AutonomyStateMachine(Node):
             self.get_logger().info('Sending object detection request...')
             self.send_request(data, self.object_detect_client)
             self.retry_count = 0  # Reset retry count
+            self.obj_detect_enabled = data  #TODO future handle the making sure it actually comes back
         else:
             if self.retry_count < self.max_retries:
                 self.get_logger().warn(f'Service not available. Retrying... ({self.retry_count + 1}/{self.max_retries})')
@@ -249,6 +252,7 @@ class AutonomyStateMachine(Node):
             self.get_logger().info('Sending aruco detection request...')
             self.send_request(data, self.aruco_detect_client)
             self.retry_count = 0 # Reset retry count
+            self.aruco_detect_enabled = data #TODO future handle the making sure it actually comes back 
         else:
             if self.retry_count < self.max_retries:
                 self.get_logger().warn(f'Service not available. Retrying... ({self.retry_count + 1}/{self.max_retries})')
@@ -450,9 +454,6 @@ class AutonomyStateMachine(Node):
                     #Keep the LED Green by keeping it in arrival state if a task has been completed
                     self.nav_state.navigation_state = NavState.ARRIVAL_STATE
 
-                    # Disable object detection and aruco detection when arrived
-                    self.toggle_aruco_detection(False)
-                    self.toggle_object_detection(False)
                 else:
                     self.nav_state.navigation_state = NavState.TELEOPERATION_STATE
                 self.correct_aruco_tag_found = False
@@ -463,6 +464,12 @@ class AutonomyStateMachine(Node):
                 self.correct_obj_found = False
                 self.obj_distance = None
                 self.obj_angle = None
+
+                # Disable object detection and aruco detection when arrived
+                if self.aruco_detect_enabled:
+                    self.toggle_aruco_detection(False)
+                if self.obj_detect_enabled:
+                    self.toggle_object_detection(False)
 
 
 
@@ -510,9 +517,11 @@ class AutonomyStateMachine(Node):
 
                 #Toggle object detection or aruco detection if within a certain distance of the target point (saves computation time)
                 if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and dist_to_target < self.obj_enable_distance:
-                    self.toggle_object_detection(True)
+                    if not self.obj_detect_enabled:
+                        self.toggle_object_detection(True)
                 elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3] and dist_to_target < self.aruco_enable_distance:
-                    self.toggle_aruco_detection(True)
+                    if not self.aruco_detect_enabled:
+                        self.toggle_aruco_detection(True)
                 
                 if dist_to_target < self.dist_tolerance:
                     if self.tag_id == TagID.GPS_ONLY:
@@ -623,12 +632,6 @@ class AutonomyStateMachine(Node):
                 self.correct_obj_found = False
                 self.obj_distance = None
                 self.obj_angle = None
-
-                if self.tag_id in [TagID.MALLET, TagID.BOTTLE]:
-                    self.toggle_object_detection(False)
-                elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3]:
-                    self.toggle_aruco_detection(False)
-
 
                 # Pop off the completed task
                 if len(self.waypoints) > 0:
