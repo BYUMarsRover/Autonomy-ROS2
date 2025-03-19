@@ -449,6 +449,10 @@ class AutonomyStateMachine(Node):
                 if self.a_task_complete:
                     #Keep the LED Green by keeping it in arrival state if a task has been completed
                     self.nav_state.navigation_state = NavState.ARRIVAL_STATE
+
+                    # Disable object detection and aruco detection when arrived
+                    self.toggle_aruco_detection(False)
+                    self.toggle_object_detection(False)
                 else:
                     self.nav_state.navigation_state = NavState.TELEOPERATION_STATE
                 self.correct_aruco_tag_found = False
@@ -459,11 +463,6 @@ class AutonomyStateMachine(Node):
                 self.correct_obj_found = False
                 self.obj_distance = None
                 self.obj_angle = None
-
-                if self.tag_id in [TagID.MALLET, TagID.BOTTLE]:
-                    self.toggle_object_detection(False)
-                elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3]:
-                    self.toggle_aruco_detection(False)
 
 
 
