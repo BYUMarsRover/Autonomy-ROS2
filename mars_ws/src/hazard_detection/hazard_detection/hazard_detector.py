@@ -9,6 +9,7 @@ from numpy import sin, cos, sqrt
 from scipy.spatial.transform import Rotation as R
 import open3d as o3d
 from rover_msgs.msg import Hazard, HazardArray, RoverStateSingleton
+from std_srvs.srv import SetBool
 
 class HazardDetector(Node):
     def __init__(self):
@@ -38,11 +39,12 @@ class HazardDetector(Node):
         self.epsilon_clustering_density = self.get_parameter('epsilon_clustering_density').value
         self.min_points_to_cluster = self.get_parameter('min_points_to_cluster').value
 
-        print('epsilon_clustering_density:', self.epsilon_clustering_density)
-        print('min_points_to_cluster:', self.min_points_to_cluster)
+        # print('epsilon_clustering_density:', self.epsilon_clustering_density)
+        # print('min_points_to_cluster:', self.min_points_to_cluster)
 
         #Initialize other variables
-        self.imu_orientation = None   
+        self.imu_orientation = None 
+        self.enabled = False  
 
         #Subscribers
         self.subscriber = self.create_subscription(
@@ -67,8 +69,17 @@ class HazardDetector(Node):
         #Publishers
         self.publisher = self.create_publisher(HazardArray, '/hazards', 10)
 
+        #Service
+        self.enable_service = self.create_service(SetBool, '/hazard_detector/enable', self.enable_callback)
+
         self.get_logger().info('Hazard_detector initialized')
 
+    def enable_callback(self, request, response):
+        self.get_logger().info(f"Hazard Detection: {'ENABLED' if request.data else 'DISABLED'}")
+        self.enabled = request.data
+        response.success = True
+        response.message = f"Hazard Detection: {'ENABLED' if self.enabled else 'DISABLED'}"
+        return response
 
     def imu_callback(self, msg):
         self.imu_orientation = msg.orientation
@@ -78,6 +89,9 @@ class HazardDetector(Node):
 
     def point_cloud_callback(self, msg):
         #TODO: save the cloud in a queue to be processed in a separate thread outside of the callback
+
+        if not self.enabled:
+            return
 
         # Convert PointCloud2 to Open3D format and transform to the bounding box frame
         cloud = ros_to_pcl_and_transform(msg, self.bounding_box_start_point)

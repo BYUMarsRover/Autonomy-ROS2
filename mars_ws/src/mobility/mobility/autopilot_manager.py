@@ -89,6 +89,7 @@ class AutopilotManager(Node):
         self.last_callback_time = self.get_clock().now()  # Store last callback time
         self.timer = None  # Timer starts as None
         self.no_obstacle_alpha = 0.9
+        self.hazard_avoidance_enabled = False
 
         # ROS subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
@@ -101,6 +102,7 @@ class AutopilotManager(Node):
         # ROS services
         self.create_service(SetBool, '/mobility/autopilot_manager/enabled', self.enable)
         self.create_service(SetFloat32, '/mobility/speed_factor', self.set_speed)
+        self.create_service(SetBool, '/mobility/autopilot_manager/enable_hazard_avoidance', self.enable_hazard_avoidance)
 
         # PID controllers
         self.linear_controller = PIDControl(self.speed * self.kp_linear, self.speed * self.ki_linear, self.speed * self.kd_linear,
@@ -149,6 +151,9 @@ class AutopilotManager(Node):
         self.curr_heading = np.deg2rad(msg.map_yaw)
 
     def obstacle_callback(self, msg):
+        #Only avoid obstacles if the hazard avoidance is enabled
+        if not self.hazard_avoidance_enabled:
+            return
         
         #start a timer to stop avoiding the obstacle after a certain amount of time
         if self.timer is None:
@@ -243,6 +248,13 @@ class AutopilotManager(Node):
         self.enabled = request.data
         response.success = True
         response.message = f"Autopilot Manager: {'ENABLED' if self.enabled else 'DISABLED'}"
+        return response
+    
+    def enable_hazard_avoidance(self, request, response):
+        self.get_logger().info(f"Hazard Avoidance: {'ENABLED' if request.data else 'DISABLED'}")
+        self.hazard_avoidance_enabled = request.data
+        response.success = True
+        response.message = f"Hazard Avoidance: {'ENABLED' if self.hazard_avoidance_enabled else 'DISABLED'}"
         return response
 
 

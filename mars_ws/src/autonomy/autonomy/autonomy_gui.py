@@ -62,6 +62,12 @@ class AutonomyGUI(Node, QWidget):
         self.SendWaypointButton.clicked.connect(self.send_waypoint)
         self.ClearWaypointButton.clicked.connect(self.clear_waypoint)
 
+        # Hazard Detection Buttons
+        self.EnableHazardDetectionButton.clicked.connect(self.enable_hazard_detection)
+        self.DisableHazardDetectionButton.clicked.connect(self.disable_hazard_detection)
+        self.EnableHazardAvoidanceButton.clicked.connect(self.enable_hazard_avoidance)
+        self.DisableHazardAvoidanceButton.clicked.connect(self.disable_hazard_avoidance)
+
         # mapviz #NOTE: depricated until mapviz capability added back
         # self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
         # self.PlanOrderMapvizButton.clicked.connect(self.plan_order_mapviz_service_call)
@@ -153,6 +159,10 @@ class AutonomyGUI(Node, QWidget):
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
         # Requests that the path planner plans the path to the selected waypoint
         self.plan_path_client = self.create_client(PlanPath, '/plan_path')
+        # Enables the hazard detection node
+        self.enable_hazard_detection_client = self.create_client(SetBool, '/hazard_detector/enable')
+        # Enables hazard avoidance in the autopilot manager
+        self.enable_hazard_avoidance_client = self.create_client(SetBool, '/mobility/autopilot_manager/enable_hazard_avoidance')
 
         #NOTE: depricated until mapviz capability added back
         # self.plan_order_mapviz_client = self.create_client(OrderPath, '/plan_order_mapviz')
@@ -391,6 +401,34 @@ class AutonomyGUI(Node, QWidget):
         req.data = False
         future = self.enable_autonomy_client.call_async(req)
         self.gui_setText('logger_label', 'Disabling Autonomy...')
+
+    def enable_hazard_detection(self):
+        req = SetBool.Request()
+        req.data = True
+        future = self.enable_hazard_detection_client.call_async(req)
+        self.gui_setText('logger_label', 'Enabling Hazard Detection...')
+        self.HazardDetection.setText(f'Hazard Detection: Enabled')
+
+    def disable_hazard_detection(self):
+        req = SetBool.Request()
+        req.data = False
+        future = self.enable_hazard_detection_client.call_async(req)
+        self.gui_setText('logger_label', 'Disabling Hazard Detection...')
+        self.HazardDetection.setText(f'Hazard Detection: Disabled')
+
+    def enable_hazard_avoidance(self):
+        req = SetBool.Request()
+        req.data = True
+        future = self.enable_hazard_avoidance_client.call_async(req)
+        self.gui_setText('logger_label', 'Enabling Hazard Avoidance...')
+        self.HazardAvoidance.setText(f'Hazard Avoidance: Enabled')
+
+    def disable_hazard_avoidance(self):
+        req = SetBool.Request()
+        req.data = False
+        future = self.enable_hazard_avoidance_client.call_async(req)
+        self.gui_setText('logger_label', 'Disabling Hazard Avoidance...')
+        self.HazardAvoidance.setText(f'Hazard Avoidance: Disabled')
 
     #NOTE: depricated until mapviz capability added back
     # This sends the waypoint to mapviz for preview
