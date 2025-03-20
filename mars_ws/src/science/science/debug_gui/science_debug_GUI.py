@@ -27,13 +27,22 @@ class science_debug_GUI(Node):
         super().__init__('science_debug_GUI')
         self.qt = QtWidgets.QWidget()
 
-        ui_file_path = os.path.join(
+        debug_skeleton_ui_path = os.path.join(
             get_package_share_directory('science'),
             'debug_gui',
-            'science_debug_GUI.ui'
+            'skeleton.ui'
+            )
+        
+        command_widget_path = os.path.join(
+            get_package_share_directory('science'),
+            'debug_gui',
+            'command_widget.ui'
             )
 
-        uic.loadUi(ui_file_path, self.qt)
+        uic.loadUi(debug_skeleton_ui_path, self.qt)
+
+        # TODO Load in the command widget and dynmically insert them into the skeleton
+
         self.qt.show() # Show the GUI
 
         self.base_ip = self.get_base_ip()
@@ -42,6 +51,7 @@ class science_debug_GUI(Node):
         
 
     def task_launcher_init(self):
+        pass
         # self.signals = Signals()
 
         # self.qt.pushButton_save_notes.clicked.connect(self.save_notes)
@@ -79,7 +89,6 @@ class science_debug_GUI(Node):
         # self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
         # self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
     
-
     def get_base_ip(self):
         ip = os.getenv("BASE_ADDRESS")
         if ip is None:

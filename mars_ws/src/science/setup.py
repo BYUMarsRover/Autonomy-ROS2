@@ -21,6 +21,8 @@ setup(
         (os.path.join('share', package_name, 'launch'), glob('launch/*.py')),
         # Include the gui .ui file
         (os.path.join('share', package_name, 'gui'), glob(os.path.join('science', 'gui', '*.ui'))),
+        # Include the debug_gui .ui files
+        (os.path.join('share', package_name, 'debug_gui'), glob(os.path.join('science', 'debug_gui', '*.ui'))),
         #Might want to be more particular in the future but this is a quick fix to get everything
         # (os.path.join('share', package_name), glob(os.path.join('science', '*.py'))),
     ],
@@ -44,6 +46,7 @@ setup(
             'science_serial_interface = science.science_serial_interface:main',
             'science_data_saver = science.presentation.science_data_saver:main',
             'science_GUI = science.gui.science_GUI:main',
+            'science_debug = science.debug_gui.science_debug_GUI:main'
             # 'presentation_generator = science.presentation.presentation_generator:main'
         ],
     },
