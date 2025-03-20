@@ -11,7 +11,7 @@ will stream the needed distance and Chi angles
 import rclpy
 from rclpy.node import Node
 
-from rover_msgs.msg import RoverStateSingleton, MobilityAutopilotCommand, MobilityGPSWaypoint2Follow, ZedObstacles
+from rover_msgs.msg import RoverStateSingleton, MobilityAutopilotCommand, MobilityGPSWaypoint2Follow
 from sensor_msgs.msg import NavSatFix
 from std_msgs.msg import String
 from std_srvs.srv import SetBool
@@ -23,8 +23,6 @@ from mobility.utils.GPSTools import *
 
 
 class PathManager(Node):
-
-    avoid_hazards = False
 
     def __init__(self) -> None:
         super().__init__('path_manager')

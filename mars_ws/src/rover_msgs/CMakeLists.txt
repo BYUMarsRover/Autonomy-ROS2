@@ -40,7 +40,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RoverState.msg"
   "msg/RoverStateSingleton.msg"
   "msg/WaypointNav.msg"
-  "msg/ZedObstacles.msg"
   "msg/Camera.msg"
   "msg/DeviceList.msg"
   "msg/ScienceFADIntensity.msg"
