@@ -23,3 +23,14 @@
   longitude: -112.012014
   altitude: 1500.0
   heading: 0.0
+- name: materials_handling_area
+  latitude: 40.267390
+  longitude: -111.658580
+  altitude: 1387.0
+  heading: 0.0
+- name: lavell_southern_lot
+  latitude: 40.256136
+  longitude: -111.655376
+  altitude: 1387.0
+  heading: 0.0
+
