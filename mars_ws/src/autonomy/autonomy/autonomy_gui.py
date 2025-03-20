@@ -174,7 +174,7 @@ class AutonomyGUI(Node, QWidget):
         # location = self.get_parameter('location').value
 
         # # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
-        # mapviz_params_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_params.yaml')
+        # mapviz_params_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_origins.yaml')
         # lat, lon = get_coordinates(mapviz_params_path, location)
         # # print(f'Lat: {lat}, Lon: {lon}')
 
@@ -828,18 +828,18 @@ class AutonomyGUI(Node, QWidget):
 
 #NOTE: depricated until mapviz capability added back
 # This gets the 0, 0 coordinates of the mapviz map
-# def get_coordinates(file_path, location):
+# def get_coordinates(file_path, location): # TODO: this may not work anymore because the format of the yaml file was changed
 #     # Read the YAML file
 #     with open(file_path, 'r') as file:
 #         data = yaml.safe_load(file)
     
 #     # Navigate to the locations data
-#     locations = data['/**']['ros__parameters']['locations']
+#     locations = data['/**']['ros__parameters']['name']
     
 #     # Check if the location exists
 #     if location in locations:
-#         lat = locations[location]['latitude']
-#         lon = locations[location]['longitude']
+#         lat = locations[name]['latitude']
+#         lon = locations[name]['longitude']
 #         return lat, lon
 #     else:
 #         return None

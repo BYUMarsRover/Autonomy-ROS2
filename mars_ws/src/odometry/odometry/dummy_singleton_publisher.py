@@ -28,14 +28,14 @@ BYU_LONG=-111.649276
 ROCK_LAT=40.267147
 ROCK_LONG=-111.632455
 
-# LAT_INIT=HANK_LAT
-# LONG_INIT=HANK_LONG
+LAT_INIT=HANK_LAT
+LONG_INIT=HANK_LONG
 
 # LAT_INIT=GRAVEL_LAT
 # LONG_INIT=GRAVEL_LONG
 
-LAT_INIT= HANK_AUT_2024_COMP_LAT
-LONG_INIT= HANK_AUT_2024_COMP_LONG
+# LAT_INIT= HANK_AUT_2024_COMP_LAT
+# LONG_INIT= HANK_AUT_2024_COMP_LONG
 
 LL_PRECISION=100
 HEADING_PRECISION=LL_PRECISION
@@ -114,15 +114,15 @@ class DummySingletonPublisher(Node):
         # self.map_yaw = self._generate_heading(self.heading_counter)
 
         # Make the rover move in a circle around the init location
-        # if not hasattr(self, 'angle'):
-        #     self.angle = 0 # North East Down (measured from North cw is positive)
-        # self.angle += 0.4
-        # if self.angle >= 360:
-        #     self.angle = 0
-        # self.latitude, self.longitude = self.rotate()
+        if not hasattr(self, 'angle'):
+            self.angle = 0 # North East Down (measured from North cw is positive)
+        self.angle += 1.0
+        if self.angle >= 360:
+            self.angle = 0
+        self.latitude, self.longitude = self.rotate()
 
         # Make the rover spin in place
-        self.map_yaw -= 0.3 # -0.1 * ROS_RATE degrees per second
+        # self.map_yaw -= 0.3 # -0.1 * ROS_RATE degrees per second
 
         # Wrap
         if self.map_yaw < -180:
@@ -142,7 +142,7 @@ class DummySingletonPublisher(Node):
 
     def rotate(self):
         R = 6378137  # Earth's radius in meters
-        d = 30  # Radius of rotation in meters
+        d = 50  # Radius of rotation in meters
 
         # Convert angle to radians
         angle_radians = np.deg2rad(self.angle)
