@@ -4,36 +4,6 @@ from sensor_msgs.msg import PointCloud2
 import struct
 import open3d as o3d
 
-
-def ros_to_pcl(ros_cloud):
-    """
-    Converts a ROS PointCloud2 message to an Open3D PointCloud.
-    
-    :param ros_cloud: ROS PointCloud2 message
-    :return: Open3D PointCloud
-    """
-    points_list = []
-
-    # Extract points from ROS PointCloud2 message
-    for point in read_points(ros_cloud, skip_nans=True):
-        points_list.append([point[0], point[1], point[2]])  # x, y, z
-
-    # Convert to NumPy array
-    np_points = np.array(points_list, dtype=np.float32)
-
-    # Create Open3D PointCloud
-    pcl_data = o3d.geometry.PointCloud()
-    pcl_data.points = o3d.utility.Vector3dVector(np_points)
-    
-    # Generate the fake point cloud
-    fake_pc = generate_fake_point_cloud()
-
-    # Visualize the point cloud
-    # visualize_point_cloud(fake_pc)
-
-    #return pcl_data
-    return fake_pc #Update when actually using a point cloud
-
 def ros_to_pcl_and_transform(ros_cloud, transformation_point):
     """
     Converts a ROS PointCloud2 message to an Open3D PointCloud and transforms the points so origin is from the start of the bounding box.
@@ -55,12 +25,12 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point):
     pcl_data.points = o3d.utility.Vector3dVector(np_points)
 
     # Generate the fake point cloud
-    # fake_pc = generate_fake_point_cloud()
+    #fake_pc = generate_fake_point_cloud()
 
     # Visualize the point cloud
     # visualize_point_cloud(pcl_data)
 
-    # return fake_pc
+    #return fake_pc
     
     return pcl_data
 
@@ -70,6 +40,10 @@ def visualize_point_cloud(pc):
     o3d.visualization.draw_geometries([pc])
 
 def generate_fake_point_cloud():
+    """
+    Generates a fake point cloud with ground and non-ground points.
+    Used for testing purposes.
+    """
     # Create ground plane points (z = 0)
     ground_plane = np.random.uniform(-5, 5, (1000, 2))  # 1000 points on the ground plane
     ground_plane = np.hstack((np.zeros((ground_plane.shape[0], 1)), ground_plane))

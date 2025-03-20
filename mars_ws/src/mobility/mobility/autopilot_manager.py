@@ -75,10 +75,6 @@ class AutopilotManager(Node):
         self.high_bound = np.deg2rad(self.get_parameter("high_bound").get_parameter_value().double_value)
 
         # Other variables
-        self.heading_plus = 0.0
-        self.slow_down = 0.0
-        self.too_close_limit = 0.0  # TODO: Choose a reasonable value
-        self.detections = []
         self.avoidance_heading = 0.0
         self.heading_alpha = 0.0
         self.obstacle_found = False
@@ -218,12 +214,6 @@ class AutopilotManager(Node):
         self.obstacle_found = False
         #turn off the timer
         self.timer.cancel()
-
-    def heading_decay(self):
-        if not self.detections:
-            return
-        if time.time_ns() - self.detections[0][0] > 10.0:
-            self.heading_plus -= self.detections.pop(0)[1]
 
     def set_speed(self, request: SetFloat32.Request, response: SetFloat32.Response):
         self.speed = request.data

@@ -59,20 +59,8 @@ class PathManager(Node):
             self.rover_state_singleton_callback,
             10
         )
-        # self.zed_obstacles_sub = self.create_subscription(
-        #     ZedObstacles,
-        #     '/zed/obstacles',
-        #     self.set_zed_obstacles,
-        #     qos_profile
-        # )
 
-        # Hazard avoidance parameters
-        self.roll = None
-        self.pitch = None
-        self.yaw = None
-        # self.obstacles = []
-
-        self.get_logger().warn("Path_Manager Initialized!")
+        self.get_logger().info("Path_Manager Initialized!")
         # self.publish_debug("[__init__] EXIT")
 
     def publish_debug(self, message: str):
@@ -86,9 +74,6 @@ class PathManager(Node):
         curr_lat = msg.gps.latitude
         curr_lon = msg.gps.longitude
         curr_elv = msg.gps.altitude
-        self.roll = msg.map_roll
-        self.pitch = msg.map_pitch
-        self.yaw = msg.map_yaw
 
         self.publish_debug("[rover_state_singleton_callback] Setting self.current_point")
         self.current_point = GPSCoordinate(curr_lat, curr_lon, curr_elv)
@@ -109,22 +94,6 @@ class PathManager(Node):
         except Exception as e:
             self.get_logger().error(f"Exception in waypoint_2_follow_callback: {e}")
 
-    # def set_zed_obstacles(self, msg: ZedObstacles):
-    #     self.publish_debug("[set_zed_obstacles] ENTER")
-    #     rover_heading = self.get_rover_heading_from_orientation()
-
-    #     if self.current_point is not None:
-    #         try:
-    #             self.obstacles = []
-    #             for i in range(len(msg.x_coord)):
-    #                 rel_x = msg.x_coord[i] * np.cos(rover_heading) + msg.y_coord[i] * np.sin(rover_heading)
-    #                 rel_y = -1 * msg.x_coord[i] * np.sin(rover_heading) + msg.y_coord[i] * np.cos(rover_heading)
-    #                 self.obstacles.append((rel_x, rel_y))
-    #         except Exception as e:
-    #             self.get_logger().error(f"Exception in set_zed_obstacles: {e}")
-
-    #     self.update_autopilot_cmd()
-    #     self.publish_debug("[set_zed_obstacles] EXIT")
 
     def update_autopilot_cmd(self):
         self.publish_debug("[update_autopilot_cmd] ENTER")
@@ -147,12 +116,6 @@ class PathManager(Node):
         response.message = f'Path Manager: {"ENABLED" if self.enabled else "DISABLED"}'
         return response
 
-    def get_rover_heading_from_orientation(self):
-        return self.yaw
-
-    def potential_fields(self):
-        # Placeholder for potential fields logic
-        pass
 
     def publish_autopilot_cmd(self):
 
