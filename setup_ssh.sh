@@ -51,11 +51,9 @@ case $choice in
     1)
         # Remove old SSH key (if it exists) to prevent key mismatch issues
         remove_old_ssh_key "$ROVER_IP_ADDRESS" "22"
-        echo "here"
 
         # Test the SSH connection to accept the new key if prompted
         $ROVER_CONNECT -o StrictHostKeyChecking=accept-new marsrover@$ROVER_IP_ADDRESS "echo" &> /dev/null
-        echo "here"
 
         # Copy the SSH key to the rover (physical machine)
         ssh-copy-id marsrover@$ROVER_IP_ADDRESS
