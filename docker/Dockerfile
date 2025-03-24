@@ -74,8 +74,7 @@ RUN pip3 install utm
 # Install OpenCV - Gabe Slade, Feb 2025
 # Used for detecting and locating aruco tags
 USER root
-RUN apt update && apt install -y libopencv-dev
-RUN apt update && apt install -y ros-humble-rviz2 
+RUN apt update && apt install -y libopencv-dev 
 USER $NAME
 
 # Downgrade numpy - Nelson Durrant, Feb 2025
@@ -95,6 +94,7 @@ RUN pip3 install pyserial
 # Needed in order to display various system GUIs
 USER root
 RUN apt update && apt install -y ros-humble-rviz-common
+RUN apt update && apt install -y ros-humble-rviz2
 USER $NAME
 
 # Install ROS 2 usb-cam package - Daniel Webb, Feb 2025
