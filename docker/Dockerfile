@@ -94,6 +94,7 @@ RUN pip3 install pyserial
 # Needed in order to display various system GUIs
 USER root
 RUN apt update && apt install -y ros-humble-rviz-common
+RUN apt update && apt install -y ros-humble-rviz2
 USER $NAME
 
 # Install ROS 2 usb-cam package - Daniel Webb, Feb 2025
@@ -145,3 +146,8 @@ USER $NAME
 USER root
 RUN apt update && apt install -y libboost-all-dev
 USER $NAME
+
+# Install pcl and open3d - Gabe Slade Mar 2025
+# Needed for the hazard avoidance node
+RUN pip3 install open3d
+RUN pip3 install pcl
