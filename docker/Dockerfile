@@ -74,7 +74,8 @@ RUN pip3 install utm
 # Install OpenCV - Gabe Slade, Feb 2025
 # Used for detecting and locating aruco tags
 USER root
-RUN apt update && apt install -y libopencv-dev 
+RUN apt update && apt install -y libopencv-dev
+RUN apt update && apt install -y ros-humble-rviz2 
 USER $NAME
 
 # Downgrade numpy - Nelson Durrant, Feb 2025
@@ -145,3 +146,8 @@ USER $NAME
 USER root
 RUN apt update && apt install -y libboost-all-dev
 USER $NAME
+
+# Install pcl and open3d - Gabe Slade Mar 2025
+# Needed for the hazard avoidance node
+RUN pip3 install open3d
+RUN pip3 install pcl
