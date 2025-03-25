@@ -6,7 +6,7 @@
     obj_distance_tolerance: 1.5 #TODO: Tune
     abort_distance_tolerance: 5.0
     aruco_distance_tolerance: 2.0
-    hex_search_radius: 4
+    hex_search_radius: 4.0
     navigate_speed: 1.0
     object_speed: 0.3
     aruco_speed: 0.3
