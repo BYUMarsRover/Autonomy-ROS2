@@ -20,7 +20,7 @@ import os
 import numpy as np
 
 # Used by Mapviz and others
-# import yaml
+import yaml
 import utm
 
 from std_srvs.srv import SetBool
@@ -67,10 +67,10 @@ class AutonomyGUI(Node, QWidget):
         self.SendWaypointButton.clicked.connect(self.send_waypoint)
         self.ClearWaypointButton.clicked.connect(self.clear_waypoint)
 
-        # mapviz #NOTE: depricated until mapviz capability added back
-        # self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
+        # Mapviz Buttons
+        self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
         # self.PlanOrderMapvizButton.clicked.connect(self.plan_order_mapviz_service_call)
-        # self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
+        self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
 
         # Mobility Control Buttons
         self.SetTurnConstantButton.clicked.connect(self.set_turn_constant)
@@ -123,8 +123,7 @@ class AutonomyGUI(Node, QWidget):
         ################# ROS Communication #################
 
         # Publishers
-        #NOTE: depricated until mapviz capability added back
-        # self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
+        self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
 
         # Subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10) #Rover GPS and Heading
@@ -169,27 +168,29 @@ class AutonomyGUI(Node, QWidget):
         self.rover_state_singleton_timepoint = None
 
         ################# Mapviz Communication Setup #################
-        #NOTE: depricated until mapviz capability added back
 
         # Retrieve Mapviz Location
-        # self.declare_parameter('location', 'hanksville')
-        # location = self.get_parameter('location').value
+        self.declare_parameter('MAPVIZ_LOCATION', 'hanksville')
+        mapviz_location = self.get_parameter('MAPVIZ_LOCATION').value
 
-        # # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
-        # mapviz_params_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_origins.yaml')
-        # lat, lon = get_coordinates(mapviz_params_path, location)
-        # # print(f'Lat: {lat}, Lon: {lon}')
+        # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
+        mapviz_origins_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_origins.yaml')
+        # Open mapviz origins file
+        with open(mapviz_origins_path, 'r') as file:
+            mapviz_origins = yaml.safe_load(file)
+        for location in mapviz_origins: # iterate over dictionaries to find the lat/lon of the location
+            if location['name'] == mapviz_location:
+                self.origin_latlon = np.array([location['latitude'], location['longitude']])
+                break
+        # Get mapviz origin in UTM coordinates
+        self.origin = np.array((utm.from_latlon(*self.origin_latlon)[0:2])[::-1])
 
-        # # Convert lat/lon to UTM coordinates
-        # utm_coords = utm.from_latlon(lat, lon)
-        # self.utm_easting_zero = utm_coords[0]
-        # self.utm_northing_zero = utm_coords[1]
-        # self.utm_zone_number = utm_coords[2]
-        # self.utm_zone_letter = utm_coords[3]
+        self.utm_easting_zero = self.origin[1]
+        self.utm_northing_zero = self.origin[0]
 
-        # # Initialize the current previewed waypoints
-        # # Stored in lat/lon format
-        # self.current_previewed_waypoints = Path() #NOTE: used by mapviz
+        # Initialize the current previewed waypoints
+        # Stored in lat/lon format
+        self.current_previewed_waypoints = Path() #NOTE: used by mapviz
 
     # Clears displays in the gui if information stops being received.
     def check_timepoints(self):
@@ -390,38 +391,38 @@ class AutonomyGUI(Node, QWidget):
 
     #NOTE: depricated until mapviz capability added back
     # This sends the waypoint to mapviz for preview
-    # def preview_waypoint(self):
-    #     # Find the x and y to be sent to mapviz
-    #     lat = float(self.latitude_input.text())
-    #     lon = float(self.longitude_input.text())
+    def preview_waypoint(self):
+        # Find the x and y to be sent to mapviz
+        lat = float(self.latitude_input.text())
+        lon = float(self.longitude_input.text())
 
-    #     current_time = self.get_clock().now().to_msg()
-    #     self.current_previewed_waypoints.header = Header()
-    #     self.current_previewed_waypoints.header.stamp = current_time
-    #     self.current_previewed_waypoints.header.frame_id = "map"
+        current_time = self.get_clock().now().to_msg()
+        self.current_previewed_waypoints.header = Header()
+        self.current_previewed_waypoints.header.stamp = current_time
+        self.current_previewed_waypoints.header.frame_id = "map"
 
-    #     pose_stamped = PoseStamped()
-    #     pose_stamped.header.stamp = current_time
-    #     pose_stamped.header.frame_id = "map"
+        pose_stamped = PoseStamped()
+        pose_stamped.header.stamp = current_time
+        pose_stamped.header.frame_id = "map"
 
-    #     pose_stamped.pose.position.x = lat
-    #     pose_stamped.pose.position.y = lon
-    #     pose_stamped.pose.position.z = 0.0
+        pose_stamped.pose.position.x = lat
+        pose_stamped.pose.position.y = lon
+        pose_stamped.pose.position.z = 0.0
 
-    #     pose_stamped.pose.orientation.x = 0.0
-    #     pose_stamped.pose.orientation.y = 0.0
-    #     pose_stamped.pose.orientation.z = 0.0
-    #     pose_stamped.pose.orientation.w = 1.0
+        pose_stamped.pose.orientation.x = 0.0
+        pose_stamped.pose.orientation.y = 0.0
+        pose_stamped.pose.orientation.z = 0.0
+        pose_stamped.pose.orientation.w = 1.0
         
-    #     self.current_previewed_waypoints.poses.append(pose_stamped)
+        self.current_previewed_waypoints.poses.append(pose_stamped)
 
-    #     self.path_publisher.publish(
-    #         path_to_utm(self.current_previewed_waypoints, 
-    #                     self.utm_easting_zero, 
-    #                     self.utm_northing_zero)
-    #         )
+        self.path_publisher.publish(
+            path_to_utm(self.current_previewed_waypoints, 
+                        self.utm_easting_zero, 
+                        self.utm_northing_zero)
+            )
         
-    #     self.ros_signal.emit('logger_label', 'Waypoint Sent for Preview')
+        self.ros_signal.emit('logger_label', 'Waypoint Sent for Preview')
 
     # This adds the waypoint to the waypoint list that is held in the autonomy gui
     def add_waypoint(self):
@@ -791,54 +792,54 @@ class AutonomyGUI(Node, QWidget):
 
     #NOTE: depricated until mapviz capability added back
     # This clears all previewed waypoints from mapviz
-    # def clear_mapviz(self):
+    def clear_mapviz(self):
 
-    #     # Clear the current previewed waypoints
-    #     while(len(self.current_previewed_waypoints.poses) > 0):
-    #         self.current_previewed_waypoints.poses.pop()
+        # Clear the current previewed waypoints
+        while(len(self.current_previewed_waypoints.poses) > 0):
+            self.current_previewed_waypoints.poses.pop()
 
-    #     msg = Path()
+        msg = Path()
 
-    #     current_time = self.get_clock().now().to_msg()
-    #     msg.header = Header()
-    #     msg.header.stamp = current_time
-    #     msg.header.frame_id = "map"
+        current_time = self.get_clock().now().to_msg()
+        msg.header = Header()
+        msg.header.stamp = current_time
+        msg.header.frame_id = "map"
 
-    #     pose_stamped = PoseStamped()
-    #     pose_stamped.header.stamp = current_time
-    #     pose_stamped.header.frame_id = "map"
+        pose_stamped = PoseStamped()
+        pose_stamped.header.stamp = current_time
+        pose_stamped.header.frame_id = "map"
 
-    #     pose_stamped.pose.position.x = 0.0
-    #     pose_stamped.pose.position.y = 0.0
-    #     pose_stamped.pose.position.z = 0.0
+        pose_stamped.pose.position.x = 0.0
+        pose_stamped.pose.position.y = 0.0
+        pose_stamped.pose.position.z = 0.0
 
-    #     pose_stamped.pose.orientation.x = 0.0
-    #     pose_stamped.pose.orientation.y = 0.0
-    #     pose_stamped.pose.orientation.z = 0.0
-    #     pose_stamped.pose.orientation.w = 1.0
+        pose_stamped.pose.orientation.x = 0.0
+        pose_stamped.pose.orientation.y = 0.0
+        pose_stamped.pose.orientation.z = 0.0
+        pose_stamped.pose.orientation.w = 1.0
         
-    #     msg.poses = [pose_stamped]
+        msg.poses = [pose_stamped]
 
-    #     self.path_publisher.publish(msg)
-    #     self.ros_signal.emit('logger_label', 'Mapviz Cleared')
+        self.path_publisher.publish(msg)
+        self.ros_signal.emit('logger_label', 'Mapviz Cleared')
 
 #NOTE: depricated until mapviz capability added back
 # This gets the 0, 0 coordinates of the mapviz map
-# def get_coordinates(file_path, location): # TODO: this may not work anymore because the format of the yaml file was changed
-#     # Read the YAML file
-#     with open(file_path, 'r') as file:
-#         data = yaml.safe_load(file)
+def get_coordinates(file_path, location): # TODO: this may not work anymore because the format of the yaml file was changed
+    # Read the YAML file
+    with open(file_path, 'r') as file:
+        data = yaml.safe_load(file)
     
-#     # Navigate to the locations data
-#     locations = data['/**']['ros__parameters']['name']
+    # Navigate to the locations data
+    locations = data['/**']['ros__parameters']['name']
     
-#     # Check if the location exists
-#     if location in locations:
-#         lat = locations[name]['latitude']
-#         lon = locations[name]['longitude']
-#         return lat, lon
-#     else:
-#         return None
+    # Check if the location exists
+    if location in locations:
+        lat = locations[name]['latitude']
+        lon = locations[name]['longitude']
+        return lat, lon
+    else:
+        return None
     
 #NOTE: depricated until mapviz capability added back
 # Converts a path from UTM to lat/lon
@@ -882,7 +883,6 @@ def main(args=None):
     # Initialize ROS2
     rclpy.init(args=args)
 
-    # Popen("pkill gst", shell=True, preexec_fn=os.setsid, stderr=PIPE)
     # Create QApplication
     gui_QWidget = QApplication(sys.argv)
 

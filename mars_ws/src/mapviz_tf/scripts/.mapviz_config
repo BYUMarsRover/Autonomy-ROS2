@@ -65,13 +65,13 @@ displays:
       offset_x: 0
       offset_y: 0
       ratio: original
-  # - type: mapviz_plugins/path
-  #   name: Path Planning
-  #   config:
-  #     visible: true
-  #     collapsed: false
-  #     topic: /mapviz/path
-  #     color: "#00ff00"
+  - type: mapviz_plugins/path
+    name: Path Planning
+    config:
+      visible: true
+      collapsed: false
+      topic: /mapviz/path
+      color: "#00ff00"
   # - type: mapviz_plugins/point_click_publisher
   #   name: new display
   #   config:
