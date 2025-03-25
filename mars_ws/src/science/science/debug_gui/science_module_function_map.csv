@@ -28,7 +28,7 @@ command,14,resume_routine,,void,0,,void,0,,void,0,,void,0,Resumes a paused routi
 command,15,step_routine,,void,0,,void,0,,void,0,,void,0,Moves a paused routine forward by one step,
 command,16,abort_routine,,void,0,,void,0,,void,0,,void,0,Aborts a routine,
 command,17,reset_spectrograph,,void,0,,void,0,,void,0,,void,0,Resets the spectrograph,
-command,18,sample_spectrograph,sample_cnt,uint8_t,1,sample_interval_mus,uint32_t,0,1,bool,1,,void,0,Samples the ,
+command,18,sample_spectrograph,sample_cnt,uint8_t,1,sample_interval_mus,uint32_t,0,bulb_on,bool,1,,void,0,Samples the spectrograph,
 command,19,reset_ltr,,void,0,,void,0,,void,0,,void,0,,
 command,20,sample_ltr,,void,0,,void,0,,void,0,,void,0,,
 command,21,calibrate_uv_sensitivty,uv_sensitivty,uint16_t,1,,void,0,,void,0,,void,0,,
