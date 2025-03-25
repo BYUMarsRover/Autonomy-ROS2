@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>623</width>
-    <height>891</height>
+    <width>790</width>
+    <height>827</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,14 +23,14 @@
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
-         <widget class="QCheckBox" name="checkBox_2">
+         <widget class="QCheckBox" name="ackBit">
           <property name="text">
            <string>Enable Acknowledge</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox">
+         <widget class="QCheckBox" name="ovrBit">
           <property name="text">
            <string>Enable Override</string>
           </property>
@@ -44,6 +44,18 @@
        <property name="title">
         <string>Last Sent Command</string>
        </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_7">
+        <item>
+         <widget class="QLabel" name="lastSentLabel">
+          <property name="text">
+           <string>NULL</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </item>
     </layout>
@@ -58,7 +70,7 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QScrollArea" name="scrollArea">
+       <widget class="QScrollArea" name="scrollArea_command">
         <property name="widgetResizable">
          <bool>true</bool>
         </property>
@@ -67,11 +79,11 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>579</width>
-           <height>346</height>
+           <width>746</width>
+           <height>314</height>
           </rect>
          </property>
-         <layout class="QGridLayout" name="gridLayout"/>
+         <layout class="QHBoxLayout" name="horizontalLayout_4"/>
         </widget>
        </widget>
       </item>
@@ -88,7 +100,7 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QScrollArea" name="scrollArea_2">
+       <widget class="QScrollArea" name="scrollArea_query">
         <property name="widgetResizable">
          <bool>true</bool>
         </property>
@@ -97,11 +109,11 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>579</width>
-           <height>346</height>
+           <width>746</width>
+           <height>314</height>
           </rect>
          </property>
-         <layout class="QGridLayout" name="gridLayout_2"/>
+         <layout class="QHBoxLayout" name="horizontalLayout_6"/>
         </widget>
        </widget>
       </item>

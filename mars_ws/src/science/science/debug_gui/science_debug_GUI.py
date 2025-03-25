@@ -1,99 +1,259 @@
 #!/usr/bin/python3
 
-from PyQt5 import QtWidgets, uic
+from PyQt5 import QtWidgets, uic, QtGui
 from python_qt_binding.QtCore import QObject, Signal
 import rclpy
 from rover_msgs.srv import CameraControl
-from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton
+from rover_msgs.msg import ScienceSerialPacket
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.pyplot as plt
 import numpy as np
+import struct
 
 import os
 import sys
 
-class Signals(QObject):
-    sensor_signal = Signal(ScienceSensorValues)
-    # auger_position = Signal(ScienceToolPosition)
-    sensor_save_signal = Signal(ScienceSaveSensor)
-    FAD_save_signal = Signal(ScienceSaveFAD)
-    notes_save_signal = Signal(ScienceSaveNotes)
-    fad_intensity_signal = Signal(ScienceFADIntensity)
+class DebugWindowWidget(QtWidgets.QWidget):
+    def __init__(self, node, func_list):
+        super(DebugWindowWidget, self).__init__()
 
-class science_debug_GUI(Node):
-    def __init__(self):
-        
-        super().__init__('science_debug_GUI')
-        self.qt = QtWidgets.QWidget()
+        self.node = node
 
-        debug_skeleton_ui_path = os.path.join(
+        # Find the UI file for the skeleton
+        skeleton_path = os.path.join(
             get_package_share_directory('science'),
             'debug_gui',
             'skeleton.ui'
-            )
-        
-        command_widget_path = os.path.join(
+        )
+
+        # Load the skeleton into this object
+        uic.loadUi(skeleton_path, self)
+
+        # Get the layout object
+        self.layout_command = self.findChild(QtWidgets.QScrollArea, "scrollArea_command").widget().layout()
+
+        # Add command widgets to the first scroll area
+        self.command_widgets = []
+        for func_definition in func_list.filter({'action_type': 'command'}):
+            widget = ActionWidget(node, self, func_definition)
+            widget.setObjectName(f"commandWidget_{len(self.command_widgets)}")
+            self.command_widgets.append(widget)
+            self.layout_command.addWidget(widget)
+
+        # Get the layout object
+        self.layout_query = self.findChild(QtWidgets.QScrollArea, "scrollArea_query").widget().layout()
+
+        # Add query widgets to the second scroll area
+        self.query_widgets = []
+        for func_definition in func_list.filter({'action_type': 'query'}):
+            widget = ActionWidget(node, self, func_definition)
+            widget.setObjectName(f"queryWidget_{len(self.query_widgets)}")
+            self.query_widgets.append(widget)
+            self.layout_query.addWidget(widget)
+
+    def packet_display(self, msg: ScienceSerialPacket):
+        last_published_command_label = self.findChild(QtWidgets.QLabel, "lastSentLabel")
+        last_published_command_label.setText(f"Last Packet Sent: {hex(msg.command_word)} {[ hex(x) for x in msg.operands ]}")
+
+    def packet_modify_flags(self, command_word):
+        command_word |= 0b01000000 if self.get_override_bit() else 0b00000000  # Set the Override Bit
+        command_word |= 0b00100000 if self.get_ack_bit() else 0b00000000  # Set the Ack Bit
+        return command_word
+    
+    def get_override_bit(self):
+        override_box = self.findChild(QtWidgets.QCheckBox, "ovrBit")
+        return override_box.isChecked()
+    
+    def get_ack_bit(self):
+        ack_box = self.findChild(QtWidgets.QCheckBox, "ackBit")
+        return ack_box.isChecked()
+
+class ActionWidget(QtWidgets.QWidget):
+    def __init__(self, node, window, func_definition):
+        super(ActionWidget, self, ).__init__()
+
+        self.node = node
+        self.window = window
+
+        # Find the UI file for the skeleton
+        action_widget_path = os.path.join(
             get_package_share_directory('science'),
             'debug_gui',
-            'command_widget.ui'
+            'action_widget.ui'
+        )
+
+        self.func_definition = func_definition
+
+        # Load the action widget into this object
+        uic.loadUi(action_widget_path, self)
+
+        # Get the layout object
+        self.layout = self.findChild(QtWidgets.QGroupBox, "groupBox").layout()
+
+        # Add operand widgets to the layout
+        self.operand_widgets = []
+        for i in [1, 2, 3]:
+            # Get the next operand in this function definition
+            name = func_definition[f'operand_name_{i}']
+            if name == '':
+                break
+            type = func_definition[f'operand_type_{i}']
+            cnt = func_definition[f'operand_cnt_{i}']
+
+            # Create the widget and add it to the layout
+            widget = OperandWidget(name, type, cnt)
+            widget.setObjectName(f"operandWidget_{len(self.operand_widgets)}")
+            self.operand_widgets.append(widget)
+            self.layout.insertWidget((len(self.operand_widgets) - 1) + 1, widget)
+
+        # Modify the Title
+        groupBox = self.findChild(QtWidgets.QGroupBox, "groupBox")
+        groupBox.setTitle(f"{func_definition['function_name']} - {hex(self.get_command_word())}")
+
+        # Modify the Description
+        descLabel = self.findChild(QtWidgets.QLabel, "descriptionLabel")
+        descLabel.setText(f"{func_definition['docstring']}")
+
+        # Link the button to the function
+        button = self.findChild(QtWidgets.QPushButton, "pushButton")
+        button.clicked.connect(self.submit)
+
+    def get_command_word(self):
+        command_word = int(self.func_definition['function_addr'])
+        command_word |= 0b10000000 if self.func_definition['action_type'] == 'command' else 0b00000000  # Set the Command Bit
+        return command_word
+
+    def submit(self):
+        # Get Command Word
+        command_word = self.window.packet_modify_flags(self.get_command_word())
+
+        # Convert Operands into bytes
+        operand_bytes = []
+        for widget in self.operand_widgets:
+            b = widget.get_operand_as_bytes()
+            if b is list:
+                operand_bytes.extend(b)
+            else:
+                operand_bytes.append(b)
+
+        self.node.packet_publish(
+            ScienceSerialPacket(
+                command_word=command_word,
+                operands=operand_bytes
             )
+        )
 
-        uic.loadUi(debug_skeleton_ui_path, self.qt)
+class OperandWidget(QtWidgets.QWidget):
+    def __init__(self, name, type, cnt):
+        super(OperandWidget, self).__init__()
 
-        # TODO Load in the command widget and dynmically insert them into the skeleton
+        # Find the UI file for the skeleton
+        operand_widget_path = os.path.join(
+            get_package_share_directory('science'),
+            'debug_gui',
+            'operand.ui'
+        )
+
+        self.type = type
+
+        # Load the action widget into this object
+        uic.loadUi(operand_widget_path, self)
+
+        # Update the title
+        groupBox = self.findChild(QtWidgets.QGroupBox, "groupBox")
+        groupBox.setTitle(name)
+
+        # Set Data Validation
+        self.lineEdit = self.findChild(QtWidgets.QLineEdit, "lineEdit")
+        if type == 'uint8_t':
+            self.lineEdit.setValidator(QtGui.QIntValidator(0, 2**8 - 1))
+        elif type == 'uint16_t':
+            self.lineEdit.setValidator(QtGui.QIntValidator(0, 2**16 - 1))
+        elif type == 'uint32_t':
+            self.lineEdit.setValidator(QtGui.QIntValidator(0, 2**31 - 1))
+        elif type == 'int8_t':
+            self.lineEdit.setValidator(QtGui.QIntValidator(-(2*7), (2*7)-1))
+        elif type == 'float':
+            self.lineEdit.setValidator(QtGui.QDoubleValidator())
+
+    def get_operand_as_bytes(self):
+        if self.type == 'uint8_t' \
+        or self.type == 'uint16_t' \
+        or self.type == 'uint32_t' \
+        or self.type == 'int8_t':
+            return int(self.lineEdit.text())
+        elif self.type == 'float':
+            return struct.pack('f', float(self.lineEdit.text()))
+        else:
+            raise Exception(f"Unknown type in OperandWidget: {self.type}")
+        
+class Signals(QObject):
+    serial_signal = Signal(ScienceSerialPacket)
+
+class science_debug_GUI(Node):
+    def __init__(self):
+        super().__init__('science_debug_GUI')
+
+        # Create a subscriber to the science_serial_packet topic
+        self.signals = Signals()
+        self.signals.serial_signal.connect(self.update_last_published_packet)
+        self.science_serial_packet_sub = self.create_subscription(ScienceSerialPacket, '/science_serial_packet', self.signals.serial_signal.emit, 10)
+
+        # Create Publisher
+        self.science_serial_packet_pub = self.create_publisher(ScienceSerialPacket, '/science_serial_packet', 10)
+
+        # Build Debug Window
+        self.qt = DebugWindowWidget(self, ScienceModuleFunctionList())  # Create an instance of the DebugWindow class
 
         self.qt.show() # Show the GUI
 
         self.base_ip = self.get_base_ip()
 
-        self.task_launcher_init()
-        
+    def update_last_published_packet(self, msg: ScienceSerialPacket):
+        self.qt.packet_display(msg)
 
-    def task_launcher_init(self):
-        pass
-        # self.signals = Signals()
-
-        # self.qt.pushButton_save_notes.clicked.connect(self.save_notes)
-        # self.qt.pushButton_fad.clicked.connect(self.fad_detector_get_point)
-        # self.qt.pushButton_fad_calibration.clicked.connect(self.save_fad)
-
-        # self.qt.pushButton_moisture.clicked.connect(lambda: self.graph_sensor_values(0))
-        # self.qt.pushButton_temperature.clicked.connect(lambda: self.graph_sensor_values(1))
-        # self.qt.pushButton_fad_graph.clicked.connect(lambda: self.graph_sensor_values(2))
-
-        # self.qt.pushButton_moisture_2.clicked.connect(lambda: self.estimate_reading(0))
-        # self.qt.pushButton_temperature_2.clicked.connect(lambda: self.estimate_reading(1))
-        # self.qt.pushButton_fad_estimate.clicked.connect(lambda: self.estimate_reading(2))
-
-        # self.qt.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
-        # self.qt.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
-        # self.qt.fad_radio.toggled.connect(lambda: self.toggle_sensor_save(2))  # fad
-
-        # self.qt.lcd_site_num.display(self.site_number)
-        # self.qt.pushButton_change_site.clicked.connect(self.increment_site_number)
-
-        # self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1) #figure this out
-        # self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
-        # self.pub_save_fad = self.create_publisher(ScienceSaveFAD, '/science_save_fad', 1)
-
-        # self.signals.sensor_signal.connect(self.update_sensor_values)
-        # # self.signals.auger_position.connect(self.update_auger_position)
-        # self.signals.sensor_save_signal.connect(self.pub_save_sensor.publish)
-        # self.signals.FAD_save_signal.connect(self.pub_save_fad.publish)
-        # self.signals.notes_save_signal.connect(self.pub_save_notes.publish)
-        # self.signals.fad_intensity_signal.connect(self.update_fad_intensity_value)
-
-        # self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.signals.sensor_signal.emit, 10)
-        # # self.science_auger_position = self.create_subscription(ScienceToolPosition, '/science_auger_position', self.signals.auger_position.emit, 10)
-        # self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
-        # self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
-    
+    def packet_publish(self, msg: ScienceSerialPacket):
+        self.science_serial_packet_pub.publish(msg)
+           
     def get_base_ip(self):
         ip = os.getenv("BASE_ADDRESS")
         if ip is None:
             ip = "192.168.1.65"
         return ip
+    
+from csv import DictReader
+
+class ScienceModuleFunctionList:
+
+    def __init__(self):
+        path = os.path.join(
+            get_package_share_directory('science'),
+            'debug_gui',
+            'science_module_function_map.csv'
+        )
+        self.function_list = self.load_function_map(path)
+
+    def load_function_map(self, filename):
+        with open(filename, 'r') as f:
+            dict_reader = DictReader(f)
+            return list(dict_reader)
+        
+    def get_all(self):
+        return self.function_list
+    
+    def filter(self, args):
+        """Filter the function list based on the provided arguments."""
+        filtered_list = []
+        for func in self.function_list:
+            skip = False
+            for k, v in args.items():
+                if not v == func[k]:
+                    skip = True
+                    break
+            if not skip:
+                filtered_list.append(func)
+        return filtered_list
     
 def main(args=None):
     rclpy.init(args=args)

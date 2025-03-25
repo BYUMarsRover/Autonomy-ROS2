@@ -23,6 +23,9 @@ setup(
         (os.path.join('share', package_name, 'gui'), glob(os.path.join('science', 'gui', '*.ui'))),
         # Include the debug_gui .ui files
         (os.path.join('share', package_name, 'debug_gui'), glob(os.path.join('science', 'debug_gui', '*.ui'))),
+        # Include the debug_gui .csv files
+        (os.path.join('share', package_name, 'debug_gui'), glob(os.path.join('science', 'debug_gui', '*.csv'))),
+
         #Might want to be more particular in the future but this is a quick fix to get everything
         # (os.path.join('share', package_name), glob(os.path.join('science', '*.py'))),
     ],
