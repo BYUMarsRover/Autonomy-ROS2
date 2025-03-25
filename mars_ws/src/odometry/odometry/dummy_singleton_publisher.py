@@ -127,11 +127,16 @@ class DummySingletonPublisher(Node):
         # Wrap
         if self.map_yaw < -180:
             self.map_yaw += 360
+        elif self.map_yaw > 180:
+            self.map_yaw -=360
 
-        self.gps.latitude = self.latitude
-        self.gps.longitude = self.longitude
+        self.gps.latitude = self.latitude + (np.random.rand() - 1)*0.00002
+        self.gps.longitude = self.longitude + (np.random.rand() - 1)*0.00002
         self.filter_gps.latitude = self.latitude
         self.filter_gps.longitude = self.longitude
+
+        # self.gps.latitude = LAT_INIT + (np.random.rand() - 1)*0.00002
+        # self.gps.longitude = LONG_INIT + (np.random.rand() - 1)*0.00002
 
         msg = RoverStateSingleton(
             map_yaw=self.map_yaw,
