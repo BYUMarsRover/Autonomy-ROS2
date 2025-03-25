@@ -58,15 +58,15 @@ class RoverTransformBroadcaster(Node):
         # Subtract the origin off
         self.rover_position = self.rover_position - self.origin
 
-        t.transform.translation.x = self.rover_position[0]
-        t.transform.translation.y = self.rover_position[1]
+        t.transform.translation.x = self.rover_position[1]
+        t.transform.translation.y = self.rover_position[0]
         t.transform.translation.z = 0.0
 
-        # Dummy quaternion (no rotation)
+        # map_yaw only quaternion TODO: change this to subscribe to the imu message that has the pose
         t.transform.rotation.x = 0.0
         t.transform.rotation.y = 0.0
-        t.transform.rotation.z = 0.0
-        t.transform.rotation.w = 1.0
+        t.transform.rotation.z = np.sin(np.deg2rad(-msg.map_yaw)/2.0) # NOTE: negative because NED frame
+        t.transform.rotation.w = np.cos(np.deg2rad(-msg.map_yaw)/2.0)
 
         # Orientation (rotation from Odometry message)
         # t.transform.rotation = msg.pose.pose.orientation
