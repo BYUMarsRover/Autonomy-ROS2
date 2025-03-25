@@ -150,6 +150,7 @@ class AutonomyStateMachine(Node):
         self.a_task_complete = False
         self.aruco_detect_enabled = False
         self.obj_detect_enabled = False
+        self.prev_tag_id = TagID.GPS_ONLY
 
         # Data structure to hold all of the waypoints at a time
         self.waypoints: deque[AutonomyTaskInfo] = deque()
@@ -456,8 +457,6 @@ class AutonomyStateMachine(Node):
 
                 else:
                     self.nav_state.navigation_state = NavState.TELEOPERATION_STATE
-                self.correct_aruco_tag_found = False
-                self.correct_obj_found = False
 
                 # Reset the state machine variables
                 self.correct_aruco_tag_found = False
@@ -466,23 +465,28 @@ class AutonomyStateMachine(Node):
                 self.obj_angle = None
 
                 # Disable object detection and aruco detection when arrived
-                if self.aruco_detect_enabled:
+                # Only disable aruco detection if the previous tag was not an aruco tag so that when we go to SEARCH_FOR_WRONG_TAG state, we can make sure not to run into it
+                if self.aruco_detect_enabled and self.prev_tag_id not in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3]:
                     self.toggle_aruco_detection(False)
                 if self.obj_detect_enabled:
                     self.toggle_object_detection(False)
 
 
-
             #This SEARCH_FOR_WRONG_STATE state is used to ensure that after finishing one aruco tag task, the rover will
-            #backup if it sees the wrong tag, to ensure it does not run into the aruco stand before starting the next task
+            #backup if the rover sees the wrong tag, to ensure it does not run into the aruco stand before starting the next task
             elif self.state == State.SEARCH_FOR_WRONG_TAG: 
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.wrong_aruco_tag_found and self.aruco_tag_distance < self.wrong_aruco_backup_distance:
                     self.drive_controller.issue_drive_cmd(-2.0, 0.0)
                     #TODO: Consider adding angular velocity to this command to ensure the rover backs up in such a way that it will not hit the stand
+                    #Perhaps in the opposite direction of the direction needed to get to get tot he next waypoint
                 else:
                     self.drive_controller.issue_drive_cmd(0.0, 0.0)
                     self.state = State.START_POINT_NAVIGATION
+
+                    #Disable aruco detection to save computational resources
+                    if self.aruco_detect_enabled:
+                        self.toggle_aruco_detection(False)
 
             elif self.state == State.START_POINT_NAVIGATION:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
@@ -632,6 +636,7 @@ class AutonomyStateMachine(Node):
                 self.correct_obj_found = False
                 self.obj_distance = None
                 self.obj_angle = None
+                self.prev_tag_id = self.tag_id
 
                 # Pop off the completed task
                 if len(self.waypoints) > 0:
