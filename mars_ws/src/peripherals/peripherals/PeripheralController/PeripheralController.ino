@@ -105,21 +105,13 @@ void statusIndicatorTick()
         timerActive = true;
         setArrayColor(0,255,0);
     }
-    if (timerActive && millis() - previousTime >= 2000) {
+    if (timerActive && millis() - previousTime >= 2000 && millis() - previousTime <=4000) {
         Serial.println("5 seconds passed");
-        // timerActive = false;
-        // previousTime = millis(); // Reset timer safely
-        // led_mode = IDLE;
         setArrayColor(0,0,0);
     }
-    // if (statCounter == STATUS_INDICATOR_COUNTER_MAX*0.1) {
-    //   // Need to flash if in arrival state
-    //   setArrayColor(0,255,0);
-    // }
-    // else if (statCounter == STATUS_INDICATOR_COUNTER_MAX){
-    //   setArrayColor(0,0,0);
-    // }
-    // statCounter++;
+    else{
+      timerActive = false;
+    }
   }
   else if (led_mode == IDLE){
     timerActive = false;
