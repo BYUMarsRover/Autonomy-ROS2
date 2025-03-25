@@ -16,7 +16,7 @@ import os
 def generate_launch_description():
     # import environment variables
     mapviz_location=os.environ.get('MAPVIZ_LOCATION', 'hanksville')
-    mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value='hanksville')
+    mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value=mapviz_location)
     autonomy_params_file = os.path.join(get_package_share_directory('autonomy'), 'params', 'autonomy_params.yaml')
 
 
@@ -28,7 +28,10 @@ def generate_launch_description():
                 'launch',
                 'base_common_launch.py'
             )
-        ])
+        ]),
+        launch_arguments={
+            'MAPVIZ_LOCATION': LaunchConfiguration('MAPVIZ_LOCATION')
+        }.items()
     )
 
     include_autonomy_gui = Node(
@@ -36,7 +39,10 @@ def generate_launch_description():
             executable='autonomy_gui',
             name='autonomy_gui',
             output='screen',
-            parameters=[autonomy_params_file]
+            parameters=[
+                autonomy_params_file,
+                {'MAPVIZ_LOCATION': LaunchConfiguration('MAPVIZ_LOCATION')}
+            ],
         )
 
     # Start launch files specific to the Autonomy Task on the base station
@@ -50,14 +56,10 @@ def generate_launch_description():
     #         )
     #     ])
     # )
-
-    #TODO: in the future, when we have built out path planning, include the launch file here
     
     return LaunchDescription([
         mapviz_location_arg,
         include_base_common,
-        SetEnvironmentVariable('MAPVIZ_LOCATION', LaunchConfiguration('MAPVIZ_LOCATION')),
         include_autonomy_gui,
         # include_base_autonomous,
-        # include_path_planning #TODO: uncomment out this when we build out and include path planning
     ])
