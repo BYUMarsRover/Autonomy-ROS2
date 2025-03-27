@@ -13,6 +13,7 @@
   <depend>nav_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>swri_transform_util</depend>
+  <depend>rosapi</depend>
 
   <build_depend>mapviz</build_depend>
   <build_depend>mapviz_plugins</build_depend>

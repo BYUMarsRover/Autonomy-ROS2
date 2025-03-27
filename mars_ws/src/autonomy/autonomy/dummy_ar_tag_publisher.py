@@ -1,3 +1,10 @@
+########
+
+# This script is used to publish dummy AR tag data to the /aruco_detect_logi/fiducial_transforms topic
+# This is useful for testing the AR tag detection and aruco navigation when run in tandem with the state machine
+# Written by Gabe Slade Jan 2025
+
+
 import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import FiducialTransformArray, FiducialTransform

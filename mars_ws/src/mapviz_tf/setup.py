@@ -16,6 +16,7 @@ setup(
         ('share/' + package_name + '/params', glob.glob('scripts/*.py')),
         ('share/' + package_name + '/scripts', glob.glob('scripts/.mapviz_config')),
         (os.path.join('share', package_name, 'launch'), glob.glob('launch/*.py')),
+        ('share/' + package_name + '/image', glob.glob('image/*.png')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

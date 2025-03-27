@@ -134,7 +134,7 @@ class FramePublisher(Node):
     def handle_rpy(self, msg):
 
         if self.i < 100:
-            self.get_logger().info(f"Calibration iteration: {self.i}")
+            # self.get_logger().info(f"Calibration iteration: {self.i}")
             self.calibration_buffer_yaw += msg.vector.z
         else:
             self.average_yaw_rad = self.calibration_buffer_yaw / 100.0

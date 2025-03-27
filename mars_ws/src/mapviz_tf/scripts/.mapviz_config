@@ -40,28 +40,28 @@ displays:
       show_laps: false
       static_arrow_sizes: false
       arrow_size: 260
-  - type: mapviz_plugins/gps
-    name: GPS Waypoint
-    config:
-      visible: true
-      collapsed: true
-      topic: /GPS_waypoint_plotter
-      color: "#ff00a6"
-      draw_style: points
-      position_tolerance: 0
-      buffer_size: 1
-      show_laps: false
-      static_arrow_sizes: false
-      arrow_size: 260
+  # - type: mapviz_plugins/gps
+  #   name: GPS Waypoint
+  #   config:
+  #     visible: true
+  #     collapsed: true
+  #     topic: /GPS_waypoint_plotter
+  #     color: "#ff00a6"
+  #     draw_style: points
+  #     position_tolerance: 0
+  #     buffer_size: 1
+  #     show_laps: false
+  #     static_arrow_sizes: false
+  #     arrow_size: 260
   - type: mapviz_plugins/robot_image
     name: Rover Image
     config:
       visible: true
       collapsed: true
       frame: rover
-      image: $(find mapviz_tf)/image/Rover.png
-      width: 50
-      height: 50
+      image: /home/marsrover/mars_ws/src/mapviz_tf/image/Rover.png
+      width: 30
+      height: 30
       offset_x: 0
       offset_y: 0
       ratio: original
@@ -72,10 +72,10 @@ displays:
       collapsed: false
       topic: /mapviz/path
       color: "#00ff00"
-  - type: mapviz_plugins/point_click_publisher
-    name: new display
-    config:
-      visible: true
-      collapsed: false
-      topic: /clicked_point
-      output_frame: origin
+  # - type: mapviz_plugins/point_click_publisher
+  #   name: new display
+  #   config:
+  #     visible: true
+  #     collapsed: false
+  #     topic: /clicked_point
+  #     output_frame: origin

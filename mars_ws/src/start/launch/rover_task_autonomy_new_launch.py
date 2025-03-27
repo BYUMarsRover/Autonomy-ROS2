@@ -12,7 +12,7 @@ import os
 
 def generate_launch_description():
     # import environment variables
-    mapviz_location=os.environ.get('MAPVIZ_LOCATION', '')
+    mapviz_location=os.environ.get('MAPVIZ_LOCATION', 'hanksville')
     mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value=mapviz_location)
 
     # Start all common launch files on the rover
@@ -35,7 +35,7 @@ def generate_launch_description():
             )
         ),
         launch_arguments={
-            'location': LaunchConfiguration('MAPVIZ_LOCATION')
+            'MAPVIZ_LOCATION': LaunchConfiguration('MAPVIZ_LOCATION')
         }.items()
     )
 

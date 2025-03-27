@@ -39,12 +39,13 @@ def generate_launch_description():
         ),
 
         # TF broadcaster that listens to the global yaw and compares it to the local yaw from the ZED
-        Node(
-            package='odometry',
-            executable='global_heading_tf_publisher',
-            name='global_heading_tf_publisher',
-            output='screen'
-        ),
+        # BRADEN MEYERS MAR 13 - NOT IN USE
+        # Node(
+        #     package='odometry',
+        #     executable='global_heading_tf_publisher',
+        #     name='global_heading_tf_publisher',
+        #     output='screen'
+        # ),
 
         Node(
             package='imu_filter_madgwick',

@@ -12,11 +12,8 @@ import os
 
 
 def generate_launch_description():
-    # Define launch arguments
-    mapviz_location_arg = DeclareLaunchArgument(
-        'MAPVIZ_LOCATION',
-        default_value=EnvironmentVariable('MAPVIZ_LOCATION', default_value='hanksville')
-    )
+    # Declare launch arguments
+    mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value='hanksville')
 
     # Set Log Info for Debugging
     set_rosconsole_format = SetEnvironmentVariable(

@@ -77,8 +77,13 @@ class AStarPlanner:
         curr_node = self.start
         i = 0
 
+        # Extract self variables for faster access
+        goal = self.goal
+        ew = self.ew
+        gw = self.gw
+
         # While the goal has not been reached
-        while curr_node != self.goal:
+        while curr_node != goal:
             self.nodes[curr_node].open = False
 
             # Costs of neighbors of current node
@@ -97,14 +102,14 @@ class AStarPlanner:
                 #     g_step -= 0.1
                 
                 g = self.nodes[curr_node].g + g_step
-                e = self.nodes[curr_node].e + np.abs(self.cost_map[n] - self.cost_map[curr_node])
+                e = self.nodes[curr_node].e + e_step*g_step
 
-                # if neighbor node is in edge nodes update check to see if the parent node should update
-                # the parent node of the neighbor node should only update if the cost to travel 
-                # to it from the current node is less than the cost to travel to it from its
-                # current parent (its current g and h cost)
+                # If neighbor node is in edge nodes
+                # Check if the parent node of the neighbor/edge node should switch to the current node
+                # It should only update if the cost to travel to it from the current node is less than 
+                # the cost to travel to it from its current parent (its current g and h cost)
                 if any(node[1] == n for node in edge_nodes):
-                    if self.nodes[n].g*self.gw + self.nodes[n].e*self.ew > g*self.gw + e*self.ew:
+                    if self.nodes[n].g*gw + self.nodes[n].e*ew > g*gw + e*ew:
                         self.nodes[n].g = g # set g cost of node
                         self.nodes[n].e = e # set e cost of node
                         self.nodes[n].parent = curr_node # reassign the parent of the node
@@ -128,9 +133,9 @@ class AStarPlanner:
                 heapq.heappush(edge_nodes, (self.nodes[n].f, n))
 
             # Debugging
-            if count:
-                i += 1
-                print(i)
+            # if count:
+            #     i += 1
+            #     print(i)
 
             curr_node = heapq.heappop(edge_nodes)[1] # set current node to node with lowest f cost
 
@@ -280,22 +285,26 @@ class AStarNode:
                 + self.e*self.ew
 
 def visualize_path(path, cost_map, map_type='Slope', waypoints=None, explored_nodes=None):
-    plt.figure(figsize=(10, 6))
-    plt.imshow(cost_map, cmap='terrain')
-    plt.colorbar(label=map_type)
-    plt.title(map_type + ' Map')
-    plt.xlabel('X Coordinate')
-    plt.ylabel('Y Coordinate')
-    #TODO: make the map bigger, add the text to the bottom of the map pop-up
-    # between 9-10 and 3-4 for screen recording 
+    plt.style.use('dark_background')
+    plt.figure(figsize=(10, 10))
+    if map_type == 'Slope':
+        plt.imshow(np.arctan(cost_map)*180/np.pi, cmap='jet')
+        cbr =plt.colorbar(label=map_type + ' (degrees)')
+    else:
+        plt.imshow(cost_map, cmap='jet')
+        cbr =plt.colorbar(label=map_type + ' (m)')
+    cbr.ax.yaxis.label.set_size(14)
+    plt.title(map_type + ' Map', fontsize=22)
+    plt.xlabel('X Relative UTM (m)', fontsize=18)
+    plt.ylabel('Y Relative UTM (m)', fontsize=18)
     legend = ['Start', 'Goal', 'Path']
 
-    plt.plot(path[0][1], path[0][0], 'o', color='orange', markersize=8, label='Start', zorder=4)
+    plt.plot(path[0][1], path[0][0], 'o', color='red', markersize=8, label='Start', zorder=4)
     plt.plot(path[-1][1], path[-1][0], 'o', color='lime', markersize=8, label='Goal', zorder=4)
-    plt.plot([x[1] for x in path], [x[0] for x in path], 'r-', zorder=2)
+    plt.plot([x[1] for x in path], [x[0] for x in path], '#d9987a', zorder=2)
     
     if waypoints is not None:
-        plt.scatter([x[1] for x in waypoints], [x[0] for x in waypoints], color='yellow', s=8, marker='o', zorder=3)
+        plt.scatter([x[1] for x in waypoints], [x[0] for x in waypoints], color='#d9987a', s=10, marker='o', zorder=3)
         legend.append('Waypoints')
     if explored_nodes is not None:
 

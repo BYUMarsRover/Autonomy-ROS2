@@ -54,10 +54,10 @@ def generate_launch_description():
         # ),
 
         # GPS
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join(
-        #         odometry_dir, 'launch', 'rover_launch.py'))
-        # ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(
+                odometry_dir, 'launch', 'rover_launch.py'))
+        ),
 
         # # Dummy publisher for rover state data when running locally
         GroupAction(
