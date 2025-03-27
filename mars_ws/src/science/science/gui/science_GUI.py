@@ -60,11 +60,13 @@ class science_GUI(Node):
         self.science_data_path = os.path.expanduser("~/science_data/site-1")
 
         # Read in coefficients. 
-        moisture_path = os.path.join(self.science_data_path, "moisture_polynomials.txt")
-        temp_path = os.path.join(self.science_data_path, "temp_polynomials.txt")
+        moisture_path = os.path.join(self.science_data_path, "moisture_coefficients.txt")
+        temp_path = os.path.join(self.science_data_path, "temp_coefficients.txt")
         if os.path.exists(moisture_path):
             with open(moisture_path, 'r') as f:
-                moisture_values = f[0].split()
+                moisture_values = f.readlines()
+                print(moisture_values)
+                moisture_values = moisture_values[0].split()
                 for i in range(len(moisture_values)):
                     self.moisture_coefficients[i] = moisture_values[i]
         else:
@@ -295,7 +297,7 @@ class science_GUI(Node):
             case 1:
                 coefficients_file = "temperature_coefficients.txt"
                 try:
-                    val = self.qt.lineEdit_moisture_2.text()
+                    val = self.qt.lineEdit_temperature_2.text()
                     x = float(val)/1023
                 except (ValueError):
                     self.get_logger().error(f"{val} is not a valid number")
@@ -303,7 +305,7 @@ class science_GUI(Node):
             case 2:
                 coefficients_file = "fad_coefficients.txt"
                 try:
-                    val = self.qt.lineEdit_moisture_2.text()
+                    val = self.qt.lineEdit_fad.text()
                     x = float(val)/1023
                 except (ValueError):
                     self.get_logger().error(f"{val} is not a valid number")
@@ -312,6 +314,8 @@ class science_GUI(Node):
                 print("Err: this sensor does not have data to graph")
                 return
         coefficients_path = os.path.join(self.science_data_path, coefficients_file)
+        # self.get_logger().info([(f) for f in os.listdir(self.science_data_path) if os.path.isfile(os.path.join(self.science_data_path, f))])
+
         
         with open(coefficients_path, 'r') as f:
             coefs = f.read().split()
