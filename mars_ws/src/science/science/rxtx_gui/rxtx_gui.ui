@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>882</width>
+    <width>797</width>
     <height>772</height>
    </rect>
   </property>
@@ -23,7 +23,7 @@
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -58,7 +58,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="pushButton_submit_form">
            <property name="text">
             <string>Send</string>
            </property>
@@ -91,21 +91,21 @@
          <item>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
-            <widget class="QCheckBox" name="checkBox">
+            <widget class="QCheckBox" name="checkBox_com">
              <property name="text">
               <string>Command</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QCheckBox" name="checkBox_2">
+            <widget class="QCheckBox" name="checkBox_ovr">
              <property name="text">
               <string>Override</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QCheckBox" name="checkBox_3">
+            <widget class="QCheckBox" name="checkBox_ack">
              <property name="text">
               <string>Acknowledge</string>
              </property>
@@ -133,9 +133,9 @@
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
-             <widget class="QLineEdit" name="lineEdit">
+             <widget class="QLineEdit" name="lineEdit_function_addr">
               <property name="placeholderText">
-               <string>0x80</string>
+               <string>0-31</string>
               </property>
              </widget>
             </item>
@@ -188,12 +188,12 @@
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout_7">
             <item>
-             <widget class="QLineEdit" name="lineEdit_2">
+             <widget class="QLineEdit" name="lineEdit_operands">
               <property name="text">
                <string/>
               </property>
               <property name="placeholderText">
-               <string>0xA49B23</string>
+               <string>A4 9B 23</string>
               </property>
              </widget>
             </item>
@@ -276,14 +276,14 @@
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_13">
           <item>
-           <widget class="QLineEdit" name="lineEdit_4">
+           <widget class="QLineEdit" name="lineEdit_ascii_manual">
             <property name="placeholderText">
              <string>lorem ipsum</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_4">
+           <widget class="QPushButton" name="pushButton_ascii_manual">
             <property name="text">
              <string>Send</string>
             </property>
@@ -305,14 +305,14 @@
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_12">
           <item>
-           <widget class="QLineEdit" name="lineEdit_3">
+           <widget class="QLineEdit" name="lineEdit_hex_manual">
             <property name="placeholderText">
              <string>53 80 04 01 02 03 04 4D</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_2">
+           <widget class="QPushButton" name="pushButton_hex_manual">
             <property name="text">
              <string>Send</string>
             </property>
@@ -352,7 +352,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_28">
      <property name="title">
-      <string>RX - Sent to Science Module</string>
+      <string>TX - Sent to Science Module</string>
      </property>
      <property name="flat">
       <bool>true</bool>
@@ -368,13 +368,13 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>838</width>
+           <width>753</width>
            <height>190</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
-           <widget class="QLabel" name="label_6">
+           <widget class="QLabel" name="label_tx_hex">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>10</horstretch>
@@ -396,6 +396,9 @@ color: rgb(255, 255, 255);</string>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
             </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
             <property name="margin">
              <number>5</number>
             </property>
@@ -409,7 +412,7 @@ color: rgb(255, 255, 255);</string>
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_7">
+           <widget class="QLabel" name="label_tx_ascii">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>3</horstretch>
@@ -425,6 +428,9 @@ color: rgb(255, 255, 255);</string>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
             </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
          </layout>
@@ -437,7 +443,7 @@ color: rgb(255, 255, 255);</string>
    <item>
     <widget class="QGroupBox" name="groupBox_29">
      <property name="title">
-      <string>TX - Received from Science Module</string>
+      <string>RX - Received from Science Module</string>
      </property>
      <property name="flat">
       <bool>true</bool>
@@ -453,13 +459,13 @@ color: rgb(255, 255, 255);</string>
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>838</width>
+           <width>753</width>
            <height>189</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_6">
           <item>
-           <widget class="QLabel" name="label_8">
+           <widget class="QLabel" name="label_rx_hex">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>10</horstretch>
@@ -481,6 +487,9 @@ color: rgb(255, 255, 255);</string>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
             </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
             <property name="margin">
              <number>5</number>
             </property>
@@ -494,7 +503,7 @@ color: rgb(255, 255, 255);</string>
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_9">
+           <widget class="QLabel" name="label_rx_ascii">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>3</horstretch>
@@ -509,6 +518,9 @@ color: rgb(255, 255, 255);</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -535,7 +547,7 @@ color: rgb(255, 255, 255);</string>
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_3">
+      <widget class="QPushButton" name="pushButton_clear">
        <property name="text">
         <string>Clear RX/TX</string>
        </property>

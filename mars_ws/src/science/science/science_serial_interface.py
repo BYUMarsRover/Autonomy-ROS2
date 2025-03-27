@@ -9,8 +9,8 @@ SUBSCRIBED TO:
 import rclpy
 import sys
 from rclpy.node import Node
-from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues, ScienceSerialPacket
-from std_msgs.msg import Bool
+from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues, ScienceSerialTxPacket
+from std_msgs.msg import Bool, UInt8MultiArray
 import serial
 import struct
 
@@ -65,9 +65,11 @@ class ScienceSerialInterface(Node):
     def __init__(self):
         super().__init__('science_serial_interface')
 
+        print("Publishing serial tx notification")
+
         try:
-            self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
-            # self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE) # - used for testing off of rover
+            # self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
+            self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE) # - used for testing off of rover
             self.get_logger().info("Serial port initialized")
             print("Serial port initialized")
         except Exception as e:
@@ -85,13 +87,17 @@ class ScienceSerialInterface(Node):
         self.sub_science_serial_primary_cache_door = self.create_subscription(ScienceActuatorControl, '/science_serial_primary_cache_door', self.primary_cache_door_control_callback, 10)
         self.sub_science_serial_secondary_cache = self.create_subscription(ScienceActuatorControl, '/science_serial_secondary_cache', self.secondary_cache_control_callback, 10)
         self.sub_science_serial_override = self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
-        self.sub_science_serial_packet = self.create_subscription(ScienceSerialPacket, '/science_serial_packet', self.receive_serial_packet_callback, 10)
+
+        # Serial Communication Exchange
+        self.sub_science_serial_tx_request = self.create_subscription(ScienceSerialTxPacket, '/science_serial_tx_request', self.receive_serial_packet_callback, 10)
+        self.pub_science_serial_tx_notification = self.create_publisher(UInt8MultiArray, '/science_serial_tx_notification', 10)
+        self.pub_science_serial_rx_notification = self.create_publisher(UInt8MultiArray, '/science_serial_rx_notification', 10)
 
         self.info_publisher = self.create_publisher(ScienceSensorValues, '/science_sensor_values', 10)
 
         self.create_timer(100e-3, self.read_serial) # 10 Hz
-        self.create_timer(1, self.query_temperature) # 1 Hz
-        self.create_timer(1, self.query_humidity) # 1 Hz
+        # self.create_timer(1, self.query_temperature) # 1 Hz
+        # self.create_timer(1, self.query_humidity) # 1 Hz
 
         # Caches for control purposes
         self.current_tool_index = 0
@@ -106,12 +112,22 @@ class ScienceSerialInterface(Node):
         # State Variable
         self.override_bit = False
 
+    def publish_serial_tx_notification(self, data):
+        msg = UInt8MultiArray()
+        msg.data = data
+        self.pub_science_serial_tx_notification.publish(msg)
+
+    def publish_serial_rx_notification(self, data):
+        msg = UInt8MultiArray()
+        msg.data = data
+        self.pub_science_serial_rx_notification.publish(msg)
+
     def set_override_bit_callback(self, msg: Bool): #Control is an int8control = FULL_STEAM_FORWARD if self.secondary_cache_state == True else FULL_STEAM_BACKWARD
         print("Received override change")
         self.override_bit = msg.data
 
     def write_actuator_control(self, command_word, control): #Control is an int8control = FULL_STEAM_FORWARD if self.secondary_cache_state == True else FULL_STEAM_BACKWARD
-        self.write_serial([command_word, 0x01, signed_to_unsigned(control)])
+        self.author_packet([command_word, 0x01, signed_to_unsigned(control)])
 
     def drill_control_callback(self, msg: ScienceActuatorControl):
         print("Doing drill control callback")
@@ -134,11 +150,19 @@ class ScienceSerialInterface(Node):
         self.write_actuator_control(UPDATE_SECONDARY_CACHE_CONTROL_COMMAND_WORD, msg.control)
 
     # Sends published serial packets from the GUI to the arduino
-    def receive_serial_packet_callback(self, msg: ScienceSerialPacket):
-        packet = [msg.command_word, len(msg.operands)] + msg.bytes
-        self.write_serial(self, packet)
+    def receive_serial_packet_callback(self, msg: ScienceSerialTxPacket):
+        if len(msg.packet) > 0:
+            # If the packet is not empty, send it to the arduino
+            self.write_serial(msg.packet)
+        else:
+            # If the packet is empty, build from command word and operands
+            self.author_packet([msg.command_word, len(msg.operands)])
 
-    def write_serial(self, byte_array):
+    def write_serial(self, packet):
+        self.arduino.write(struct.pack('B' * len(packet), *packet))
+        self.publish_serial_tx_notification(packet)
+
+    def author_packet(self, byte_array):
          # Configure a payload with the overhead formatting and send to arduino
         if len(byte_array) > MAXIMUM_PACKET_SIZE:
             # todo proper error message
@@ -147,20 +171,18 @@ class ScienceSerialInterface(Node):
             byte_array[0] |= 0b01000000 if self.override_bit else 0b00000000  # Set the Override Bit
             byte_array.insert(0, COMMAND_PACKET_HEADER)
             byte_array.append(COMMAND_PACKET_FOOTER)
-            self.arduino.write(struct.pack('B' * len(byte_array), *byte_array))
+            self.write_serial(byte_array)
+
             hex_array = [ hex(x) for x in byte_array]
             print(f"Sending to arduino: {','.join(hex_array)}")
-            # print(byte_array)
             
     def query_temperature(self):
-        print('Doing query temp')
         # ask the arduino to return the temperature as a calibrated float
-        self.write_serial([GET_TEMP_COMMAND_WORD, 0x00])
+        self.author_packet([GET_TEMP_COMMAND_WORD, 0x00])
 
     def query_humidity(self):
-        print('Doing query humidity')
         # ask the arduino to return the humidity as a calibrated float
-        self.write_serial([GET_HUM_COMMAND_WORD, 0x00])
+        self.author_packet([GET_HUM_COMMAND_WORD, 0x00])
 
     def contains_possible_packet(self, queue):
         # Returns format information for a possible packet in the queue
@@ -199,7 +221,9 @@ class ScienceSerialInterface(Node):
             # Attempt a read if there is something in the buffer
             # print(f"Arduino Buffer contains {self.arduino.in_waiting} bytes")
 
-            for byte in self.arduino.read_all():
+            buffer_contents = self.arduino.read_all()
+            self.publish_serial_rx_notification(buffer_contents)
+            for byte in buffer_contents:
                 # Load all bytes into the queue
                 if len(self.read_queue) == 0:
                     # Nothing is in the queue, look for the header

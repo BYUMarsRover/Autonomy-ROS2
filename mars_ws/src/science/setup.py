@@ -50,8 +50,8 @@ setup(
             'science_serial_interface = science.science_serial_interface:main',
             'science_data_saver = science.presentation.science_data_saver:main',
             'science_GUI = science.gui.science_GUI:main',
-            'science_debug = science.debug_gui.science_debug_GUI:main'
-            'science_rxtx = science.rxtx_GUI.science_rxtx_GUI:main'
+            'science_debug = science.debug_gui.science_debug_GUI:main',
+            'science_rxtx = science.rxtx_gui.science_rxtx_GUI:main'
             # 'presentation_generator = science.presentation.presentation_generator:main'
         ],
     },

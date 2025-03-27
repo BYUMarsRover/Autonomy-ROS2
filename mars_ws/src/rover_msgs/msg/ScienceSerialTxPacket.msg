@@ -3,3 +3,6 @@
 
 uint8 command_word
 uint8[] operands
+
+# if packet contains data the command_word and operands fields are ignored
+uint8[] packet

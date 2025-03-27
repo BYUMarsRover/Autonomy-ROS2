@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets, uic, QtGui
 from python_qt_binding.QtCore import QObject, Signal
 import rclpy
 from rover_msgs.srv import CameraControl
-from rover_msgs.msg import ScienceSerialPacket
+from rover_msgs.msg import ScienceSerialTxPacket
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.pyplot as plt
@@ -52,7 +52,7 @@ class DebugWindowWidget(QtWidgets.QWidget):
             self.query_widgets.append(widget)
             self.layout_query.addWidget(widget)
 
-    def packet_display(self, msg: ScienceSerialPacket):
+    def packet_display(self, msg: ScienceSerialTxPacket):
         last_published_command_label = self.findChild(QtWidgets.QLabel, "lastSentLabel")
         last_published_command_label.setText(f"Last Packet Sent: {hex(msg.command_word)} {[ hex(x) for x in msg.operands ]}")
 
@@ -146,7 +146,7 @@ class ActionWidget(QtWidgets.QWidget):
         print(f"out data f{operand_bytes}")
 
         self.node.packet_publish(
-            ScienceSerialPacket(
+            ScienceSerialTxPacket(
                 command_word=command_word,
                 operands=operand_bytes
             )
@@ -323,7 +323,7 @@ class ArrayEntryWidget(QtWidgets.QWidget):
             raise Exception(f"Unknown data_type in OperandWidget: {self.type}")
         
 class Signals(QObject):
-    serial_signal = Signal(ScienceSerialPacket)
+    serial_signal = Signal(ScienceSerialTxPacket)
 
 class science_debug_GUI(Node):
     def __init__(self):
@@ -332,10 +332,10 @@ class science_debug_GUI(Node):
         # Create a subscriber to the science_serial_packet topic
         self.signals = Signals()
         self.signals.serial_signal.connect(self.update_last_published_packet)
-        self.science_serial_packet_sub = self.create_subscription(ScienceSerialPacket, '/science_serial_packet', self.signals.serial_signal.emit, 10)
+        self.science_serial_packet_sub = self.create_subscription(ScienceSerialTxPacket, '/science_serial_packet', self.signals.serial_signal.emit, 10)
 
         # Create Publisher
-        self.science_serial_packet_pub = self.create_publisher(ScienceSerialPacket, '/science_serial_packet', 10)
+        self.science_serial_packet_pub = self.create_publisher(ScienceSerialTxPacket, '/science_serial_tx_request', 10)
 
         # Build Debug Window
         self.qt = DebugWindowWidget(self, ScienceModuleFunctionList())  # Create an instance of the DebugWindow class
@@ -344,10 +344,10 @@ class science_debug_GUI(Node):
 
         self.base_ip = self.get_base_ip()
 
-    def update_last_published_packet(self, msg: ScienceSerialPacket):
+    def update_last_published_packet(self, msg: ScienceSerialTxPacket):
         self.qt.packet_display(msg)
 
-    def packet_publish(self, msg: ScienceSerialPacket):
+    def packet_publish(self, msg: ScienceSerialTxPacket):
         self.science_serial_packet_pub.publish(msg)
            
     def get_base_ip(self):
