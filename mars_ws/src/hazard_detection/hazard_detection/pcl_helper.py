@@ -4,7 +4,7 @@ from sensor_msgs.msg import PointCloud2
 import struct
 import open3d as o3d
 
-def ros_to_pcl_and_transform(ros_cloud, transformation_point):
+def ros_to_pcl_and_transform(ros_cloud, transformation_point, name):
     """
     Converts a ROS PointCloud2 message to an Open3D PointCloud and transforms the points so origin is from the start of the bounding box.
      
@@ -13,9 +13,25 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point):
     """
     points_list = []
 
-    # Extract points from ROS PointCloud2 message
-    for point in read_points(ros_cloud, skip_nans=True):
-        points_list.append([point[0]-transformation_point[0], point[1]-transformation_point[1], point[2]-transformation_point[2]])  # x, y, z - transfromation point
+    #TODO: Account for the slight angle of the LIDAR and ZED when transforming the points
+    if name == "lidar":
+        # Extract points from ROS PointCloud2 message
+        # Transform points to rover frame, x-forward, y-right, z-down
+        # And also transform the points so origin is from the start of the bounding box  
+        for point in read_points(ros_cloud, skip_nans=True):
+            points_list.append([point[3]-transformation_point[0],   #X axis in the rover frame is Z in the LIDAR frame
+                                point[1]-transformation_point[1],   #Y axes are the same
+                               -point[0]-transformation_point[2]])  #Z axis in the rover frame is -X in the LIDAR frame
+                                                                    #transfromation point in rover frame is the start of the bounding box
+    elif name == 'zed':
+        # Extract points from ROS PointCloud2 message
+        # Transform points to rover frame, x-forward, y-right, z-down
+        # And also transform the points so origin is from the start of the bounding box 
+        for point in read_points(ros_cloud, skip_nans=True):
+            points_list.append([point[0]-transformation_point[0],   #X axes are the same
+                               -point[1]-transformation_point[1],   #Y axis in the rover frame is -Y in the ZED frame
+                               -point[2]-transformation_point[2]])  #Z axis in the rover frame is -Z in the ZED frame
+                                                                    #transfromation point in rover frame is the start of the bounding box
 
     # Convert to NumPy array
     np_points = np.array(points_list, dtype=np.float32)
@@ -25,7 +41,7 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point):
     pcl_data.points = o3d.utility.Vector3dVector(np_points)
 
     # Generate the fake point cloud
-    #fake_pc = generate_fake_point_cloud()
+    # fake_pc = generate_fake_point_cloud()
 
     # Visualize the point cloud
     # visualize_point_cloud(pcl_data)

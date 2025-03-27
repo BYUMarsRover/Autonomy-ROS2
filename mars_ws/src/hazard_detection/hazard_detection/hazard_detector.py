@@ -19,7 +19,7 @@ class HazardDetector(Node):
         self.declare_parameter('slope_threshold', 15.0) #Height of max slope of ground, in degrees
         self.declare_parameter('voxel_grid_size', .1) #Size of voxel grid cubes for downsampling, in meters
         self.declare_parameter('ground_distance_threshold', .05) #Increase if the ground is pretty rocky
-        self.declare_parameter('bounding_box_start_point', [-0.5, 0.0, 0.5]) #X, Y, Z- X is up the mast, Y is to the right from the rovers perspective, and Z is out away from the rover, all in the Lidars' orientation
+        self.declare_parameter('bounding_box_start_point', [0.5, 0.0, -0.5]) #x-forward, y-right, z-down, the rovers frame, in meters
         self.declare_parameter('bounding_box_length', 3.0)  #in front of the rover
         self.declare_parameter('bounding_box_width', 2.0)   #to the left and right of the rover
         self.declare_parameter('bounding_box_height', 1.0)  #above the rover
@@ -49,7 +49,7 @@ class HazardDetector(Node):
         self.subscriber = self.create_subscription(
             PointCloud2,
             '/unilidar/cloud',
-            self.point_cloud_callback,
+            self.lidar_point_cloud_callback,
             10
         )
         self.imu_subscriber = self.create_subscription(
@@ -62,6 +62,12 @@ class HazardDetector(Node):
             RoverStateSingleton, 
             '/odometry/rover_state_singleton', 
             self.rover_state_singleton_callback, 
+            10
+        )
+        self.subscriber = self.create_subscription(
+            PointCloud2,
+            'zed/zed_node/point_cloud/cloud_registered',
+            self.zed_point_cloud_callback,
             10
         )
 
@@ -87,14 +93,33 @@ class HazardDetector(Node):
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
         self.rover_state_singleton = msg
 
-    def point_cloud_callback(self, msg):
-        #TODO: save the cloud in a queue to be processed in a separate thread outside of the callback
-
+    def lidar_point_cloud_callback(self, msg):
         if not self.enabled:
             return
 
+        #PCL in LIDAR frame. X is up the mast, Y is right of the rover, Z is out away from the rover. All in meters.
+        #TODO: save the cloud in a queue to be processed in a separate thread outside of the callback
+           
         # Convert PointCloud2 to Open3D format and transform to the bounding box frame
-        cloud = ros_to_pcl_and_transform(msg, self.bounding_box_start_point)
+        cloud = ros_to_pcl_and_transform(msg, self.bounding_box_start_point, 'lidar')
+        self.point_cloud_callback(cloud)
+
+        return
+    
+    def zed_point_cloud_callback(self, msg):
+        if not self.enabled:
+            return
+        
+        #PCL in ZED frame. X is forward, Y is left, Z is up. Positive angle is counterclockwise from x-axis. All in meters.
+        #TODO: save the cloud in a queue to be processed in a separate thread outside of the callback
+
+        # Convert PointCloud2 to Open3D format and transform to the bounding box frame
+        cloud = ros_to_pcl_and_transform(msg, self.bounding_box_start_point, 'zed')
+        self.point_cloud_callback(cloud)
+    
+        return 
+    
+    def point_cloud_callback(self, cloud):
 
         # Downsample for efficiency
         cloud_filtered = cloud.voxel_down_sample(voxel_size=self.voxel_grid_size)
@@ -147,7 +172,7 @@ class HazardDetector(Node):
         self.get_logger().info(f"Detected {len(clusters)} clusters (potential hazards).")
         
         for cluster in clusters:
-            z_max = max(cluster[:, 0])  # Extract x (height) component (from lidar frame, x is up the mast)
+            z_max = max(-cluster[:, 2])  # Extract negative z (height) component (z is down in the rover frame)
             if z_max > self.height_threshold:
                 high_points.append(cluster)
 
@@ -213,14 +238,14 @@ class HazardDetector(Node):
                 hazard.type = Hazard.OBSTACLE
 
                 #Need to convert from the LIDAR frame(Xup, y is right of the rover, and Z is out away from the rover) to the rover frame (x forward, y is right, z is down)
-                hazard.location_x = np.mean(high_point[:, 2]) #X axis in the rover frame is Z in the LIDAR frame
-                hazard.location_y = np.mean(high_point[:, 1]) #Y axis are the same
-                hazard.location_z = np.mean(-high_point[:, 0]) #Z axis in the rover frame is -X in the LIDAR frame
+                hazard.location_x = np.mean(high_point[:, 0]) #X axis (forward)
+                hazard.location_y = np.mean(high_point[:, 1]) #Y axis (right)
+                hazard.location_z = np.mean(high_point[:, 2]) #Z axis (down)
 
                 peak_to_peak = np.ptp(high_point, axis=0)
-                hazard.length_x= peak_to_peak[2] #X axis in the rover frame is Z in the LIDAR frame
-                hazard.length_y= peak_to_peak[1] #Y axis are the same
-                hazard.length_z= peak_to_peak[0] #Z axis in the rover frame is -X in the LIDAR frame
+                hazard.length_x= peak_to_peak[0] #X axis
+                hazard.length_y= peak_to_peak[1] #Y axis
+                hazard.length_z= peak_to_peak[2] #Z axis 
                 hazard.num_points = len(high_point)
                 message.hazards.append(hazard)
 
