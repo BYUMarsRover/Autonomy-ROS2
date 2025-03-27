@@ -72,6 +72,7 @@ class HazardDetector(Node):
         self.enable_service = self.create_service(SetBool, '/hazard_detector/enable', self.enable_callback)
 
         self.get_logger().info('Hazard_detector initialized')
+        self.get_logger().warn('Hazard detection is DISABLED. Use the /hazard_detector/enable service to enable it.')
 
     def enable_callback(self, request, response):
         self.get_logger().info(f"Hazard Detection: {'ENABLED' if request.data else 'DISABLED'}")
