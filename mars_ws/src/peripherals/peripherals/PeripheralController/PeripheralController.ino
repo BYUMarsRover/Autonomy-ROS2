@@ -29,6 +29,8 @@ int battCounter = 0;
 int statCounter = 0;
 bool engage = false;
 bool timerActive = false;
+unsigned long lastBlinkTime = 0; 
+bool ledState = false;  
 
 // Define the array of leds
 CRGB leds[STATUS_INDICATOR_NUM_LEDS];
@@ -98,21 +100,40 @@ void statusIndicatorTick()
     setArrayColor(255,0,0);
     timerActive = false;
   }
-  else if (led_mode == ARRIVAL)
-  {
+  else if (led_mode == ARRIVAL) {
     if (timerActive == false){
         previousTime = millis();
         timerActive = true;
-        setArrayColor(0,255,0);
+        setArrayColor(0, 255, 0);  // Green
     }
-    if (timerActive && millis() - previousTime >= 2000 && millis() - previousTime <=4000) {
-        Serial.println("5 seconds passed");
-        setArrayColor(0,0,0);
-    }
-    else{
-      timerActive = false;
+    
+    // Check if 3 seconds have passed
+    if (millis() - lastBlinkTime >= 3000) {
+      lastBlinkTime = millis();  // Update last blink time
+      ledState = !ledState;       // Toggle LED state
+
+      if (ledState) {
+        setArrayColor(0, 255, 0);  // Green (LED on)
+      } else {
+        setArrayColor(0, 0, 0);    // Off (LED off)
+      }
     }
   }
+  // else if (led_mode == ARRIVAL)
+  // {
+  //   if (timerActive == false){
+  //       previousTime = millis();
+  //       timerActive = true;
+  //       setArrayColor(0,255,0);
+  //   }
+  //   if (timerActive && millis() - previousTime >= 2000 && millis() - previousTime <=4000) {
+  //       Serial.println("5 seconds passed");
+  //       setArrayColor(0,0,0);
+  //   }
+  //   else{
+  //     timerActive = false;
+  //   }
+  // }
   else if (led_mode == IDLE){
     timerActive = false;
     setArrayColor(0,0,0);
