@@ -23,6 +23,24 @@ def generate_launch_description():
         ),
         Node(
             package="science",
+            executable="science_rxtx",
+            name="science_rxtx",
+            output="screen"
+        ),
+        Node(
+            package="science",
+            executable="science_response",
+            name="science_response",
+            output="screen"
+        ),
+        Node(
+            package="science",
+            executable="science_debug",
+            name="science_debug",
+            output="screen"
+        ),
+        Node(
+            package="science",
             executable="science_data_saver",
             name="science_data_saver",
             output="screen"

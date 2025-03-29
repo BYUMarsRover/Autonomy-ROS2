@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Science GUI</class>
- <widget class="QWidget" name="Science GUI">
+ <class>FunctionLibrary</class>
+ <widget class="QWidget" name="FunctionLibrary">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Science GUI</string>
+   <string>Function Library</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -23,16 +23,16 @@
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
-         <widget class="QCheckBox" name="ackBit">
+         <widget class="QCheckBox" name="ovrBit">
           <property name="text">
-           <string>Enable Acknowledge</string>
+           <string>Enable Override</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="ovrBit">
+         <widget class="QCheckBox" name="ackBit">
           <property name="text">
-           <string>Enable Override</string>
+           <string>Enable Acknowledge</string>
           </property>
          </widget>
         </item>
@@ -48,7 +48,7 @@
         <item>
          <widget class="QLabel" name="lastSentLabel">
           <property name="text">
-           <string>NULL</string>
+           <string>None</string>
           </property>
           <property name="wordWrap">
            <bool>true</bool>

@@ -23,12 +23,13 @@ setup(
         (os.path.join('share', package_name, 'gui'), glob(os.path.join('science', 'gui', '*.ui'))),
         # Include the debug_gui .ui files
         (os.path.join('share', package_name, 'debug_gui'), glob(os.path.join('science', 'debug_gui', '*.ui'))),
-        # Include the debug_gui .csv files
-        (os.path.join('share', package_name, 'debug_gui'), glob(os.path.join('science', 'debug_gui', '*.csv'))),
+        
         # Include the rxtx_gui .csv files
         (os.path.join('share', package_name, 'rxtx_gui'), glob(os.path.join('science', 'rxtx_gui', '*.ui'))),
         # Include the rxtx_gui .csv files
         (os.path.join('share', package_name, 'response_gui'), glob(os.path.join('science', 'response_gui', '*.ui'))),
+
+        (os.path.join('share', package_name, 'function_mapping'), glob(os.path.join('science', 'function_mapping', '*.csv'))),
         #Might want to be more particular in the future but this is a quick fix to get everything
         # (os.path.join('share', package_name), glob(os.path.join('science', '*.py'))),
     ],

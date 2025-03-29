@@ -10,12 +10,13 @@ from ament_index_python.packages import get_package_share_directory
 import matplotlib.pyplot as plt
 import numpy as np
 import struct
+from science.function_mapping.function_map import ScienceModuleFunctionList as SMFL
 
 import os
 import sys
 
 class DebugWindowWidget(QtWidgets.QWidget):
-    def __init__(self, node, func_list):
+    def __init__(self, node):
         super(DebugWindowWidget, self).__init__()
 
         self.node = node
@@ -31,22 +32,22 @@ class DebugWindowWidget(QtWidgets.QWidget):
         uic.loadUi(skeleton_path, self)
 
         # Get the layout object
-        self.layout_command = self.findChild(QtWidgets.QScrollArea, "scrollArea_command").widget().layout()
+        self.layout_action = self.findChild(QtWidgets.QScrollArea, "scrollArea_command").widget().layout()
 
-        # Add command widgets to the first scroll area
-        self.command_widgets = []
-        for func_definition in func_list.filter({'action_type': 'command'}):
+        # Add action widgets to the first scroll area
+        self.action_widgets = []
+        for func_definition in SMFL.filter({'command_type': 'action'}):
             widget = ActionWidget(node, self, func_definition)
-            widget.setObjectName(f"commandWidget_{len(self.command_widgets)}")
-            self.command_widgets.append(widget)
-            self.layout_command.addWidget(widget)
+            widget.setObjectName(f"commandWidget_{len(self.action_widgets)}")
+            self.action_widgets.append(widget)
+            self.layout_action.addWidget(widget)
 
         # Get the layout object
         self.layout_query = self.findChild(QtWidgets.QScrollArea, "scrollArea_query").widget().layout()
 
         # Add query widgets to the second scroll area
         self.query_widgets = []
-        for func_definition in func_list.filter({'action_type': 'query'}):
+        for func_definition in SMFL.filter({'command_type': 'query'}):
             widget = ActionWidget(node, self, func_definition)
             widget.setObjectName(f"queryWidget_{len(self.query_widgets)}")
             self.query_widgets.append(widget)
@@ -68,9 +69,13 @@ class DebugWindowWidget(QtWidgets.QWidget):
     def get_ack_bit(self):
         ack_box = self.findChild(QtWidgets.QCheckBox, "ackBit")
         return ack_box.isChecked()
+    
+    def get_flags(self):
+        return [self.get_override_bit(), self.get_ack_bit()]
+
 
 class ActionWidget(QtWidgets.QWidget):
-    def __init__(self, node, window, func_definition):
+    def __init__(self, node, window, func):
         super(ActionWidget, self, ).__init__()
 
         self.node = node
@@ -83,7 +88,7 @@ class ActionWidget(QtWidgets.QWidget):
             'action_widget.ui'
         )
 
-        self.func_definition = func_definition
+        self.func = func
 
         # Load the action widget into this object
         uic.loadUi(action_widget_path, self)
@@ -95,12 +100,12 @@ class ActionWidget(QtWidgets.QWidget):
         self.operand_widgets = []
         for i in [1, 2, 3]:
             # Get the next operand in this function definition
-            name = func_definition[f'operand_name_{i}']
+            name = func[f'operand_name_{i}']
             if name == '':
                 break
-            data_type = func_definition[f'operand_type_{i}']
+            data_type = func[f'operand_type_{i}']
 
-            cnt_str = func_definition[f'operand_cnt_{i}']
+            cnt_str = func[f'operand_cnt_{i}']
             if (cnt_str == 'variable'):
                 # Create the widget and add it to the layout
                 widget = ArrayWidget(name, data_type, (1, sys.maxsize))
@@ -116,26 +121,18 @@ class ActionWidget(QtWidgets.QWidget):
 
         # Modify the Title
         groupBox = self.findChild(QtWidgets.QGroupBox, "groupBox")
-        groupBox.setTitle(f"{func_definition['function_name']} - {hex(self.get_command_word())}")
+        groupBox.setTitle(f"{func['function_name']} - {hex(SMFL.get_command_word(func))}")
 
         # Modify the Description
         descLabel = self.findChild(QtWidgets.QLabel, "descriptionLabel")
-        descLabel.setText(f"{func_definition['docstring']}")
+        descLabel.setText(f"{func['docstring']}")
 
         # Link the button to the function
         button = self.findChild(QtWidgets.QPushButton, "pushButton")
         button.clicked.connect(self.submit)
 
-    def get_command_word(self):
-        command_word = int(self.func_definition['function_addr'])
-        command_word |= 0b10000000 if self.func_definition['action_type'] == 'command' else 0b00000000  # Set the Command Bit
-        return command_word
-
     def submit(self):
-        # Get Command Word
-        command_word = self.window.packet_modify_flags(self.get_command_word())
-
-        # Convert Operands into bytes
+        # Convert Operands into byte array
         operand_bytes = []
         for widget in self.operand_widgets:
             b = widget.get_operand_as_bytes()
@@ -143,14 +140,17 @@ class ActionWidget(QtWidgets.QWidget):
                 operand_bytes.extend(b)
             else:
                 operand_bytes.append(b)
-        print(f"out data f{operand_bytes}")
 
-        self.node.packet_publish(
-            ScienceSerialTxPacket(
-                command_word=command_word,
-                operands=operand_bytes
-            )
+        # Form packet
+        tx_packet = SMFL.build_tx_packet(
+            self.func,
+            operand_bytes,
+            self.window.get_flags()
         )
+
+        # Publish packet
+        self.node.packet_publish(tx_packet)
+        self.node.update_last_published_packet(tx_packet)
 
 class OperandWidget(QtWidgets.QWidget):
     def __init__(self, name, type):
@@ -308,7 +308,6 @@ class ArrayEntryWidget(QtWidgets.QWidget):
 
         # Update the placeholder
         self.lineEdit.setPlaceholderText(f"{self.data_type}")
-        print(self.data_type)
 
     def get_operand_as_bytes(self):
         if self.data_type == 'uint8_t' \
@@ -322,23 +321,16 @@ class ArrayEntryWidget(QtWidgets.QWidget):
         else:
             raise Exception(f"Unknown data_type in OperandWidget: {self.type}")
         
-class Signals(QObject):
-    serial_signal = Signal(ScienceSerialTxPacket)
 
 class science_debug_GUI(Node):
     def __init__(self):
         super().__init__('science_debug_GUI')
 
-        # Create a subscriber to the science_serial_packet topic
-        self.signals = Signals()
-        self.signals.serial_signal.connect(self.update_last_published_packet)
-        self.science_serial_packet_sub = self.create_subscription(ScienceSerialTxPacket, '/science_serial_packet', self.signals.serial_signal.emit, 10)
-
         # Create Publisher
         self.science_serial_packet_pub = self.create_publisher(ScienceSerialTxPacket, '/science_serial_tx_request', 10)
 
         # Build Debug Window
-        self.qt = DebugWindowWidget(self, ScienceModuleFunctionList())  # Create an instance of the DebugWindow class
+        self.qt = DebugWindowWidget(self)  # Create an instance of the DebugWindow class
 
         self.qt.show() # Show the GUI
 
@@ -355,39 +347,6 @@ class science_debug_GUI(Node):
         if ip is None:
             ip = "192.168.1.65"
         return ip
-    
-from csv import DictReader
-
-class ScienceModuleFunctionList:
-
-    def __init__(self):
-        path = os.path.join(
-            get_package_share_directory('science'),
-            'debug_gui',
-            'science_module_function_map.csv'
-        )
-        self.function_list = self.load_function_map(path)
-
-    def load_function_map(self, filename):
-        with open(filename, 'r') as f:
-            dict_reader = DictReader(f)
-            return list(dict_reader)
-        
-    def get_all(self):
-        return self.function_list
-    
-    def filter(self, args):
-        """Filter the function list based on the provided arguments."""
-        filtered_list = []
-        for func in self.function_list:
-            skip = False
-            for k, v in args.items():
-                if not v == func[k]:
-                    skip = True
-                    break
-            if not skip:
-                filtered_list.append(func)
-        return filtered_list
     
 def main(args=None):
     rclpy.init(args=args)

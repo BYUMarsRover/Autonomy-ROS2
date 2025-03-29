@@ -9,10 +9,11 @@ SUBSCRIBED TO:
 import rclpy
 import sys
 from rclpy.node import Node
-from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues, ScienceSerialTxPacket
+from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues, ScienceSerialTxPacket, ScienceSerialRxPacket
 from std_msgs.msg import Bool, UInt8MultiArray
 import serial
 import struct
+import time
 
 # This module uses the Science Module Serial Communication Protocol
 # as definded in the BYU-Mars-Rover-Wiki
@@ -65,8 +66,6 @@ class ScienceSerialInterface(Node):
     def __init__(self):
         super().__init__('science_serial_interface')
 
-        print("Publishing serial tx notification")
-
         try:
             # self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
             self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE) # - used for testing off of rover
@@ -92,12 +91,11 @@ class ScienceSerialInterface(Node):
         self.sub_science_serial_tx_request = self.create_subscription(ScienceSerialTxPacket, '/science_serial_tx_request', self.receive_serial_packet_callback, 10)
         self.pub_science_serial_tx_notification = self.create_publisher(UInt8MultiArray, '/science_serial_tx_notification', 10)
         self.pub_science_serial_rx_notification = self.create_publisher(UInt8MultiArray, '/science_serial_rx_notification', 10)
+        self.pub_science_serial_rx_packet = self.create_publisher(ScienceSerialRxPacket, '/science_serial_rx_packet', 10)
 
         self.info_publisher = self.create_publisher(ScienceSensorValues, '/science_sensor_values', 10)
 
         self.create_timer(100e-3, self.read_serial) # 10 Hz
-        # self.create_timer(1, self.query_temperature) # 1 Hz
-        # self.create_timer(1, self.query_humidity) # 1 Hz
 
         # Caches for control purposes
         self.current_tool_index = 0
@@ -156,7 +154,7 @@ class ScienceSerialInterface(Node):
             self.write_serial(msg.packet)
         else:
             # If the packet is empty, build from command word and operands
-            self.author_packet([msg.command_word, len(msg.operands)])
+            self.author_packet([msg.command_word, len(msg.operands)] + list(msg.operands))
 
     def write_serial(self, packet):
         self.arduino.write(struct.pack('B' * len(packet), *packet))
@@ -281,17 +279,33 @@ class ScienceSerialInterface(Node):
         except:
             print(f'Received Response Packet with invalid ascii:({error_code}) {",".join([ hex(x) for x in error_message])}')
 
+        # Publish packet notification to ROS
+        self.pub_science_serial_rx_packet.publish(
+            ScienceSerialRxPacket(
+            timestamp = time.time(),  # Timestamp as a float with sub-second precision
+            echo = echo_message,  # Random echo bytes
+            error_code = error_code,
+            message = error_message
+            )
+        )
+
         function_address = echo_message[1] & 0b11111
         if function_address == (GET_TEMP_COMMAND_WORD & 0b11111):
             # This packet contains temperature data as a float
-            self.temperature = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))[0] #For some reason struct.unpack returns a tuple with a single value. Da heck
-            # print(f"Received temp: {self.temperature}")
-            self.publish_sensors_value()
+            try:
+                self.temperature = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))[0] #For some reason struct.unpack returns a tuple with a single value. Da heck
+                # print(f"Received temp: {self.temperature}")
+                self.publish_sensors_value()
+            except:
+                pass
         elif function_address == (GET_HUM_COMMAND_WORD & 0b11111):
             # This packet contains humidity data as a float
-            self.humidity = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))[0]
-            # print(f"Received humidity: {self.humidity}")
-            self.publish_sensors_value()
+            try:
+                self.humidity = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))[0]
+                # print(f"Received humidity: {self.humidity}")
+                self.publish_sensors_value()
+            except:
+                pass
 
 def main(args=None):
     rclpy.init(args=args)
