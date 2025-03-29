@@ -4,6 +4,7 @@ imu_filter_madgwick:
     use_mag: True
     use_magnetic_field_msg: True
     # world_frame: 'nwu' was in the config previously
-    world_frame: 'ned'
+    # world_frame: 'ned'
+    world_frame: 'enu'
     publish_tf: False
     publish_debug_topics: True
