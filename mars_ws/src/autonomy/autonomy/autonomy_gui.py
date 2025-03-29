@@ -14,7 +14,6 @@ from PyQt5 import uic
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-# from subprocess import Popen, PIPE
 import sys
 import os
 import numpy as np
@@ -389,7 +388,6 @@ class AutonomyGUI(Node, QWidget):
         future = self.enable_autonomy_client.call_async(req)
         self.ros_signal.emit('logger_label', 'Disabling Autonomy...')
 
-    #NOTE: depricated until mapviz capability added back
     # This sends the waypoint to mapviz for preview
     def preview_waypoint(self):
         # Find the x and y to be sent to mapviz
@@ -779,8 +777,6 @@ class AutonomyGUI(Node, QWidget):
             self.get_logger().warn(f'Could not find {name} field of gui')
 
 
-    #NOTE All of the following mapviz functions are depricated until mapviz capability is added back
-    #################################################################################################
     #NOTE: depricated until mapviz capability added back
     # This reorders the added waypoints to the optimal order based on path length
     # def plan_order_mapviz_service_call(self):
@@ -790,7 +786,6 @@ class AutonomyGUI(Node, QWidget):
     #     future = self.plan_order_mapviz_client.call_async(req)
     #     self.ros_signal.emit('logger_label', 'Planning order on mapviz...')
 
-    #NOTE: depricated until mapviz capability added back
     # This clears all previewed waypoints from mapviz
     def clear_mapviz(self):
 
@@ -822,26 +817,8 @@ class AutonomyGUI(Node, QWidget):
 
         self.path_publisher.publish(msg)
         self.ros_signal.emit('logger_label', 'Mapviz Cleared')
-
-#NOTE: depricated until mapviz capability added back
-# This gets the 0, 0 coordinates of the mapviz map
-def get_coordinates(file_path, location): # TODO: this may not work anymore because the format of the yaml file was changed
-    # Read the YAML file
-    with open(file_path, 'r') as file:
-        data = yaml.safe_load(file)
     
-    # Navigate to the locations data
-    locations = data['/**']['ros__parameters']['name']
-    
-    # Check if the location exists
-    if location in locations:
-        lat = locations[name]['latitude']
-        lon = locations[name]['longitude']
-        return lat, lon
-    else:
-        return None
-    
-#NOTE: depricated until mapviz capability added back
+#NOTE: not used anywhere
 # Converts a path from UTM to lat/lon
 # def path_to_latlon(path, utm_easting_zero, utm_northing_zero, utm_zone_number, utm_zone_letter):
 #     latlon_path = Path()
