@@ -13,11 +13,20 @@ class MegaMiddleman(Node):
     def __init__(self):
         super().__init__('mega_middleman')
 
+        self.ser = None
+
+        self.curr_wheel_msg = None
+        self.curr_elev_msg = None
+        self.curr_heart_msg = None
+        self.last_wheel_msg_time = time.time()
+        self.last_elev_msg_time = time.time()
+
+        
         # SUBSCRIBERS
         self.create_subscription(IWCMotors, '/IWC_motorControl', self.send_wheel, 1)
         self.create_subscription(Elevator, '/elevator', self.send_elevator, 1)
-        self.create_subscription(Bool, '/arm_clicker', self.send_clicker, 1)
-        self.create_subscription(Bool, '/arm_laser', self.send_laser, 1)
+        # self.create_subscription(Bool, '/arm_clicker', self.send_clicker, 1)
+        # self.create_subscription(Bool, '/arm_laser', self.send_laser, 1)
         # self.create_subscription(FPVServo, '/fpv_servo', self.send_fpvsv, 1)
         self.create_subscription(HeartbeatStatusRover, '/heartbeat_status_rover', self.send_heart, 1)
 
@@ -25,18 +34,20 @@ class MegaMiddleman(Node):
         self.pub_IR = self.create_publisher(UInt16MultiArray, '/IR', 1)
         self.pub_Debug = self.create_publisher(String, '/ArduinoDebug', 25)
 
-        self.serial_queue = queue.Queue()
+        # self.serial_queue = queue.Queue()
         self.lock = threading.Lock()
         # Connect to Arduino
         self.disconnected = True
         self.handshake = False   # If a Serial object is good to communicate on the port
         self.connect()
 
-        time.sleep(7.0)
+        time.sleep(7.0)  # Wait for Arduino to boot and motors
 
         # Start writer thread
         self.writer_thread = threading.Thread(target=self.serial_writer_loop, daemon=True)
         self.writer_thread.start()
+
+        self.create_timer(1.0, self.message_check)
 
         # Timer for relay_mega
         self.create_timer(0.01, self.loop)  # 100 Hz
@@ -70,38 +81,16 @@ class MegaMiddleman(Node):
     def disconnect(self):
         self.disconnected = True
         self.handshake = False
-        self.ser.close()
+        if self.ser is not None:
+            self.ser.close()
     
-    
-
-    def serial_write(self, msg):
-        if not self.disconnected:
-            try:
-                # Ensure queue is reasonable
-                if self.serial_queue.qsize() > 5:
-                    self.get_logger().warn(f"Orin -> Mega queue is getting too long, culling data.")
-                    self.write_debug("Orin: Write queue is getting too long! Culling stale data.")
-                    with self.lock:
-                        self.serial_queue.queue.clear()
-                with self.lock:
-                    self.serial_queue.put(msg)
-                    while not self.serial_queue.empty():
-                        message = self.serial_queue.get()
-                        self.ser.write(message.encode('ascii'))
-
-            except serial.SerialException as e:
-                self.write_debug("Orin: Failed to send message to Arduino.")
-                self.disconnected = True # Not necessarily disconnected, but could be
-        else:
-            self.write_debug("Orin: Not connected to Arduino; ignoring message.")
 
     def serial_writer_loop(self):
-        while True: #TODO See if ROS2 has a if node is running
+        while rclpy.ok(): # While ROS is running
             if not self.handshake:
                 self.write_debug("Orin: Waiting for Arduino handshake")
                 time.sleep(1)
                 continue
-            msg = self.serial_queue.get()  # Blocking until a message is available
             if not self.disconnected:
                 with self.lock:
                     # Ensure connection
@@ -110,27 +99,37 @@ class MegaMiddleman(Node):
                         self.write_debug("Orin: Arduino port is not open at time of writing!")
                         return
                     
-                    # Ensure queue is reasonable
-                    if self.serial_queue.qsize() > 20:
-                        self.get_logger().warn(f"Orin -> Mega queue is getting too long, culling data.")
-                        self.write_debug("Orin: Write queue is getting too long! Culling stale data.")
-                        self.serial_queue.queue.clear()
+                    messages = []
+                    if self.latest_wheel_msg is not None:
+                        messages.append(str(self.latest_wheel_msg))
+                        self.latest_wheel_msg = None
+                    if self.latest_elevator_msg is not None:
+                        messages.append(str(self.latest_elevator_msg))
+                        self.latest_elevator_msg = None
+                    if self.latest_heart_msg is not None:
+                        messages.append(str(self.latest_heart_msg))
+                        self.latest_heart_msg = None
+                    if self.latest_hands_msg is not None:
+                        messages.append(str(self.latest_hands_msg))
+                        self.latest_hands_msg = None
 
                     # Send message
-                    try:
-                        self.ser.write((msg).encode('utf-8'))
-                        self.write_debug("Orin: Thread output to Arduino: " + msg)
-                    except (serial.SerialTimeoutException) as e:
-                        self.get_logger().warn(f"Failed to write to serial due to timeout: {e}")
-                        self.write_debug("Orin: Failed to send message to Arduino in time.")
-                        # 2024-25 Experiments revealed these can help with reliability
-                        time.sleep(2) 
-                        self.handshake = False
-                    except (serial.SerialException) as e:
-                        self.get_logger().warn(f"Failed to write to serial due to exception: {e}")
-                        self.write_debug("Orin: Error when trying to send message to Arduino.")
-                        self.disconnect() # Not necessarily disconnected, but act like we are
-
+                    for msg in messages:
+                        try:
+                            self.ser.write((msg).encode('utf-8'))
+                            self.write_debug("Orin: Thread output to Arduino: " + msg)
+                        except (serial.SerialTimeoutException) as e:
+                            self.get_logger().warn(f"Failed to write to serial due to timeout: {e}")
+                            self.write_debug("Orin: Failed to send message to Arduino in time.")
+                            # 2024-25 Experiments revealed these can help with reliability
+                            time.sleep(2) 
+                            self.handshake = False
+                            break
+                        except (serial.SerialException) as e:
+                            self.get_logger().warn(f"Failed to write to serial due to exception: {e}")
+                            self.write_debug("Orin: Error when trying to send message to Arduino.")
+                            self.disconnect() # Not necessarily disconnected, but act like we are
+                            break
 
                     # Give arduino breathing time
                     time.sleep(0.05) # [s], delay between writes, only blocks write thread not main thread.
@@ -151,23 +150,23 @@ class MegaMiddleman(Node):
         ]
         wheel_msg = "$WHEEL," + ",".join(str(int(param)) for param in motor_params) + "*"
         # self.write_debug(wheel_msg)
-        self.serial_write(wheel_msg)
+        self.latest_wheel_msg = wheel_msg
 
     def send_elevator(self, msg):
         eleva_params = [msg.elevator_speed, msg.elevator_direction]
         eleva_msg = "$ELEVA," + ",".join(str(int(param)) for param in eleva_params) + "*"
         # self.write_debug(f"Orin: Sending elevator message to Arduino. {eleva_msg}")
-        self.serial_write(eleva_msg)
+        self.latest_elevator_msg = eleva_msg
 
-    def send_clicker(self, msg):
-        click_value = 1 if msg.data else 0
-        click_msg = f"$CLICK,{click_value}*"
-        self.serial_write(click_msg)
+    # def send_clicker(self, msg):
+    #     click_value = 1 if msg.data else 0
+    #     click_msg = f"$CLICK,{click_value}*"
+    #     self.serial_write(click_msg)
 
-    def send_laser(self, msg):
-        laser_value = 1 if msg.data else 0
-        laser_msg = f"$LASER,{laser_value}*"
-        self.serial_write(laser_msg)
+    # def send_laser(self, msg):
+    #     laser_value = 1 if msg.data else 0
+    #     laser_msg = f"$LASER,{laser_value}*"
+    #     self.serial_write(laser_msg)
 
     # def send_fpvsv(self, msg):
     #     fpv_params = [msg.yaw, msg.pitch]
@@ -176,7 +175,7 @@ class MegaMiddleman(Node):
 
     def send_heart(self, msg):
         heart_msg = f"$HEART,{msg.elapsed_time}*"
-        self.serial_write(heart_msg)
+        self.latest_heart_msg = heart_msg
 
     def read_nmea(self):
         # Watch for start of new message
