@@ -147,10 +147,11 @@ class HazardDetector(Node):
         non_ground = cloud_bounded.select_by_index(inliers, invert=True)
 
         # Visualize ground and non-ground points
-        # print("Ground points:")
-        # o3d.visualization.draw_geometries([ground])
-        # print("Non-ground points:")
-        # o3d.visualization.draw_geometries([non_ground])
+        axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
+        print("Ground points:")
+        o3d.visualization.draw_geometries([ground, axis])
+        print("Non-ground points:")
+        o3d.visualization.draw_geometries([non_ground, axis])
 
         # Detect obstacles by height
         high_points = self.detect_high_obstacles(non_ground)
@@ -255,7 +256,7 @@ class HazardDetector(Node):
             hazard = Hazard()
             hazard.type = Hazard.STEEP_SLOPE
             hazard.slope_angle = slope_angle
-            message.hazards.append(hazard)
+            # message.hazards.append(hazard)
 
         return message
     

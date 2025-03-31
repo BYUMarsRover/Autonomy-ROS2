@@ -19,7 +19,7 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point, name):
         # Transform points to rover frame, x-forward, y-right, z-down
         # And also transform the points so origin is from the start of the bounding box  
         for point in read_points(ros_cloud, skip_nans=True):
-            points_list.append([point[3]-transformation_point[0],   #X axis in the rover frame is Z in the LIDAR frame
+            points_list.append([point[2]-transformation_point[0],   #X axis in the rover frame is Z in the LIDAR frame
                                 point[1]-transformation_point[1],   #Y axes are the same
                                -point[0]-transformation_point[2]])  #Z axis in the rover frame is -X in the LIDAR frame
                                                                     #transfromation point in rover frame is the start of the bounding box
@@ -44,7 +44,7 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point, name):
     # fake_pc = generate_fake_point_cloud()
 
     # Visualize the point cloud
-    # visualize_point_cloud(pcl_data)
+    visualize_point_cloud(pcl_data)
 
     #return fake_pc
     
@@ -53,7 +53,13 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point, name):
 
 def visualize_point_cloud(pc):
     # Visualize the point cloud
-    o3d.visualization.draw_geometries([pc])
+
+    # Create a coordinate frame with a specified size
+    axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
+
+    # Visualize the point cloud with the axis
+    o3d.visualization.draw_geometries([pc, axis])
+    # o3d.visualization.draw_geometries([pc])
 
 def generate_fake_point_cloud():
     """
