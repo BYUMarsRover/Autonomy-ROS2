@@ -2,13 +2,18 @@
 #define GLOBALS_H
 
 #include <Arduino.h>
+#include "limits.h"
+
+// Debug code is technically less performant so it may
+// be desirable to disable it when unnecessary
+#define DEBUG true
 
 //Constant variable that sets the maximum delay between motor commands
 //If this value is exceeded, it implies that communication has been lost between
 //the Orin and the Mega and the Mega will shut down all motion in the wheels
-const unsigned long MAXTIMEDIFF = 500;
-const unsigned int BUFFERSIZE = 200;
-const unsigned int IRPERIOD = 100; //Period , not frequency (50 -> 20Hz)
+const unsigned long MAXTIMEDIFF = 500; //ms
+const unsigned int BUFFERSIZE = 256;
+const unsigned int SLOWPERIOD = 100; //Period , not frequency (50 -> 20Hz)
 
 //Number of motors on arduino  
 const int NUM_WHEELS = 7;
@@ -89,8 +94,61 @@ const int MIN_PWM_DUTY_CYCLE_PITCH = 135;
 #define RUNNING 0
 #define RESETING 1
 #define STARTING 2
-const unsigned short motorResetPins[NUM_WHEELS] = {LEFT_FRONT_WHEEL_ENABLE, LEFT_MIDDLE_WHEEL_ENABLE, LEFT_REAR_WHEEL_ENABLE, RIGHT_FRONT_WHEEL_ENABLE, RIGHT_MIDDLE_WHEEL_ENABLE, RIGHT_REAR_WHEEL_ENABLE, ELEVATOR_ENABLE};
-const unsigned short motorErrorPins[NUM_WHEELS] = {LEFT_FRONT_WHEEL_ERROR, LEFT_MIDDLE_WHEEL_ERROR, LEFT_REAR_WHEEL_ERROR, RIGHT_FRONT_WHEEL_ERROR, RIGHT_MIDDLE_WHEEL_ERROR, RIGHT_REAR_WHEEL_ERROR, ELEVATOR_ERROR};
 const unsigned int MOTOR_RESET_TIME = 2000; //[ms]
 const unsigned int MOTOR_STARTUP_TIME = 10000; //[ms]
+
+//////////////////////////////////
+//   Declare Global variables   //
+//////////////////////////////////
+//This is probably not best programming practice for modification/debugging, but hopefully helps keep the code readable and easy to reorganize
+
+// I/O
+// The write queue uses a circular buffer structure to allow
+//  for quick queing and dequeing. Using a buffer structure 
+//  lets us write asynchronously, which can help us read faster,
+//  reducing the chances of Orin write failures that it really
+//  doesn't like. (A lot of this code revolves around minimizing
+//  risks of Orin write failure)
+#define WRITE_QUEUE_SIZE 1024
+extern char writeQueue[WRITE_QUEUE_SIZE];
+extern size_t writeStartIdx;
+extern size_t writeEndIdx;
+
+//Debug
+#if DEBUG
+#define DEBUG_MSG_SIZE 512  // Size of the debug message buffer
+extern char debugMessage[DEBUG_MSG_SIZE];  // Fixed-size buffer for the debug message
+#endif
+
+//Clicker state
+extern unsigned long lastClickForward;
+extern unsigned long lastClickBackward;
+extern unsigned long lastClickDuration;
+extern bool clicking;
+
+//Variables to store current yaw and pitch of FPV servo
+extern float currentYaw;
+extern float currentPitch;
+
+//Heartbeat status
+extern bool cardiacArrest;
+extern unsigned long lastContactTime;
+extern unsigned long prevLEDBlink;
+extern unsigned long blinkInterval;
+
+//IR reader
+extern unsigned int sensorArray[2];
+extern unsigned long currentTime;
+extern unsigned long lastSlowTime;
+
+//Motor card interface objects
+#include "Wheels.h"
+extern Wheels wheels;
+
+//Motor card reset queue
+extern unsigned short motorStatuses[NUM_WHEELS];
+extern unsigned long motorTimers[NUM_WHEELS];
+
+//Other
+extern bool falseLED; //Makes sure LED goes low after debug
 #endif
