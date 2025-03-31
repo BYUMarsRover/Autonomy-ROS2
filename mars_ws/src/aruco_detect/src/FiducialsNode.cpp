@@ -121,15 +121,19 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
 
         cv::aruco::detectMarkers(cv_ptr->image, dictionary_, corners, ids, detector_params_);
         if (!ids.empty()) {
-            RCLCPP_INFO(this->get_logger(), "Detected %d markers", static_cast<int>(ids.size()));
-            for (const auto& id : ids) {
-                RCLCPP_INFO(this->get_logger(), "Detected marker ID: %d", id);
+            int num_markers = ids.size();
+            if (prev_num_markers_ != num_markers){
+                RCLCPP_INFO(this->get_logger(), "Detected %d markers", num_markers);
+                for (const auto& id : ids) {
+                    RCLCPP_INFO(this->get_logger(), "Detected marker ID: %d", id);
+                }
+                prev_num_markers_ = num_markers;
+            }
+            
+            if (publish_images_) {
+                cv::aruco::drawDetectedMarkers(cv_ptr->image, corners, ids);
             }
         } 
-        if (!ids.empty()) {
-            RCLCPP_INFO(this->get_logger(), "Detected %d markers", static_cast<int>(ids.size()));
-            cv::aruco::drawDetectedMarkers(cv_ptr->image, corners, ids);
-        }
 
         if (do_pose_estimation_) {
             if (!have_cam_info_) {
@@ -146,8 +150,11 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
                                       rvecs, tvecs, reprojection_errors);
 
             for (size_t i = 0; i < ids.size(); i++) {
-                cv::aruco::drawAxis(cv_ptr->image, camera_matrix_, distortion_coeffs_,
-                                    rvecs[i], tvecs[i], static_cast<float>(fiducial_len_));
+                
+                if (publish_images_) {
+                    cv::aruco::drawAxis(cv_ptr->image, camera_matrix_, distortion_coeffs_,
+                                        rvecs[i], tvecs[i], static_cast<float>(fiducial_len_));
+                }
 
                 RCLCPP_DEBUG(this->get_logger(),
                             "Detected id %d T [%.2f %.2f %.2f] R [%.2f %.2f %.2f]",
@@ -234,10 +241,10 @@ void FiducialsNode::enableDetectionsCallback(
     enable_detections_ = request->data;
     response->success = true;
     if (enable_detections_) {
-        response->message = "ArUco detections have been enabled.";
+        response->message = "aruco detections - enabled";
         RCLCPP_INFO(this->get_logger(), "ArUco detections enabled.");
     } else {
-        response->message = "ArUco detections have been disabled.";
+        response->message = "aruco detections - disabled";
         RCLCPP_INFO(this->get_logger(), "ArUco detections disabled.");
     }
 }
