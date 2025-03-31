@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 
 from PyQt5 import QtWidgets, uic
-from PyQt5.QtCore import QObject, pyqtSignal, QTimer
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer, Qt, QAbstractTableModel
+from PyQt5.QtWidgets import QApplication, QTableView
 from python_qt_binding.QtCore import QObject, Signal
 import rclpy
+from std_msgs.msg import Empty
 from rover_msgs.srv import CameraControl
 from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton
 from rclpy.node import Node
@@ -22,6 +24,41 @@ class Signals(QObject):
     notes_save_signal = Signal(ScienceSaveNotes)
     fad_intensity_signal = Signal(ScienceFADIntensity)
 
+class WavelengthTableModel(QAbstractTableModel):
+    def __init__(self, wavelengths, values):
+        super().__init__()
+        self.wavelengths = wavelengths
+        self.values = values
+
+    def rowCount(self, parent=None):
+        return len(self.wavelengths)
+
+    def columnCount(self, parent=None):
+        return 2
+
+    def data(self, index, role):
+        if role == Qt.DisplayRole:
+            if index.column() == 0:
+                return f"{self.wavelengths[index.row()]} nm"
+            elif index.column() == 1:
+                return f"{self.values[index.row()]:.4f}"
+        return None
+
+    def headerData(self, section, orientation, role):
+        if role == Qt.DisplayRole:
+            if orientation == Qt.Horizontal:
+                return ["Wavelength (nm)", "Value"][section]
+            elif orientation == Qt.Vertical:
+                return str(section + 1)
+        return None
+    
+    def updateData(self, new_values):
+        if len(new_values) != len(self.wavelengths):
+            print("Error: Data length mismatch")
+            return
+        self.values = new_values
+        self.layoutChanged.emit() 
+
 class science_GUI(Node):
     def __init__(self):
         
@@ -39,10 +76,14 @@ class science_GUI(Node):
 
         self.base_ip = self.get_base_ip()
         self.cli = self.create_client(CameraControl, 'camera_control')
-        # if not self.cli.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('Camera control not available, waiting...')
-        # self.req = CameraControl.Request()
-        # self.future = self.cli.call_async(self.req)
+        
+        # Set up the spectrometer data table
+        wavelengths = [400 + 20 * i for i in range(18)]
+        values = [0 for i in range(18)]
+
+        # Set Model to QTableView
+        self.spectro_table = WavelengthTableModel(wavelengths, values)
+        self.qt.tableView.setModel(self.spectro_table)
 
         self.temperature = 1
         self.moisture = 0
@@ -105,6 +146,12 @@ class science_GUI(Node):
         self.qt.pushButton_temperature_2.clicked.connect(lambda: self.estimate_reading(1))
         self.qt.pushButton_fad_estimate.clicked.connect(lambda: self.estimate_reading(2))
 
+        #TODO
+        # self.qt.pushButton_spectro.clicked.connect(lambda: self.fetch_spectro_data())
+        # self.qt.pushButton_uv.clicked.connect(lambda: self.fetch_uv_data())
+        self.qt.pushButton_spectro.clicked.connect(lambda: self.pub_get_spectro.publish())
+        self.qt.pushButton_uv.clicked.connect(lambda: self.pub_get_uv.publish())
+
         self.qt.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
         self.qt.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
         self.qt.fad_radio.toggled.connect(lambda: self.toggle_sensor_save(2))  # fad
@@ -115,6 +162,10 @@ class science_GUI(Node):
         self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1) #figure this out
         self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
         self.pub_save_fad = self.create_publisher(ScienceSaveFAD, '/science_save_fad', 1)
+        
+        #TODO - make new messages and integrate with science serial interface
+        self.pub_get_spectro = self.create_publisher(Empty, '/science_spectro_request', 1)
+        self.pub_get_uv = self.create_publisher(Empty, '/science_uv_request', 1)
 
         self.signals.sensor_signal.connect(self.update_sensor_values)
         # self.signals.auger_position.connect(self.update_auger_position)
@@ -127,6 +178,21 @@ class science_GUI(Node):
         # self.science_auger_position = self.create_subscription(ScienceToolPosition, '/science_auger_position', self.signals.auger_position.emit, 10)
         self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
         self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
+        self.sub_spectro = self.create_subscription(ScienceSpectroData, '/science_spectro_data', self.update_spectro_data, 10)
+        self.sub_uv = self.create_subscription(ScienceUvData, '/science_uv_data', self.update_uv_values, 10)
+
+    # def fetch_spectro_data(self):
+    #     self.pub_get_spectro.publish()
+
+    def update_spectro_data(self, msg)
+        vals = msg.values#TODO - get new message
+        self.spectro_table.updateData(vals)
+
+    def update_uv_values(self, msg):
+        uv = msg.uv
+        als = msg.als
+        self.qt.lcd_uv.display(uv)
+        self.qt.ambient.display(als)
     
     def toggle_sensor_save(self, p):
         """

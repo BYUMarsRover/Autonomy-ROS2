@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1032</width>
+    <width>1296</width>
     <height>450</height>
    </rect>
   </property>
@@ -50,8 +50,8 @@
   <widget class="QLCDNumber" name="lcd_auger">
    <property name="geometry">
     <rect>
-     <x>880</x>
-     <y>90</y>
+     <x>1000</x>
+     <y>260</y>
      <width>111</width>
      <height>131</height>
     </rect>
@@ -167,7 +167,7 @@
     <rect>
      <x>680</x>
      <y>270</y>
-     <width>321</width>
+     <width>301</width>
      <height>111</height>
     </rect>
    </property>
@@ -227,10 +227,10 @@
   <widget class="QLineEdit" name="lineEdit_5">
    <property name="geometry">
     <rect>
-     <x>880</x>
-     <y>30</y>
+     <x>1000</x>
+     <y>390</y>
      <width>111</width>
-     <height>51</height>
+     <height>41</height>
     </rect>
    </property>
    <property name="font">
@@ -799,7 +799,164 @@ p, li { white-space: pre-wrap; }
     </rect>
    </property>
    <property name="text">
-    <string>Estimate weight life</string>
+    <string>Estimate volume life</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_spectro">
+   <property name="geometry">
+    <rect>
+     <x>930</x>
+     <y>220</y>
+     <width>121</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Get wavelength counts</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_8">
+   <property name="geometry">
+    <rect>
+     <x>890</x>
+     <y>30</y>
+     <width>211</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>20</pointsize>
+     <italic>true</italic>
+    </font>
+   </property>
+   <property name="text">
+    <string>Spectrometer</string>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QTableView" name="tableView">
+   <property name="geometry">
+    <rect>
+     <x>880</x>
+     <y>91</y>
+     <width>231</width>
+     <height>131</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLCDNumber" name="lcd_uv">
+   <property name="geometry">
+    <rect>
+     <x>1150</x>
+     <y>110</y>
+     <width>81</width>
+     <height>91</height>
+    </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
+   <property name="smallDecimalPoint">
+    <bool>false</bool>
+   </property>
+   <property name="digitCount">
+    <number>1</number>
+   </property>
+  </widget>
+  <widget class="Line" name="line_6">
+   <property name="geometry">
+    <rect>
+     <x>1120</x>
+     <y>70</y>
+     <width>20</width>
+     <height>341</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Vertical</enum>
+   </property>
+  </widget>
+  <widget class="QLCDNumber" name="lcd_ambient">
+   <property name="geometry">
+    <rect>
+     <x>1150</x>
+     <y>240</y>
+     <width>81</width>
+     <height>91</height>
+    </rect>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
+   <property name="smallDecimalPoint">
+    <bool>false</bool>
+   </property>
+   <property name="digitCount">
+    <number>3</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>1170</x>
+     <y>90</y>
+     <width>51</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>UV index</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_11">
+   <property name="geometry">
+    <rect>
+     <x>1140</x>
+     <y>220</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Ambient Light Sensor</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_9">
+   <property name="geometry">
+    <rect>
+     <x>1160</x>
+     <y>30</y>
+     <width>51</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>20</pointsize>
+     <italic>true</italic>
+    </font>
+   </property>
+   <property name="text">
+    <string>UV</string>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_uv">
+   <property name="geometry">
+    <rect>
+     <x>1140</x>
+     <y>360</y>
+     <width>121</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Get UV and ALS values</string>
    </property>
   </widget>
   <zorder>groupBox</zorder>
@@ -845,6 +1002,16 @@ p, li { white-space: pre-wrap; }
   <zorder>pushButton_fad_calibration</zorder>
   <zorder>pushButton_fad_graph</zorder>
   <zorder>pushButton_fad_estimate</zorder>
+  <zorder>pushButton_spectro</zorder>
+  <zorder>lineEdit_8</zorder>
+  <zorder>tableView</zorder>
+  <zorder>lcd_uv</zorder>
+  <zorder>line_6</zorder>
+  <zorder>lcd_ambient</zorder>
+  <zorder>label_10</zorder>
+  <zorder>label_11</zorder>
+  <zorder>lineEdit_9</zorder>
+  <zorder>pushButton_uv</zorder>
  </widget>
  <resources/>
  <connections/>
