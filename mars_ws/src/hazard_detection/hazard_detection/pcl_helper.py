@@ -43,12 +43,14 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point, name):
     # Generate the fake point cloud
     # fake_pc = generate_fake_point_cloud()
 
-    # Visualize the point cloud
-    visualize_point_cloud(pcl_data)
-
-    #return fake_pc
-    
-    return pcl_data
+        # Check if the cloud has more than 3 points
+    if len(pcl_data.points) < 3:
+        
+        return pcl_data
+    else:
+          # Visualize the point cloud
+        visualize_point_cloud(pcl_data)
+        return pcl_data
 
 
 def visualize_point_cloud(pc):

@@ -121,6 +121,15 @@ class HazardDetector(Node):
     
     def point_cloud_callback(self, cloud):
 
+        # Check if the cloud has more than 3 points
+        if len(cloud.points) < 3:
+            self.get_logger().warn("Point cloud has less than 3 points!")
+            return
+        
+        self.get_logger().info("Min cloud: " + str(np.asarray(cloud.get_min_bound())))
+        self.get_logger().info("Max cloud: " + str(np.asarray(cloud.get_max_bound())))
+        self.get_logger().info("Num points: " + str(len(cloud.points)))
+
         # Downsample for efficiency
         cloud_filtered = cloud.voxel_down_sample(voxel_size=self.voxel_grid_size)
 
