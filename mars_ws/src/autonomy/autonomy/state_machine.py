@@ -202,8 +202,6 @@ class AutonomyStateMachine(Node):
         '''
         Sets current task to be the next one in the deque. Note that this also assumes that the TASK_COMPLETE task has popped
         the first waypoint off the front of the deque.
-        TODO: Confirm that popping off the completed task is most clearly done in the TASK_COMPLETE state, or if it is better
-        to pass in a task_complete parameter that tells this function to pop or not pop
         '''
         current_task: AutonomyTaskInfo = self.waypoints[0]
         self.set_task_callback(current_task)
@@ -515,7 +513,7 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
 
-                #Toggle object detection or aruco detection if within a certain distance of the target point (saves computation time)
+                # Toggle object detection or aruco detection if within a certain distance of the target point (saves cpu usage during navigation** necessary)
                 if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and dist_to_target < self.obj_enable_distance:
                     if not self.obj_detect_enabled:
                         self.toggle_object_detection(True)
