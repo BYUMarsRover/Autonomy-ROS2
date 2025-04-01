@@ -56,6 +56,7 @@ class ScienceModuleFunctionList:
         tx_packet.command_word = ScienceModuleFunctionList.get_command_word(func, flags)
         tx_packet.operands = operand_blob
         return tx_packet
+            
     
     @staticmethod
     def verify_operands(func, operand_blob):
@@ -106,7 +107,7 @@ class ScienceModuleFunctionList:
                 for j in range(int(func[f'operand_cnt_{i}'])):
                     # Ran past the array while looking for inputs
                     if (tracer + size > len(operand_blob)):
-                        raise Exception("Not enough data was provided for all expected operands")
+                        raise Exception(f"Not enough data was provided for all expected operands. Expected at least {tracer + size} bytes, but got {len(operand_blob)} bytes. Operand index: {i}, Operand type: {data_type}, Function: {func['function_name']}")
                     
                     # Grab the operand and attempt to interpret it
                     blob = operand_blob[tracer : tracer + size]

@@ -182,6 +182,13 @@ class science_response_GUI(Node):
         # Check for popup
         self.check_popup(msg)
 
+        # Selected item was the last in the list, autoselect this one
+        # Get the currently selected item in the packet browser
+        current_item = self.qt.packet_browser.currentItem();
+        if current_item is not None and current_item.data(Qt.UserRole)["index"] == last_index:
+            self.qt.packet_browser.setCurrentRow(last_index + 1)
+            self.select_response_packet()
+
     def packets_equivalent(self, msg1: ScienceSerialRxPacket, msg2: ScienceSerialRxPacket):
         return (msg1.echo[1] == msg2.echo[1]) and (msg1.error_code == msg2.error_code) and (msg1.message == msg2.message)
     
