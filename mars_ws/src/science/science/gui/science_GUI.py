@@ -7,7 +7,7 @@ from python_qt_binding.QtCore import QObject, Signal
 import rclpy
 from std_msgs.msg import Empty
 from rover_msgs.srv import CameraControl
-from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton
+from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton, ScienceSerialTxPacket
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.pyplot as plt
@@ -101,6 +101,8 @@ class science_GUI(Node):
 
         self.science_data_path = os.path.expanduser("~/science_data/site-1")
 
+        self.serial_sensor_tx_request_pub = self.create_publisher(ScienceSerialTxPacket, '/science_serial_tx_request', 10) # Publisher for sending sensor values
+
         # Read in coefficients. 
         moisture_path = os.path.join(self.science_data_path, "moisture_polynomials.txt")
         temp_path = os.path.join(self.science_data_path, "temp_polynomials.txt")
@@ -129,6 +131,28 @@ class science_GUI(Node):
     def initialize_timers(self):
         self.moisture_timer = self.create_timer(self.save_interval, self.stop_moist_saver)#These are probably redundant in ros2
         self.temp_timer = self.create_timer(self.save_interval, self.stop_temp_saver)
+
+        # Query the temperature and humidity at 1 Hz
+        self.create_timer(1, self.query_temperature) # 1 Hz
+        self.create_timer(1, self.query_humidity) # 1 Hz
+
+    def query_temperature(self):
+        # ask the arduino to return the temperature as a calibrated float
+        self.serial_sensor_tx_request_pub.publish(
+            ScienceSerialTxPacket(
+                command_word = 0x0F,
+                operands = [0x00]
+            )
+        )
+
+    def query_humidity(self):
+        # ask the arduino to return the humidity as a calibrated float
+        self.serial_sensor_tx_request_pub.publish(
+            ScienceSerialTxPacket(
+                command_word = 0x10,
+                operands = [0x00]
+            )
+        )
         
 
     def task_launcher_init(self):
