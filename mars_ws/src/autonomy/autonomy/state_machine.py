@@ -156,6 +156,9 @@ class AutonomyStateMachine(Node):
         self.waypoints: deque[AutonomyTaskInfo] = deque()
         self.last_waypoint: AutonomyTaskInfo = None
 
+        self.backup_timer = None
+        self.backup_duration = 4.0  # Tune this number 
+
     def set_task_callback(self, task_info: AutonomyTaskInfo):
         self.get_logger().info('in set_task_callback')
 
@@ -423,6 +426,20 @@ class AutonomyStateMachine(Node):
             chi_1 += 2.0 * np.pi
         return chi_1
 
+    def stop_backup(self):
+        self.drive_controller.issue_drive_cmd(0.0, 0.0)
+        self.state = State.START_POINT_NAVIGATION
+
+        # Disable aruco detection to save computational resources
+        if self.aruco_detect_enabled:
+            self.toggle_aruco_detection(False)
+
+        # Destroy the timer and reset it
+        if self.backup_timer is not None:
+            self.backup_timer.cancel()
+            self.backup_timer = None
+
+
     def set_autopilot_speed(self, speed):
         print("Setting autopilot speed...")
 
@@ -470,16 +487,15 @@ class AutonomyStateMachine(Node):
                     self.toggle_aruco_detection(False)
                 if self.obj_detect_enabled:
                     self.toggle_object_detection(False)
+                elif self.prev_tag_id == None:  # not always running in the background, just in case state machine is restarted
+                    self.toggle_aruco_detection(True)
 
 
             #This SEARCH_FOR_WRONG_STATE state is used to ensure that after finishing one aruco tag task, the rover will
             #backup if the rover sees the wrong tag, to ensure it does not run into the aruco stand before starting the next task
             elif self.state == State.SEARCH_FOR_WRONG_TAG: 
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                if self.wrong_aruco_tag_found and self.aruco_tag_distance < self.wrong_aruco_backup_distance:
-                    
-                    #TODO: Change method for when we stop backing up because turning 
-                    # might make it so that we can no longer see the wrong tag
+                if self.wrong_aruco_tag_found:
 
                     #Find the angle to our new target point
                     target_latitude = self.waypoints[0].latitude
@@ -488,11 +504,18 @@ class AutonomyStateMachine(Node):
                     chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, target_point)
                     des_heading = self.wrap(chi_rad - self.curr_heading, 0)
 
-                    #Backup and turn the same direction as the angle to the next waypoint
-                    if des_heading < 0:
-                        self.drive_controller.issue_drive_cmd(-2.0, -self.wrong_aruco_backup_spin_speed)
-                    else:
-                        self.drive_controller.issue_drive_cmd(-2.0, self.wrong_aruco_backup_spin_speed)
+                    # #Backup and turn the same direction as the angle to the next waypoint
+                    # if des_heading < 0:
+                    #     self.drive_controller.issue_drive_cmd(-2.0, -self.wrong_aruco_backup_spin_speed)
+                    # else:
+                    #     self.drive_controller.issue_drive_cmd(-2.0, self.wrong_aruco_backup_spin_speed)
+                    linear_vel = -2.0
+                    angular_vel = -self.wrong_aruco_backup_spin_speed if des_heading < 0 else self.wrong_aruco_backup_spin_speed
+
+                    # Start backup maneuver with timer
+                    if self.backup_timer is None:
+                        self.drive_controller.issue_drive_cmd(linear_vel, angular_vel)
+                        self.backup_timer = self.create_timer(self.backup_duration, self.stop_backup)
 
                 else:
                     self.drive_controller.issue_drive_cmd(0.0, 0.0)
