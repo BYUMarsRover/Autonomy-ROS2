@@ -34,19 +34,18 @@ class PathManager(Node):
         self.enabled = False
         self.autopilot_cmd = MobilityAutopilotCommand()
 
-        # ROS 2 Services
-        self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable)
-
-        # ROS 2 Publishers
-        self.autopilot_cmds_pub = self.create_publisher(MobilityAutopilotCommand, '/mobility/autopilot_cmds', 10)
-        self.debug_pub = self.create_publisher(String, '/mobility/PathManagerDebug', 10)
-
+        # Publish Autopilot command every 0.1 seconds
         timer_period = 0.1
         self.pub_timer = self.create_timer(timer_period, self.publish_autopilot_cmd)
 
-        # self.publish_debug("[__init__] ENTER")
+        # Services
+        self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable)
 
-        # ROS 2 Subscribers
+        # Publishers
+        self.autopilot_cmds_pub = self.create_publisher(MobilityAutopilotCommand, '/mobility/autopilot_cmds', 10)
+        self.debug_pub = self.create_publisher(String, '/mobility/PathManagerDebug', 10) # Topic for debug messages specific to this node
+
+        # Subscribers
         self.gps_waypoint_2_follow_sub = self.create_subscription(
             MobilityGPSWaypoint2Follow,
             '/mobility/waypoint2follow',
@@ -72,8 +71,7 @@ class PathManager(Node):
         self.yaw = None
         # self.obstacles = []
 
-        self.get_logger().warn("Path_Manager Initialized!")
-        # self.publish_debug("[__init__] EXIT")
+        self.get_logger().info("Path_Manager Initialized!")
 
     def publish_debug(self, message: str):
         """Publish debug messages."""
@@ -90,7 +88,9 @@ class PathManager(Node):
         self.pitch = msg.map_pitch
         self.yaw = msg.map_yaw
 
-        self.publish_debug("[rover_state_singleton_callback] Setting self.current_point")
+        # self.publish_debug("[rover_state_singleton_callback] Setting self.current_point")
+
+        # Update Current Point
         self.current_point = GPSCoordinate(curr_lat, curr_lon, curr_elv)
 
         self.update_autopilot_cmd()
@@ -102,7 +102,7 @@ class PathManager(Node):
             des_lon = msg.longitude
             des_elv = self.current_point.alt if self.current_point else 0.0
 
-            self.publish_debug("[waypoint_2_follow_callback] Setting self.desired_point")
+            # self.publish_debug("[waypoint_2_follow_callback] Setting self.desired_point")
             self.desired_point = GPSCoordinate(des_lat, des_lon, des_elv)
 
             self.update_autopilot_cmd()
@@ -127,18 +127,18 @@ class PathManager(Node):
     #     self.publish_debug("[set_zed_obstacles] EXIT")
 
     def update_autopilot_cmd(self):
-        self.publish_debug("[update_autopilot_cmd] ENTER")
+        # self.publish_debug("[update_autopilot_cmd] ENTER")
 
         # If current point and desired point have been set, calculate the autopilot commands
         if self.current_point and self.desired_point:
-            self.publish_debug("[update_autopilot_cmd] Calculating autopilot commands")
+            # self.publish_debug("[update_autopilot_cmd] Calculating autopilot commands")
             self.chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, self.desired_point)
             self.distance = GPSTools.distance_between_lat_lon(self.current_point, self.desired_point)
 
             self.autopilot_cmd.distance_to_target = self.distance
             self.autopilot_cmd.course_angle = self.chi_rad
 
-        self.publish_debug("[update_autopilot_cmd] EXIT")
+        # self.publish_debug("[update_autopilot_cmd] EXIT")
 
     def enable(self, request: SetBool.Request, response: SetBool.Response):
         self.enabled = request.data
