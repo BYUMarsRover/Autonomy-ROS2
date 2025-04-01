@@ -1,19 +1,39 @@
 #!/usr/bin/env python3
 """
-PURPOSE: Recieve ROS commands and send commands to science Arduino via serial USB.
+PURPOSE: Receive ROS commands and send commands to the science Arduino via serial USB.
 
 SUBSCRIBED TO:
-/science_control
+/science_serial_probe
+/science_serial_auger
+/science_serial_primary_cache_door
+/science_serial_secondary_cache_door
+/science_serial_secondary_cache
+/science_serial_drill
+/science_serial_override
+/science_serial_tx_request
+
+PUBLISHED TO:
+/science_serial_tx_notification
+/science_serial_rx_notification
+/science_serial_rx_packet
+
+FUNCTIONALITY:
+- Initializes a serial connection with the science Arduino.
+- Sends actuator control commands to the Arduino based on ROS messages.
+- Handles override bit changes for command packets.
+- Reads and processes response packets from the Arduino.
+- Publishes notifications and processed packets to ROS topics.
 """
 
 import rclpy
 import sys
 from rclpy.node import Node
 from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues, ScienceSerialTxPacket, ScienceSerialRxPacket
-from std_msgs.msg import Bool, UInt8MultiArray, Empty
+from std_msgs.msg import Bool, UInt8MultiArray, Empty, UInt16, Float32
 import serial
 import struct
 import time
+from science.function_mapping.function_map import ScienceModuleFunctionList as SMFL
 
 # This module uses the Science Module Serial Communication Protocol
 # as definded in the BYU-Mars-Rover-Wiki
@@ -25,16 +45,6 @@ RESPONSE_PACKET_HEADER = 0x52
 RESPONSE_PACKET_FOOTER = 0x46
 
 MAXIMUM_PACKET_SIZE = 0xFF
-FULL_STEAM_FORWARD = 0x7F
-FULL_STEAM_BACKWARD = 0x80
-
-UPDATE_PROBE_CONTROL_COMMAND_WORD = 0x85
-UPDATE_AUGER_CONTROL_COMMAND_WORD = 0x86
-UPDATE_DRILL_CONTROL_COMMAND_WORD = 0xAA
-
-UPDATE_PRIMARY_CACHE_DOOR_CONTROL_COMMAND_WORD = 0x87
-# UPDATE_SECONDARY_CACHE_DOOR_CONTROL_COMMAND_WORD = 0x88  #Unused secondary cache door, removed for 2024/2025 module design
-UPDATE_SECONDARY_CACHE_CONTROL_COMMAND_WORD = 0x89
 
 RESPONSE_ECHO_LEN_INDEX = 1
 RESPONSE_ECHO_MESSAGE_START_INDEX = RESPONSE_ECHO_LEN_INDEX + 1
@@ -42,25 +52,16 @@ RESPONSE_ERROR_LEN_BASE_INDEX = 3
 RESPONSE_ERROR_MESSAGE_START_BASE_INDEX = RESPONSE_ERROR_LEN_BASE_INDEX + 1
 RESPONSE_FOOTER_BASE_INDEX = 4
 
-GET_TEMP_COMMAND_WORD = 0x0F
-GET_HUM_COMMAND_WORD = 0x10
-GET_TEMP_RAW_COMMAND_WORD = 0x0D
-GET_HUM_RAW_COMMAND_WORD = 0x0E
-
-PROBE_TOOL_INDEX = 0
-AUGER_TOOL_INDEX = 1
+PROBE_ACTUATOR_INDEX = 0
+AUGER_ACTUATOR_INDEX = 1
+PRIMARY_DOOR_ACTUATOR_INDEX = 2
+SECONDARY_DOOR_ACTUATOR_INDEX = 3
+SECONDARY_CACHE_ACTUATOR_INDEX = 4
+PRIMARY_DOOR_ACTUATOR_INDEX = 5
+DRILL_ACTUATOR_INDEX = 6
 
 SENSOR_ERR_CODE = -1
-
 BAUD_RATE = 115200
-
-def signed_to_unsigned(signed_value):
-    if signed_value < 0:
-        # Compute the two's complement representation
-        unsigned_value = (1 << 8) + signed_value
-    else:
-        unsigned_value = signed_value
-    return unsigned_value
 
 class ScienceSerialInterface(Node):
     """Bridge ROS messaging and science arduino"""
@@ -82,41 +83,39 @@ class ScienceSerialInterface(Node):
             rclpy.shutdown()
             exit(0)
 
-        self.sub_science_serial_drill = self.create_subscription(ScienceActuatorControl, '/science_serial_drill', self.drill_control_callback, 10)
-        self.sub_science_serial_probe = self.create_subscription(ScienceActuatorControl, '/science_serial_probe', self.probe_control_callback, 10)
-        self.sub_science_serial_auger = self.create_subscription(ScienceActuatorControl, '/science_serial_auger', self.auger_control_callback, 10)
-        self.sub_science_serial_primary_cache_door = self.create_subscription(ScienceActuatorControl, '/science_serial_primary_cache_door', self.primary_cache_door_control_callback, 10)
-        self.sub_science_serial_secondary_cache = self.create_subscription(ScienceActuatorControl, '/science_serial_secondary_cache', self.secondary_cache_control_callback, 10)
-        self.sub_science_serial_override = self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
+        self.create_subscription(ScienceActuatorControl, '/science_serial_probe',                lambda msg: self.actuator_control_callback(msg, PROBE_ACTUATOR_INDEX), 10)
+        self.create_subscription(ScienceActuatorControl, '/science_serial_auger',                lambda msg: self.actuator_control_callback(msg, AUGER_ACTUATOR_INDEX), 10)
+        self.create_subscription(ScienceActuatorControl, '/science_serial_primary_cache_door',   lambda msg: self.actuator_control_callback(msg, PRIMARY_DOOR_ACTUATOR_INDEX), 10)
+        self.create_subscription(ScienceActuatorControl, '/science_serial_secondary_cache_door', lambda msg: self.actuator_control_callback(msg, SECONDARY_DOOR_ACTUATOR_INDEX), 10)
+        self.create_subscription(ScienceActuatorControl, '/science_serial_secondary_cache',      lambda msg: self.actuator_control_callback(msg, SECONDARY_CACHE_ACTUATOR_INDEX), 10)
+        self.create_subscription(ScienceActuatorControl, '/science_serial_drill',                lambda msg: self.actuator_control_callback(msg, DRILL_ACTUATOR_INDEX), 10)
+        self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
 
         # Serial Communication Exchange
-        self.sub_science_serial_tx_request = self.create_subscription(ScienceSerialTxPacket, '/science_serial_tx_request', self.receive_serial_packet_callback, 10)
+        self.sub_science_serial_tx_request = self.create_subscription(ScienceSerialTxPacket, '/science_serial_tx_request', self.perform_tx_request, 10)
         self.pub_science_serial_tx_notification = self.create_publisher(UInt8MultiArray, '/science_serial_tx_notification', 10)
         self.pub_science_serial_rx_notification = self.create_publisher(UInt8MultiArray, '/science_serial_rx_notification', 10)
         self.pub_science_serial_rx_packet = self.create_publisher(ScienceSerialRxPacket, '/science_serial_rx_packet', 10)
-        self.sub_science_gui_raw_request = self.create_subscription(Empty, '/science_serial_request_raw', self.query_sensor_raw_callback, 10)
 
-        self.info_publisher = self.create_publisher(ScienceSensorValues, '/science_sensor_values', 10)
-
+        # Timer to read the serial input
         self.create_timer(100e-3, self.read_serial) # 10 Hz
-        self.create_timer(1, self.query_temperature) # 1 Hz
-        self.create_timer(1, self.query_humidity) # 1 Hz
-        self.create_timer(1, self.query_sensor_raw) # 1 Hz
-
-        # Caches for control purposes
-        self.current_tool_index = 0
 
         # Data structure for reading packets
         self.read_queue = []
 
-        # Caches for sensor values
-        self.temperature = None
-        self.humidity = None
-        self.temperature_raw = 0
-        self.humidity_raw = 0
-
         # State Variable
         self.override_bit = False
+
+    # Callbacks for Subscribers
+
+    def actuator_control_callback(self, msg: ScienceActuatorControl, sensor_index):
+        self.publish_tx_request(SMFL.get_tx_get_update_actuator_control(sensor_index, msg.control))
+
+    def set_override_bit_callback(self, msg: Bool):
+        print("Received override change")
+        self.override_bit = msg.data
+
+    # Publishing for RXTX Monitoring
 
     def publish_serial_tx_notification(self, data):
         msg = UInt8MultiArray()
@@ -128,85 +127,36 @@ class ScienceSerialInterface(Node):
         msg.data = data
         self.pub_science_serial_rx_notification.publish(msg)
 
-    def set_override_bit_callback(self, msg: Bool): #Control is an int8control = FULL_STEAM_FORWARD if self.secondary_cache_state == True else FULL_STEAM_BACKWARD
-        print("Received override change")
-        self.override_bit = msg.data
-
-    def write_actuator_control(self, command_word, control): #Control is an int8control = FULL_STEAM_FORWARD if self.secondary_cache_state == True else FULL_STEAM_BACKWARD
-        self.author_packet([command_word, 0x01, signed_to_unsigned(control)])
-
-    def drill_control_callback(self, msg: ScienceActuatorControl):
-        print("Doing drill control callback")
-        self.write_actuator_control(UPDATE_DRILL_CONTROL_COMMAND_WORD, msg.control)
-    
-    def probe_control_callback(self, msg: ScienceActuatorControl):
-        print("Doing probe linear actuator callback")
-        self.write_actuator_control(UPDATE_PROBE_CONTROL_COMMAND_WORD, msg.control)
-
-    def auger_control_callback(self, msg: ScienceActuatorControl):
-        print("Doing auger linear actuator callback")
-        self.write_actuator_control(UPDATE_AUGER_CONTROL_COMMAND_WORD, msg.control)
-
-    def primary_cache_door_control_callback(self, msg: ScienceActuatorControl):
-        print("Doing primary cache door callback")
-        self.write_actuator_control(UPDATE_PRIMARY_CACHE_DOOR_CONTROL_COMMAND_WORD, msg.control)
-
-    def secondary_cache_control_callback(self, msg: ScienceActuatorControl):
-        print("Doing secondary cache door callback")
-        self.write_actuator_control(UPDATE_SECONDARY_CACHE_CONTROL_COMMAND_WORD, msg.control)
+    # Writing to the Serial Buses
 
     # Sends published serial packets from the GUI to the arduino
-    def receive_serial_packet_callback(self, msg: ScienceSerialTxPacket):
+    def perform_tx_request(self, msg: ScienceSerialTxPacket):
         if len(msg.packet) > 0:
-            # If the packet is not empty, send it to the arduino
+            # If the packet is not empty, just send it to the arduino
             self.write_serial(msg.packet)
         else:
             # If the packet is empty, build from command word and operands
-            self.author_packet([msg.command_word, len(msg.operands)] + list(msg.operands))
+            self.author_packet([msg.command_word, len(msg.operands)] + list(msg.operands), self.override_bit)
 
     def write_serial(self, packet):
         self.arduino.write(struct.pack('B' * len(packet), *packet))
         self.publish_serial_tx_notification(packet)
 
-    def author_packet(self, byte_array):
+    def author_packet(self, byte_array, override):
          # Configure a payload with the overhead formatting and send to arduino
         if len(byte_array) > MAXIMUM_PACKET_SIZE:
             # todo proper error message
             print(f"Provided command packet is of size {len(byte_array)}, maximum is {MAXIMUM_PACKET_SIZE}")
         elif self.arduino:
-            byte_array[0] |= 0b01000000 if self.override_bit else 0b00000000  # Set the Override Bit
+            byte_array[0] |= 0b01000000 if override else 0b00000000  # Set the Override Bit
             byte_array.insert(0, COMMAND_PACKET_HEADER)
             byte_array.append(COMMAND_PACKET_FOOTER)
             self.write_serial(byte_array)
 
-            hex_array = [ hex(x) for x in byte_array]
-            print(f"Sending to arduino: {','.join(hex_array)}")
-            
-    def query_temperature(self):
-        # ask the arduino to return the temperature as a calibrated float
-        self.author_packet([GET_TEMP_COMMAND_WORD, 0x00])
+            # hex_array = [ hex(x) for x in byte_array]
+            # print(f"Sending to arduino: {','.join(hex_array)}")
 
-    def query_humidity(self):
-        # ask the arduino to return the humidity as a calibrated float
-        self.author_packet([GET_HUM_COMMAND_WORD, 0x00])
-
-    def query_sensor_raw_callback(self, msg: Empty):
-        self.query_sensor()
-
-    def query_sensor_raw(self):
-        print('Doing query raw')
-        # ask the arduino to return the temperature as a raw float
-        self.write_serial([GET_TEMP_RAW_COMMAND_WORD, 0x00])
-        self.write_serial([GET_HUM_RAW_COMMAND_WORD, 0x00])
-
-    def query_sensor_raw_callback(self, msg: Empty):
-        self.query_sensor()
-
-    def query_sensor_raw(self):
-        print('Doing query raw')
-        # ask the arduino to return the temperature as a raw float
-        self.write_serial([GET_TEMP_RAW_COMMAND_WORD, 0x00])
-        self.write_serial([GET_HUM_RAW_COMMAND_WORD, 0x00])
+    # Reading in from the Serial Bus
 
     def contains_possible_packet(self, queue):
         # Returns format information for a possible packet in the queue
@@ -282,20 +232,6 @@ class ScienceSerialInterface(Node):
                         if len(self.read_queue) == 0 or self.read_queue[0] == RESPONSE_PACKET_HEADER:
                             break
 
-    def publish_sensors_calibrated(self):
-        if (self.temperature is None):
-            self.temperature = SENSOR_ERR_CODE
-        if (self.humidity is None):
-            self.humidity = SENSOR_ERR_CODE
-        self.sensor_calibrated_publisher.publish(ScienceSensorValues(temperature=int(self.temperature),moisture=int(self.humidity)))
-
-    def publish_sensors_raw(self):
-        if (self.temperature is None):
-            self.temperature = SENSOR_ERR_CODE
-        if (self.humidity is None):
-            self.humidity = SENSOR_ERR_CODE
-        self.sensor_raw_publisher.publish(ScienceSensorValues(temperature=int(self.temp_raw),moisture=int(self.humidity_raw)))
-
     def process_packet(self, response_packet, formatting_data):
         # Process a valid response packet
         echo_length = formatting_data[0]
@@ -313,42 +249,13 @@ class ScienceSerialInterface(Node):
             print(f'Received Response Packet with invalid ascii:({error_code}) {",".join([ hex(x) for x in error_message])}')
 
         # Publish packet notification to ROS
-        self.pub_science_serial_rx_packet.publish(
-            ScienceSerialRxPacket(
+        rx_packet = ScienceSerialRxPacket(
             timestamp = time.time(),  # Timestamp as a float with sub-second precision
             echo = echo_message,  # Random echo bytes
             error_code = error_code,
             message = error_message
-            )
         )
-
-        function_address = echo_message[1] & 0b11111
-        if function_address == (GET_TEMP_COMMAND_WORD & 0b11111):
-            # This packet contains temperature data as a float
-            self.temperature = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))[0] #For some reason struct.unpack returns a tuple with a single value. Da heck
-            self.publish_sensors_calibrated()
-            try:
-                self.temperature = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))[0] #For some reason struct.unpack returns a tuple with a single value. Da heck
-                # print(f"Received temp: {self.temperature}")
-                self.publish_sensors_value()
-            except:
-                pass
-        elif function_address == (GET_HUM_COMMAND_WORD & 0b11111):
-            # This packet contains humidity data as a float
-            self.humidity = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))[0]
-            self.publish_sensors_calibrated()
-        elif function_address == (GET_TEMP_RAW_COMMAND_WORD & 0b11111):
-            self.temp_raw = struct.unpack('<H', struct.pack('B' * len(error_message), *error_message))[0]
-            # self.publish_sensors_raw() #since these publish both, we're only going to publish once on when humidity is received
-        elif function_address == (GET_HUM_RAW_COMMAND_WORD & 0b11111):
-            self.humidity_raw = struct.unpack('<H', struct.pack('B' * len(error_message), *error_message))[0]
-            self.publish_sensors_raw()
-            try:
-                self.humidity = struct.unpack('<f', struct.pack('B' * len(error_message), *error_message))[0]
-                # print(f"Received humidity: {self.humidity}")
-                self.publish_sensors_value()
-            except:
-                pass
+        self.pub_science_serial_rx_packet.publish(rx_packet)
 
 def main(args=None):
     rclpy.init(args=args)

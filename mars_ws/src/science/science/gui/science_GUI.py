@@ -5,9 +5,9 @@ from PyQt5.QtCore import QObject, pyqtSignal, QTimer, Qt, QAbstractTableModel
 from PyQt5.QtWidgets import QApplication, QTableView
 from python_qt_binding.QtCore import QObject, Signal
 import rclpy
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, Bool
 from rover_msgs.srv import CameraControl
-from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton, ScienceSerialTxPacket
+from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton, ScienceSerialTxPacket, ScienceSpectroData, ScienceUvData
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.pyplot as plt
@@ -93,15 +93,13 @@ class science_GUI(Node):
 
         self.fad_calibration_interval = 2
         self.site_number = 1
-        self.initialize_timers()
         self.task_launcher_init()
+        self.initialize_timers()
         self.sensor_saving = [False] * 3  # temp, moisture, fad
         self.temperature_coefficients = [[],[],[],[],[],[]]
         self.moisture_coefficients = [[],[],[],[],[],[]]
 
         self.science_data_path = os.path.expanduser("~/science_data/site-1")
-
-        self.serial_sensor_tx_request_pub = self.create_publisher(ScienceSerialTxPacket, '/science_serial_tx_request', 10) # Publisher for sending sensor values
 
         # Read in coefficients. 
         moisture_path = os.path.join(self.science_data_path, "moisture_polynomials.txt")
@@ -132,28 +130,11 @@ class science_GUI(Node):
         self.moisture_timer = self.create_timer(self.save_interval, self.stop_moist_saver)#These are probably redundant in ros2
         self.temp_timer = self.create_timer(self.save_interval, self.stop_temp_saver)
 
-        # Query the temperature and humidity at 1 Hz
-        self.create_timer(1, self.query_temperature) # 1 Hz
-        self.create_timer(1, self.query_humidity) # 1 Hz
-
-    def query_temperature(self):
-        # ask the arduino to return the temperature as a calibrated float
-        self.serial_sensor_tx_request_pub.publish(
-            ScienceSerialTxPacket(
-                command_word = 0x0F,
-                operands = [0x00]
-            )
-        )
-
-    def query_humidity(self):
-        # ask the arduino to return the humidity as a calibrated float
-        self.serial_sensor_tx_request_pub.publish(
-            ScienceSerialTxPacket(
-                command_word = 0x10,
-                operands = [0x00]
-            )
-        )
-        
+        # Query the temperature and humidity sensors at 1 Hz
+        self.create_timer(1, lambda: self.pub_get_analog_sensors.publish(Bool( data=False ))) # 1 Hz - Get Raw 
+        self.create_timer(0.5, lambda: self.pub_get_uv.publish(Empty())) # 1 Hz - Get Raw 
+        # TODO Get using_probe from xbox_science.py
+        # self.create_timer(1, lambda: self.update_augur_position())
 
     def task_launcher_init(self):
         self.signals = Signals()
@@ -171,10 +152,10 @@ class science_GUI(Node):
         self.qt.pushButton_fad_estimate.clicked.connect(lambda: self.estimate_reading(2))
 
         #TODO
-        # self.qt.pushButton_spectro.clicked.connect(lambda: self.fetch_spectro_data())
-        # self.qt.pushButton_uv.clicked.connect(lambda: self.fetch_uv_data())
-        self.qt.pushButton_spectro.clicked.connect(lambda: self.pub_get_spectro.publish())
-        self.qt.pushButton_uv.clicked.connect(lambda: self.pub_get_uv.publish())
+        self.qt.pushButton_spectro.clicked.connect(lambda: self.fetch_spectro_data())
+        self.qt.pushButton_uv.clicked.connect(lambda: self.fetch_uv_data())
+        self.qt.pushButton_spectro.clicked.connect(lambda: self.pub_get_spectro.publish(Empty()))
+        self.qt.pushButton_uv.clicked.connect(lambda: self.pub_get_uv.publish(Empty()))
 
         self.qt.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
         self.qt.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
@@ -187,9 +168,9 @@ class science_GUI(Node):
         self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
         self.pub_save_fad = self.create_publisher(ScienceSaveFAD, '/science_save_fad', 1)
         
-        #TODO - make new messages and integrate with science serial interface
         self.pub_get_spectro = self.create_publisher(Empty, '/science_spectro_request', 1)
         self.pub_get_uv = self.create_publisher(Empty, '/science_uv_request', 1)
+        self.pub_get_analog_sensors = self.create_publisher(Bool, '/science_sensor_request', 1)
 
         self.signals.sensor_signal.connect(self.update_sensor_values)
         # self.signals.auger_position.connect(self.update_auger_position)
@@ -205,18 +186,23 @@ class science_GUI(Node):
         self.sub_spectro = self.create_subscription(ScienceSpectroData, '/science_spectro_data', self.update_spectro_data, 10)
         self.sub_uv = self.create_subscription(ScienceUvData, '/science_uv_data', self.update_uv_values, 10)
 
-    # def fetch_spectro_data(self):
-    #     self.pub_get_spectro.publish()
+    def fetch_spectro_data(self):
+        msg = Empty()
+        self.pub_get_spectro.publish(msg)
 
-    def update_spectro_data(self, msg)
-        vals = msg.values#TODO - get new message
+    def fetch_uv_data(self):
+        msg = Empty()
+        self.pub_get_uv.publish(msg)
+
+    def update_spectro_data(self, msg):
+        vals = msg.values
         self.spectro_table.updateData(vals)
 
     def update_uv_values(self, msg):
         uv = msg.uv
         als = msg.als
         self.qt.lcd_uv.display(uv)
-        self.qt.ambient.display(als)
+        self.qt.lcd_ambient.display(als)
     
     def toggle_sensor_save(self, p):
         """
@@ -336,17 +322,6 @@ class science_GUI(Node):
 
             plt.scatter(dummy_analog,dummy_manuals)
             plt.pause(0.5)
-            # Have it ask you to save the point or delete after showing you an updated graph.
-            # Need to decide if this is useful or not
-            # keep = "y"
-            # if not (keep == "y" or keep =="Y" or keep == "[Y]" or keep == "[y]" or keep == ""):
-            #     manual_points.pop()
-            #     analog_vals.pop()
-            #     plt.cla()
-            #     plt.scatter(dummy_analog,dummy_manuals)
-            #     plt.xlabel("Arduino Digital Readout")
-            #     plt.ylabel("Reference Temperature (deg C)")
-            #     plt.pause(0.5)
         #Add something so you can decide what order polynomial you want.
         order = int(input("What order polynomial do you want to fit? [0 - 6]\n"))
         P0 = np.zeros((1,6-order))
@@ -432,19 +407,6 @@ class science_GUI(Node):
         self.qt.lbl_heading.setText(heading)
         self.qt.lbl_coordinates.setText(coordinates)
 
-    # def update_auger_position(self, msg):
-    #     """
-    #     Updates the augur display.
-
-    #     This is like this because the photoresistors are backwards on the board.
-    #     """
-    #     if msg.position == 0:
-    #         self.qt.lcd_auger.display(2)
-    #     elif msg.position == 1:
-    #         self.qt.lcd_auger.display(1)
-    #     else:
-    #         self.qt.lcd_auger.display(-1)
-
     def fad_detector_get_point(self, event=None): #Written by chat
         print('Calibrate FAD')
         if not self.cli.service_is_ready():
@@ -468,16 +430,6 @@ class science_GUI(Node):
             self.update_fad_intensity_value(response)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {str(e)}")
-
-
-        # print('Calibrate FADD')
-        # site_name = 'fad_calibration'
-        # camera = Camera()
-        # camera.client_address = "{}@{}".format(os.getlogin(), self.base_ip)
-        # camera.camera_name = 'fadCam'
-        # response = self.camera_control(camera=camera, site_name=site_name, calibrate=True)
-
-        # self.update_fad_intensity_value(response.intensity)
 
     def get_base_ip(self):
         ip = os.getenv("BASE_ADDRESS")
