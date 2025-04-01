@@ -17,7 +17,8 @@ imgpoints = []  # 2D points in image plane
 image_shape = None  # Placeholder for image shape
 
 # Load all calibration images
-images = glob.glob("calibration_images/*.jpg")
+images = glob.glob("/home/marsrover/AutonomyRos2/mars_ws/src/keyboard_autonomy/scripts/calibration_images/*.jpg")
+print(images)
 for fname in images:
     img = cv2.imread(fname)
     if img is None:

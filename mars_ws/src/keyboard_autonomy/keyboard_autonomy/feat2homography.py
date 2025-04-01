@@ -125,6 +125,33 @@ class Feat2HomographyNode(Node):
         if ret:
             # Optionally, store the image in the object
             self.camera_image = frame
+                # FISHEYE CONVERSION
+            h, w = self.camera_image.shape[:2]
+            # Camera matrix (K) from calibration
+            K = np.array([[240.0742270720785, 0.0, 303.87271958823317], [0.0, 240.2956790772891, 242.63742883611513],
+                        [0.0, 0.0, 1.0]], dtype=np.float32)
+            # Distortion coefficients (D) from calibration
+            D = np.array([[-0.032316597779098725],
+                        [-0.014192392170667197],
+                        [0.004485507618487958],
+                        [-0.0007679973472430706]], dtype=np.float32)
+
+            # Adjust K to prevent lots of zooming
+            scaled_K = K.copy()
+            scaled_K[0, 0] *= 0.8  # Reduce focal length in x-direction
+            scaled_K[1, 1] *= 0.8  # Reduce focal length in y-direction
+            # Undistortion map
+
+            map1, map2 = cv2.fisheye.initUndistortRectifyMap(
+                K, D, np.eye(3), scaled_K, (w, h), cv2.CV_16SC2
+            )
+            # Undistort the image
+            undistorted_img = cv2.remap(self.camera_image, map1, map2, interpolation=cv2.INTER_LINEAR,
+                                        borderMode=cv2.BORDER_CONSTANT)
+            # Show and save the undistorted image
+            # TODO: take out the image writing when this node is done
+            cv2.imwrite("undistorted_fisheye.png", undistorted_img)
+            self.get_logger().info('finished fisheye')
             self.get_logger().info("Image capture success.")
         else:
             self.get_logger().warn("Failed to capture image from the camera.")
