@@ -108,7 +108,7 @@ void statusIndicatorTick()
     }
     
     // Check if 3 seconds have passed
-    if (millis() - lastBlinkTime >= 3000) {
+    if (millis() - lastBlinkTime >= 1000) {
       lastBlinkTime = millis();  // Update last blink time
       ledState = !ledState;       // Toggle LED state
 
