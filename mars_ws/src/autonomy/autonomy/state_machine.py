@@ -33,6 +33,8 @@ class State(Enum):
     START_ABORT_STATE = "START_ABORT_STATE"
     ABORT_STATE = "ABORT_STATE"
 
+NAVIGATION_STATES = [State.SEARCH_FOR_WRONG_TAG, State.START_POINT_NAVIGATION, State.WAYPOINT_NAVIGATION, State.POINT_NAVIGATION, State.START_SPIN_SEARCH, State.SPIN_SEARCH, State.START_HEX_SEARCH ,State.HEX_SEARCH, State.START_OBJECT_HEX_SEARCH, State.ARUCO_NAVIGATE, State.OBJECT_NAVIGATE, State.ARUCO_GATE_NAVIGATION, State.ARUCO_GATE_ORIENTATION, State.ARUCO_GATE_APPROACH, State.ARUCO_GATE_PAST]
+
 class TagID(Enum):
     AR_TAG_1 = 1
     AR_TAG_2 = 2
@@ -41,11 +43,19 @@ class TagID(Enum):
     MALLET = 5
     GPS_ONLY = 6
 
+AR_ENABLE_MSG = 'aruco detections - enabled'
+AR_DISABLE_MSG = 'aruco detections - disabled'
+OBJ_ENABLE_MSG = ''     # TODO
+OBJ_DISABLE_MSG = ''    # TODO
+
 class AutonomyStateMachine(Node):
 
     def __init__(self):
         super().__init__('state_machine')
         self.get_logger().info('in init AutonomyStateMachine')
+
+        # TODO add conditionals to see if in verbose state
+        self.verbose = False       # If you want additional log output to debug
 
         # Create a timer to call `state_loop` every 0.1 seconds (10 Hz)
         self.create_timer(0.1, self.state_loop)
@@ -150,13 +160,14 @@ class AutonomyStateMachine(Node):
         self.a_task_complete = False
         self.aruco_detect_enabled = False
         self.obj_detect_enabled = False
+        self.prev_tag_id = TagID.GPS_ONLY
+        self.dist_to_target = 1000          # Abitrary High number, Will be updated in point navigation
 
         # Data structure to hold all of the waypoints at a time
         self.waypoints: deque[AutonomyTaskInfo] = deque()
         self.last_waypoint: AutonomyTaskInfo = None
 
     def set_task_callback(self, task_info: AutonomyTaskInfo):
-        self.get_logger().info('in set_task_callback')
 
         self.target_latitude = task_info.latitude
         self.target_longitude = task_info.longitude
@@ -228,6 +239,7 @@ class AutonomyStateMachine(Node):
         self.curr_latitude = msg.gps.latitude
         self.curr_longitude = msg.gps.longitude
         self.curr_elevation = msg.gps.altitude
+        # TODO: Get our filtered GPS POSITION INSTEAD OF RAW
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)
         self.curr_heading = np.deg2rad(msg.map_yaw)
 
@@ -236,7 +248,6 @@ class AutonomyStateMachine(Node):
             self.get_logger().info('Sending object detection request...')
             self.send_request(data, self.object_detect_client)
             self.retry_count = 0  # Reset retry count
-            self.obj_detect_enabled = data  #TODO future handle the making sure it actually comes back
         else:
             if self.retry_count < self.max_retries:
                 self.get_logger().warn(f'Service not available. Retrying... ({self.retry_count + 1}/{self.max_retries})')
@@ -250,7 +261,6 @@ class AutonomyStateMachine(Node):
             self.get_logger().info('Sending aruco detection request...')
             self.send_request(data, self.aruco_detect_client)
             self.retry_count = 0 # Reset retry count
-            self.aruco_detect_enabled = data #TODO future handle the making sure it actually comes back 
         else:
             if self.retry_count < self.max_retries:
                 self.get_logger().warn(f'Service not available. Retrying... ({self.retry_count + 1}/{self.max_retries})')
@@ -267,15 +277,23 @@ class AutonomyStateMachine(Node):
         future = client.call_async(request)
         future.add_done_callback(self.handle_response)
 
-    # Callback for handling the generic service call function (send_request)
+    # Callback for handling the service call function (send_request)
     def handle_response(self, future):
         try:
             response = future.result()
             self.get_logger().info(f'Response: Success={response.success}, Message="{response.message}"')
+            if response.message == AR_ENABLE_MSG:
+                self.aruco_detect_enabled = True
+            elif response.message == AR_DISABLE_MSG:
+                self.aruco_detect_enabled = False
+            elif response.message == OBJ_ENABLE_MSG:
+                self.obj_detect_enabled = True
+            elif response.message == OBJ_DISABLE_MSG:
+                self.obj_detect_enabled = False
+            
         except Exception as e:
             self.get_logger().error(f'Failed to call service: {str(e)}')
-    
-    
+
     def obj_detect_callback(self, msg: ObjectDetections):
         timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
         is_recent = lambda obj_ts: timestamp - obj_ts <= 1.0
@@ -358,11 +376,11 @@ class AutonomyStateMachine(Node):
             self.ar_callback_see_time = time.time()
 
             if msg.transforms[0].fiducial_id == self.tag_id.value:
-                self.get_logger().info(f"Is correct tag: {self.tag_id.value}") #correct Tag found, navigate using angle and distance
+                self.get_logger().info(f"Recieved Correct tag: {self.tag_id.value}", throttle_duration_sec=3.0) #correct Tag found, navigate using angle and distance
                 self.correct_aruco_tag_found = True
                 self.wrong_aruco_tag_found = False
             else:
-                self.get_logger().info(f"Is not correct tag. tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id.value}")
+                self.get_logger().info(f"Recieved  INCORRECT tag. tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id.value}",throttle_duration_sec=3.0)
                 self.correct_aruco_tag_found = False
                 self.wrong_aruco_tag_found = True
         elif time.time() - self.ar_callback_see_time > 1: #If we have not seen the tag within the last second, we will use the last known position
@@ -371,8 +389,6 @@ class AutonomyStateMachine(Node):
             # self.both_aruco_tags_found = False
 
     def enable(self, request: SetBool.Request, response: SetBool.Response):
-        self.get_logger().info('in enable')
-
         self.enabled = request.data
         
         if self.enabled:
@@ -431,11 +447,45 @@ class AutonomyStateMachine(Node):
             self.get_logger().warn("Set speed service is not available.")
         return
 
+    def check_detections(self):
+        # Enable object detection and aruco detection:
+            # Only when actively navigating
+        if self.state in NAVIGATION_STATES and self.enabled:
+            #Toggle object detection or aruco detection if within a certain distance of the target point (saves computation time)
+            # TODO search for wrong tag state 
+            if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and self.dist_to_target < self.obj_enable_distance:
+                if not self.obj_detect_enabled:
+                    self.toggle_object_detection(True)
+            elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3] and self.dist_to_target < self.aruco_enable_distance:
+                if not self.aruco_detect_enabled:
+                    self.toggle_aruco_detection(True)
+        else:
+            # Disable object detection and aruco detection when not navigating
+            # Only disable aruco detection if the previous tag was not an aruco tag so that when we go to SEARCH_FOR_WRONG_TAG state, we can make sure not to run into it
+            # TODO search for wrong tag state 
+            if self.aruco_detect_enabled:
+                self.toggle_aruco_detection(False)
+                self.get_logger().info(f"Disabling Aruco - State is: {self.state.value}, tag_id is: {self.tag_id.value}")
+            if self.obj_detect_enabled:
+                self.toggle_object_detection(False)
+                self.get_logger().info(f"Disabling Aruco - State is: {self.state.value}, tag_id is: {self.tag_id.value}")
+
+
+    def reset_state_variables(self):
+        # Reset the state machine variables
+        self.correct_aruco_tag_found = False
+        self.correct_obj_found = False
+        self.obj_distance = None
+        self.obj_angle = None
+        self.prev_tag_id = self.tag_id
+        self.dist_to_target = 1000          # Arbitrary High number, will be updated in navigation
+
 
     def state_loop(self):
         self.get_logger().info(f"State is: {self.state.value}", throttle_duration_sec=10)
-
+        
         if self.enabled:
+
             if self.state == State.MANUAL:
                 if self.a_task_complete:
                     #Keep the LED Green by keeping it in arrival state if a task has been completed
@@ -443,8 +493,6 @@ class AutonomyStateMachine(Node):
 
                 else:
                     self.nav_state.navigation_state = NavState.TELEOPERATION_STATE
-                self.correct_aruco_tag_found = False
-                self.correct_obj_found = False
 
                 # Reset the state machine variables
                 self.correct_aruco_tag_found = False
@@ -452,21 +500,14 @@ class AutonomyStateMachine(Node):
                 self.obj_distance = None
                 self.obj_angle = None
 
-                # Disable object detection and aruco detection when arrived
-                if self.aruco_detect_enabled:
-                    self.toggle_aruco_detection(False)
-                if self.obj_detect_enabled:
-                    self.toggle_object_detection(False)
-
-
-
             #This SEARCH_FOR_WRONG_STATE state is used to ensure that after finishing one aruco tag task, the rover will
-            #backup if it sees the wrong tag, to ensure it does not run into the aruco stand before starting the next task
+            #backup if the rover sees the wrong tag, to ensure it does not run into the aruco stand before starting the next task
             elif self.state == State.SEARCH_FOR_WRONG_TAG: 
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.wrong_aruco_tag_found and self.aruco_tag_distance < self.wrong_aruco_backup_distance:
                     self.drive_controller.issue_drive_cmd(-2.0, 0.0)
                     #TODO: Consider adding angular velocity to this command to ensure the rover backs up in such a way that it will not hit the stand
+                    #Perhaps in the opposite direction of the direction needed to get to get tot he next waypoint
                 else:
                     self.drive_controller.issue_drive_cmd(0.0, 0.0)
                     self.state = State.START_POINT_NAVIGATION
@@ -500,17 +541,17 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.POINT_NAVIGATION:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
+                self.dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
 
-                # Toggle object detection or aruco detection if within a certain distance of the target point (saves cpu usage during navigation** necessary)
-                if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and dist_to_target < self.obj_enable_distance:
+                #Toggle object detection or aruco detection if within a certain distance of the target point (saves computation time)
+                if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and self.dist_to_target < self.obj_enable_distance:
                     if not self.obj_detect_enabled:
                         self.toggle_object_detection(True)
-                elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3] and dist_to_target < self.aruco_enable_distance:
+                elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3] and self.dist_to_target < self.aruco_enable_distance:
                     if not self.aruco_detect_enabled:
                         self.toggle_aruco_detection(True)
                 
-                if dist_to_target < self.dist_tolerance:
+                if self.dist_to_target < self.dist_tolerance:
                     if self.tag_id == TagID.GPS_ONLY:
                         self.get_logger().info('GPS Task is complete!')
                         self.state = State.TASK_COMPLETE
@@ -614,11 +655,7 @@ class AutonomyStateMachine(Node):
                 self.drive_controller.stop()
                 self.a_task_complete = True
 
-                # Reset the state machine variables
-                self.correct_aruco_tag_found = False
-                self.correct_obj_found = False
-                self.obj_distance = None
-                self.obj_angle = None
+                self.reset_state_variables()
 
                 # Pop off the completed task
                 if len(self.waypoints) > 0:
@@ -654,6 +691,7 @@ class AutonomyStateMachine(Node):
 
         self.nav_state_pub.publish(self.nav_state)
         self.publish_status()
+        self.check_detections()
 
     def publish_status(self):
         msg = RoverState()
