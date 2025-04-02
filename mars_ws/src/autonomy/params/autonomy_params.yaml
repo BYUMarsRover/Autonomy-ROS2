@@ -7,9 +7,9 @@
     abort_distance_tolerance: 5.0
     aruco_distance_tolerance: 2.0
     hex_search_radius: 17.3
-    navigate_speed: 1.0
-    object_speed: 0.3
-    aruco_speed: 0.3
+    navigate_speed: 10.0
+    object_speed: 3.0
+    aruco_speed: 3.0
     spin_speed: 30.0
     object_alpha_lpf: 0.5
     obj_enable_distance: 25.0

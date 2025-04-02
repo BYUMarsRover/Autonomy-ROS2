@@ -122,7 +122,11 @@ class DummySingletonPublisher(Node):
         # self.latitude, self.longitude = self.rotate()
 
         # Make the rover spin in place
-        self.map_yaw -= 0.3 # -0.1 * ROS_RATE degrees per second
+        self.map_yaw += 0.3 # -0.1 * ROS_RATE degrees per second
+
+        # Loop for testing
+        if self.map_yaw > 90.0:
+            self.map_yaw = 0.0
 
         # Wrap
         if self.map_yaw < -180:

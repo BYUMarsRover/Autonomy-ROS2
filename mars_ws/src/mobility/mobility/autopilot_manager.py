@@ -9,14 +9,13 @@ for the drive manager given current vs desired heading, as well as distance to t
 
 import rclpy
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 
 import numpy as np
 import time
 
 from rover_msgs.msg import RoverStateSingleton, MobilityAutopilotCommand, MobilityVelocityCommands, ZedObstacles
-from rover_msgs.srv import SetFloat32
-from std_msgs.msg import Float32
-from geometry_msgs.msg import Twist
+from rover_msgs.srv import SetFloats
 from std_srvs.srv import SetBool
 
 # Import wrap from utils and PIDControl from controllers
@@ -31,7 +30,6 @@ class AutopilotManager(Node):
         self.declare_parameters(
             namespace='',
             parameters=[
-                ('percent_speed', 0.5),
                 ('linear_autopilot_kp', 1.0),
                 ('linear_autopilot_ki', 0.0),
                 ('linear_autopilot_kd', 0.0),
@@ -57,17 +55,15 @@ class AutopilotManager(Node):
         self.course_error = 0
 
         # Controller gains
-        self.speed = self.get_parameter("percent_speed").get_parameter_value().double_value
-
-        self.kp_linear = self.get_parameter("linear_autopilot_kp").get_parameter_value().double_value
-        self.ki_linear = self.get_parameter("linear_autopilot_ki").get_parameter_value().double_value
-        self.kd_linear = self.get_parameter("linear_autopilot_kd").get_parameter_value().double_value
+        kp_linear = self.get_parameter("linear_autopilot_kp").get_parameter_value().double_value
+        ki_linear = self.get_parameter("linear_autopilot_ki").get_parameter_value().double_value
+        kd_linear = self.get_parameter("linear_autopilot_kd").get_parameter_value().double_value
         Ts_linear = self.get_parameter("linear_autopilot_Ts").get_parameter_value().double_value
         limit_linear = self.get_parameter("linear_autopilot_limit").get_parameter_value().double_value
 
-        self.kp_angular = self.get_parameter("angular_autopilot_kp").get_parameter_value().double_value
-        self.ki_angular = self.get_parameter("angular_autopilot_ki").get_parameter_value().double_value
-        self.kd_angular = self.get_parameter("angular_autopilot_kd").get_parameter_value().double_value
+        kp_angular = self.get_parameter("angular_autopilot_kp").get_parameter_value().double_value
+        ki_angular = self.get_parameter("angular_autopilot_ki").get_parameter_value().double_value
+        kd_angular = self.get_parameter("angular_autopilot_kd").get_parameter_value().double_value
         Ts_angular = self.get_parameter("angular_autopilot_Ts").get_parameter_value().double_value
         limit_angular = self.get_parameter("angular_autopilot_limit").get_parameter_value().double_value
 
@@ -87,12 +83,12 @@ class AutopilotManager(Node):
 
         # services
         self.create_service(SetBool, '/mobility/autopilot_manager/enabled', self.enable)
-        self.create_service(SetFloat32, '/mobility/speed_factor', self.set_speed)
+        self.create_service(SetFloats, '/mobility/autopilot_manager/set_gains', self.set_gains)
 
-        # PID controllers
-        self.linear_controller = PIDControl(self.speed * self.kp_linear, self.speed * self.ki_linear, self.speed * self.kd_linear,
+        # PID controllers (only proportional control used as of 4/2/2025)
+        self.linear_controller = PIDControl(kp_linear, ki_linear, kd_linear,
                                             Ts=Ts_linear, limit=limit_linear)
-        self.angular_controller = PIDControl(self.speed * self.kp_angular, self.speed * self.ki_angular, self.speed * self.kd_angular,
+        self.angular_controller = PIDControl(kp_angular, ki_angular, kd_angular,
                                              Ts=Ts_angular, limit=limit_angular)
         
         # Variables used to stop the rover if GPS is lost
@@ -159,19 +155,30 @@ class AutopilotManager(Node):
         if time.time_ns() - self.detections[0][0] > 10.0:
             self.heading_plus -= self.detections.pop(0)[1]
 
-    def set_speed(self, request: SetFloat32.Request, response: SetFloat32.Response):
-        self.speed = request.data
+    def set_gains(self, request: SetFloats.Request, response: SetFloats.Response):
 
-        self.linear_controller.kp = self.speed * self.kp_linear
-        self.linear_controller.ki = self.speed * self.ki_linear
-        self.linear_controller.kd = self.speed * self.kd_linear
+        self.get_logger().info('New gains received')
 
-        self.angular_controller.kp = self.speed * self.kp_angular
-        self.angular_controller.ki = self.speed * self.ki_angular
-        self.angular_controller.kd = self.speed * self.kd_angular
+        # Unpack gains and limits
+        kp_linear = request.data[0]
+        kp_angular = request.data[1]
+        limit_linear = request.data[2]
+        limit_angular = request.data[3]
+
+        # Update Parameters
+        self.set_parameters([Parameter('linear_autopilot_kp', Parameter.Type.DOUBLE, kp_linear)])
+        self.set_parameters([Parameter('angular_autopilot_kp', Parameter.Type.DOUBLE, kp_angular)])
+        self.set_parameters([Parameter('linear_autopilot_limit', Parameter.Type.DOUBLE, limit_linear)])
+        self.set_parameters([Parameter('angular_autopilot_limit', Parameter.Type.DOUBLE, limit_angular)])
+
+        # Update the controller gains
+        self.linear_controller.kp = kp_linear
+        self.angular_controller.kp = kp_angular
+        self.linear_controller.limit = limit_linear
+        self.angular_controller.limit = limit_angular
 
         response.success = True
-        response.message = f"Autopilot Speed set to {self.speed}"
+        response.message = "Autopilot gains set successfully"
         return response
 
     def publish_rover_vel_cmd(self):

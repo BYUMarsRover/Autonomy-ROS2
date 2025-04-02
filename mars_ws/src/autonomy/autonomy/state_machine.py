@@ -71,7 +71,7 @@ class AutonomyStateMachine(Node):
 
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
         self.aruco_detect_client = self.create_client(SetBool, '/enable_detections')
-        self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
+        self.set_speed_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_speed')
         self.path_manager_client = self.create_client(SetBool, '/mobility/path_manager/enabled')
         self.autopilot_manager_client = self.create_client(SetBool, '/mobility/autopilot_manager/enabled')
         self.drive_manager_client = self.create_client(SetBool, '/mobility/drive_manager/enabled')
@@ -89,7 +89,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('aruco_distance_tolerance', 2.0)
         self.declare_parameter('abort_distance_tolerance', 2.0)
         self.declare_parameter('hex_search_radius', 17.0)
-        self.declare_parameter('navigate_speed', 1.0)
+        self.declare_parameter('navigate_speed', 10.0)
         self.declare_parameter('aruco_speed', 0.3)
         self.declare_parameter('spin_speed', 30.0)
         self.declare_parameter('object_alpha_lpf', 0.5)
@@ -420,27 +420,16 @@ class AutonomyStateMachine(Node):
             chi_1 += 2.0 * np.pi
         return chi_1
 
-    def set_autopilot_speed(self, speed):
-        print("Setting autopilot speed...")
-
-        # Wait until the service is available
-        self.get_logger().info("Waiting for Service /mobility/speed_factor")
-        if not self.srv_autopilot_speed.wait_for_service(timeout_sec=3.0): #Don't know what would be the appropriate time to wait here
-            self.get_logger().info("Service /mobility/speed_factor not available!")
-            return False
-        print("Service is live")
-        self.get_logger().error("Service is live")
-
-        # Create a request object
-        self.autopilot_speed_request = SetFloat32.Request()  # Create a request instance
-        self.autopilot_speed_request.data = speed
-        print("Executing service...")
-        self.get_logger().error("Executing service")
-        
-        # Send the request and wait for the response
-        self.get_logger().info("Sending request to autopilot_speed_request")
-        future = self.srv_autopilot_speed.call_async(self.autopilot_speed_request)
-
+    # This is a service that adjusts the drive manager's max speed, different speeds should be used for local navigation vs GNSS navigation
+    def set_speed(self, speed):
+        # Speed is from 0 to 10
+        req = SetFloat32.Request()
+        req.data = float(speed)
+        if self.set_speed_client.service_is_ready():
+            future = self.set_speed_client.call_async(req)
+        else:
+            self.get_logger().warn("Set speed service is not available.")
+        return
 
 
     def state_loop(self):
@@ -485,7 +474,7 @@ class AutonomyStateMachine(Node):
             elif self.state == State.START_POINT_NAVIGATION:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 self.get_logger().info("Starting commands")
-                self.set_autopilot_speed(self.navigate_speed)
+                self.set_speed(self.navigate_speed)
                 self.get_logger().info(f"Number of waypoints {len(self.waypoints)}")
                 self.target_latitude = self.waypoints[0].latitude
                 self.target_longitude = self.waypoints[0].longitude
@@ -598,7 +587,7 @@ class AutonomyStateMachine(Node):
                     self.state = State.OBJECT_NAVIGATE
 
             elif self.state == State.ARUCO_NAVIGATE:
-                self.set_autopilot_speed(self.aruco_speed)
+                self.set_speed(self.aruco_speed)
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.correct_aruco_tag_found: #f we have seen the correct tag in the last second, navigate using angle and distance
                     self.drive_controller.issue_aruco_autopilot_cmd(self.aruco_tag_angle, self.aruco_tag_distance)
@@ -610,7 +599,7 @@ class AutonomyStateMachine(Node):
                     self.drive_controller.stop()
 
             elif self.state == State.OBJECT_NAVIGATE:
-                self.set_autopilot_speed(self.object_speed)
+                self.set_speed(self.object_speed)
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.correct_obj_found:
                     self.drive_controller.issue_aruco_autopilot_cmd(self.obj_angle, self.obj_distance)
@@ -640,7 +629,7 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.START_ABORT_STATE:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                self.set_autopilot_speed(self.navigate_speed)
+                self.set_speed(self.navigate_speed)
                 self.drive_controller.issue_path_cmd(self.abort_lat, self.abort_lon)
                 self.state = State.ABORT_STATE
 

@@ -816,70 +816,6 @@
               </property>
              </widget>
             </item>
-            <!-- Turn Constant Setting Item -->
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
-              <property name="alignment">
-               <set>Qt::AlignTop</set>
-              </property>
-              <!-- Turn Constant Label -->
-              <item>
-               <widget class="QLabel" name="TurnConstantLabel">
-                <property name="text">
-                 <string>Update C_turn:</string>
-                </property>
-               </widget>
-              </item>
-              <!-- Turn Constant Input -->
-              <item>
-               <widget class="QLineEdit" name="TurnConstantInput">
-                <property name="placeholderText">
-                 <string>enter turn constant</string>
-                </property>
-               </widget>
-              </item>
-              <!-- Send Turn Constant Button -->
-              <item>
-               <widget class="QPushButton" name="SetTurnConstantButton">
-                <property name="text">
-                 <string>Send</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <!-- Speed Constant Setting Item -->
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
-              <property name="alignment">
-               <set>Qt::AlignTop</set>
-              </property>
-              <!-- Turn Constant Label -->
-              <item>
-               <widget class="QLabel" name="SpeedConstantLabel">
-                <property name="text">
-                 <string>Update C_speed:</string>
-                </property>
-               </widget>
-              </item>
-              <!-- Turn Constant Input -->
-              <item>
-               <widget class="QLineEdit" name="SpeedConstantInput">
-                <property name="placeholderText">
-                 <string>enter (0-10)</string>
-                </property>
-               </widget>
-              </item>
-              <!-- Send Turn Constant Button -->
-              <item>
-               <widget class="QPushButton" name="SetSpeedConstantButton">
-                <property name="text">
-                 <string>Send</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
             <!-- Horizontal Dividing Line -->
             <item>
              <widget class="Line" name="line_3">
@@ -1270,6 +1206,174 @@
                </item>
               </layout>
              </widget>
+            </item>
+            <!-- Horizontal Dividing Line -->
+            <item>
+             <widget class="Line" name="line_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <!-- Gain Setting Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- kp_linear Label -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLabel" name="kpLinearLabel">
+                <property name="text">
+                 <string>kp_lin:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- kp_linear Input -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLineEdit" name="kpLinearInput">
+                <property name="text">
+                 <string>1.0</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>1000</height> <!-- arbitrary max height -->
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <!-- kp_angular Label -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLabel" name="kpAngularLabel">
+                <property name="text">
+                 <string>kp_ang:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- kp_angular Input -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLineEdit" name="kpAngularInput">
+                <property name="text">
+                 <string>80.0</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>1000</height> <!-- arbitrary max height -->
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <!-- limit_linear Label -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLabel" name="LimitLinearLabel">
+                <property name="text">
+                 <string>limit_lin:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- limit_linear Input -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLineEdit" name="LimitLinearInput">
+                <property name="text">
+                 <string>3.0</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>1000</height> <!-- arbitrary max height -->
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <!-- limit_angular Label -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLabel" name="limitAngularLabel">
+                <property name="text">
+                 <string>limit_ang:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- limit_angular Input -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLineEdit" name="LimitAngularInput">
+                <property name="text">
+                 <string>30.0</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>1000</height> <!-- arbitrary max height -->
+                 </size>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Gain Type selection item  -->
+            <item>
+             <layout class="QHBoxLayout" name="GainsTypeSelectionLayout">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- GNSS Nav Gains Radio Button Item -->
+              <item>
+               <widget class="QRadioButton" name="GNSSGainsRadioButton">
+                <property name="text">
+                 <string>GNSS Nav Gains</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Obj/Aruco Nav Gains Radio Button Item -->
+              <item>
+               <widget class="QRadioButton" name="ObjArucoGainsRadioButton">
+                <property name="text">
+                 <string>Obj/Aruco Nav Gains</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Set Gains Button -->
+            <item>
+             <widget class="QPushButton" name="SetGainsButton">
+              <property name="text">
+               <string>Set</string>
+              </property>
+             </widget>
+            </item>
+            <!-- Set Speed Setting Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Set Speed Label -->
+              <item>
+               <widget class="QLabel" name="SpeedConstantLabel">
+                <property name="text">
+                 <string>Update Speed:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Set Speed Input -->
+              <item>
+               <widget class="QLineEdit" name="SpeedConstantInput">
+                <property name="placeholderText">
+                 <string>enter (0-10)</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Set Speed Button -->
+              <item>
+               <widget class="QPushButton" name="SetSpeedConstantButton">
+                <property name="text">
+                 <string>Send</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>

@@ -26,7 +26,7 @@ from std_srvs.srv import SetBool
 from std_msgs.msg import Header, Int8
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
-from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloat32, OrderAutonomyWaypoint, PlanPath
+from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloats, SetFloat32, OrderAutonomyWaypoint, PlanPath
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors
 from sensor_msgs.msg import Image
 from ament_index_python.packages import get_package_share_directory
@@ -73,8 +73,8 @@ class AutonomyGUI(Node, QWidget):
         self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
 
         # Mobility Control Buttons
-        self.SetTurnConstantButton.clicked.connect(self.set_turn_constant)
-        self.SetSpeedConstantButton.clicked.connect(self.set_speed_constant)
+        self.SetGainsButton.clicked.connect(self.set_gains)
+        self.SetSpeedConstantButton.clicked.connect(self.set_speed)
 
         # Waypoint List Functions
         self.AddWaypointButton.clicked.connect(self.add_waypoint)
@@ -159,9 +159,10 @@ class AutonomyGUI(Node, QWidget):
         #NOTE: depricated until mapviz capability added back
         # self.plan_order_mapviz_client = self.create_client(OrderPath, '/plan_order_mapviz')
 
-        # Clients used for tunning constants TODO: remove once tuned for competition
-        self.set_turn_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_turn_constant')
-        self.set_speed_constant_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_speed')
+        # Clients used for tunning controller gains TODO: remove once tuned for competition
+        self.set_autopilot_gains_client = self.create_client(SetFloats, '/mobility/autopilot_manager/set_gains')
+        self.set_aruco_autopilot_gains_client = self.create_client(SetFloats, '/mobility/aruco_autopilot_manager/set_gains')
+        self.set_speed_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_speed')
 
         # Timer to run check if we have recieved information from various sources recently
         # for the purpose of clearing the information if it is not recent
@@ -693,31 +694,15 @@ class AutonomyGUI(Node, QWidget):
         future = self.abort_autonomy_client.call_async(req)
         self.ros_signal.emit('logger_label', 'Attempting Abort')
 
-    def set_turn_constant(self):
-        req = SetFloat32.Request()
-        req.data = float(self.TurnConstantInput.text())
-        future = self.set_turn_constant_client.call_async(req)
-        self.ros_signal.emit('logger_label', 'Sending Turn Constant...')
-        future.add_done_callback(self.set_turn_constant_callback)
-
-    def set_turn_constant_callback(self, future):
-        try:
-            response = future.result()
-            if response.success:
-                self.ros_signal.emit('logger_label', response.message)
-            else:
-                self.ros_signal.emit('logger_label', "Failed to send turn constant")
-        except Exception as e:
-            self.ros_signal.emit('logger_label', f'Send Turn Constant Service call failed!')
-
-    def set_speed_constant(self):
+    # This is a service that adjusts the drive manager's max speed, different speeds should be used for local navigation vs GNSS navigation
+    def set_speed(self):
         req = SetFloat32.Request()
         req.data = float(self.SpeedConstantInput.text())
-        future = self.set_speed_constant_client.call_async(req)
+        future = self.set_speed_client.call_async(req)
         self.ros_signal.emit('logger_label', 'Sending Speed Constant...')
-        future.add_done_callback(self.set_speed_constant_callback)
+        future.add_done_callback(self.set_speed_callback)
 
-    def set_speed_constant_callback(self, future):
+    def set_speed_callback(self, future):
         try:
             response = future.result()
             if response.success:
@@ -726,6 +711,51 @@ class AutonomyGUI(Node, QWidget):
                 self.ros_signal.emit('logger_label', "Failed! Must be in range (0-10)")
         except Exception as e:
             self.ros_signal.emit('logger_label', f'Send Speed Constant Service call failed!')
+
+    def set_gains(self):
+
+        try:
+            kp_linear = float(self.kpLinearInput.text())
+            kp_angular = float(self.kpAngularInput.text())
+            limit_linear = float(self.LimitLinearInput.text())
+            limit_angular = float(self.LimitAngularInput.text())
+        except ValueError as e:
+            self.ros_signal.emit('logger_label', str(e))
+            return
+
+        # Input Validation
+        if kp_linear <= 0 or kp_angular <= 0 or limit_linear <= 0 or limit_angular <= 0:
+            self.ros_signal.emit('logger_label', 'Invalid input: Gains must be positive values.')
+            return
+
+        req = SetFloats.Request()
+        req.data = [kp_linear, kp_angular, limit_linear, limit_angular]
+        
+        if self.GNSSGainsRadioButton.isChecked():
+            future = self.set_autopilot_gains_client.call_async(req)
+        elif self.ObjArucoGainsRadioButton.isChecked():
+            future = self.set_aruco_autopilot_gains_client.call_async(req)
+        else:
+            self.ros_signal.emit('logger_label', 'Please Select an Autopilot Gain Type')
+            return
+
+        future.add_done_callback(self.set_gains_callback)
+        self.ros_signal.emit('logger_label', 'Sending Gains...')
+
+    def set_gains_callback(self, future):
+        try:
+            response = future.result()
+            if response.success:
+                self.ros_signal.emit('logger_label', response.message)
+            else:
+                self.ros_signal.emit('logger_label', "Failed to send gains")
+        except Exception as e:
+            self.ros_signal.emit('logger_label', f'Send Gains Service call failed! {e}')
+        return
+
+    # def set_aruco_autopilot_gains(self, kp_linear, kp_angular, limit_linear, limit_angular):
+    #     self.get_logger().warn('Attempting to set aruco autopilot gains')
+
 
     def rover_state_singleton_callback(self, msg):
         self.rover_state_singleton_timepoint = self.get_clock().now().to_msg().sec
