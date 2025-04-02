@@ -51,7 +51,10 @@ class PositionVelocityTimeTranslator(Node):
             position_covariance_type=NavSatFix.COVARIANCE_TYPE_DIAGONAL_KNOWN,
         )
 
-        navsatfix_message.header.frame_id = 'gps_frame'  # Adds information to the navsat message header
+        navsatfix_message.header.frame_id = 'gps_link'  # Adds information to the navsat message header
+
+        # FIX THIS to get the actual time stamp
+        navsatfix_message.header.stamp = self.get_clock().now().to_msg()
 
         self.lla_publisher.publish(navsatfix_message)  # publishes message using publisher
 

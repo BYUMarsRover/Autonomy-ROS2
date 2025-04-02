@@ -36,6 +36,8 @@ setup(
             'position_velocity_time_translator = odometry.position_velocity_time_translator:main',
             'dummy_singleton_publisher = odometry.dummy_singleton_publisher:main',
             'global_heading_tf_publisher = odometry.global_heading_tf_publisher:main',
+            'custom_ekf_node = odometry.custom_ekf_node:main',
+            'imu_time_sync = odometry.imu_time_sync:main',
         ],
     },
 )
