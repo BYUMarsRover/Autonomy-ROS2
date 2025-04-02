@@ -1,8 +1,10 @@
 import os
 from csv import DictReader
 from ament_index_python.packages import get_package_share_directory
-from rover_msgs.msg import ScienceSerialTxPacket
+from rover_msgs.msg import ScienceSerialTxPacket, ScienceSerialRxPacket
 import struct
+
+
 
 class ScienceModuleFunctionList:
 
@@ -36,7 +38,7 @@ class ScienceModuleFunctionList:
         return filtered_list
     
     @staticmethod
-    def build_tx_packet(func, operand_blob, flags=[False, False]):
+    def build_tx_packet(func, operand_blob=[], flags=[False, False]):
         """
         Build a ScienceSerialTxPacket from a function entry.
         """
@@ -71,7 +73,7 @@ class ScienceModuleFunctionList:
             # Get it's expected size
             size = ScienceModuleFunctionList.__length_of_datatype(data_type)
             if size is None:
-                raise Exception("Unrecognized data type encounterd while parsing operands: '{data_type}'")
+                raise Exception(f"Unrecognized data type encounterd while parsing operands: '{data_type}'")
             
             # Check if this is a variable length
             operand_count = func[f'operand_cnt_{i}'] 
@@ -121,7 +123,27 @@ class ScienceModuleFunctionList:
         # Catch the case where extra data was provided
         if tracer != len(operand_blob):
             raise Exception(f"More data was provided then expected for func {func['function_name']} len: {len(operand_blob)}")
-
+        
+    @staticmethod
+    def __blob_data(number, datatype):
+        try:
+            if datatype in ['uint8_t', 'int8_t']:
+                return [number & 0xFF]
+            elif datatype == 'uint16_t':
+                value = number
+                return [value & 0xFF, (value >> 8) & 0xFF]
+            elif datatype == 'uint32_t':
+                value = number
+                return [value & 0xFF, (value >> 8) & 0xFF, (value >> 16) & 0xFF, (value >> 24) & 0xFF]
+            elif datatype == 'bool':
+                return [1 if number else 0]
+            elif datatype == 'float':
+                data = struct.pack('f', number)
+                return [int(b) for b in data]
+            else:
+                raise Exception(f"Unknown data_type: {datatype}")
+        except ValueError:
+            raise Exception(f"Invalid input for data_type {datatype}: {value_str}")
         
     @staticmethod
     def __verify_data(data, datatype):
@@ -138,6 +160,8 @@ class ScienceModuleFunctionList:
             case 'uint8_t':
                 result = 1
             case 'int8_t':
+                result = 1
+            case 'bool':
                 result = 1
             case 'uint16_t':
                 result = 2
@@ -178,3 +202,104 @@ class ScienceModuleFunctionList:
             return None
         else:
             return results[0]
+        
+    @staticmethod
+    def get_function_by_function_name(function_name):
+        results = ScienceModuleFunctionList.filter(
+            {
+                'function_name': function_name
+            }
+        )
+        if len(results) == 0:
+            return None
+        else:
+            return results[0]
+        
+    @staticmethod
+    def get_return_data(func_def, msg: ScienceSerialRxPacket):
+        output = msg.message
+        data_type = func_def['return_type']
+        cnt = int(func_def['return_cnt'])
+        size = ScienceModuleFunctionList.__length_of_datatype(data_type)
+        conversion_func = ScienceModuleFunctionList.__conversion_function(data_type)
+
+        out = []
+        for i in range(cnt):
+            out.append(conversion_func(output, i*size))
+        return out[0] if cnt == 1 else out
+
+    @staticmethod
+    def __conversion_function(datatype):
+        match datatype:
+            case 'uint8_t':
+                result = lambda data, index=0: struct.unpack('<B', bytes(data[index:index+1]))[0]
+            case 'int8_t':
+                result = lambda data, index=0: struct.unpack('<b', bytes(data[index:index+1]))[0]
+            case 'uint16_t':
+                result = lambda data, index=0: struct.unpack('<H', bytes(data[index:index+2]))[0]
+            case 'uint32_t':
+                result = lambda data, index=0: struct.unpack('<I', bytes(data[index:index+4]))[0]
+            case 'float':
+                result = lambda data, index=0: struct.unpack('<f', bytes(data[index:index+4]))[0]
+            case 'void':
+                result = lambda data, index=0: None
+            case _:
+                result = None
+        return result
+        
+    # Mapping Functions
+    
+    @staticmethod
+    def get_tx_get_analog_sensor_raw(sensor_index):
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("get_analog_sensor_raw"),
+            operand_blob = [sensor_index]
+        )
+    
+    @staticmethod
+    def get_tx_get_analog_sensor_calibrated(sensor_index):
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("get_analog_sensor_calibrated"),
+            operand_blob = [sensor_index]
+        )
+    
+    @staticmethod
+    def get_tx_get_update_actuator_control(actuator_index, control):
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("update_actuator_control"),
+            operand_blob = [actuator_index, control]
+        )
+    
+    @staticmethod
+    def get_tx_get_sample_spectrograph(sample_cnt, sample_interval_ms, bulb_on):
+        sample_interval_blob = ScienceModuleFunctionList.__blob_data(sample_interval_ms, 'uint32_t')
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("sample_spectrograph"),
+            operand_blob = [sample_cnt] + sample_interval_blob + [bulb_on]
+        )
+    
+    @staticmethod
+    def get_tx_get_sample_spectrograph(sample_cnt, sample_interval_ms, bulb_on):
+        sample_interval_blob = ScienceModuleFunctionList.__blob_data(sample_interval_ms, 'uint32_t')
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("sample_spectrograph"),
+            operand_blob = [sample_cnt] + sample_interval_blob + [int(bulb_on)]
+        )
+    
+    @staticmethod
+    def get_tx_return_spectrograph_data():
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("return_spectrograph_data")
+        )
+    
+    @staticmethod
+    def get_tx_sample_ltr():
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("sample_ltr")
+        )
+    
+    @staticmethod
+    def get_tx_return_ltr_data():
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("return_ltr_data")
+        )

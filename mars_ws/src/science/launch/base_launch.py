@@ -17,6 +17,12 @@ def generate_launch_description():
         # ),
         Node(
             package="science",
+            executable="science_request_manager",
+            name="science_request_manager",
+            output="screen"
+        ),
+        Node(
+            package="science",
             executable="science_GUI",
             name="science_GUI",
             output="screen"

@@ -51,6 +51,7 @@ setup(
     entry_points={
         'console_scripts': [
             'science_serial_interface = science.science_serial_interface:main',
+            'science_request_manager = science.science_request_manager:main',
             'science_data_saver = science.presentation.science_data_saver:main',
             'science_GUI = science.gui.science_GUI:main',
             'science_debug = science.debug_gui.science_debug_GUI:main',

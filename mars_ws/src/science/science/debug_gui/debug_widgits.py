@@ -178,6 +178,8 @@ class DataField():
             return QtGui.QIntValidator(0, 1)
         elif data_type == 'float':
             return QtGui.QDoubleValidator()
+        else:
+            return None
         
     @staticmethod
     def str2bytes(data_type, value_str):
