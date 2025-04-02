@@ -71,9 +71,6 @@ class AutopilotManager(Node):
         Ts_angular = self.get_parameter("angular_autopilot_Ts").get_parameter_value().double_value
         limit_angular = self.get_parameter("angular_autopilot_limit").get_parameter_value().double_value
 
-        self.low_bound = np.deg2rad(self.get_parameter("low_bound").get_parameter_value().double_value)
-        self.high_bound = np.deg2rad(self.get_parameter("high_bound").get_parameter_value().double_value)
-
         # Other variables
         self.heading_plus = 0.0
         self.slow_down = 0.0
@@ -98,6 +95,7 @@ class AutopilotManager(Node):
         self.angular_controller = PIDControl(self.speed * self.kp_angular, self.speed * self.ki_angular, self.speed * self.kd_angular,
                                              Ts=Ts_angular, limit=limit_angular)
         
+        # Variables used to stop the rover if GPS is lost
         self.previous_dist_to_target = None
         self.distance_to_target_timepoint = time.time()
         self.max_time_between_gps_messages = 0.5
