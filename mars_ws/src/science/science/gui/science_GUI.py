@@ -5,7 +5,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, QTimer, Qt, QAbstractTableModel
 from PyQt5.QtWidgets import QApplication, QTableView
 from python_qt_binding.QtCore import QObject, Signal
 import rclpy
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, Bool
 from rover_msgs.srv import CameraControl
 from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton, ScienceSerialTxPacket
 from rclpy.node import Node
@@ -135,6 +135,7 @@ class science_GUI(Node):
         # Query the temperature and humidity at 1 Hz
         self.create_timer(1, self.query_temperature) # 1 Hz
         self.create_timer(1, self.query_humidity) # 1 Hz
+        self.create_timer(1, self.query_auger_position) # 1 Hz
 
     def query_temperature(self):
         # ask the arduino to return the temperature as a calibrated float
@@ -154,6 +155,9 @@ class science_GUI(Node):
             )
         )
         
+    # Request the auger position from xbox_science
+    def query_auger_position(self):
+        self.pub_get_auger_position.publish(Empty())
 
     def task_launcher_init(self):
         self.signals = Signals()
@@ -187,28 +191,29 @@ class science_GUI(Node):
         self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
         self.pub_save_fad = self.create_publisher(ScienceSaveFAD, '/science_save_fad', 1)
         
-        #TODO - make new messages and integrate with science serial interface
         self.pub_get_spectro = self.create_publisher(Empty, '/science_spectro_request', 1)
         self.pub_get_uv = self.create_publisher(Empty, '/science_uv_request', 1)
 
+        self.pub_get_auger_position = self.create_publisher(Empty, '/science_auger_position', 1)
+
         self.signals.sensor_signal.connect(self.update_sensor_values)
-        # self.signals.auger_position.connect(self.update_auger_position)
+        self.signals.auger_position.connect(self.update_auger_position)
         self.signals.sensor_save_signal.connect(self.pub_save_sensor.publish)
         self.signals.FAD_save_signal.connect(self.pub_save_fad.publish)
         self.signals.notes_save_signal.connect(self.pub_save_notes.publish)
         self.signals.fad_intensity_signal.connect(self.update_fad_intensity_value)
 
         self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.signals.sensor_signal.emit, 10)
-        # self.science_auger_position = self.create_subscription(ScienceToolPosition, '/science_auger_position', self.signals.auger_position.emit, 10)
+        self.science_auger_position = self.create_subscription(Bool, '/science_using_probe', self.signals.auger_position.emit, 10)
         self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
         self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
-        self.sub_spectro = self.create_subscription(ScienceSpectroData, '/science_spectro_data', self.update_spectro_data, 10)
-        self.sub_uv = self.create_subscription(ScienceUvData, '/science_uv_data', self.update_uv_values, 10)
+        # self.sub_spectro = self.create_subscription(ScienceSpectroData, '/science_spectro_data', self.update_spectro_data, 10)
+        # self.sub_uv = self.create_subscription(ScienceUvData, '/science_uv_data', self.update_uv_values, 10)
 
     # def fetch_spectro_data(self):
     #     self.pub_get_spectro.publish()
 
-    def update_spectro_data(self, msg)
+    def update_spectro_data(self, msg):
         vals = msg.values#TODO - get new message
         self.spectro_table.updateData(vals)
 
@@ -432,18 +437,18 @@ class science_GUI(Node):
         self.qt.lbl_heading.setText(heading)
         self.qt.lbl_coordinates.setText(coordinates)
 
-    # def update_auger_position(self, msg):
-    #     """
-    #     Updates the augur display.
+    def update_auger_position(self, msg):
+        """
+        Updates the augur display.
 
-    #     This is like this because the photoresistors are backwards on the board.
-    #     """
-    #     if msg.position == 0:
-    #         self.qt.lcd_auger.display(2)
-    #     elif msg.position == 1:
-    #         self.qt.lcd_auger.display(1)
-    #     else:
-    #         self.qt.lcd_auger.display(-1)
+        This is like this because the photoresistors are backwards on the board.
+        """
+        if msg.position == 0:
+            self.qt.lcd_auger.display(2)
+        elif msg.position == 1:
+            self.qt.lcd_auger.display(1)
+        else:
+            self.qt.lcd_auger.display(-1)
 
     def fad_detector_get_point(self, event=None): #Written by chat
         print('Calibrate FAD')

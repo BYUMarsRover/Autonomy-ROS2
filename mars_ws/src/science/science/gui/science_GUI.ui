@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1296</width>
+    <width>1327</width>
     <height>450</height>
    </rect>
   </property>
@@ -407,19 +407,6 @@
     </property>
    </widget>
   </widget>
-  <widget class="QPushButton" name="pushButton_fad">
-   <property name="geometry">
-    <rect>
-     <x>720</x>
-     <y>190</y>
-     <width>121</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Get FAD intensity</string>
-   </property>
-  </widget>
   <widget class="QGroupBox" name="groupBox_2">
    <property name="geometry">
     <rect>
@@ -595,6 +582,11 @@
      <height>21</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
    <property name="text">
     <string>Enter calibtration value</string>
    </property>
@@ -618,6 +610,11 @@
      <height>21</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>6</pointsize>
+    </font>
+   </property>
    <property name="text">
     <string>Estimate Moisture</string>
    </property>
@@ -630,6 +627,11 @@
      <width>121</width>
      <height>20</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
    </property>
    <property name="text">
     <string>Enter observed reading</string>
@@ -644,6 +646,11 @@
      <height>21</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
    <property name="text">
     <string>Enter calibtration value</string>
    </property>
@@ -656,6 +663,11 @@
      <width>121</width>
      <height>20</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
    </property>
    <property name="text">
     <string>Enter observed reading</string>
@@ -693,6 +705,11 @@
      <height>16</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
    <property name="text">
     <string>Polynomial not saved</string>
    </property>
@@ -705,6 +722,11 @@
      <width>121</width>
      <height>16</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
    </property>
    <property name="text">
     <string>Polynomial not saved</string>
@@ -749,6 +771,11 @@ p, li { white-space: pre-wrap; }
      <height>21</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>6</pointsize>
+    </font>
+   </property>
    <property name="text">
     <string>Enter yeast weight in grams</string>
    </property>
@@ -763,51 +790,12 @@ p, li { white-space: pre-wrap; }
     </rect>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_fad_calibration">
-   <property name="geometry">
-    <rect>
-     <x>720</x>
-     <y>130</y>
-     <width>121</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Enter calibration point</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButton_fad_graph">
-   <property name="geometry">
-    <rect>
-     <x>720</x>
-     <y>160</y>
-     <width>121</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Show Graph</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButton_fad_estimate">
-   <property name="geometry">
-    <rect>
-     <x>720</x>
-     <y>220</y>
-     <width>121</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Estimate volume life</string>
-   </property>
-  </widget>
   <widget class="QPushButton" name="pushButton_spectro">
    <property name="geometry">
     <rect>
-     <x>930</x>
+     <x>910</x>
      <y>220</y>
-     <width>121</width>
+     <width>161</width>
      <height>21</height>
     </rect>
    </property>
@@ -920,6 +908,11 @@ p, li { white-space: pre-wrap; }
      <height>21</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
    <property name="text">
     <string>Ambient Light Sensor</string>
    </property>
@@ -955,9 +948,64 @@ p, li { white-space: pre-wrap; }
      <height>21</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>6</pointsize>
+    </font>
+   </property>
    <property name="text">
     <string>Get UV and ALS values</string>
    </property>
+  </widget>
+  <widget class="QWidget" name="verticalLayoutWidget_3">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>130</y>
+     <width>121</width>
+     <height>121</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QPushButton" name="pushButton_fad_calibration">
+      <property name="font">
+       <font>
+        <pointsize>6</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Enter calibration point</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="pushButton_fad_graph">
+      <property name="text">
+       <string>Show Graph</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="pushButton_fad">
+      <property name="text">
+       <string>Get FAD intensity</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="pushButton_fad_estimate">
+      <property name="font">
+       <font>
+        <pointsize>6</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Estimate volume life</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <zorder>groupBox</zorder>
   <zorder>lcd_moist</zorder>
@@ -977,7 +1025,6 @@ p, li { white-space: pre-wrap; }
   <zorder>lineEdit_7</zorder>
   <zorder>moist_radio</zorder>
   <zorder>temp_radio</zorder>
-  <zorder>pushButton_fad</zorder>
   <zorder>groupBox_2</zorder>
   <zorder>le_fad</zorder>
   <zorder>fad_radio</zorder>
@@ -999,9 +1046,6 @@ p, li { white-space: pre-wrap; }
   <zorder>label_8</zorder>
   <zorder>label_9</zorder>
   <zorder>lineEdit_fad</zorder>
-  <zorder>pushButton_fad_calibration</zorder>
-  <zorder>pushButton_fad_graph</zorder>
-  <zorder>pushButton_fad_estimate</zorder>
   <zorder>pushButton_spectro</zorder>
   <zorder>lineEdit_8</zorder>
   <zorder>tableView</zorder>
@@ -1012,6 +1056,7 @@ p, li { white-space: pre-wrap; }
   <zorder>label_11</zorder>
   <zorder>lineEdit_9</zorder>
   <zorder>pushButton_uv</zorder>
+  <zorder>verticalLayoutWidget_3</zorder>
  </widget>
  <resources/>
  <connections/>

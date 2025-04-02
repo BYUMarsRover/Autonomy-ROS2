@@ -3,7 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Joy
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Empty
 from rover_msgs.msg import (
     Elevator,
     ScienceActuatorControl
@@ -61,9 +61,15 @@ class XBOX(Node):
         self.sub_joy = self.create_subscription(
             Joy, "/joy_science_input", self.joy_callback, 10
         )
+        self.sub_auger = self.create_subscription(
+            Empty, "/science_auger_position", self.auger_control_callback, 10
+        )
 
         # Publishers
         self.setup_update_publishers()
+        self.pub_using_probe = self.create_publisher(
+            Bool, "/science_using_probe", 10
+        )
 
         # Initialize state variables
         self.prev_joy_state = None
@@ -79,6 +85,8 @@ class XBOX(Node):
         self.secondary_cache_axis = iptl.InputAxis(DPAD_HORIZONTAL, invert=True)
         self.override_button = iptl.InputButton(POWER, True, False)
 
+    def auger_control_callback(self, msg: Empty):
+        self.pub_using_probe.publish(Bool(self.using_probe))
 
     def joy_callback(self, msg: Joy):
         '''Logic goes here'''
