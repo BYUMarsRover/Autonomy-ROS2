@@ -221,7 +221,7 @@ class ScienceModuleFunctionList:
         data_type = func_def['return_type']
         cnt = int(func_def['return_cnt'])
         size = ScienceModuleFunctionList.__length_of_datatype(data_type)
-        conversion_func = ScienceModuleFunctionList.__conversion_function(data_type)
+        conversion_func = ScienceModuleFunctionList.conversion_function(data_type)
 
         out = []
         for i in range(cnt):
@@ -229,7 +229,7 @@ class ScienceModuleFunctionList:
         return out[0] if cnt == 1 else out
 
     @staticmethod
-    def __conversion_function(datatype):
+    def conversion_function(datatype):
         match datatype:
             case 'uint8_t':
                 result = lambda data, index=0: struct.unpack('<B', bytes(data[index:index+1]))[0]

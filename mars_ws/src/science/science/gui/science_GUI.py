@@ -131,8 +131,8 @@ class science_GUI(Node):
         self.temp_timer = self.create_timer(self.save_interval, self.stop_temp_saver)
 
         # Query the temperature and humidity sensors at 1 Hz
-        self.create_timer(1, lambda: self.pub_get_analog_sensors.publish(Bool( data=False ))) # 1 Hz - Get Raw 
-        self.create_timer(0.5, lambda: self.pub_get_uv.publish(Empty())) # 1 Hz - Get Raw 
+        # self.create_timer(1, lambda: self.pub_get_analog_sensors.publish(Bool( data=False ))) # 1 Hz - Get Raw 
+        # self.create_timer(0.5, lambda: self.pub_get_uv.publish(Empty())) # 1 Hz - Get Raw 
         # TODO Get using_probe from xbox_science.py
         # self.create_timer(1, lambda: self.update_augur_position())
 
