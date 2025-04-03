@@ -719,10 +719,19 @@ class AutonomyGUI(Node, QWidget):
             self.ros_signal.emit('logger_label', f'Send Speed Constant Service call failed!')
 
     def rover_state_singleton_callback(self, msg):
-        self.rover_state_singleton_timepoint = self.get_clock().now().to_msg().sec
-        self.RoverStateLat.setText(f'Latitude: {msg.gps.latitude}')
-        self.RoverStateLon.setText(f'Longitude: {msg.gps.longitude}')
-        self.RoverStateMapYaw.setText(f'Map Yaw: {msg.map_yaw}')
+        # TODO move this to config 
+        filtered = True
+
+        if filtered:
+            self.rover_state_singleton_timepoint = self.get_clock().now().to_msg().sec
+            self.RoverStateLat.setText(f'Latitude: {msg.filter_gps.latitude}')
+            self.RoverStateLon.setText(f'Longitude: {msg.filter_gps.longitude}')
+            self.RoverStateMapYaw.setText(f'Map Yaw: {msg.map_yaw}')
+        else:
+            self.rover_state_singleton_timepoint = self.get_clock().now().to_msg().sec
+            self.RoverStateLat.setText(f'Latitude: {msg.gps.latitude}')
+            self.RoverStateLon.setText(f'Longitude: {msg.gps.longitude}')
+            self.RoverStateMapYaw.setText(f'Map Yaw: {msg.map_yaw}')
         return
 
     # GUI Graphics Functions

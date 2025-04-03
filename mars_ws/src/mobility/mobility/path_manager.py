@@ -80,10 +80,18 @@ class PathManager(Node):
 
     # Subscriber callbacks
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
-        # Updates the current point of the rover and updates the autopilot command
-        curr_lat = msg.gps.latitude
-        curr_lon = msg.gps.longitude
-        curr_elv = msg.gps.altitude
+        filtered = True
+        # TODO move this to config
+        if filtered:
+            # Updates the current point of the rover and updates the autopilot command
+            curr_lat = msg.filter_gps.latitude
+            curr_lon = msg.filter_gps.longitude
+            curr_elv = msg.filter_gps.altitude
+        else:
+            # Updates the current point of the rover and updates the autopilot command
+            curr_lat = msg.gps.latitude
+            curr_lon = msg.gps.longitude
+            curr_elv = msg.gps.altitude
         self.roll = msg.map_roll
         self.pitch = msg.map_pitch
         self.yaw = msg.map_yaw

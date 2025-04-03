@@ -25,8 +25,8 @@ class RoverStateSingletonCreator(Node):
         super().__init__('rover_state_singleton_creator')
 
         # Subscribers
-        self.ukf_map_subscription = self.create_subscription(Odometry, "/odometry/filtered_map", self.convert_map, 10)  # Subscribes to the UKF map odometry output
-        self.ukf_odom_subscription = self.create_subscription(Odometry, "/odometry/filtered", self.convert_odom, 10)  # Subscribes to the UKF odom odometry output
+        self.ukf_map_subscription = self.create_subscription(Odometry, "/ekf/odom", self.convert_map, 10)  # Subscribes to the UKF map odometry output
+        self.ukf_odom_subscription = self.create_subscription(Odometry, "/zed/zed_node/odom", self.convert_odom, 10)  # Subscribes to the UKF odom odometry output
 
         self.filtered_gps_subscription = self.create_subscription(NavSatFix, "/gps/filtered", self.convert_filtered_gps, 10)  # Subscribes to the filtered GPS data from the UKF output
         self.gps_subscription = self.create_subscription(NavSatFix, "/ins/lla", self.convert_gps, 10) # Subscribes to unfiltered GPS data
@@ -80,7 +80,12 @@ class RoverStateSingletonCreator(Node):
         # sets the roll, pitch and yaw based on the euler angles and converts them to degrees
         self.map_roll = euler[0] * 180/math.pi
         self.map_pitch = euler[1] * 180/math.pi
-        self.map_yaw = euler[2] * 180/math.pi
+
+        yaw_ned = 90.0 - (euler[2] * 180.0/math.pi)   # Yaw from ENU to NED coordinates
+
+        yaw_ned = ((yaw_ned + 180.0) % 360.0) - 180.0  # Normalize yaw to be between -180 and 180 degrees
+
+        self.map_yaw = yaw_ned 
 
         self.map_x = message.pose.pose.position.x
         self.map_y = message.pose.pose.position.y

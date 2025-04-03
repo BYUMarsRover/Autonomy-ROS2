@@ -53,8 +53,8 @@ class PositionVelocityTimeTranslator(Node):
 
         navsatfix_message.header.frame_id = 'gps_link'  # Adds information to the navsat message header
 
-        # FIX THIS to get the actual time stamp
-        navsatfix_message.header.stamp = self.get_clock().now().to_msg()
+        # FIX THIS to get the actual time stamp from GPS measurment
+        navsatfix_message.header.stamp = message.header.stamp
 
         self.lla_publisher.publish(navsatfix_message)  # publishes message using publisher
 

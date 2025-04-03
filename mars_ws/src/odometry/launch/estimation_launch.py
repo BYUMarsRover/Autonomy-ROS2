@@ -2,6 +2,7 @@ from launch import LaunchDescription
 from launch.actions import GroupAction, DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import os
@@ -14,40 +15,27 @@ def generate_launch_description():
     return LaunchDescription([
         # Load parameters for robot_localization
 
-        DeclareLaunchArgument('ROVER_ADDRESS', default_value='192.168.1.120'),
-        Node(
-            package='robot_localization',
-            executable='ukf_node',
-            name='ukf_se_odom',
-            output='screen',
-            parameters=[config],
-            emulate_tty=True
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(
+                    get_package_share_directory('rover_description'),
+                    'launch',
+                    'robot_state_publisher.launch.py'
+                )
+            )
         ),
-
-        Node(
-            package='robot_localization',
-            executable='ukf_node',
-            name='ukf_se_map',
-            output='screen',
-            parameters=[config],
-            remappings=[
-                ('odometry/filtered', 'odometry/filtered_map')
-            ],
-            emulate_tty=True
-        ),
-
         Node(
             package='robot_localization',
             executable='navsat_transform_node',
-            name='navsat_transform',
+            name='navsat_transform_node',
             output='screen',
             parameters=[config],
             remappings=[
-                ('odometry/filtered', 'odometry/filtered_map'),
+                ('odometry/filtered', 'ekf/odom'),
                 ('imu', 'imu/data'),
                 ('gps/fix', 'ins/lla'),
             ],
-            arguments=['--ros-args', '--log-level', 'fatal'],
+            arguments=['--ros-args', '--log-level', 'info'],
             emulate_tty=True
         ),
 
@@ -61,12 +49,19 @@ def generate_launch_description():
                     output='screen'
                 ),
             ],
-            condition=IfCondition(
-                PythonExpression(["'", LaunchConfiguration('ROVER_ADDRESS'), "' != '127.0.0.1'"])
-            )
         ),
 
-        
+        #TODO: Maybe take this out of the other launch file
+        Node(
+            package='odometry',
+            executable='position_velocity_time_translator',
+            namespace='rover',
+            name='position_velocity_time_translator',
+            remappings=[
+                ('lla', '/ins/lla')
+            ],
+            output='screen'
+        ),
 
         Node(
             package='imu_filter_madgwick',
@@ -74,9 +69,16 @@ def generate_launch_description():
             name='imu_filter_madgwick',
             output='screen',
             remappings=[
-                ('imu/data_raw', 'zed/imu/data'),
-                ('imu/mag', 'zed/imu/mag')
+                ('imu/data_raw', 'zed/zed_node/imu/data'),
+                ('imu/mag', 'zed/zed_node/imu/mag')
             ],
             parameters=[imu_config]
         ),
+        Node(
+            package='odometry',
+            executable='custom_ekf_node',
+            name='custom_ekf_node',
+            output='screen',
+            parameters=[config],
+        )
     ])

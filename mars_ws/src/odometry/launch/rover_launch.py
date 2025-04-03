@@ -12,16 +12,16 @@ def generate_launch_description():
         #What is this?
         # DeclareLaunchArgument('standalone', default_value='false'),
         
-        Node(
-            package='odometry',
-            executable='position_velocity_time_translator',
-            namespace='rover',
-            name='position_velocity_time_translator',
-            remappings=[
-                ('lla', '/ins/lla')
-            ],
-            output='screen'
-        ),
+        # Node(
+        #     package='odometry',
+        #     executable='position_velocity_time_translator',
+        #     namespace='rover',
+        #     name='position_velocity_time_translator',
+        #     remappings=[
+        #         ('lla', '/ins/lla')
+        #     ],
+        #     output='screen'
+        # ),
         Node(
             package='ublox_read_2',
             executable='ublox_ros',
