@@ -667,7 +667,7 @@ class AutonomyGUI(Node, QWidget):
         #logic for aborting autonomy task
         req = AutonomyAbort.Request()
         req.abort_status = True
-
+        # why is this like this? 
         try:
             lat = float(self.latitude_input.text())
             lon = float(self.longitude_input.text())

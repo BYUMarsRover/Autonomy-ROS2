@@ -161,6 +161,8 @@ class AutonomyStateMachine(Node):
         self.aruco_detect_enabled = False
         self.obj_detect_enabled = False
         self.prev_tag_id = TagID.GPS_ONLY
+        self.prev_lat = 0
+        self.prev_lon = 0
         self.dist_to_target = 1000          # Abitrary High number, Will be updated in point navigation
 
         # Data structure to hold all of the waypoints at a time
@@ -413,11 +415,14 @@ class AutonomyStateMachine(Node):
         response.message = f"Autonomy state machine is {self.enabled}!"
         return response
     
-    def abort(self, request: AutonomyAbort.Request, response: SetBool.Response):
+    def abort(self, request: AutonomyAbort.Request, response: SetBool.Response): 
         self.get_logger().info('in abort')
         self.abort_status = request.abort_status
-        self.abort_lat = request.lat
-        self.abort_lon = request.lon
+        # self.abort_lat = request.lat
+        # self.abort_lon = request.lon
+        self.get_logger().info(f'lat: {self.prev_lat}, lon: {self.prev_lon}')
+        self.abort_lat = self.prev_lat
+        self.abort_lon = self.prev_lon
         self.abort_point = GPSCoordinate(self.abort_lat, self.abort_lon, 0)
 
         if self.abort_status:
@@ -490,6 +495,8 @@ class AutonomyStateMachine(Node):
         self.obj_distance = None
         self.obj_angle = None
         self.prev_tag_id = self.tag_id
+        self.prev_lat = 0
+        self.prev_lon = 0
         self.dist_to_target = 1000          # Arbitrary High number, will be updated in navigation
 
 
