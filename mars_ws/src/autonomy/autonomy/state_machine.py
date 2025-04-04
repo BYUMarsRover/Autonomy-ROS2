@@ -418,11 +418,8 @@ class AutonomyStateMachine(Node):
     def abort(self, request: AutonomyAbort.Request, response: SetBool.Response): 
         self.get_logger().info('in abort')
         self.abort_status = request.abort_status
-        # self.abort_lat = request.lat
-        # self.abort_lon = request.lon
-        self.get_logger().info(f'lat: {self.prev_lat}, lon: {self.prev_lon}')
-        self.abort_lat = self.prev_lat
-        self.abort_lon = self.prev_lon
+        self.abort_lat = request.lat
+        self.abort_lon = request.lon
         self.abort_point = GPSCoordinate(self.abort_lat, self.abort_lon, 0)
 
         if self.abort_status:
@@ -489,14 +486,14 @@ class AutonomyStateMachine(Node):
 
 
     def reset_state_variables(self):
-        # Reset the state machine variables
+        # Reset the state machine variables, ONLY if task is complete
         self.correct_aruco_tag_found = False
         self.correct_obj_found = False
         self.obj_distance = None
         self.obj_angle = None
         self.prev_tag_id = self.tag_id
-        self.prev_lat = 0
-        self.prev_lon = 0
+        self.prev_lat = self.target_latitude
+        self.prev_lon = self.target_longitude
         self.dist_to_target = 1000          # Arbitrary High number, will be updated in navigation
 
 
