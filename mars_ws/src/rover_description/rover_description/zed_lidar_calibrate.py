@@ -64,7 +64,7 @@ class FramePublisher(Node):
             Trigger, "calibrate/zed_lidar", self.calibrate_callback  # service name
         )  # callback function
 
-        self.transform_timer = self.create_timer(1.0, self.publish_transform)  # Publish every second
+        self.transform_timer = self.create_timer(0.1, self.publish_transform)  # Publish every second
 
     def publish_transform(self):
         if self.current_stamp is None:
@@ -98,7 +98,7 @@ class FramePublisher(Node):
         try: 
             # Get the current orientation of the rover
             # Lookup transformation from odom to base_link
-            odom_to_base_link = self.tf_buffer.lookup_transform('odom', 'base_link', now)
+            odom_to_base_link = self.tf_buffer.lookup_transform('odom', 'base_link', now, rclpy.duration.Duration(seconds=0.2))
 
             # Set the rotation to the current orientation of the rover
             base_link_to_gravity.transform.rotation = odom_to_base_link.transform.rotation
@@ -225,7 +225,7 @@ class FramePublisher(Node):
         # roll, pitch, yaw = self.quaternion_to_euler(msg.orientation)
 
         self.current_stamp = msg.header.stamp
-        self.get_logger().info('setting zed transform')
+        # self.get_logger().info('setting zed transform')
 
         if self.new_zed_calibration:
             self.zed_transform.header.stamp = msg.header.stamp
