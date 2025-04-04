@@ -17,7 +17,7 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point, name):
     if name == "lidar":
         # Extract points from ROS PointCloud2 message
         # Transform points to rover frame, x-forward, y-right, z-down
-        # And also transform the points so origin is from the start of the bounding box  
+        # And also transform the points so origin is from the start of the bounding box
         for point in read_points(ros_cloud, skip_nans=True):
             points_list.append([point[2]-transformation_point[0],   #X axis in the rover frame is Z in the LIDAR frame
                                 point[1]-transformation_point[1],   #Y axes are the same
@@ -26,12 +26,31 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point, name):
     elif name == 'zed':
         # Extract points from ROS PointCloud2 message
         # Transform points to rover frame, x-forward, y-right, z-down
+        # Also Include 8 degree rotation around y axis
         # And also transform the points so origin is from the start of the bounding box 
+
+        # Create a rotation matrix for 8 degrees around the y-axis
+        angle = np.radians(-10)  # Convert degrees to radians
+        R = np.array([[np.cos(angle), 0, np.sin(angle)],
+                      [0, 1, 0],
+                      [-np.sin(angle), 0, np.cos(angle)]])
+
+
         for point in read_points(ros_cloud, skip_nans=True):
-            points_list.append([point[0]-transformation_point[0],   #X axes are the same
-                               -point[1]-transformation_point[1],   #Y axis in the rover frame is -Y in the ZED frame
-                               -point[2]-transformation_point[2]])  #Z axis in the rover frame is -Z in the ZED frame
-                                                                    #transfromation point in rover frame is the start of the bounding box
+            point = [point[0],   #X axes are the same
+                    -point[1],   #Y axis in the rover frame is -Y in the ZED frame
+                    -point[2]]   #Z axis in the rover frame is -Z in the ZED frame
+                                                        
+            # Apply the rotation
+            rotated_point = np.dot(R, point)
+
+            # Apply the translation
+            rotated_point[0] += transformation_point[0]
+            rotated_point[1] += transformation_point[1]
+            rotated_point[2] += transformation_point[2]
+
+            # Append the rotated point to the list
+            points_list.append(rotated_point)
 
     # Convert to NumPy array
     np_points = np.array(points_list, dtype=np.float32)
@@ -40,12 +59,12 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point, name):
     pcl_data = o3d.geometry.PointCloud()
     pcl_data.points = o3d.utility.Vector3dVector(np_points)
 
-    # Generate the fake point cloud
+    # # Generate the fake point cloud
     # fake_pc = generate_fake_point_cloud()
+    # return fake_pc
 
         # Check if the cloud has more than 3 points
     if len(pcl_data.points) < 3:
-        
         return pcl_data
     else:
           # Visualize the point cloud
@@ -122,7 +141,7 @@ def read_points(cloud, skip_nans=True):
     Generator to iterate through PointCloud2 data.
 
     :param cloud: PointCloud2 message
-    :param skip_nans: Skip NaN values
+    :param skip_nans: Skip NaN and Inf values
     :yield: Point as a tuple (x, y, z)
     """
     fmt = "<fff"  # XYZ format
@@ -133,7 +152,7 @@ def read_points(cloud, skip_nans=True):
         for col in range(cloud.width):
             i = row * row_step + col * point_step
             x, y, z = struct.unpack_from(fmt, data, offset=i)
-            if skip_nans and (np.isnan(x) or np.isnan(y) or np.isnan(z)):
+            if skip_nans and (np.isnan(x) or np.isnan(y) or np.isnan(z) or np.isinf(x) or np.isinf(y) or np.isinf(z)):
                 continue
             yield (x, y, z)
 
