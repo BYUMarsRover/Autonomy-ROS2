@@ -55,9 +55,9 @@ class DriveManager(Node):
         self.get_logger().info(f"Drive Manager initialized!")
     
     def set_speed(self, request, response):
-        if request.data > 10.0:
+        if request.data < 0.0 or request.data > 10.0:
             response.success = False
-            response.message = f"Drive Manager: Max Speed cannot be greater than 10.0"
+            response.message = f"Speed must be between 0.0 and 10.0"
             return response
         else:
             self.max_speed = 10.1 - request.data

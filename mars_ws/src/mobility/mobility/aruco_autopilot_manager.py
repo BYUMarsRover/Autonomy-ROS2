@@ -92,27 +92,6 @@ class ArucoAutopilotManager(Node):
         self.rover_vel_cmd.omega_cmd = angular_vel
 
         self.publish_rover_vel_cmd()
-
-    def set_speed(self, request, response):
-        """Service callback to adjust the speed scaling."""
-        self.speed = request.data
-
-        if not (0.0 <= self.speed <= 1.0):
-            response.success = False
-            response.message = "Speed must be between 0 and 1."
-            return response
-
-        self.linear_controller.kp = self.speed * self.get_parameter_helper('linear_autopilot_kp', 1.0)
-        self.linear_controller.ki = self.speed * self.get_parameter_helper('linear_autopilot_ki', 0.0)
-        self.linear_controller.kd = self.speed * self.get_parameter_helper('linear_autopilot_kd', 0.0)
-
-        self.angular_controller.kp = self.speed * self.get_parameter_helper('angular_autopilot_kp', 1.0)
-        self.angular_controller.ki = self.speed * self.get_parameter_helper('angular_autopilot_ki', 0.0)
-        self.angular_controller.kd = self.speed * self.get_parameter_helper('angular_autopilot_kd', 0.0)
-
-        response.success = True
-        response.message = f"Autopilot Speed set to {self.speed}"
-        return response
     
     def set_gains(self, request: SetFloats.Request, response: SetFloats.Response):
 
