@@ -103,6 +103,12 @@ class ArucoAutopilotManager(Node):
         limit_linear = request.data[2]
         limit_angular = request.data[3]
 
+        # Update Parameters
+        self.set_parameters([Parameter('aruco_linear_autopilot_kp', Parameter.Type.DOUBLE, kp_linear)])
+        self.set_parameters([Parameter('aruco_angular_autopilot_kp', Parameter.Type.DOUBLE, kp_angular)])
+        self.set_parameters([Parameter('aruco_linear_autopilot_limit', Parameter.Type.DOUBLE, limit_linear)])
+        self.set_parameters([Parameter('aruco_angular_autopilot_limit', Parameter.Type.DOUBLE, limit_angular)])
+
         # Update the controller gains
         self.linear_controller.kp = kp_linear
         self.angular_controller.kp = kp_angular
