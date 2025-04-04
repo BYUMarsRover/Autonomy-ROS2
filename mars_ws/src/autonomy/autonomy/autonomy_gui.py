@@ -194,6 +194,12 @@ class AutonomyGUI(Node, QWidget):
         # Stored in lat/lon format
         self.current_previewed_waypoints = Path() #NOTE: used by mapviz
 
+        self.troubleshooting_timer = self.create_timer(5.0, self.troubleshooting_timer_callback)
+
+    def troubleshooting_timer_callback(self):
+        self.get_logger().info('ROS Side is still running')
+        return
+
     # Clears displays in the gui if information stops being received.
     def check_timepoints(self):
         if self.rover_state_singleton_timepoint is not None:
@@ -219,20 +225,24 @@ class AutonomyGUI(Node, QWidget):
             self.nav_state = 'TELEOPERATION'
         elif nav_state == 2:
             self.nav_state = 'ARRIVAL'
-            if self.selected_waypoint_to_send is not None:
+            if self.selected_waypoint_to_send is not None and self.waypoints[self.selected_waypoint_to_send -1][4] == 'ACTIVE':
                 self.waypoints[self.selected_waypoint_to_send -1][4] = 'COMPLETE'
+                self.update_waypoint_list()
         else:
             self.nav_state = 'UNKNOWN'
         # Update GUI fields
-        self.ros_signal.emit('PreviousNavStateDisplay', self.CurrentNavStateDisplay.text())
-        self.ros_signal.emit('CurrentNavStateDisplay', self.nav_state)
+        if self.CurrentNavStateDisplay.text() != self.nav_state:
+            self.ros_signal.emit('PreviousNavStateDisplay', self.CurrentNavStateDisplay.text())
+            self.ros_signal.emit('CurrentNavStateDisplay', self.nav_state)
         return
 
     def rover_state_callback(self, msg): #State machine status (state, auto_enable)
         #Update previous state and state list
         if self.state_machine_state != None and msg.state != self.state_machine_state:
+            if self.state_machine_list_string.count('\n') > 27:
+                self.state_machine_list_string = self.state_machine_list_string[:self.state_machine_list_string.rfind('\n')]
             self.state_machine_list_string = f'{msg.state}\n' + self.state_machine_list_string
-            self.ros_signal.emit('PreviousStatesList', self.state_machine_list_string) 
+            self.ros_signal.emit('PreviousStatesList', self.state_machine_list_string)
 
             self.prev_state_machine_state = self.state_machine_state
 

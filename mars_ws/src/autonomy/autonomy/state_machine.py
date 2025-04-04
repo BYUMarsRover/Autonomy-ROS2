@@ -527,7 +527,7 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.path_waypoint_dist_tolerance:
                     if len(self.waypoints) > 1:
-                        self.waypoints.pop(0)
+                        self.waypoints.popleft()
                         self.get_logger().info("Popped intermediate waypoint!")
                         self.state = State.START_POINT_NAVIGATION
                     else:
