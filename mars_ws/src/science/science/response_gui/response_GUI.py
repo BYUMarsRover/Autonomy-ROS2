@@ -58,6 +58,8 @@ class science_response_GUI(Node):
         # Create Subscriptions
         self.science_serial_rx_sub = self.create_subscription(ScienceSerialRxPacket, '/science_serial_rx_packet', self.receive_response_packet, 10)
 
+        self.return_table = None
+
         self.qt.show() # Show the GUI
 
     def extract_timestamp(self, msg: ScienceSerialRxPacket):
@@ -225,7 +227,6 @@ class science_response_GUI(Node):
         self.clear_serial_monitor()
 
     def populate_detail_view(self, packet):
-
         # Get the matching function call
         func = SMFL.get_function_by_command_word(packet.echo[1]) # 2nd Byte is the command word
 
@@ -241,6 +242,7 @@ class science_response_GUI(Node):
         self.qt.packet_error_code.setText(str(packet.error_code)) # Set the error code
         self.qt.packet_message_len.setText(str(len(packet.message))) # Set the message length
         self.write_serial_monitor(packet.message)
+        self.update_return_table(func, packet.message)
 
     def select_response_packet(self):
         item = self.qt.packet_browser.currentItem()
@@ -253,6 +255,42 @@ class science_response_GUI(Node):
         self.response_packet_list = []  # Clear the list of packets
         self.dialog_box_packets = []
         self.clear_detail_view()
+
+    def update_return_table(self, func_def, message):
+        datatype = func_def['return_type']
+        conversion_func = SMFL.conversion_function(func_def['return_type'])
+        self.get_logger().info(f"test 1 '{datatype}' {datatype != 'void'} test 2 {conversion_func is not None}")
+        self.get_logger().info(f' type({datatype}) --> {datatype}')
+        r = 'void'
+        self.get_logger().info(f' type({r}) --> {r}')
+        if datatype != 'void' and conversion_func is not None:
+            self.show_return_table()
+            # TODO fill it up with data
+        else:
+            self.hide_return_table()
+
+    def load_return_table(self):
+        self.return_table = QtWidgets.QWidget()
+        return_table_file_path = os.path.join(
+        get_package_share_directory('science'),
+            'response_gui',
+            'return_data'
+            '.ui'
+        )
+        uic.loadUi(return_table_file_path, self.return_table)
+
+    def show_return_table(self):
+        self.get_logger().info('Showing return table')
+        if self.return_table is None:
+            self.load_return_table()
+        self.qt.scrollAreaContents.layout().addWidget(self.return_table)
+
+    def hide_return_table(self):
+        self.get_logger().info('Removing return table')
+        if self.return_table is not None:
+            self.return_table.setParent(None)  # Detach the widget from its parent
+            self.return_table.deleteLater()  # Schedule the widget for deletion
+            self.return_table = None  # Reset the reference
 
     def task_launcher_init(self):
         self.signals = Signals()

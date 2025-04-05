@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>893</width>
-    <height>753</height>
+    <width>891</width>
+    <height>748</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -148,6 +148,17 @@
              </property>
             </widget>
            </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <widget class="QLabel" name="label_6">
+             <property name="text">
+              <string>Echo'ed Action:</string>
+             </property>
+            </widget>
+           </item>
            <item>
             <widget class="QLabel" name="packet_timestamp">
              <property name="sizePolicy">
@@ -161,17 +172,6 @@
              </property>
              <property name="text">
               <string/>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QVBoxLayout" name="verticalLayout_4">
-           <item>
-            <widget class="QLabel" name="label_6">
-             <property name="text">
-              <string>Echo'ed Action:</string>
              </property>
             </widget>
            </item>
@@ -270,22 +270,22 @@
            <property name="widgetResizable">
             <bool>true</bool>
            </property>
-           <widget class="QWidget" name="scrollAreaWidgetContents_2">
+           <widget class="QWidget" name="scrollAreaContents">
             <property name="geometry">
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>384</width>
-              <height>416</height>
+              <width>383</width>
+              <height>387</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_7">
              <item>
               <widget class="QLabel" name="label_rx_ascii">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>3</horstretch>
-                 <verstretch>0</verstretch>
+                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                 <horstretch>10</horstretch>
+                 <verstretch>50</verstretch>
                 </sizepolicy>
                </property>
                <property name="styleSheet">
@@ -312,9 +312,9 @@
              <item>
               <widget class="QLabel" name="label_rx_hex">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                  <horstretch>10</horstretch>
-                 <verstretch>0</verstretch>
+                 <verstretch>50</verstretch>
                 </sizepolicy>
                </property>
                <property name="font">
