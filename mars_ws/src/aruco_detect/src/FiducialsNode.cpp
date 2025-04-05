@@ -17,7 +17,7 @@
 // Constructor implementation
 FiducialsNode::FiducialsNode()
     : Node("fiducials_node"),
-      enable_detections_(true),
+      enable_detections_(false),
       frame_num_(0),
       have_cam_info_(false),
       node_handle_(std::shared_ptr<FiducialsNode>(this, [](auto *) {})),
@@ -121,20 +121,24 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
 
         cv::aruco::detectMarkers(cv_ptr->image, dictionary_, corners, ids, detector_params_);
         if (!ids.empty()) {
-            RCLCPP_INFO(this->get_logger(), "Detected %d markers", static_cast<int>(ids.size()));
-            for (const auto& id : ids) {
-                RCLCPP_INFO(this->get_logger(), "Detected marker ID: %d", id);
+            int num_markers = ids.size();
+            if (prev_num_markers_ != num_markers){
+                RCLCPP_INFO(this->get_logger(), "Detected %d markers", num_markers);
+                for (const auto& id : ids) {
+                    RCLCPP_INFO(this->get_logger(), "Detected marker ID: %d", id);
+                }
+                prev_num_markers_ = num_markers;
+            }
+            
+            if (publish_images_) {
+                cv::aruco::drawDetectedMarkers(cv_ptr->image, corners, ids);
             }
         } 
-        if (!ids.empty()) {
-            RCLCPP_INFO(this->get_logger(), "Detected %d markers", static_cast<int>(ids.size()));
-            cv::aruco::drawDetectedMarkers(cv_ptr->image, corners, ids);
-        }
 
         if (do_pose_estimation_) {
             if (!have_cam_info_) {
                 if (frame_num_ > 5) {
-                    RCLCPP_ERROR(this->get_logger(), "No camera intrinsics");
+                    RCLCPP_ERROR_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "No camera intrinsics");
                 }
                 return;
             }
@@ -146,23 +150,26 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
                                       rvecs, tvecs, reprojection_errors);
 
             for (size_t i = 0; i < ids.size(); i++) {
-                cv::aruco::drawAxis(cv_ptr->image, camera_matrix_, distortion_coeffs_,
-                                    rvecs[i], tvecs[i], static_cast<float>(fiducial_len_));
+                
+                if (publish_images_) {
+                    cv::aruco::drawAxis(cv_ptr->image, camera_matrix_, distortion_coeffs_,
+                                        rvecs[i], tvecs[i], static_cast<float>(fiducial_len_));
+                }
 
-                RCLCPP_INFO(this->get_logger(),
+                RCLCPP_DEBUG(this->get_logger(),
                             "Detected id %d T [%.2f %.2f %.2f] R [%.2f %.2f %.2f]",
                             ids[i], tvecs[i][0], tvecs[i][1], tvecs[i][2],
                             rvecs[i][0], rvecs[i][1], rvecs[i][2]);
 
                 if (std::find(ignore_ids_.begin(), ignore_ids_.end(), ids[i]) != ignore_ids_.end()) {
-                    RCLCPP_INFO(this->get_logger(), "Ignoring id %d", ids[i]);
+                    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Ignoring id %d", ids[i]);
                     continue;
                 }
 
                 double angle = cv::norm(rvecs[i]);
                 cv::Vec3d axis = rvecs[i] / angle;
-                RCLCPP_INFO(this->get_logger(), "Angle %f Axis [%f %f %f]",
-                            angle, axis[0], axis[1], axis[2]);
+                // RCLCPP_INFO(this->get_logger(), "Angle %f Axis [%f %f %f]",
+                //             angle, axis[0], axis[1], axis[2]);
 
                 auto ft = rover_msgs::msg::FiducialTransform();
                 ft.fiducial_id = ids[i];
@@ -196,9 +203,9 @@ void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
             image_pub_.publish(cv_ptr->toImageMsg());
         }
     } catch (cv_bridge::Exception& e) {
-        RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
+        RCLCPP_ERROR_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "cv_bridge exception: %s", e.what());
     } catch (cv::Exception& e) {
-        RCLCPP_ERROR(this->get_logger(), "OpenCV exception: %s", e.what());
+        RCLCPP_ERROR_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "OpenCV exception: %s", e.what());
     }
 }
 
@@ -209,7 +216,7 @@ void FiducialsNode::camInfoCallback(const sensor_msgs::msg::CameraInfo::ConstSha
     }
 
     if (std::all_of(msg->k.begin(), msg->k.end(), [](double k) { return k == 0.0; })) {
-        RCLCPP_WARN(this->get_logger(), "CameraInfo message has invalid intrinsics, K matrix all zeros");
+        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "CameraInfo message has invalid intrinsics, K matrix all zeros");
         return;
     }
 
@@ -234,10 +241,10 @@ void FiducialsNode::enableDetectionsCallback(
     enable_detections_ = request->data;
     response->success = true;
     if (enable_detections_) {
-        response->message = "ArUco detections have been enabled.";
+        response->message = "aruco detections - enabled";
         RCLCPP_INFO(this->get_logger(), "ArUco detections enabled.");
     } else {
-        response->message = "ArUco detections have been disabled.";
+        response->message = "aruco detections - disabled";
         RCLCPP_INFO(this->get_logger(), "ArUco detections disabled.");
     }
 }
@@ -278,13 +285,13 @@ void FiducialsNode::handleIgnoreString(const std::string& str) {
         if (dash_pos != std::string::npos) {
             int start = std::stoi(item.substr(0, dash_pos));
             int end = std::stoi(item.substr(dash_pos + 1));
-            RCLCPP_INFO(this->get_logger(), "Ignoring fiducial id range %d to %d", start, end);
+            RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Ignoring fiducial id range %d to %d", start, end);
             for (int j = start; j <= end; j++) {
                 ignore_ids_.push_back(j);
             }
         } else {
             int fid = std::stoi(item);
-            RCLCPP_INFO(this->get_logger(), "Ignoring fiducial id %d", fid);
+            RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Ignoring fiducial id %d", fid);
             ignore_ids_.push_back(fid);
         }
     }
@@ -308,17 +315,17 @@ void FiducialsNode::parseFiducialLenOverride(const std::string& str) {
             if (dash_pos != std::string::npos) {
                 int start = std::stoi(ids_str.substr(0, dash_pos));
                 int end = std::stoi(ids_str.substr(dash_pos + 1));
-                RCLCPP_INFO(this->get_logger(), "Setting fiducial id range %d - %d length to %f", start, end, len);
+                RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Setting fiducial id range %d - %d length to %f", start, end, len);
                 for (int j = start; j <= end; j++) {
                     fiducial_lens_[j] = len;
                 }
             } else {
                 int fid = std::stoi(ids_str);
-                RCLCPP_INFO(this->get_logger(), "Setting fiducial id %d length to %f", fid, len);
+                RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Setting fiducial id %d length to %f", fid, len);
                 fiducial_lens_[fid] = len;
             }
         } else {
-            RCLCPP_ERROR(this->get_logger(), "Malformed fiducial_len_override: %s", item.c_str());
+            RCLCPP_ERROR_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Malformed fiducial_len_override: %s", item.c_str());
         }
     }
 }

@@ -36,6 +36,7 @@ private:
     bool do_pose_estimation_;
     bool have_cam_info_;
     double fiducial_len_;
+    int prev_num_markers_;
     cv::Ptr<cv::aruco::Dictionary> dictionary;
 
     // Publishers
