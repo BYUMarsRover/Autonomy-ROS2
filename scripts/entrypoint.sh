@@ -12,8 +12,8 @@ if [ "$(uname -m)" == "aarch64" ]; then
     tmux new-session -d -s rover_runtime
     tmux send-keys -t rover_runtime.0 "clear" Enter
 
-    # Launch ROS 2 nodes on system startup
-    tmux send-keys -t rover_runtime.0 "ros2 launch mobility rover_xbox_launch.py" Enter
+    # Enter keys but do not startup
+    tmux send-keys -t rover_runtime.0 "ros2 launch mobility rover_xbox_launch.py"
 
     # Full color and mouse options
     tmux set-option -g default-terminal "screen-256color"
