@@ -5,7 +5,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, QTimer, Qt, QAbstractTableModel
 from PyQt5.QtWidgets import QApplication, QTableView
 from python_qt_binding.QtCore import QObject, Signal
 import rclpy
-from std_msgs.msg import Empty, Bool, Bool
+from std_msgs.msg import Empty, Bool
 from rover_msgs.srv import CameraControl
 from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton, ScienceSerialTxPacket, ScienceSpectroData, ScienceUvData
 from rclpy.node import Node
@@ -18,7 +18,7 @@ import sys
 
 class Signals(QObject):
     sensor_signal = Signal(ScienceSensorValues)
-    # auger_position = Signal(ScienceToolPosition)
+    auger_position = Signal(Bool)
     sensor_save_signal = Signal(ScienceSaveSensor)
     FAD_save_signal = Signal(ScienceSaveFAD)
     notes_save_signal = Signal(ScienceSaveNotes)
@@ -133,8 +133,7 @@ class science_GUI(Node):
         # Query the temperature and humidity sensors at 1 Hz
         self.create_timer(1, lambda: self.pub_get_analog_sensors.publish(Bool( data=False ))) # 1 Hz - Get Raw 
         self.create_timer(0.5, lambda: self.pub_get_uv.publish(Empty())) # 1 Hz - Get Raw 
-        # TODO Get using_probe from xbox_science.py
-        # self.create_timer(1, lambda: self.update_augur_position())
+        self.create_timer(1, lambda: self.pub_get_auger_position.publish(Empty()))
 
     def task_launcher_init(self):
         self.signals = Signals()
@@ -151,7 +150,6 @@ class science_GUI(Node):
         self.qt.pushButton_temperature_2.clicked.connect(lambda: self.estimate_reading(1))
         self.qt.pushButton_fad_estimate.clicked.connect(lambda: self.estimate_reading(2))
 
-        #TODO
         self.qt.pushButton_spectro.clicked.connect(lambda: self.fetch_spectro_data())
         self.qt.pushButton_uv.clicked.connect(lambda: self.fetch_uv_data())
         self.qt.pushButton_spectro.clicked.connect(lambda: self.pub_get_spectro.publish(Empty()))
@@ -415,9 +413,9 @@ class science_GUI(Node):
 
         This is like this because the photoresistors are backwards on the board.
         """
-        if msg.position == 0:
+        if msg.data == 0:
             self.qt.lcd_auger.display(2)
-        elif msg.position == 1:
+        elif msg.data == 1:
             self.qt.lcd_auger.display(1)
         else:
             self.qt.lcd_auger.display(-1)
