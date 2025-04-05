@@ -1,5 +1,5 @@
 command_type,function_addr,function_name,operand_name_1,operand_type_1,operand_cnt_1,operand_name_2,operand_type_2,operand_cnt_2,operand_name_3,operand_type_3,operand_cnt_3,return_name,return_type,return_cnt,docstring,Errors
-query,0,module_health_check,,void,0,,void,0,,void,0,message,uint8_t,1,Returns a health check,
+query,0,module_health_check,,void,0,,void,0,,void,0,,void,0,Returns a health check,
 query,1,get_actuator_position,actuator_index,uint8_t,1,,void,0,,void,0,position,uint8_t,1,Returns the current position of actuator X,
 query,2,get_actuator_control,actuator_index,uint8_t,1,,void,0,,void,0,control,int8_t,1,Returns the current signed control for actuator X,
 query,3,get_analog_sensor_raw,sensor_index,uint8_t,1,,void,0,,void,0,raw_result,uint16_t,1,Returns the analog voltage returned by the Nano's 10 bit ADC for a given sensor index,

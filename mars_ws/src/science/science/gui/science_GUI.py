@@ -12,6 +12,7 @@ from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.pyplot as plt
 import numpy as np
+import subprocess
 
 import os
 import sys
@@ -63,7 +64,7 @@ class science_GUI(Node):
     def __init__(self):
         
         super().__init__('science_GUI')
-        self.qt = QtWidgets.QWidget()
+        self.qt = QtWidgets.QMainWindow()
 
         ui_file_path = os.path.join(
             get_package_share_directory('science'),
@@ -95,6 +96,7 @@ class science_GUI(Node):
         self.site_number = 1
         self.task_launcher_init()
         self.initialize_timers()
+        self.setup_menu_bar()
         self.sensor_saving = [False] * 3  # temp, moisture, fad
         self.temperature_coefficients = [[],[],[],[],[],[]]
         self.moisture_coefficients = [[],[],[],[],[],[]]
@@ -121,19 +123,42 @@ class science_GUI(Node):
             self.temperature_coefficients = []
             print("Temperature coefficients file does not exist. Please use the show graph button to store coefficients.")
 
-        # if self.future.result() is not None:
-        #     self.get_logger().info(f"{self.future.result()}")
-        # else:
-        #     self.get_logger().error(f"Service call failed {self.future.exception()}")
+    def setup_menu_bar(self):
+        # Launch the GUI when the menu item is clicked
+        self.qt.actionLaunch_Function_Library.triggered.connect(lambda: self.launch_gui("science_debug"))
+        self.qt.actionLaunch_RX_TX_Monitor.triggered.connect(lambda: self.launch_gui("science_rxtx"))
+        self.qt.actionLaunch_Response_Parse.triggered.connect(lambda: self.launch_gui("science_response"))
+
+        # Begin sensor queries
+        self.qt.actionToggle_Sensor_Query.triggered.connect(self.toggle_sensor_queries)
+        self.qt.actionToggle_Sensor_Query.text = "Begin Sensor Queries"
+        self.is_reading_sensors = False
+        
+    def launch_gui(self, executable):
+        """
+        Launch the response_gui node as a subprocess when the menu item is clicked.
+        """
+        try:
+            # Launch the response_gui node using ros2 run
+            subprocess.Popen(["ros2", "run", "science", executable])
+            self.get_logger().info(f"Launched gui node {executable}.")
+        except Exception as e:
+            self.get_logger().error(f"Failed to launch gui: {str(e)}")
+
+    def toggle_sensor_queries(self):
+        self.is_reading_sensors = not self.is_reading_sensors
+        if self.is_reading_sensors:
+            self.temperature_timer = self.create_timer(1, lambda: self.pub_get_analog_sensors.publish(Bool( data=False ))) # 1 Hz - Get Raw 
+            self.mositure_timer = self.create_timer(0.5, lambda: self.pub_get_uv.publish(Empty())) # 1 Hz - Get Raw 
+            self.qt.actionToggle_Sensor_Query.setText("Stop Sensor Queries")
+        else:
+            self.temperature_timer.cancel()
+            self.mositure_timer.cancel()
+            self.qt.actionToggle_Sensor_Query.setText("Begin Sensor Queries")
 
     def initialize_timers(self):
         self.moisture_timer = self.create_timer(self.save_interval, self.stop_moist_saver)#These are probably redundant in ros2
         self.temp_timer = self.create_timer(self.save_interval, self.stop_temp_saver)
-
-        # Query the temperature and humidity sensors at 1 Hz
-        self.create_timer(1, lambda: self.pub_get_analog_sensors.publish(Bool( data=False ))) # 1 Hz - Get Raw 
-        self.create_timer(0.5, lambda: self.pub_get_uv.publish(Empty())) # 1 Hz - Get Raw 
-        self.create_timer(1, lambda: self.pub_get_auger_position.publish(Empty()))
 
     def task_launcher_init(self):
         self.signals = Signals()
@@ -173,7 +198,7 @@ class science_GUI(Node):
         self.pub_get_auger_position = self.create_publisher(Empty, '/science_auger_position', 1)
 
         self.signals.sensor_signal.connect(self.update_sensor_values)
-        self.signals.auger_position.connect(self.update_auger_position)
+        self.signals.auger_position.connect(self.update_current_tool)
         self.signals.sensor_save_signal.connect(self.pub_save_sensor.publish)
         self.signals.FAD_save_signal.connect(self.pub_save_fad.publish)
         self.signals.notes_save_signal.connect(self.pub_save_notes.publish)
@@ -407,18 +432,13 @@ class science_GUI(Node):
         self.qt.lbl_heading.setText(heading)
         self.qt.lbl_coordinates.setText(coordinates)
 
-    def update_auger_position(self, msg):
-        """
-        Updates the augur display.
-
-        This is like this because the photoresistors are backwards on the board.
-        """
-        if msg.data == 0:
-            self.qt.lcd_auger.display(2)
-        elif msg.data == 1:
-            self.qt.lcd_auger.display(1)
+    def update_current_tool(self, msg):
+        if msg.data == True: # Using Probe
+            self.qt.current_tool_label.setText("PROBE")
+        elif msg.data == False: # Not using probe
+            self.qt.current_tool_label.setText("AUGER")
         else:
-            self.qt.lcd_auger.display(-1)
+            self.qt.current_tool_label.setText("NONE")
 
     def fad_detector_get_point(self, event=None): #Written by chat
         print('Calibrate FAD')

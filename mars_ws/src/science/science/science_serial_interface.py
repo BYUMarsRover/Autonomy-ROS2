@@ -57,8 +57,7 @@ AUGER_ACTUATOR_INDEX = 1
 PRIMARY_DOOR_ACTUATOR_INDEX = 2
 SECONDARY_DOOR_ACTUATOR_INDEX = 3
 SECONDARY_CACHE_ACTUATOR_INDEX = 4
-PRIMARY_DOOR_ACTUATOR_INDEX = 5
-DRILL_ACTUATOR_INDEX = 6
+DRILL_ACTUATOR_INDEX = 5
 
 SENSOR_ERR_CODE = -1
 BAUD_RATE = 115200
@@ -70,8 +69,8 @@ class ScienceSerialInterface(Node):
         super().__init__('science_serial_interface')
 
         try:
-            # self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
-            self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE) # - used for testing off of rover
+            self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
+            # self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE) # - used for testing off of rover
             self.get_logger().info("Serial port initialized")
             print("Serial port initialized")
         except Exception as e:
@@ -109,7 +108,7 @@ class ScienceSerialInterface(Node):
     # Callbacks for Subscribers
 
     def actuator_control_callback(self, msg: ScienceActuatorControl, sensor_index):
-        self.publish_tx_request(SMFL.get_tx_get_update_actuator_control(sensor_index, msg.control))
+        self.perform_tx_request(SMFL.get_tx_get_update_actuator_control(sensor_index, msg.control))
 
     def set_override_bit_callback(self, msg: Bool):
         print("Received override change")

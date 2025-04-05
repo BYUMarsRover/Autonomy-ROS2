@@ -86,7 +86,7 @@ class XBOX(Node):
         self.override_button = iptl.InputButton(POWER, True, False)
 
     def auger_control_callback(self, msg: Empty):
-        self.pub_using_probe.publish(Bool(self.using_probe))
+        self.pub_using_probe.publish(Bool(data=self.using_probe))
 
     def joy_callback(self, msg: Joy):
         '''Logic goes here'''
@@ -122,6 +122,7 @@ class XBOX(Node):
 
             # Switch Tool Context
             self.using_probe = not self.using_probe
+            self.auger_control_callback(None)
 
         # Handle Probe and Auger
         if (self.using_probe):

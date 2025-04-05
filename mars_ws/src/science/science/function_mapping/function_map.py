@@ -71,7 +71,7 @@ class ScienceModuleFunctionList:
                 break
 
             # Get it's expected size
-            size = ScienceModuleFunctionList.__length_of_datatype(data_type)
+            size = ScienceModuleFunctionList.length_of_datatype(data_type)
             if size is None:
                 raise Exception(f"Unrecognized data type encounterd while parsing operands: '{data_type}'")
             
@@ -143,7 +143,7 @@ class ScienceModuleFunctionList:
             else:
                 raise Exception(f"Unknown data_type: {datatype}")
         except ValueError:
-            raise Exception(f"Invalid input for data_type {datatype}: {value_str}")
+            raise Exception(f"Invalid input for data_type {datatype}: {number}")
         
     @staticmethod
     def __verify_data(data, datatype):
@@ -155,7 +155,7 @@ class ScienceModuleFunctionList:
             return False
     
     @staticmethod
-    def __length_of_datatype(datatype):
+    def length_of_datatype(datatype):
         match datatype:
             case 'uint8_t':
                 result = 1
@@ -220,7 +220,7 @@ class ScienceModuleFunctionList:
         output = msg.message
         data_type = func_def['return_type']
         cnt = int(func_def['return_cnt'])
-        size = ScienceModuleFunctionList.__length_of_datatype(data_type)
+        size = ScienceModuleFunctionList.length_of_datatype(data_type)
         conversion_func = ScienceModuleFunctionList.conversion_function(data_type)
 
         out = []
@@ -267,7 +267,7 @@ class ScienceModuleFunctionList:
     def get_tx_get_update_actuator_control(actuator_index, control):
         return ScienceModuleFunctionList.build_tx_packet(
             ScienceModuleFunctionList.get_function_by_function_name("update_actuator_control"),
-            operand_blob = [actuator_index, control]
+            operand_blob = [actuator_index, control & 0xFF] # Make Control be interpreted as uint8_t
         )
     
     @staticmethod

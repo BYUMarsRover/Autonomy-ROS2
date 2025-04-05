@@ -192,7 +192,7 @@ class science_response_GUI(Node):
             self.select_response_packet()
 
     def packets_equivalent(self, msg1: ScienceSerialRxPacket, msg2: ScienceSerialRxPacket):
-        return (msg1.echo[1] == msg2.echo[1]) and (msg1.error_code == msg2.error_code) and (msg1.message == msg2.message)
+        return (msg1.echo == msg2.echo) and (msg1.error_code == msg2.error_code) and (msg1.message == msg2.message)
     
     def inc_item(self, index):
         item = self.qt.packet_browser.item(index)
@@ -259,15 +259,36 @@ class science_response_GUI(Node):
     def update_return_table(self, func_def, message):
         datatype = func_def['return_type']
         conversion_func = SMFL.conversion_function(func_def['return_type'])
-        self.get_logger().info(f"test 1 '{datatype}' {datatype != 'void'} test 2 {conversion_func is not None}")
-        self.get_logger().info(f' type({datatype}) --> {datatype}')
-        r = 'void'
-        self.get_logger().info(f' type({r}) --> {r}')
         if datatype != 'void' and conversion_func is not None:
             self.show_return_table()
-            # TODO fill it up with data
+            self.clear_table()
+            self.populate_table(func_def, message)
         else:
             self.hide_return_table()
+
+    def clear_table(self):
+        if self.return_table is not None:
+            self.return_table.returnData.clearContents()
+            self.return_table.returnData.setRowCount(0)
+
+    def populate_table(self, func_def, message):
+        datatype = func_def['return_type']
+        cnt = int(func_def['return_cnt'])
+        size = SMFL.length_of_datatype(func_def['return_type'])
+        conversion_func = SMFL.conversion_function(func_def['return_type'])
+        for i in range(cnt):
+            self.return_table.returnData.insertRow(i)
+            data = conversion_func(message[i*size:(i+1)*size])
+
+            # Insert the name of the data in the first column
+            name_item = QtWidgets.QTableWidgetItem(datatype)
+            name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
+            self.return_table.returnData.setItem(i, 0, name_item)
+            
+            # Insert the converted data in the second column
+            data_item = QtWidgets.QTableWidgetItem(str(data))
+            data_item.setFlags(data_item.flags() & ~Qt.ItemIsEditable)
+            self.return_table.returnData.setItem(i, 1, data_item)
 
     def load_return_table(self):
         self.return_table = QtWidgets.QWidget()
@@ -280,13 +301,11 @@ class science_response_GUI(Node):
         uic.loadUi(return_table_file_path, self.return_table)
 
     def show_return_table(self):
-        self.get_logger().info('Showing return table')
         if self.return_table is None:
             self.load_return_table()
         self.qt.scrollAreaContents.layout().addWidget(self.return_table)
 
     def hide_return_table(self):
-        self.get_logger().info('Removing return table')
         if self.return_table is not None:
             self.return_table.setParent(None)  # Detach the widget from its parent
             self.return_table.deleteLater()  # Schedule the widget for deletion

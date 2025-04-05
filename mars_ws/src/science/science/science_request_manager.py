@@ -74,7 +74,7 @@ class ScienceRequestManager(Node):
         for observer in self.observers:
             # If the rx packet has the same command word are this observer
             if SMFL.get_command_word(observer.func_def) == rx.echo[1] & 0b10011111:
-                self.get_logger().info(f"Got callback for function {observer.func_def['function_name']}")
+                # self.get_logger().info(f"Got callback for function {observer.func_def['function_name']}")
                 observer.receive(rx)
                 return
 
