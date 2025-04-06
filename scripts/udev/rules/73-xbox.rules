@@ -1,0 +1,37 @@
+# Red Tape Drive Controller
+KERNEL=="js*", SUBSYSTEM=="input", \
+ATTRS{idVendor}=="045e", ATTRS{product}=="Controller", \
+ATTRS{serial}=="1B7FC22", MODE:="0777", \
+SYMLINK+="rover/js/xbox_red"
+
+KERNEL=="js*", SUBSYSTEM=="input", \
+ATTRS{idVendor}=="045e", ATTRS{product}=="Controller", \
+ATTRS{serial}=="0000001", MODE:="0777", \
+SYMLINK+="rover/js/xbox_360_science"
+
+# Xbox One
+KERNEL=="js*", SUBSYSTEM=="input", \
+ATTRS{idVendor}=="24c6", ATTRS{product}=="Xbox ONE Pro Ex controller", \
+ATTRS{serial}=="0000BEF6F338FE34", MODE:="0777", \
+SYMLINK+="rover/js/xbox_one_drive"
+
+# Xbox One
+KERNEL=="js*", SUBSYSTEM=="input", \
+ATTRS{idVendor}=="24c6", ATTRS{product}=="Xbox ONE Pro Ex controller", \
+ATTRS{serial}=="00008A360544DEF4", MODE:="0777", \
+SYMLINK+="rover/js/xbox_one_drive"
+
+# VOYEE Black Controller
+KERNEL=="js*", SUBSYSTEM=="input", \
+ATTRS{serial}=="7EA955AA", MODE:="0777", \
+SYMLINK+="rover/js/xbox_one_arm"
+
+# Alternative VOYEE Black Controller
+KERNEL=="js*", SUBSYSTEM=="input", \
+ATTRS{serial}=="530DD4BD", MODE:="0777", \
+SYMLINK+="rover/js/xbox_one_drive"
+
+# Temporary RAD-lab-owned Black Generic XBOX controller
+KERNEL=="js*", SUBSYSTEM=="input", \
+ATTRS{serial}=="1DD5F3D", MODE:="0777", \
+SYMLINK+="rover/js/xbox_one_arm"

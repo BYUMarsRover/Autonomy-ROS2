@@ -10,7 +10,7 @@ def generate_launch_description():
         #TODO fix this
         DeclareLaunchArgument(
             'xbox_dev',
-            default_value='/dev/rover/js/xbox_one',
+            default_value='/dev/rover/js/xbox_one_drive',
             description='Xbox controller device path'
         ),
 

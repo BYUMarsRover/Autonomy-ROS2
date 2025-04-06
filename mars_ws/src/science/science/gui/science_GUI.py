@@ -104,26 +104,31 @@ class science_GUI(Node):
         self.science_data_path = os.path.expanduser("~/science_data/site-1")
 
         # Read in coefficients. 
-        moisture_path = os.path.join(self.science_data_path, "moisture_coefficients.txt")
-        temp_path = os.path.join(self.science_data_path, "temp_coefficients.txt")
-        if os.path.exists(moisture_path):
-            with open(moisture_path, 'r') as f:
-                moisture_values = f.readlines()
-                print(moisture_values)
-                moisture_values = moisture_values[0].split()
-                for i in range(len(moisture_values)):
-                    self.moisture_coefficients[i] = moisture_values[i]
-        else:
-            self.moisture_coefficients = []
-            print("Moisture coefficients file does not exist. Please use the show graph button to store coefficients.")
-        if os.path.exists(temp_path):
-            with open(temp_path, 'r') as f:
-                temp_values = f[1].split()
-                for i in range(len(temp_values)):
-                    self.temperature_coefficients[i] = temp_values[i]
-        else:
-            self.temperature_coefficients = []
-            print("Temperature coefficients file does not exist. Please use the show graph button to store coefficients.")
+        try:
+            moisture_path = os.path.join(self.science_data_path, "moisture_coefficients.txt")
+            temp_path = os.path.join(self.science_data_path, "temp_coefficients.txt")
+            if os.path.exists(moisture_path):
+                with open(moisture_path, 'r') as f:
+                    moisture_values = f.readlines()
+                    print(moisture_values)
+                    moisture_values = moisture_values[0].split()
+                    for i in range(len(moisture_values)):
+                        self.moisture_coefficients[i] = moisture_values[i]
+            else:
+                self.moisture_coefficients = []
+                print("Moisture coefficients file does not exist. Please use the show graph button to store coefficients.")
+            if os.path.exists(temp_path):
+                with open(temp_path, 'r') as f:
+                    temp_values = f[1].split()
+                    for i in range(len(temp_values)):
+                        self.temperature_coefficients[i] = temp_values[i]
+            else:
+                self.temperature_coefficients = []
+                print("Temperature coefficients file does not exist. Please use the show graph button to store coefficients.")
+        except Exception as e:
+            self.get_logger().error(f"Error reading coefficients: {str(e)}")
+            
+    
 
     def setup_menu_bar(self):
         # Launch the GUI when the menu item is clicked
