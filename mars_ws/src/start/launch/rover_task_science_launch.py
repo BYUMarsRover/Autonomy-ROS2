@@ -31,6 +31,13 @@ def generate_launch_description():
             ])
         ),
 
+        # Start the Mega Middleman
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([
+                FindPackageShare("mobility"), "/launch/rover_xbox_launch.py"
+            ])
+        )
+
         # Peripherals
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join( 

@@ -6,20 +6,13 @@ from launch.substitutions import LaunchConfiguration
 namespace = 'mobility'
 def generate_launch_description():
     return LaunchDescription([
-        # Declare the parameter for xbox_node_drive
-        #TODO fix this
-        DeclareLaunchArgument(
-            'xbox_dev',
-            default_value='/dev/rover/js/xbox_one_drive',
-            description='Xbox controller device path'
-        ),
 
         # Launch the joy_node (renamed to xbox_node_drive)
         Node(
-            package='joy',
-            executable='joy_node',
+            package='joy_linux',
+            executable='joy_linux_node',
             name='xbox_node_drive',
-            parameters=[{'dev': LaunchConfiguration('xbox_dev')}],
+            parameters=[{'dev': '/dev/rover/js/xbox_one_drive'}],
             remappings=[('/joy', '/joy_drive_input')]
         ),
 
