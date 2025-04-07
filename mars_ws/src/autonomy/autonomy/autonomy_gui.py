@@ -117,8 +117,8 @@ class AutonomyGUI(Node, QWidget):
         self.selected_waypoint_for_path_planning = None
         self.prev_lat = 0
         self.prev_lon = 0
-        self.lat = 0
-        self.lon = 0
+        # self.lat = 0
+        # self.lon = 0
 
 
         # This should return a list like this: [lat, lon] and can be used for the plan path to selected waypoint

@@ -422,6 +422,14 @@ class AutonomyStateMachine(Node):
         self.abort_lon = request.lon
         self.abort_point = GPSCoordinate(self.abort_lat, self.abort_lon, 0)
 
+        # # Disable object detect/aruco detect 
+        # if self.aruco_detect_enabled:
+        #     self.toggle_aruco_detection(False)
+        #     self.get_logger().info(f"Disabling Aruco - State is: {self.state.value}")
+        # if self.obj_detect_enabled:
+        #     self.toggle_object_detection(False)
+        #     self.get_logger().info(f"Disabling Object Detect - State is: {self.state.value}")
+
         if self.abort_status:
             self.get_logger().info("Aborting...")
             self.state = State.START_ABORT_STATE
@@ -482,7 +490,7 @@ class AutonomyStateMachine(Node):
                 self.get_logger().info(f"Disabling Aruco - State is: {self.state.value}, tag_id is: {self.tag_id.value}")
             if self.obj_detect_enabled:
                 self.toggle_object_detection(False)
-                self.get_logger().info(f"Disabling Aruco - State is: {self.state.value}, tag_id is: {self.tag_id.value}")
+                self.get_logger().info(f"Disabling Object Detection - State is: {self.state.value}, tag_id is: {self.tag_id.value}")
 
 
     def reset_state_variables(self):
