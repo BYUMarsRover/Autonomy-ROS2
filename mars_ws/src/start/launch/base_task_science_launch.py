@@ -11,19 +11,20 @@ from launch.substitutions import LaunchConfiguration, EnvironmentVariable
 import os
 
 def generate_launch_description():
-    # mapviz_location=os.environ.get('MAPVIZ_LOCATION', '')
-    # mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value=mapviz_location)
+
+    mapviz_location = os.environ.get('MAPVIZ_LOCATION', '')
+    mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value=mapviz_location)
 
     return LaunchDescription([
         # Todo work on this with someone who understands it
-        # mapviz_location_arg,
+        mapviz_location_arg,
 
-        # # Start all common launch files on the rover
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource([
-        #         FindPackageShare("start"), "/launch/base_common_launch.py"
-        #     ])
-        # ),
+        # Start all common launch files on the rover
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([
+                FindPackageShare("start"), "/launch/base_common_launch.py"
+            ])
+        ),
 
         # Launch the science package
         IncludeLaunchDescription(
@@ -32,15 +33,11 @@ def generate_launch_description():
             ])
         ),
 
+        # Launch the XBOX controller for science module control
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([
                 FindPackageShare("joysticks"), "/launch/xbox_science_launch.py"
             ])
-        ),
-
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([
-                FindPackageShare("mobility"), "/launch/xbox_drive_launch.py"
-            ])
         )
+
     ])

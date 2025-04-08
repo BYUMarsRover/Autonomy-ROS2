@@ -16,7 +16,7 @@ def generate_launch_description():
     mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value=mapviz_location)
 
     # Start all common launch files on the rover
-    include_rover_common = IncludeLaunchDescription(
+    rover_common_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory('start'),
@@ -27,7 +27,7 @@ def generate_launch_description():
     )
 
     # Start launch files specific to the Autonomy Task on the rover
-    include_autonomy = IncludeLaunchDescription(
+    autonomy_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
                 get_package_share_directory('autonomy'),
                 'launch',
@@ -41,7 +41,7 @@ def generate_launch_description():
 
     # TODO: Add when converted to ROS2
     # Start Mobility low level nodes
-    include_autopilot_drive = IncludeLaunchDescription(
+    autopilot_drive_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory('mobility'),
@@ -52,7 +52,7 @@ def generate_launch_description():
     )
 
     # Start localization in odometry
-    include_estimation = IncludeLaunchDescription(
+    estimation_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory('odometry'),
@@ -64,9 +64,8 @@ def generate_launch_description():
 
     return LaunchDescription([
         mapviz_location_arg,
-        include_rover_common,
-        include_autonomy,
-        include_autopilot_drive,
-        include_estimation
-        
+        rover_common_launch,
+        autonomy_launch,
+        autopilot_drive_launch,
+        estimation_launch
     ])

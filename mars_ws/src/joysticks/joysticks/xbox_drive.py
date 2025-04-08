@@ -8,8 +8,8 @@ from rover_msgs.msg import IWCMotors, Elevator
 from mobility.controllers.teleop_controllers import TankController, ArcadeController
 
 # Ammon Test Changes
-# from joysticks.joysticks.input_tools import \
-from joysticks.joysticks.publish_on_update import ElevatorPublisher
+import joysticks.joysticks.publish_on_update as pubup
+import joysticks.joysticks.input_tools as iptl
 
 # TODO: put these inside a yaml
 # Button and axis mappings
@@ -45,17 +45,15 @@ class XBOX(Node):
         )
 
         # Publishers
-        self.joy_drive_enabled_pub = self.create_publisher(
-            Bool,
-            '/mobility/joy_drive_enabled',
-            10
-        )
+        self.publisher_group = pubup.UpdatePublisherGroup()
+        self.joy_drive_enabled_pub = self.publisher_group.add_publisher(pubup.UpdatePublisher(self.create_publisher(Bool, "/mobility/joy_drive_enabled", 10)))
+        self.elevator_pub = self.publisher_group.add_publisher(pubup.ElevatorPublisher(self.create_publisher(Elevator, "/elevator", 10)))
+
         self.teleop_drive_cmds_pub = self.create_publisher(
             IWCMotors,
             '/mobility/teleop_drive_cmds',
             10
         )
-        self.elevator_pub =  ElevatorPublisher(self.create_publisher(Elevator, "/elevator", 10))
 
         self.drive_enabled = False
         self.drive_speed_multiplier_idx = 0
@@ -91,10 +89,13 @@ class XBOX(Node):
 
             # Call to update elevator commands
             self.elevator_commands()
-            self.elevator_pub.publish()
+
+        # Post all changes to the publishers
+        self.publisher_group.publish()
 
 
     def elevator_commands(self, msg: Joy):
+        '''Updates the elevator publisher with new commands'''
 
         elevator_input = msg.axes[DPAD_VERTICAL]
         elevator_speed_input = msg.axes[DPAD_HORIZONTAL]
@@ -134,9 +135,6 @@ class XBOX(Node):
             self.last_left_dpad = False
         if not right_dpad:
             self.last_right_dpad = False
-        
-        return elevator_msg
-
 
 
     def tank_drive(self, msg: Joy):
@@ -178,17 +176,12 @@ class XBOX(Node):
 
         if back_button:
             self.drive_enabled = False
-            self._publish_drive_enable()
+            self.joy_drive_enabled_pub(self.drive_enabled)
             self.get_logger().info('Drive disabled')
         elif start_button:
             self.drive_enabled = True
-            self._publish_drive_enable()
+            self.joy_drive_enabled_pub(self.drive_enabled)
             self.get_logger().info('Drive enabled')
-
-    def _publish_drive_enable(self):
-        joy_drive_enable = Bool()
-        joy_drive_enable.data = self.drive_enabled
-        self.joy_drive_enabled_pub.publish(joy_drive_enable)
 
     def _check_desired_drive_speed(self, msg: Joy):
         right_bumper = msg.buttons[RB]
