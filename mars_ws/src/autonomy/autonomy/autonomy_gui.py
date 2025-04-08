@@ -28,7 +28,7 @@ from std_msgs.msg import Header, Int8
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloat32, OrderAutonomyWaypoint, PlanPath
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors, HazardArray
 from ament_index_python.packages import get_package_share_directory
 
 import threading
@@ -141,7 +141,8 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(MobilityDriveCommand, '/mobility/wheel_vel_cmds', self.wheel_vel_cmds_callback, 10) #What mobility/wheel_manager is publishing
         self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, 1) 
         self.create_subscription(PlanPath.Response, '/path_plan_response', self.plan_path_response_callback, 10) # Allows the path planner node to notify when the path is ready
-
+        self.create_subscription(HazardArray, '/hazards', self.hazard_callback, 10)
+        
         # Services
 
         # Clients
