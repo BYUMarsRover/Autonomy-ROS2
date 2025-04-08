@@ -14,21 +14,35 @@ def generate_launch_description():
     hazard_detection_params_dir = os.path.join(get_package_share_directory('hazard_detection', 'params'))
 
     try:
-        # Resolve the original device path from the symlink
-        original_path = os.readlink('/dev/rover/cameras/autonomyWebCam')
-        device = {'video_device': original_path}
+        # Path to the symlink
+        udev_path = '/dev/rover/cameras/autonomyWebCam'
+
+        # Read the symlink to get the relative path it points to (e.g., ../../video8)
+        relative_target = os.readlink(udev_path)
+
+        # Extract the final component of the relative path (e.g., 'video8')
+        final_device_name = os.path.basename(relative_target)
+
+        # Construct the absolute path in /dev folder (e.g., /dev/video8)
+        absolute_target = os.path.join('/dev', final_device_name)
+
+        device = {'video_device': absolute_target}
+
+        # Print the final absolute device path
+        print(f"Autonomy Web Cam using: {absolute_target}")
     
     except OSError as e:
         print(f"Error resolving symlink: {e}")
-        return None
+        original_path = '/dev/video2'  # Fallback to a default value if needed
+        device = {'video_device': original_path}
     
 
     return LaunchDescription([
         # Declare launch arguments
-        DeclareLaunchArgument('location', default_value='hanksville'),
+        DeclareLaunchArgument('MAPVIZ_LOCATION', default_value='hanksville'),
         
         # USB cam node for the autonomy webcam 
-        # Include autonomy camera launch file (autonomy) Don't run this on a PC docker computer
+        # NOTE: this will die on a PC docker container because it doesn't have access to your usb devices
         Node(
             package='usb_cam',
             executable='usb_cam_node_exe',
@@ -70,13 +84,17 @@ def generate_launch_description():
         #     parameters=[autonomy_params_file]
         # ),
 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join( 
-                get_package_share_directory('path_planning'), 'launch', 'path_planner_launch.py'))
+        Node(
+            package='path_planning',
+            executable='path_planner',
+            name='path_planner',
+            output='screen',
+            parameters=[
+                {'MAPVIZ_LOCATION': LaunchConfiguration('MAPVIZ_LOCATION')}
+            ]
         ),
 
         # Launch state machine with autonomy namespace
-        # What is group action and what does it do?
         GroupAction([
             Node(
                 package='autonomy',

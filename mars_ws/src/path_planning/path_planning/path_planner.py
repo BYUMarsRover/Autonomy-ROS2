@@ -68,12 +68,16 @@ class PathPlanner(Node):
         ################ Mapviz Communication Setup ################# #TODO: Look into this please!
 
         # Retrieve Mapviz Location
-        self.declare_parameter('location', 'gravel_pit')
-        location = self.get_parameter('location').value
-
-        # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
-        mapviz_params_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_params.yaml')
-        lat, lon = get_coordinates(mapviz_params_path, location)
+        self.declare_parameter('MAPVIZ_LOCATION', 'hanksville') # Declare Mapviz Location Parameter (passed in from launch file)
+        mapviz_location = self.get_parameter('MAPVIZ_LOCATION').value # Extract location
+        mapviz_origins_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_origins.yaml')
+        # Open mapviz origins file
+        with open(mapviz_origins_path, 'r') as file:
+            mapviz_origins = yaml.safe_load(file)
+        for location in mapviz_origins: # iterate over dictionaries to find the lat/lon of the location
+            if location['name'] == mapviz_location:
+                lat, lon = location['latitude'], location['longitude']
+                break
 
         # Convert lat/lon to UTM coordinates
         utm_coords = utm.from_latlon(lat, lon)
@@ -313,24 +317,6 @@ class PathPlanner(Node):
             response.success = False  # Indicate failure
             response.message = "No waypoints available to publish"
         return response
-
-
-    
-def get_coordinates(file_path, location):
-    # Read the YAML file
-    with open(file_path, 'r') as file:
-        data = yaml.safe_load(file)
-    
-    # Navigate to the locations data
-    locations = data['/**']['ros__parameters']['locations']
-    
-    # Check if the location exists
-    if location in locations:
-        lat = locations[location]['latitude']
-        lon = locations[location]['longitude']
-        return lat, lon
-    else:
-        return None
     
 def main(args=None):
 

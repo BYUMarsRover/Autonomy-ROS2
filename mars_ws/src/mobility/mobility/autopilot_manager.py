@@ -87,15 +87,15 @@ class AutopilotManager(Node):
         self.no_obstacle_alpha = 0.9
         self.hazard_avoidance_enabled = False
 
-        # ROS subscribers
+        # subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
         self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, 10)
         self.create_subscription(HazardArray, '/hazards', self.obstacle_callback, 10)
 
-        # ROS publishers
+        # publishers
         self.rover_vel_cmds_pub = self.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', 10)
 
-        # ROS services
+        # services
         self.create_service(SetBool, '/mobility/autopilot_manager/enabled', self.enable)
         self.create_service(SetFloat32, '/mobility/speed_factor', self.set_speed)
         self.create_service(SetBool, '/mobility/autopilot_manager/enable_hazard_avoidance', self.enable_hazard_avoidance)
@@ -105,14 +105,30 @@ class AutopilotManager(Node):
                                             Ts=Ts_linear, limit=limit_linear)
         self.angular_controller = PIDControl(self.speed * self.kp_angular, self.speed * self.ki_angular, self.speed * self.kd_angular,
                                              Ts=Ts_angular, limit=limit_angular)
+        
+        self.previous_dist_to_target = None
+        self.distance_to_target_timepoint = time.time()
+        self.max_time_between_gps_messages = 0.5
 
         self.get_logger().info("Autopilot Manager initialized!")
 
 
     def autopilot_cmds_callback(self, msg: MobilityAutopilotCommand):
-        
+
         self.distance = msg.distance_to_target
         lin_vel = self.linear_controller.update_with_error(self.distance)
+
+        if self.distance != self.previous_dist_to_target:
+            # Update the time since we got a unique distance to target
+            self.distance_to_target_timepoint = time.time()
+
+        if time.time() - self.distance_to_target_timepoint > self.max_time_between_gps_messages:
+            self.rover_vel_cmd.u_cmd = 0.0
+            self.rover_vel_cmd.omega_cmd = 0.0
+            self.rover_vel_cmd.course_heading_error = 0.0
+            self.publish_rover_vel_cmd()
+            self.get_logger().error('Oh no, we lost GPS, sending 0.0 linear and angular velocity commands!', throttle_duration_sec=1.0)
+            return
 
         # self.des_heading = wrap(msg.course_angle + self.heading_plus, 0)
         if self.obstacle_found:
@@ -142,6 +158,9 @@ class AutopilotManager(Node):
         self.rover_vel_cmd.course_heading_error = self.course_error
 
         self.publish_rover_vel_cmd()
+
+        # Update previous distance to target
+        self.previous_dist_to_target = self.distance
 
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
         self.curr_heading = np.deg2rad(msg.map_yaw)

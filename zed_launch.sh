@@ -38,13 +38,18 @@ then
     printInfo "Setting up the ZED tmux session..."
     # Send tmux commands to the rover's Docker container over SSH
     ssh marsrover@$ROVER_IP_ADDRESS "tmux new-session -d -s foxy_runtime; \
-        tmux set-option -g default-terminal "screen-256color"; \
+        tmux set-option -g default-terminal 'screen-256color'; \
         tmux set -g mouse on; \
         tmux send-keys -t foxy_runtime.0 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
         tmux send-keys -t foxy_runtime.0 'clear' Enter; \
         tmux send-keys -t foxy_runtime.0 'source /opt/ros/foxy/setup.bash' Enter; \
         tmux send-keys -t foxy_runtime.0 'cd ~/foxy_ws && source install/setup.bash' Enter; \
-        tmux send-keys -t foxy_runtime.0 'ros2 launch object_detection object_detection_launch.py'" # NO ENTER
+        tmux send-keys -t foxy_runtime.0 'ros2 launch object_detection object_detection_launch.py'; \
+        tmux new-window -t foxy_runtime:1 -n 'system monitor'; \
+        tmux split-window -v -t foxy_runtime:1; \
+        tmux send-keys -t foxy_runtime:1.0 'htop' Enter; \
+        tmux send-keys -t foxy_runtime:1.1 'cd Autonomy-ROS2' Enter; \
+        tmux send-keys -t foxy_runtime:1.1 'git pull base dev';"
 else
     printWarning "ZED tmux session already running, simply entering it..."
 fi

@@ -8,8 +8,8 @@ class LatLonConvertor:
     def __init__(self):
         # Use os.getenv to fetch MAPVIZ_LOCATION or default to 'hanksville'
         self.location = os.getenv('MAPVIZ_LOCATION', 'hanksville')
-        yaml_path = os.path.join(os.getenv('HOME', '/home/marsrover'),'mars_ws/src/mapviz_tf/params/mapviz_params.yaml')
-        with open(yaml_path, 'r') as file:
+        mapviz_origins_path = os.path.join(os.getenv('HOME', '/home/marsrover'),'mars_ws/src/mapviz_tf/params/mapviz_origins.yaml')
+        with open(mapviz_origins_path, 'r') as file:
             config = yaml.safe_load(file)
             self.latitude = config.get('locations', {}).get(self.location, {}).get('latitude', 0.0)
             self.longitude = config.get('locations', {}).get(self.location, {}).get('longitude', 0.0)

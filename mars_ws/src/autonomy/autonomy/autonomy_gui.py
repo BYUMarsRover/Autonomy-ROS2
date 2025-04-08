@@ -20,7 +20,7 @@ import os
 import numpy as np
 
 # Used by Mapviz and others
-# import yaml
+import yaml
 import utm
 
 from std_srvs.srv import SetBool
@@ -35,6 +35,9 @@ import threading
 
 
 class AutonomyGUI(Node, QWidget):
+    # This signal is used to isolate the updating of graphical elements from the ROS callbacks
+    ros_signal = pyqtSignal(str, str)
+
     def __init__(self):
         # Initialize ROS2 node
         Node.__init__(self, 'autonomy_gui')
@@ -44,7 +47,9 @@ class AutonomyGUI(Node, QWidget):
         # Load the .ui file
         uic.loadUi(os.path.expanduser('~') + '/mars_ws/src/autonomy/autonomy_gui.ui', self)
         self.show()  # Show the GUI
-
+        
+        ############################## GUI #############################
+        self.ros_signal.connect(self.gui_setText)
         #################### GUI Button Connections ####################
         # Connect Leg Type Radio Buttons to update_leg_subselection function
         self.GNSSRadioButton.toggled.connect(self.update_leg_subselection)
@@ -62,16 +67,10 @@ class AutonomyGUI(Node, QWidget):
         self.SendWaypointButton.clicked.connect(self.send_waypoint)
         self.ClearWaypointButton.clicked.connect(self.clear_waypoint)
 
-        # Hazard Detection Buttons
-        self.EnableHazardDetectionButton.clicked.connect(self.enable_hazard_detection)
-        self.DisableHazardDetectionButton.clicked.connect(self.disable_hazard_detection)
-        self.EnableHazardAvoidanceButton.clicked.connect(self.enable_hazard_avoidance)
-        self.DisableHazardAvoidanceButton.clicked.connect(self.disable_hazard_avoidance)
-
-        # mapviz #NOTE: depricated until mapviz capability added back
-        # self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
+        # Mapviz Buttons
+        self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
         # self.PlanOrderMapvizButton.clicked.connect(self.plan_order_mapviz_service_call)
-        # self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
+        self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
 
         # Mobility Control Buttons
         self.SetTurnConstantButton.clicked.connect(self.set_turn_constant)
@@ -123,12 +122,8 @@ class AutonomyGUI(Node, QWidget):
 
         ################# ROS Communication #################
 
-        # Guard Conditions
-        self.create_guard_condition(self.check_node_statuses)
-
         # Publishers
-        #NOTE: depricated until mapviz capability added back
-        # self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
+        self.path_publisher = self.create_publisher(Path, '/mapviz/path', 10)
 
         # Subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10) #Rover GPS and Heading
@@ -178,33 +173,29 @@ class AutonomyGUI(Node, QWidget):
         self.rover_state_singleton_timepoint = None
 
         ################# Mapviz Communication Setup #################
-        #NOTE: depricated until mapviz capability added back
 
         # Retrieve Mapviz Location
-        # self.declare_parameter('location', 'hanksville')
-        # location = self.get_parameter('location').value
+        self.declare_parameter('MAPVIZ_LOCATION', 'hanksville')
+        mapviz_location = self.get_parameter('MAPVIZ_LOCATION').value
 
-        # # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
-        # mapviz_params_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_params.yaml')
-        # lat, lon = get_coordinates(mapviz_params_path, location)
-        # # print(f'Lat: {lat}, Lon: {lon}')
+        # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
+        mapviz_origins_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_origins.yaml')
+        # Open mapviz origins file
+        with open(mapviz_origins_path, 'r') as file:
+            mapviz_origins = yaml.safe_load(file)
+        for location in mapviz_origins: # iterate over dictionaries to find the lat/lon of the location
+            if location['name'] == mapviz_location:
+                self.origin_latlon = np.array([location['latitude'], location['longitude']])
+                break
+        # Get mapviz origin in UTM coordinates
+        self.origin = np.array((utm.from_latlon(*self.origin_latlon)[0:2])[::-1])
 
-        # # Convert lat/lon to UTM coordinates
-        # utm_coords = utm.from_latlon(lat, lon)
-        # self.utm_easting_zero = utm_coords[0]
-        # self.utm_northing_zero = utm_coords[1]
-        # self.utm_zone_number = utm_coords[2]
-        # self.utm_zone_letter = utm_coords[3]
+        self.utm_easting_zero = self.origin[1]
+        self.utm_northing_zero = self.origin[0]
 
-        # # Initialize the current previewed waypoints
-        # # Stored in lat/lon format
-        # self.current_previewed_waypoints = Path() #NOTE: used by mapviz
-
-    def check_node_statuses(self):
-        active_nodes = self.get_node_names()
-
-        if '/path_planner' in active_nodes:
-            self.gui_setText('PathPlannerStatus', 'Active')
+        # Initialize the current previewed waypoints
+        # Stored in lat/lon format
+        self.current_previewed_waypoints = Path() #NOTE: used by mapviz
 
     # Clears displays in the gui if information stops being received.
     def check_timepoints(self):
@@ -213,9 +204,9 @@ class AutonomyGUI(Node, QWidget):
                 self.clear_rover_state_singleton_info()
     
     def clear_rover_state_singleton_info(self):
-        self.gui_setText('RoverStateMapYaw', 'Map Yaw: ...')
-        self.gui_setText('RoverStateLat','Latitude: ...')
-        self.gui_setText('RoverStateLon', 'Longitude: ...')
+        self.ros_signal.emit('RoverStateMapYaw', 'Map Yaw: ...')
+        self.ros_signal.emit('RoverStateLat','Latitude: ...')
+        self.ros_signal.emit('RoverStateLon', 'Longitude: ...')
         return
 
     ################# Callbacks for Subscribers #################
@@ -236,22 +227,22 @@ class AutonomyGUI(Node, QWidget):
         else:
             self.nav_state = 'UNKNOWN'
         # Update GUI fields
-        self.gui_setText('PreviousNavStateDisplay', self.CurrentNavStateDisplay.text())
-        self.gui_setText('CurrentNavStateDisplay', self.nav_state)
+        self.ros_signal.emit('PreviousNavStateDisplay', self.CurrentNavStateDisplay.text())
+        self.ros_signal.emit('CurrentNavStateDisplay', self.nav_state)
         return
 
     def rover_state_callback(self, msg): #State machine status (state, auto_enable)
         #Update previous state and state list
         if self.state_machine_state != None and msg.state != self.state_machine_state:
             self.state_machine_list_string = f'{msg.state}\n' + self.state_machine_list_string
-            self.gui_setText('PreviousStatesList', self.state_machine_list_string) 
+            self.ros_signal.emit('PreviousStatesList', self.state_machine_list_string) 
 
             self.prev_state_machine_state = self.state_machine_state
 
         #Show the first state on the previous state column
         if self.state_machine_state == None:
             self.state_machine_list_string = f'{msg.state}\n'
-            self.gui_setText('PreviousStatesList', self.state_machine_list_string)
+            self.ros_signal.emit('PreviousStatesList', self.state_machine_list_string)
 
         #Update current state and autonomous enable
         self.state_machine_state = msg.state
@@ -290,7 +281,7 @@ class AutonomyGUI(Node, QWidget):
             else:
                 aruco_text = aruco_text + f"Incorrect tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id}"
             
-            self.gui_setText('ArucoStatus', aruco_text)
+            self.ros_signal.emit('ArucoStatus', aruco_text)
         return
     
     def obj_detect_callback(self, msg):
@@ -320,7 +311,7 @@ class AutonomyGUI(Node, QWidget):
 
             objects_string = objects_string + f'{obj_name}: conf: {obj.confidence}, dist: {obj_distance} m @ {obj_angle} deg \n'
 
-        self.gui_setText('ObjStatus', objects_string)
+        self.ros_signal.emit('ObjStatus', objects_string)
         return
     
     ################# Callbacks for Mobility #################
@@ -335,13 +326,13 @@ class AutonomyGUI(Node, QWidget):
             autopilot_cmds_string = f'E_lin: {msg.distance_to_target:.1f}m, cw N: {np.rad2deg(msg.course_angle):.1f}°'
         else:
             autopilot_cmds_string = f'E_lin: {msg.distance_to_target:.1f}m, cw N: {np.rad2deg(msg.course_angle):.1f}°, E_ang: {np.rad2deg(self.course_heading_error):.1f}°'
-        self.gui_setText('AutopilotCmds', autopilot_cmds_string)
+        self.ros_signal.emit('AutopilotCmds', autopilot_cmds_string)
         return
     
     def vel_cmds_callback(self, msg):
         self.course_heading_error = msg.course_heading_error
         vel_cmds_string = f'Lin Vel: {round(msg.u_cmd, 2)}, Ang Vel: {round(msg.omega_cmd, 2)}'
-        self.gui_setText('VelocityCmds', vel_cmds_string)
+        self.ros_signal.emit('VelocityCmds', vel_cmds_string)
 
         # If we have a course heading error, update the autopilot string
         if self.autopilot_cmds_msg is not None:
@@ -351,7 +342,7 @@ class AutonomyGUI(Node, QWidget):
 
     def wheel_vel_cmds_callback(self, msg):
         wheel_vel_cmds_string = f'LW Speed: {round(msg.lw, 2)}, RW Speed: {round(msg.rw, 2)}'
-        self.gui_setText('WheelVelocityCmds', wheel_vel_cmds_string)
+        self.ros_signal.emit('WheelVelocityCmds', wheel_vel_cmds_string)
         return
 
     def auto_drive_cmds_callback(self, msg):
@@ -383,7 +374,7 @@ class AutonomyGUI(Node, QWidget):
         else:
             IWC_cmd_string = IWC_cmd_string + f', RRW: -{round(msg.right_rear_speed, 2)}'
 
-        self.gui_setText('IWCCmds', IWC_cmd_string)
+        self.ros_signal.emit('IWCCmds', IWC_cmd_string)
         
         return
 
@@ -395,85 +386,57 @@ class AutonomyGUI(Node, QWidget):
             self.waypoints[self.selected_waypoint_to_send -1][4] = 'ACTIVE'
         self.update_waypoint_list()
         future = self.enable_autonomy_client.call_async(req)
-        self.gui_setText('logger_label', 'Enabling Autonomy...')
+        self.ros_signal.emit('logger_label', 'Enabling Autonomy...')
 
     def disable_autonomy(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_autonomy_client.call_async(req)
-        self.gui_setText('logger_label', 'Disabling Autonomy...')
-
-    def enable_hazard_detection(self):
-        req = SetBool.Request()
-        req.data = True
-        future = self.enable_hazard_detection_client.call_async(req)
-        self.gui_setText('logger_label', 'Enabling Hazard Detection...')
-        self.HazardDetection.setText(f'Hazard Detection: Enabled')
-
-    def disable_hazard_detection(self):
-        req = SetBool.Request()
-        req.data = False
-        future = self.enable_hazard_detection_client.call_async(req)
-        self.gui_setText('logger_label', 'Disabling Hazard Detection...')
-        self.HazardDetection.setText(f'Hazard Detection: Disabled')
-
-    def enable_hazard_avoidance(self):
-        req = SetBool.Request()
-        req.data = True
-        future = self.enable_hazard_avoidance_client.call_async(req)
-        self.gui_setText('logger_label', 'Enabling Hazard Avoidance...')
-        self.HazardAvoidance.setText(f'Hazard Avoidance: Enabled')
-
-    def disable_hazard_avoidance(self):
-        req = SetBool.Request()
-        req.data = False
-        future = self.enable_hazard_avoidance_client.call_async(req)
-        self.gui_setText('logger_label', 'Disabling Hazard Avoidance...')
-        self.HazardAvoidance.setText(f'Hazard Avoidance: Disabled')
+        self.ros_signal.emit('logger_label', 'Disabling Autonomy...')
 
     #NOTE: depricated until mapviz capability added back
     # This sends the waypoint to mapviz for preview
-    # def preview_waypoint(self):
-    #     # Find the x and y to be sent to mapviz
-    #     lat = float(self.latitude_input.text())
-    #     lon = float(self.longitude_input.text())
+    def preview_waypoint(self):
+        # Find the x and y to be sent to mapviz
+        lat = float(self.latitude_input.text())
+        lon = float(self.longitude_input.text())
 
-    #     current_time = self.get_clock().now().to_msg()
-    #     self.current_previewed_waypoints.header = Header()
-    #     self.current_previewed_waypoints.header.stamp = current_time
-    #     self.current_previewed_waypoints.header.frame_id = "map"
+        current_time = self.get_clock().now().to_msg()
+        self.current_previewed_waypoints.header = Header()
+        self.current_previewed_waypoints.header.stamp = current_time
+        self.current_previewed_waypoints.header.frame_id = "map"
 
-    #     pose_stamped = PoseStamped()
-    #     pose_stamped.header.stamp = current_time
-    #     pose_stamped.header.frame_id = "map"
+        pose_stamped = PoseStamped()
+        pose_stamped.header.stamp = current_time
+        pose_stamped.header.frame_id = "map"
 
-    #     pose_stamped.pose.position.x = lat
-    #     pose_stamped.pose.position.y = lon
-    #     pose_stamped.pose.position.z = 0.0
+        pose_stamped.pose.position.x = lat
+        pose_stamped.pose.position.y = lon
+        pose_stamped.pose.position.z = 0.0
 
-    #     pose_stamped.pose.orientation.x = 0.0
-    #     pose_stamped.pose.orientation.y = 0.0
-    #     pose_stamped.pose.orientation.z = 0.0
-    #     pose_stamped.pose.orientation.w = 1.0
+        pose_stamped.pose.orientation.x = 0.0
+        pose_stamped.pose.orientation.y = 0.0
+        pose_stamped.pose.orientation.z = 0.0
+        pose_stamped.pose.orientation.w = 1.0
         
-    #     self.current_previewed_waypoints.poses.append(pose_stamped)
+        self.current_previewed_waypoints.poses.append(pose_stamped)
 
-    #     self.path_publisher.publish(
-    #         path_to_utm(self.current_previewed_waypoints, 
-    #                     self.utm_easting_zero, 
-    #                     self.utm_northing_zero)
-    #         )
+        self.path_publisher.publish(
+            path_to_utm(self.current_previewed_waypoints, 
+                        self.utm_easting_zero, 
+                        self.utm_northing_zero)
+            )
         
-    #     self.gui_setText('logger_label', 'Waypoint Sent for Preview')
+        self.ros_signal.emit('logger_label', 'Waypoint Sent for Preview')
 
     # This adds the waypoint to the waypoint list that is held in the autonomy gui
     def add_waypoint(self):
         try:
-            self.gui_setText('logger_label', 'Adding Waypoint...')
+            self.ros_signal.emit('logger_label', 'Adding Waypoint...')
             lat = float(self.latitude_input.text())
             lon = float(self.longitude_input.text())
         except ValueError:
-            self.gui_setText('logger_label', 'Invalid latitude or longitude')
+            self.ros_signal.emit('logger_label', 'Invalid latitude or longitude')
             return
         waypoint = [int(len(self.waypoints) + 1), self.tag_id, lat, lon, 'IDLE']
 
@@ -482,10 +445,10 @@ class AutonomyGUI(Node, QWidget):
 
     def remove_selected_waypoint(self):
         if self.selected_waypoint is None:
-            self.gui_setText('logger_label', 'No waypoint selected')
+            self.ros_signal.emit('logger_label', 'No waypoint selected')
             return
         if self.selected_waypoint > len(self.waypoints):
-            self.gui_setText('logger_label', 'Empty Waypoint Selected')
+            self.ros_signal.emit('logger_label', 'Empty Waypoint Selected')
             return
         
         if self.selected_waypoint_to_send == self.selected_waypoint:
@@ -523,13 +486,13 @@ class AutonomyGUI(Node, QWidget):
 
         # Error Handling
         if not self.plan_path_client.wait_for_service(timeout_sec=2.0):
-            self.gui_setText('logger_label', "Plan Path service is unavailable.")
+            self.ros_signal.emit('logger_label', "Plan Path service is unavailable.")
             return
         if self.selected_waypoint_for_path_planning is None:
-            self.gui_setText('logger_label', 'No waypoint selected')
+            self.ros_signal.emit('logger_label', 'No waypoint selected')
             return
         if self.waypoints[self.selected_waypoint_for_path_planning - 1][4] == 'PATH READY':
-            self.gui_setText('logger_label', 'Path already planned')
+            self.ros_signal.emit('logger_label', 'Path already planned')
             return
 
         tag_id, lat, lon = self.waypoints[self.selected_waypoint_for_path_planning -1][1:4] # Extract tag_id and lat/lon of the selected waypoint
@@ -545,14 +508,14 @@ class AutonomyGUI(Node, QWidget):
         try:
             response = future.result()
             if response.success:
-                self.gui_setText('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message)
                 self.waypoints[self.selected_waypoint_for_path_planning - 1][4] = 'PLANNING'
             else:
-                self.gui_setText('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message)
                 self.waypoints[self.selected_waypoint_for_path_planning - 1][4] = 'IDLE'
         except Exception as e:
             self.get_logger().error(f'Plan Path Service call failed! {e}')
-            self.gui_setText('logger_label', f'Plan Path Service call failed! (See Logger)')
+            self.ros_signal.emit('logger_label', f'Plan Path Service call failed! (See Logger)')
 
         self.update_waypoint_list()
 
@@ -563,10 +526,10 @@ class AutonomyGUI(Node, QWidget):
                 if wp[4] != 'COMPLETE':
                     wp[4] = 'IDLE'
             self.waypoints[self.selected_waypoint_for_path_planning - 1][4] = 'PATH READY'
-            self.gui_setText('logger_label', msg.message)
+            self.ros_signal.emit('logger_label', msg.message)
         else:
             self.waypoints[self.selected_waypoint_for_path_planning - 1][4] = 'IDLE'
-            self.gui_setText('logger_label', msg.message)
+            self.ros_signal.emit('logger_label', msg.message)
         self.update_waypoint_list()
         return
 
@@ -617,7 +580,7 @@ class AutonomyGUI(Node, QWidget):
             req.task_list.append(task)
 
         future = self.plan_order_client.call_async(req)
-        self.gui_setText('logger_label', 'Planning order...')
+        self.ros_signal.emit('logger_label', 'Planning order...')
         future.add_done_callback(self.plan_order_service_callback)
     
     def plan_order_service_callback(self, future):
@@ -630,25 +593,25 @@ class AutonomyGUI(Node, QWidget):
                 for i in range(len(response.ids)):
                     self.waypoints[i][0] = response.ids[i].data
                 self.update_waypoint_list()
-                self.gui_setText('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message)
             else:
-                self.gui_setText('logger_label', "Failed to plan order")
+                self.ros_signal.emit('logger_label', "Failed to plan order")
         except Exception as e:
-            self.gui_setText('logger_label', f'Plan Order Service call failed!')
+            self.ros_signal.emit('logger_label', f'Plan Order Service call failed!')
     
     # Sends the selected waypoint to the state machine either via the path planner node or directly
     def send_waypoint(self):
         self.selected_waypoint_to_send = self.selected_waypoint
         # Error Handling
         if self.selected_waypoint_to_send is None:
-            self.gui_setText('logger_label', 'No waypoint selected!')
+            self.ros_signal.emit('logger_label', 'No waypoint selected!')
             return
         
         # If the waypoint has a path planned, send the path
         if self.waypoints[self.selected_waypoint_to_send - 1][4] == 'PATH READY':
             self.waypoints[self.selected_waypoint_to_send - 1][4] = 'SENDING'
             if not self.send_path_client.wait_for_service(timeout_sec=2.0) and not self.send_waypoint_client.wait_for_service(timeout_sec=2.0):
-                self.gui_setText('logger_label', 'Send path service or AU_waypoint_service unavailable!')
+                self.ros_signal.emit('logger_label', 'Send path service or AU_waypoint_service unavailable!')
                 return
             future = self.send_path_client.call_async(SetBool.Request(data=True))
             future.add_done_callback(self.send_waypoint_callback)
@@ -656,7 +619,7 @@ class AutonomyGUI(Node, QWidget):
         # If the waypoint does not have a path planned, send the single waypoint directly
         else:
             if not self.send_waypoint_client.wait_for_service(timeout_sec=2.0):
-                self.gui_setText('logger_label', '/AU_waypoint_service service unavailable!')
+                self.ros_signal.emit('logger_label', '/AU_waypoint_service service unavailable!')
                 return
             self.waypoints[self.selected_waypoint_to_send - 1][4] = 'SENDING'
             tag_id, lat, lon = self.waypoints[self.selected_waypoint_to_send -1][1:4] # Extract tag_id and lat/lon of the selected waypoint
@@ -674,14 +637,14 @@ class AutonomyGUI(Node, QWidget):
             if response.success:
                 if self.selected_waypoint_to_send is not None:
                     self.waypoints[self.selected_waypoint_to_send -1][4] = 'READY'
-                self.gui_setText('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message)
             else:
                 if self.selected_waypoint_to_send is not None:
                     self.waypoints[self.selected_waypoint_to_send -1][4] = 'SEND FAILURE'
-                self.gui_setText('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message)
         except Exception as e:
             self.get_logger().error(f'Send Waypoint Service call failed! {e}')
-            self.gui_setText('logger_label', f'Send Waypoint Service call failed! (see logger)')
+            self.ros_signal.emit('logger_label', f'Send Waypoint Service call failed! (see logger)')
         
         self.update_waypoint_list()
         return
@@ -691,18 +654,18 @@ class AutonomyGUI(Node, QWidget):
         req = SetBool.Request()
         req.data = True
         future = self.clear_waypoint_client.call_async(req)
-        self.gui_setText('logger_label', 'Removing Last Waypoint')
+        self.ros_signal.emit('logger_label', 'Removing Last Waypoint')
         future.add_done_callback(self.clear_waypoint_callback)
 
     def clear_waypoint_callback(self, future):
         try:
             response = future.result()
             if response.success:
-                self.gui_setText('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message)
             else:
-                self.gui_setText('logger_label', "Failed to remove waypoint")
+                self.ros_signal.emit('logger_label', "Failed to remove waypoint")
         except Exception as e:
-            self.gui_setText('logger_label', f'Remove Waypoint Service call failed!')
+            self.ros_signal.emit('logger_label', f'Remove Waypoint Service call failed!')
 
     # This calls the abort service
     def abort_autonomy(self):
@@ -714,7 +677,7 @@ class AutonomyGUI(Node, QWidget):
             lat = float(self.latitude_input.text())
             lon = float(self.longitude_input.text())
         except ValueError:
-            self.gui_setText('logger_label', 'Invalid latitude or longitude')
+            self.ros_signal.emit('logger_label', 'Invalid latitude or longitude')
             return
 
         # Create a task and append to the task list
@@ -724,41 +687,41 @@ class AutonomyGUI(Node, QWidget):
 
         # Send the Abort Request
         future = self.abort_autonomy_client.call_async(req)
-        self.gui_setText('logger_label', 'Attempting Abort')
+        self.ros_signal.emit('logger_label', 'Attempting Abort')
 
     def set_turn_constant(self):
         req = SetFloat32.Request()
         req.data = float(self.TurnConstantInput.text())
         future = self.set_turn_constant_client.call_async(req)
-        self.gui_setText('logger_label', 'Sending Turn Constant...')
+        self.ros_signal.emit('logger_label', 'Sending Turn Constant...')
         future.add_done_callback(self.set_turn_constant_callback)
 
     def set_turn_constant_callback(self, future):
         try:
             response = future.result()
             if response.success:
-                self.gui_setText('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message)
             else:
-                self.gui_setText('logger_label', "Failed to send turn constant")
+                self.ros_signal.emit('logger_label', "Failed to send turn constant")
         except Exception as e:
-            self.gui_setText('logger_label', f'Send Turn Constant Service call failed!')
+            self.ros_signal.emit('logger_label', f'Send Turn Constant Service call failed!')
 
     def set_speed_constant(self):
         req = SetFloat32.Request()
         req.data = float(self.SpeedConstantInput.text())
         future = self.set_speed_constant_client.call_async(req)
-        self.gui_setText('logger_label', 'Sending Speed Constant...')
+        self.ros_signal.emit('logger_label', 'Sending Speed Constant...')
         future.add_done_callback(self.set_speed_constant_callback)
 
     def set_speed_constant_callback(self, future):
         try:
             response = future.result()
             if response.success:
-                self.gui_setText('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message)
             else:
-                self.gui_setText('logger_label', "Failed! Must be in range (0-10)")
+                self.ros_signal.emit('logger_label', "Failed! Must be in range (0-10)")
         except Exception as e:
-            self.gui_setText('logger_label', f'Send Speed Constant Service call failed!')
+            self.ros_signal.emit('logger_label', f'Send Speed Constant Service call failed!')
 
     def rover_state_singleton_callback(self, msg):
         self.rover_state_singleton_timepoint = self.get_clock().now().to_msg().sec
@@ -830,58 +793,58 @@ class AutonomyGUI(Node, QWidget):
     #     req.path = self.current_previewed_waypoints
 
     #     future = self.plan_order_mapviz_client.call_async(req)
-    #     self.gui_setText('logger_label', 'Planning order on mapviz...')
+    #     self.ros_signal.emit('logger_label', 'Planning order on mapviz...')
 
     #NOTE: depricated until mapviz capability added back
     # This clears all previewed waypoints from mapviz
-    # def clear_mapviz(self):
+    def clear_mapviz(self):
 
-    #     # Clear the current previewed waypoints
-    #     while(len(self.current_previewed_waypoints.poses) > 0):
-    #         self.current_previewed_waypoints.poses.pop()
+        # Clear the current previewed waypoints
+        while(len(self.current_previewed_waypoints.poses) > 0):
+            self.current_previewed_waypoints.poses.pop()
 
-    #     msg = Path()
+        msg = Path()
 
-    #     current_time = self.get_clock().now().to_msg()
-    #     msg.header = Header()
-    #     msg.header.stamp = current_time
-    #     msg.header.frame_id = "map"
+        current_time = self.get_clock().now().to_msg()
+        msg.header = Header()
+        msg.header.stamp = current_time
+        msg.header.frame_id = "map"
 
-    #     pose_stamped = PoseStamped()
-    #     pose_stamped.header.stamp = current_time
-    #     pose_stamped.header.frame_id = "map"
+        pose_stamped = PoseStamped()
+        pose_stamped.header.stamp = current_time
+        pose_stamped.header.frame_id = "map"
 
-    #     pose_stamped.pose.position.x = 0.0
-    #     pose_stamped.pose.position.y = 0.0
-    #     pose_stamped.pose.position.z = 0.0
+        pose_stamped.pose.position.x = 0.0
+        pose_stamped.pose.position.y = 0.0
+        pose_stamped.pose.position.z = 0.0
 
-    #     pose_stamped.pose.orientation.x = 0.0
-    #     pose_stamped.pose.orientation.y = 0.0
-    #     pose_stamped.pose.orientation.z = 0.0
-    #     pose_stamped.pose.orientation.w = 1.0
+        pose_stamped.pose.orientation.x = 0.0
+        pose_stamped.pose.orientation.y = 0.0
+        pose_stamped.pose.orientation.z = 0.0
+        pose_stamped.pose.orientation.w = 1.0
         
-    #     msg.poses = [pose_stamped]
+        msg.poses = [pose_stamped]
 
-    #     self.path_publisher.publish(msg)
-    #     self.gui_setText('logger_label', 'Mapviz Cleared')
+        self.path_publisher.publish(msg)
+        self.ros_signal.emit('logger_label', 'Mapviz Cleared')
 
 #NOTE: depricated until mapviz capability added back
 # This gets the 0, 0 coordinates of the mapviz map
-# def get_coordinates(file_path, location):
-#     # Read the YAML file
-#     with open(file_path, 'r') as file:
-#         data = yaml.safe_load(file)
+def get_coordinates(file_path, location): # TODO: this may not work anymore because the format of the yaml file was changed
+    # Read the YAML file
+    with open(file_path, 'r') as file:
+        data = yaml.safe_load(file)
     
-#     # Navigate to the locations data
-#     locations = data['/**']['ros__parameters']['locations']
+    # Navigate to the locations data
+    locations = data['/**']['ros__parameters']['name']
     
-#     # Check if the location exists
-#     if location in locations:
-#         lat = locations[location]['latitude']
-#         lon = locations[location]['longitude']
-#         return lat, lon
-#     else:
-#         return None
+    # Check if the location exists
+    if location in locations:
+        lat = locations[name]['latitude']
+        lon = locations[name]['longitude']
+        return lat, lon
+    else:
+        return None
     
 #NOTE: depricated until mapviz capability added back
 # Converts a path from UTM to lat/lon
@@ -925,7 +888,6 @@ def main(args=None):
     # Initialize ROS2
     rclpy.init(args=args)
 
-    # Popen("pkill gst", shell=True, preexec_fn=os.setsid, stderr=PIPE)
     # Create QApplication
     gui_QWidget = QApplication(sys.argv)
 
