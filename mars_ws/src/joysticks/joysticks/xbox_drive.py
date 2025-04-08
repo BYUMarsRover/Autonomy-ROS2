@@ -55,11 +55,6 @@ class XBOX(Node):
             '/mobility/teleop_drive_cmds',
             10
         )
-        # self.elevator_pub = self.create_publisher(
-        #     Elevator,
-        #     '/elevator',
-        #     10
-        # )
         self.elevator_pub =  ElevatorPublisher(self.create_publisher(Elevator, "/elevator", 10))
 
         self.drive_enabled = False
