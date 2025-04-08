@@ -78,7 +78,6 @@ class AutonomyStateMachine(Node):
         self.srv_clear_waypoint = self.create_service(SetBool, '/AU_clear_waypoint_service', self.clear_waypoint)
 
         # Clients
-
         self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
         self.aruco_detect_client = self.create_client(SetBool, '/enable_detections')
         self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
@@ -109,8 +108,10 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('spin_step_size', 0.6981)
         self.declare_parameter('spin_delay_time', 1.2)
         self.declare_parameter('wrong_aruco_backup_distance', 7.0)
+        self.declare_parameter('wrong_aruco_backup_spin_speed', 15.0)
         self.declare_parameter('hex_seach_angle_difference', 50.0)
         self.declare_parameter('object_speed', 0.3)
+        
 
         # Get Parameters
         self.path_waypoint_dist_tolerance = self.get_parameter('path_waypoint_distance_tolerance').get_parameter_value().double_value #distance tolerance for switching to a different intermediate points in a path planned path
@@ -125,14 +126,13 @@ class AutonomyStateMachine(Node):
         self.spin_speed = self.get_parameter('spin_speed').get_parameter_value().double_value #angular speed during spin search
         self.obj_alpha_lpf = self.get_parameter('object_alpha_lpf').get_parameter_value().double_value #alpha value for the low pass filter for the angle and distance to an object after the rover starts seeing the object
         self.obj_enable_distance = self.get_parameter('obj_enable_distance').get_parameter_value().double_value # object detection gets enabled only when within a certain distance of the coordinate to conserve computational resources
-        self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value
-        self.spin_step_size = self.get_parameter('spin_step_size').get_parameter_value().double_value
-        self.spin_delay_time = self.get_parameter('spin_delay_time').get_parameter_value().double_value
-        self.wrong_aruco_backup_distance = self.get_parameter('wrong_aruco_backup_distance').get_parameter_value().double_value
-        self.hex_seach_angle_difference = self.get_parameter('hex_seach_angle_difference').get_parameter_value().double_value
-        self.aruco_enable_distance = self.get_parameter('aruco_enable_distance').get_parameter_value().double_value
-        # self.aruco_gate_approach_distance = rospy.get_param('aruco_gate_approach_distance').get_parameter_value().double_value
-        # self.aruco_gate_spin_speed = rospy.get_param('aruco_gate_spin_speed').get_parameter_value().double_value
+        self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value #alpha value for the low pass filter for the angle and distance to an aruco tag after the rover starts seeing the aruco tag
+        self.spin_step_size = self.get_parameter('spin_step_size').get_parameter_value().double_value # angle in radians that the rover turns in spin search, after which the rover stops, looks for a tag/object, and then continues spinning
+        self.spin_delay_time = self.get_parameter('spin_delay_time').get_parameter_value().double_value # time that the rover waits after spinning in spin search looking for tags/objects
+        self.wrong_aruco_backup_distance = self.get_parameter('wrong_aruco_backup_distance').get_parameter_value().double_value # distance that the rover backups up upon starting a new leg, after having just finished an aruco tag leg (so that the rover doesn't run into the aruco stand)
+        self.wrong_aruco_backup_spin_speed = self.get_parameter('wrong_aruco_backup_spin_speed').get_parameter_value().double_value # speed that the rover spins at when backing up after starting a new leg, after having just finished an aruco tag leg
+        self.hex_seach_angle_difference = self.get_parameter('hex_seach_angle_difference').get_parameter_value().double_value # angle in degrees between vertex points of the hex search
+        self.aruco_enable_distance = self.get_parameter('aruco_enable_distance').get_parameter_value().double_value # aruco detection gets enabled only when within a certain distance of the target coordinate to conserve computational resources
 
         #Initialize variables
         self.nav_state = NavState()
@@ -168,6 +168,9 @@ class AutonomyStateMachine(Node):
         # Data structure to hold all of the waypoints at a time
         self.waypoints: deque[AutonomyTaskInfo] = deque()
         self.last_waypoint: AutonomyTaskInfo = None
+
+        self.backup_timer = None
+        self.backup_duration = 4.0  # Tune this number 
 
     def set_task_callback(self, task_info: AutonomyTaskInfo):
 
@@ -448,6 +451,20 @@ class AutonomyStateMachine(Node):
             chi_1 += 2.0 * np.pi
         return chi_1
 
+    def stop_backup(self):
+        self.drive_controller.issue_drive_cmd(0.0, 0.0)
+        self.state = State.START_POINT_NAVIGATION
+
+        # Disable aruco detection to save computational resources
+        if self.aruco_detect_enabled:
+            self.toggle_aruco_detection(False)
+
+        # Destroy the timer and reset it
+        if self.backup_timer is not None:
+            self.backup_timer.cancel()
+            self.backup_timer = None
+
+
     def set_autopilot_speed(self, speed):
         print("Setting autopilot speed...")
 
@@ -524,14 +541,42 @@ class AutonomyStateMachine(Node):
                 self.obj_distance = None
                 self.obj_angle = None
 
+                # Disable object detection and aruco detection when arrived
+                # Only disable aruco detection if the previous tag was not an aruco tag so that when we go to SEARCH_FOR_WRONG_TAG state, we can make sure not to run into it
+                if self.aruco_detect_enabled and self.prev_tag_id not in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3]:
+                    self.toggle_aruco_detection(False)
+                if self.obj_detect_enabled:
+                    self.toggle_object_detection(False)
+                elif self.prev_tag_id == None:  # not always running in the background, just in case state machine is restarted
+                    self.toggle_aruco_detection(True)
+
+
             #This SEARCH_FOR_WRONG_STATE state is used to ensure that after finishing one aruco tag task, the rover will
             #backup if the rover sees the wrong tag, to ensure it does not run into the aruco stand before starting the next task
             elif self.state == State.SEARCH_FOR_WRONG_TAG: 
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                if self.wrong_aruco_tag_found and self.aruco_tag_distance < self.wrong_aruco_backup_distance:
-                    self.drive_controller.issue_drive_cmd(-2.0, 0.0)
-                    #TODO: Consider adding angular velocity to this command to ensure the rover backs up in such a way that it will not hit the stand
-                    #Perhaps in the opposite direction of the direction needed to get to get tot he next waypoint
+                if self.wrong_aruco_tag_found:
+
+                    #Find the angle to our new target point
+                    target_latitude = self.waypoints[0].latitude
+                    target_longitude = self.waypoints[0].longitude
+                    target_point = GPSCoordinate(target_latitude, target_longitude, 0)
+                    chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, target_point)
+                    des_heading = self.wrap(chi_rad - self.curr_heading, 0)
+
+                    # #Backup and turn the same direction as the angle to the next waypoint
+                    # if des_heading < 0:
+                    #     self.drive_controller.issue_drive_cmd(-2.0, -self.wrong_aruco_backup_spin_speed)
+                    # else:
+                    #     self.drive_controller.issue_drive_cmd(-2.0, self.wrong_aruco_backup_spin_speed)
+                    linear_vel = -2.0
+                    angular_vel = -self.wrong_aruco_backup_spin_speed if des_heading < 0 else self.wrong_aruco_backup_spin_speed
+
+                    # Start backup maneuver with timer
+                    if self.backup_timer is None:
+                        self.drive_controller.issue_drive_cmd(linear_vel, angular_vel)
+                        self.backup_timer = self.create_timer(self.backup_duration, self.stop_backup)
+
                 else:
                     self.drive_controller.issue_drive_cmd(0.0, 0.0)
                     self.state = State.START_POINT_NAVIGATION

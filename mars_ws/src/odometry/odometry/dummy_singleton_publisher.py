@@ -114,12 +114,12 @@ class DummySingletonPublisher(Node):
         # self.map_yaw = self._generate_heading(self.heading_counter)
 
         # Make the rover move in a circle around the init location
-        if not hasattr(self, 'angle'):
-            self.angle = 0 # North East Down (measured from North cw is positive)
-        self.angle += 1.0
-        if self.angle >= 360:
-            self.angle = 0
-        self.latitude, self.longitude = self.rotate()
+        # if not hasattr(self, 'angle'):
+        #     self.angle = 0 # North East Down (measured from North cw is positive)
+        # self.angle += 1.0
+        # if self.angle >= 360:
+        #     self.angle = 0
+        # self.latitude, self.longitude = self.rotate()
 
         # Make the rover spin in place
         # self.map_yaw -= 0.3 # -0.1 * ROS_RATE degrees per second
