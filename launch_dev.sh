@@ -169,6 +169,22 @@ while true; do
   shift
 done
 
+# Non-option arguments
+ROVER_ADDRESS="$1"
+
+# Check arguments and set defaults
+if [ -z "$ROVER_ADDRESS" ]; then
+  DEFAULT_ROVER_ADDRESS='192.168.1.120'
+  ROVER_ADDRESS=$DEFAULT_ROVER_ADDRESS
+fi
+
+ROVER_REPO='~/Autonomy-ROS2' # default
+
+# Get the location of the Autonomy-ROS2 repository on this computer
+# This cd's into the directory where this script is
+# and then uses git to get the name of the repository's folder
+BASE_STATION_REPO="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && git rev-parse --show-toplevel )"
+
 
 # Set parameters for running the rover and base station on the same computer
 if [[ "$ROVER_ADDRESS" = 'local' || "$ROVER_ADDRESS" = 'localhost' || "$ROVER_ADDRESS" = '127.0.0.1' ]]; then
@@ -211,6 +227,49 @@ fi
 ###############################################################################
 # Prepare environment                                                         #
 ###############################################################################
+
+BASE_ENVIRONMENT="
+ROS_MASTER_URI=http://$ROVER_ADDRESS:11311
+ROS_IP=$BASE_ADDRESS
+HUSKY_URDF_EXTRAS=$BASE_STATION_REPO/rover_ws/src/husky_custom_description/urdf/custom_description.urdf.xacro
+ROVER_ADDRESS=$ROVER_ADDRESS
+BASE_ADDRESS=$BASE_ADDRESS
+MAPVIZ_LOCATION=$MAPVIZ_LOCATION
+BASE_USER=$BASE_USER
+"
+printDebug "BASE_ENVIRONMENT: $BASE_ENVIRONMENT"
+
+ROVER_ENVIRONMENT="
+ROS_MASTER_URI=http://$ROVER_ADDRESS:11311
+ROS_IP=$ROVER_ADDRESS
+HUSKY_URDF_EXTRAS=$ROVER_REPO/rover_ws/src/husky_custom_description/urdf/custom_description.urdf.xacro
+ROVER_ADDRESS=$ROVER_ADDRESS
+BASE_ADDRESS=$BASE_ADDRESS
+BASE_USER=$BASE_USER
+"
+printDebug "ROVER_ENVIRONMENT: $ROVER_ENVIRONMENT"
+
+unset ROS_HOSTNAME # Not being used, so make sure it doesn't have an inherited value
+export $(echo $BASE_ENVIRONMENT | xargs)
+
+# Source the rover workspace, if it has been built, warn the user that it has not been built otherwise
+BASE_REPO_SETUP="$BASE_STATION_REPO/rover_ws/source/setup.sh"
+
+# Run the ROS setup script
+if ! test -f "$BASE_REPO_SETUP"; then
+    printWarning "The rover workspace has not been built, so it cannot be set up.
+Please build the workspace with catkin_make, and then run the command \"source ${BASE_REPO_SETUP}\""
+    exit 1
+else
+    source "$BASE_REPO_SETUP"
+fi
+
+SET_BASE_ENV_CMD="export $(echo $BASE_ENVIRONMENT | xargs) && unset ROS_HOSTNAME && source $BASE_REPO_SETUP"
+SET_ROVER_ENV_CMD="export $(echo $ROVER_ENVIRONMENT | xargs) && unset ROS_HOSTNAME && source $ROVER_REPO/rover_ws/devel/setup.sh"
+
+
+echo 'Break'
+exit 0
 
 # Check for an SSH connection to the rover's Docker container
 if ! rover_cmd "echo"  &> /dev/null
