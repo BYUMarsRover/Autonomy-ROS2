@@ -138,3 +138,12 @@ USER $NAME
 USER root
 RUN apt update && apt install -y gpsd-clients
 USER $NAME
+
+# Install urdf launch - Braden Meyers, Apr 2025
+# Needed to publish the urdf model of the rover
+# ZED messages for the the object detections
+USER root
+RUN apt update && apt install -y \
+    ros-humble-urdf-launch \
+    ros-humble-zed-msgs    
+USER $NAME
