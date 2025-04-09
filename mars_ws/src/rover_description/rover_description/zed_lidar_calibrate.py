@@ -68,7 +68,7 @@ class FramePublisher(Node):
 
     def publish_transform(self):
         if self.current_stamp is None:
-            self.get_logger().warn("Current stamp is None, not publishing transforms.")
+            self.get_logger().warn("Current stamp is None, not publishing transforms.", throttle_duration_sec=5)
             return
         
         # IN A PINCH COULD CHANGE THIS TO NOW TIME IF RUNNING LIVE
@@ -98,13 +98,13 @@ class FramePublisher(Node):
         try: 
             # Get the current orientation of the rover
             # Lookup transformation from odom to base_link
-            odom_to_base_link = self.tf_buffer.lookup_transform('odom', 'base_link', now, rclpy.duration.Duration(seconds=0.2))
+            odom_to_base_link = self.tf_buffer.lookup_transform('odom', 'base_link', now, timeout=rclpy.duration.Duration(seconds=0.4))
 
             # Set the rotation to the current orientation of the rover
             base_link_to_gravity.transform.rotation = odom_to_base_link.transform.rotation
 
         except Exception as e:
-            self.get_logger().error(f"Error looking up transform: {e}")
+            self.get_logger().error(f"Error looking up transform: {e}", throttle_duration_sec=5)
 
         # Send the transform
         # self.tf_broadcaster.sendTransform(base_link_to_gravity)
@@ -225,7 +225,7 @@ class FramePublisher(Node):
         # roll, pitch, yaw = self.quaternion_to_euler(msg.orientation)
 
         self.current_stamp = msg.header.stamp
-        # self.get_logger().info('setting zed transform')
+        self.get_logger().info('setting zed transform')
 
         if self.new_zed_calibration:
             self.zed_transform.header.stamp = msg.header.stamp

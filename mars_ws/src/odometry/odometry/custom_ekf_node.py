@@ -201,7 +201,7 @@ class EKFNode(Node):
     def publish_odom_map_frame(self, msg: Odometry):
         try:
             # Lookup transformation from map to odom
-            map_to_odom = self.tf_buffer.lookup_transform('map', 'odom', msg.header.stamp, rclpy.duration.Duration(seconds=0.2))
+            map_to_odom = self.tf_buffer.lookup_transform('map', 'odom', msg.header.stamp)
         
             if self.map_trans is None:
                 # Extract translation and rotation from map → odom
@@ -265,7 +265,7 @@ class EKFNode(Node):
     def odom_to_map_transorm(self, dx, dy, dyaw):
         # Transform odom data to map frame
         try:
-            map_to_odom = self.tf_buffer.lookup_transform('map', 'odom', self.latest_odom.header.stamp, rclpy.duration.Duration(seconds=0.2))
+            map_to_odom = self.tf_buffer.lookup_transform('map', 'odom', self.latest_odom.header.stamp)
 
             map_quat = [
                 map_to_odom.transform.rotation.x,
@@ -304,7 +304,7 @@ class EKFNode(Node):
         self.new_odom = True
 
         self.publish_odom_transforms(msg)
-        self.publish_odom_map_frame(msg)
+        # self.publish_odom_map_frame(msg)
 
 
     def kalman_predict(self, F, B, u, Q):
@@ -354,7 +354,7 @@ class EKFNode(Node):
 
             # Step 2: Get the `base_link -> odom` transform from TF buffer
             base_to_odom = self.tf_buffer.lookup_transform(
-                'base_link', 'odom', msg.header.stamp, rclpy.duration.Duration(seconds=0.2)
+                'base_link', 'odom', msg.header.stamp
             )
 
             q_base_to_odom = [
