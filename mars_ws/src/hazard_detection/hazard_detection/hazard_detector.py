@@ -23,6 +23,7 @@ class HazardDetector(Node):
         self.declare_parameter('bounding_box_length', 5.0)  #in front of the rover
         self.declare_parameter('bounding_box_width', 3.0)   #to the left and right of the rover
         self.declare_parameter('bounding_box_height', 3.0)  #above the rover
+        self.declare_parameter('bounding_box_height_ditch', 3.0)  #below the ground 
         self.declare_parameter('epsilon_clustering_density', 0.4)  #Change if the density of the points is not large enough to detect hazards, in meters?
         self.declare_parameter('min_points_to_cluster', 50) #Increase if we are getting false positives for hazard detection, decrease if we aren't detecting anything
         
@@ -35,6 +36,7 @@ class HazardDetector(Node):
         self.box_length = self.get_parameter('bounding_box_length').value
         self.box_width = self.get_parameter('bounding_box_width').value
         self.box_height = self.get_parameter('bounding_box_height').value
+        self.box_height_ditch = self.get_parameter('bounding_box_height_ditch').value
         self.epsilon_clustering_density = self.get_parameter('epsilon_clustering_density').value
         self.min_points_to_cluster = self.get_parameter('min_points_to_cluster').value
 
@@ -138,7 +140,7 @@ class HazardDetector(Node):
 
         #Creates an array of booleans of whether the point at that index is in the bounding box or not
         bounding_mask = (
-            (transformed_points[:, 2] <= 0) & (transformed_points[:, 2] >= -self.box_height) &  # Z-axis (height)
+            (transformed_points[:, 2] <= self.box_height_ditch) & (transformed_points[:, 2] >= -self.box_height) & # Z-axis (height)
             (-self.box_width / 2 <= transformed_points[:, 1]) & (transformed_points[:, 1] <= self.box_width / 2) &  # Y-axis (width)
             (transformed_points[:, 0] <= self.box_length)  # X-axis (length)
         )
