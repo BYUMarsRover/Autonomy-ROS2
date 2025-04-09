@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from sensor_msgs.msg import PointCloud2, Imu
 from std_msgs.msg import String
 from .pcl_helper import *
@@ -45,7 +46,15 @@ class HazardDetector(Node):
 
         #Initialize other variables
         self.imu_orientation = None 
-        self.enabled = False  
+        self.enabled = False
+
+        #Quality of Service Profile for zed publisher
+        qos_profile = QoSProfile(
+            depth=1,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            durability=DurabilityPolicy.VOLATILE
+        )  
 
         #Subscribers
         self.subscriber = self.create_subscription(
@@ -70,7 +79,7 @@ class HazardDetector(Node):
             PointCloud2,
             'zed/zed_node/point_cloud/cloud_registered',
             self.zed_point_cloud_callback,
-            10
+            qos_profile
         )
 
         #Publishers
@@ -149,9 +158,9 @@ class HazardDetector(Node):
         cloud_bounded = cloud_filtered.select_by_index(np.where(bounding_mask)[0].tolist())
 
         # # View the bounding box points
-        print("Bounding box points: ", len(cloud_bounded.points))
-        axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
-        o3d.visualization.draw_geometries([cloud_bounded, axis])
+        # print("Bounding box points: ", len(cloud_bounded.points))
+        # axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
+        # o3d.visualization.draw_geometries([cloud_bounded, axis])
 
         # Segment ground plane
         plane_model, inliers = cloud_bounded.segment_plane(

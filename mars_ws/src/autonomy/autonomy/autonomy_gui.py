@@ -425,7 +425,7 @@ class AutonomyGUI(Node, QWidget):
                 distance = np.sqrt(hazard.location_x**2 + hazard.location_y**2)
                 angle = np.rad2deg(np.arctan2(hazard.location_y, hazard.location_x))
 
-                hazard_text += f'Hazard {round(distance, 2)} m away, {round(angle, 2)} deg, {round(hazard.location_z, 2)} m tall\n'
+                hazard_text += f'Hazard {round(distance, 2)} m away, {round(angle, 2)} deg, {round(-hazard.location_z, 2)} m tall\n'
 
         # Update the GUI with the hazards
         self.ros_signal.emit('HazardsFound', hazard_text)
