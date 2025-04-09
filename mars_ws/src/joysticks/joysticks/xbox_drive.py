@@ -35,6 +35,7 @@ class XBOX(Node):
 
     def __init__(self):
         super().__init__('xbox_drive')
+        self.get_logger().info('Running XBOX Drive')
 
         # Subscribers
         self.sub_joy_sub = self.create_subscription(
@@ -46,7 +47,12 @@ class XBOX(Node):
 
         # Publishers
         self.publisher_group = pubup.UpdatePublisherGroup()
-        self.joy_drive_enabled_pub = self.publisher_group.add_publisher(pubup.UpdatePublisher(self.create_publisher(Bool, "/mobility/joy_drive_enabled", 10)))
+        self.joy_drive_enabled_pub = self.publisher_group.add_publisher(
+            pubup.UpdatePublisher(
+                self.create_publisher(Bool, "/mobility/joy_drive_enabled", 10),
+                "std_msgs.msg.Bool"
+                )
+            )
         self.elevator_pub = self.publisher_group.add_publisher(pubup.ElevatorPublisher(self.create_publisher(Elevator, "/elevator", 10)))
 
         self.teleop_drive_cmds_pub = self.create_publisher(

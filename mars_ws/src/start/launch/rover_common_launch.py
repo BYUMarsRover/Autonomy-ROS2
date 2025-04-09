@@ -40,7 +40,7 @@ def generate_launch_description():
     # GPS
     odometry_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
-            FindPackageShare("odometry"), '/launch/rover_launch.py'
+            FindPackageShare("odometry"), '/launch/rover_launch.launch.py'
         ])
     )
 

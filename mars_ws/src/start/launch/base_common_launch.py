@@ -16,7 +16,6 @@ import os
 
 
 def generate_launch_description():
-    return
 
     # Declare launch arguments
     mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value='hanksville')
