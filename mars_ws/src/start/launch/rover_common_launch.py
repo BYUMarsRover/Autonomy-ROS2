@@ -21,7 +21,7 @@ def generate_launch_description():
         description='Console output format'
     )
 
-    rover_address_arg = DeclareLaunchArgument('ROVER_ADDRESS', default_value='192.168.1.120'),
+    rover_address_arg = DeclareLaunchArgument('ROVER_ADDRESS', default_value='192.168.1.120')
 
     # Mobility
     mobility_launch = IncludeLaunchDescription(
@@ -40,7 +40,7 @@ def generate_launch_description():
     # GPS
     odometry_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
-            FindPackageShare("odometry"), '/launch/rover_launch.launch.py'
+            FindPackageShare("odometry"), '/launch/rover_launch.py'
         ])
     )
 

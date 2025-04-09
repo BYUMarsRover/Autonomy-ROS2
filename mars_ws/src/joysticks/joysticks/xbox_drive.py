@@ -8,8 +8,8 @@ from rover_msgs.msg import IWCMotors, Elevator
 from mobility.controllers.teleop_controllers import TankController, ArcadeController
 
 # Ammon Test Changes
-import joysticks.joysticks.publish_on_update as pubup
-import joysticks.joysticks.input_tools as iptl
+import joysticks.publish_on_update as pubup
+import joysticks.input_tools as iptl
 
 # TODO: put these inside a yaml
 # Button and axis mappings

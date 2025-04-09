@@ -8,7 +8,6 @@ from rover_msgs.msg import IWCMotors, Elevator
 from mobility.controllers.teleop_controllers import TankController, ArcadeController
 
 # Ammon Test Changes
-# from joysticks.joysticks.input_tools import \
 from joysticks.joysticks.publish_on_update import ElevatorPublisher
 
 # TODO: put these inside a yaml
