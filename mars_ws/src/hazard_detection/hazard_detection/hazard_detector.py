@@ -160,12 +160,12 @@ class HazardDetector(Node):
         ground = cloud_bounded.select_by_index(inliers)
         non_ground = cloud_bounded.select_by_index(inliers, invert=True)
 
-        # Visualize ground and non-ground points
-        axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
-        print("Ground points:")
-        o3d.visualization.draw_geometries([ground, axis])
-        print("Non-ground points:")
-        o3d.visualization.draw_geometries([non_ground, axis])
+        # # Visualize ground and non-ground points
+        # axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
+        # print("Ground points:")
+        # o3d.visualization.draw_geometries([ground, axis])
+        # print("Non-ground points:")
+        # o3d.visualization.draw_geometries([non_ground, axis])
 
         # Detect obstacles by height
         high_points = self.detect_high_obstacles(non_ground)
@@ -225,7 +225,7 @@ class HazardDetector(Node):
         pc.points = o3d.utility.Vector3dVector(points)
 
         # Perform DBSCAN clustering (density-based clustering)
-        labels = np.array(pc.cluster_dbscan(eps=self.epsilon_clustering_density, min_points=self.min_points_to_cluster, print_progress=True))
+        labels = np.array(pc.cluster_dbscan(eps=self.epsilon_clustering_density, min_points=self.min_points_to_cluster, print_progress=False))
 
         # Extract clusters
         clusters = []

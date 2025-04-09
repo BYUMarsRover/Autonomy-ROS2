@@ -68,7 +68,7 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point, name):
         return pcl_data
     else:
           # Visualize the point cloud
-        visualize_point_cloud(pcl_data)
+        # visualize_point_cloud(pcl_data)
         return pcl_data
 
 
