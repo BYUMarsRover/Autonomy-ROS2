@@ -5,7 +5,9 @@ from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, Rove
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from std_srvs.srv import SetBool
 from std_msgs.msg import String
+from zed_msgs.msg import ObjectsStamped 
 from autonomy.drive_controller_api import DriveControllerAPI
+from autonomy.service_client_handler import ServiceCaller
 from autonomy.GPSTools import GPSTools, GPSCoordinate
 from enum import Enum
 import numpy as np
@@ -45,8 +47,14 @@ class TagID(Enum):
 
 AR_ENABLE_MSG = 'aruco detections - enabled'
 AR_DISABLE_MSG = 'aruco detections - disabled'
-OBJ_ENABLE_MSG = ''     # TODO
-OBJ_DISABLE_MSG = ''    # TODO
+AR_ENABLE_MSGS = [AR_ENABLE_MSG]
+AR_DISABLE_MSGS = [AR_DISABLE_MSG]
+OBJ_ENABLE_MSG = 'Object Detection started'     
+OBJ_DISABLE_MSG = 'Object Detection stopped'    
+OBJ_RUNNING_MSG = 'Object Detection is already running'    
+OBJ_NOT_RUNNING_MSG = 'Object Detection was not running' 
+OBJ_ENABLE_MSGS = [OBJ_ENABLE_MSG, OBJ_RUNNING_MSG]
+OBJ_DISABLE_MSGS = [OBJ_DISABLE_MSG, OBJ_NOT_RUNNING_MSG]   
 
 class AutonomyStateMachine(Node):
 
@@ -63,7 +71,7 @@ class AutonomyStateMachine(Node):
         # Subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
         self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10)
-        self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10)
+        self.create_subscription(ObjectsStamped, '/zed/zed_node/obj_det/objects', self.obj_detect_callback, 10)
 
         # Publishers
         self.aruco_pose_pub = self.create_publisher(FiducialData, '/autonomy/aruco_pose', 10)
@@ -79,7 +87,7 @@ class AutonomyStateMachine(Node):
 
         # Clients
 
-        self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
+        self.object_detect_client = self.create_client(SetBool, '/zed/zed_node/enable_obj_det')
         self.aruco_detect_client = self.create_client(SetBool, '/enable_detections')
         self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
         self.path_manager_client = self.create_client(SetBool, '/mobility/path_manager/enabled')
@@ -87,10 +95,6 @@ class AutonomyStateMachine(Node):
         self.drive_manager_client = self.create_client(SetBool, '/mobility/drive_manager/enabled')
         self.wheel_manager_client = self.create_client(SetBool, '/mobility/wheel_manager/enabled')
         self.aruco_manager_client = self.create_client(SetBool, '/mobility/aruco_autopilot_manager/enabled')
-
-        # Client variables
-        self.max_retries = 5
-        self.retry_count = 0
 
         # Declare Parameters
         self.declare_parameter('path_waypoint_distance_tolerance', 4.0)
@@ -158,8 +162,11 @@ class AutonomyStateMachine(Node):
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)  
         self.tag_id = TagID.GPS_ONLY
         self.a_task_complete = False
-        self.aruco_detect_enabled = False
-        self.obj_detect_enabled = False
+
+        # Enabling Detections variables
+        self.obj_toggle_hanlder = ServiceCaller(self.object_detect_client, self,'Object', OBJ_ENABLE_MSGS, OBJ_DISABLE_MSGS)
+        self.aruco_toggle_handler = ServiceCaller(self.aruco_detect_client, self, 'Aruco',  AR_ENABLE_MSGS, AR_DISABLE_MSGS)
+
         self.prev_tag_id = TagID.GPS_ONLY
         self.dist_to_target = 1000          # Abitrary High number, Will be updated in point navigation
 
@@ -245,58 +252,8 @@ class AutonomyStateMachine(Node):
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)
         self.curr_heading = np.deg2rad(msg.map_yaw)
 
-    def toggle_object_detection(self, data):
-        if self.object_detect_client.service_is_ready():  # Check if service is available
-            self.get_logger().info('Sending object detection request...')
-            self.send_request(data, self.object_detect_client)
-            self.retry_count = 0  # Reset retry count
-        else:
-            if self.retry_count < self.max_retries:
-                self.get_logger().warn(f'Service not available. Retrying... ({self.retry_count + 1}/{self.max_retries})')
-                self.retry_count += 1
-                self.create_timer(1.0, lambda: self.toggle_object_detection(data))
-            else:
-                self.get_logger().error('Object detection service not available after maximum retries. Giving up.')
 
-    def toggle_aruco_detection(self, data):
-        if self.aruco_detect_client.service_is_ready():
-            self.get_logger().info('Sending aruco detection request...')
-            self.send_request(data, self.aruco_detect_client)
-            self.retry_count = 0 # Reset retry count
-        else:
-            if self.retry_count < self.max_retries:
-                self.get_logger().warn(f'Service not available. Retrying... ({self.retry_count + 1}/{self.max_retries})')
-                self.retry_count += 1
-                self.create_timer(1.0, lambda: self.toggle_aruco_detection(data))
-            else:
-                self.get_logger().error('Aruco detection service not available after maximum retries. Giving up.')
-
-    # Generic service call method
-    def send_request(self, data, client):
-        # Create and send a request
-        request = SetBool.Request()
-        request.data = data
-        future = client.call_async(request)
-        future.add_done_callback(self.handle_response)
-
-    # Callback for handling the service call function (send_request)
-    def handle_response(self, future):
-        try:
-            response = future.result()
-            self.get_logger().info(f'Response: Success={response.success}, Message="{response.message}"')
-            if response.message == AR_ENABLE_MSG:
-                self.aruco_detect_enabled = True
-            elif response.message == AR_DISABLE_MSG:
-                self.aruco_detect_enabled = False
-            elif response.message == OBJ_ENABLE_MSG:
-                self.obj_detect_enabled = True
-            elif response.message == OBJ_DISABLE_MSG:
-                self.obj_detect_enabled = False
-            
-        except Exception as e:
-            self.get_logger().error(f'Failed to call service: {str(e)}')
-
-    def obj_detect_callback(self, msg: ObjectDetections):
+    def obj_detect_callback(self, msg: ObjectsStamped):
         timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
         is_recent = lambda obj_ts: timestamp - obj_ts <= 1.0
 
@@ -309,26 +266,28 @@ class AutonomyStateMachine(Node):
         
         found = False
         for obj in msg.objects:
-            msg = String()
-            msg.data = f"Object: {obj.label}, {obj.confidence}"
-            self.debug_pub.publish(msg)
-            if obj.label != correct_label or obj.confidence < 0.75:
+            debug_msg = String()
+            debug_msg.data = f"Object: {obj.label_id}, {obj.confidence}"
+            self.debug_pub.publish(debug_msg)
+            if obj.label_id != correct_label:
                 continue
 
-            if obj.id in self.known_objects:
-                if is_recent(self.known_objects[obj.id][-1]):
-                    self.known_objects[obj.id].append(timestamp)
+            if obj.label_id in self.known_objects:
+                if is_recent(self.known_objects[obj.label_id][-1]):
+                    self.known_objects[obj.label_id].append(timestamp)
 
-                if len(self.known_objects[obj.id]) < 5:
-                    msg = String()
-                    msg.data = f"Num Detections: {len(self.known_objects[obj.id])}"
-                    self.debug_pub.publish(msg)
+                if len(self.known_objects[obj.label_id]) < 5:
+                    debug_msg = String()
+                    debug_msg.data = f"Num Detections: {len(self.known_objects[obj.label_id])}"
+                    self.debug_pub.publish(debug_msg)
                     continue
 
                 # Low-pass filter the distance and heading information
                 # For the ZED X is forward, Y is left, Z is up. Positive angle is counterclockwise from x-axis. All in meters.
-                obj_dist = np.sqrt((obj.y) ** 2 + (obj.x) ** 2)
-                obj_ang = -np.arctan(obj.y / obj.x)
+                obj_x = obj.position[0]
+                obj_y = obj.position[1]
+                obj_dist = np.sqrt((obj_y) ** 2 + (obj_x) ** 2)
+                obj_ang = -np.arctan(obj_y / obj_x)
                 if self.obj_distance is None:
                     self.obj_distance = obj_dist
                     self.obj_angle = obj_ang
@@ -340,10 +299,10 @@ class AutonomyStateMachine(Node):
                 if found:
                     self.get_logger().info("Found a duplicate object, taking last one")
                 else:
-                    self.get_logger().info(f"Found object for 15 frames: {obj}")
+                    self.get_logger().info(f"Found object for 15 frames: {obj.label}")
                     found = True
             else:
-                self.known_objects[obj.id] = [timestamp]
+                self.known_objects[obj.label_id] = [timestamp]
 
 
     def ar_tag_callback(self, msg: FiducialTransformArray):
@@ -461,26 +420,20 @@ class AutonomyStateMachine(Node):
 
     def check_detections(self):
         # Enable object detection and aruco detection:
-            # Only when actively navigating
+        # Only when actively navigating
         if self.state in NAVIGATION_STATES and self.enabled:
             #Toggle object detection or aruco detection if within a certain distance of the target point (saves computation time)
             # TODO search for wrong tag state 
             if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and self.dist_to_target < self.obj_enable_distance:
-                if not self.obj_detect_enabled:
-                    self.toggle_object_detection(True)
+                self.obj_toggle_hanlder.toggle(True)
             elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3] and self.dist_to_target < self.aruco_enable_distance:
-                if not self.aruco_detect_enabled:
-                    self.toggle_aruco_detection(True)
+                self.aruco_toggle_handler.toggle(True)
         else:
             # Disable object detection and aruco detection when not navigating
             # Only disable aruco detection if the previous tag was not an aruco tag so that when we go to SEARCH_FOR_WRONG_TAG state, we can make sure not to run into it
             # TODO search for wrong tag state 
-            if self.aruco_detect_enabled:
-                self.toggle_aruco_detection(False)
-                self.get_logger().info(f"Disabling Aruco - State is: {self.state.value}, tag_id is: {self.tag_id.value}")
-            if self.obj_detect_enabled:
-                self.toggle_object_detection(False)
-                self.get_logger().info(f"Disabling Aruco - State is: {self.state.value}, tag_id is: {self.tag_id.value}")
+            self.aruco_toggle_handler.toggle(False)
+            self.obj_toggle_hanlder.toggle(False)
 
 
     def reset_state_variables(self):
