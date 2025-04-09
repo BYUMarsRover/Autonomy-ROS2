@@ -85,6 +85,12 @@ class AutonomyGUI(Node, QWidget):
         self.PlanPathButton.clicked.connect(self.request_plan_path)
         self.selected_waypoint = None
 
+        # Hazard Detection Buttons
+        self.EnableHazardDetectionButton.clicked.connect(self.enable_hazard_detection)
+        self.DisableHazardDetectionButton.clicked.connect(self.disable_hazard_detection)
+        self.EnableHazardAvoidanceButton.clicked.connect(self.enable_hazard_avoidance)
+        self.DisableHazardAvoidanceButton.clicked.connect(self.disable_hazard_avoidance)
+
         # GUI Input Fields
         self.latitude_input = self.LatitudeInput
         self.longitude_input = self.LongitudeInput
@@ -376,6 +382,53 @@ class AutonomyGUI(Node, QWidget):
 
         self.ros_signal.emit('IWCCmds', IWC_cmd_string)
         
+        return
+
+
+    #Hazard Detection Code
+    def enable_hazard_detection(self):
+        req = SetBool.Request()
+        req.data = True
+        future = self.enable_hazard_detection_client.call_async(req)
+        self.gui_setText('logger_label', 'Enabling Hazard Detection...')
+        self.HazardDetection.setText(f'Hazard Detection: Enabled')
+
+    def disable_hazard_detection(self):
+        req = SetBool.Request()
+        req.data = False
+        future = self.enable_hazard_detection_client.call_async(req)
+        self.gui_setText('logger_label', 'Disabling Hazard Detection...')
+        self.HazardDetection.setText(f'Hazard Detection: Disabled')
+
+    def enable_hazard_avoidance(self):
+        req = SetBool.Request()
+        req.data = True
+        future = self.enable_hazard_avoidance_client.call_async(req)
+        self.gui_setText('logger_label', 'Enabling Hazard Avoidance...')
+        self.HazardAvoidance.setText(f'Hazard Avoidance: Enabled')
+
+    def disable_hazard_avoidance(self):
+        req = SetBool.Request()
+        req.data = False
+        future = self.enable_hazard_avoidance_client.call_async(req)
+        self.gui_setText('logger_label', 'Disabling Hazard Avoidance...')
+        self.HazardAvoidance.setText(f'Hazard Avoidance: Disabled')
+
+
+
+    def hazard_callback(self, msg):
+        # Clear the string
+        hazard_text = ''
+
+        for hazard in msg.hazards:
+            if hazard.type == hazard.OBSTACLE:
+                distance = np.sqrt(hazard.location_x**2 + hazard.location_y**2)
+                angle = np.rad2deg(np.arctan2(hazard.location_y, hazard.location_x))
+
+                hazard_text += f'Hazard {round(distance, 2)} m away, {round(angle, 2)} deg, {round(hazard.location_z, 2)} m tall\n'
+
+        # Update the GUI with the hazards
+        self.ros_signal.emit('HazardsFound', hazard_text)
         return
 
     # Callback functions for buttons
