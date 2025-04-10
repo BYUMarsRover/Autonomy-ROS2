@@ -16,9 +16,9 @@
     base_type: "surveyed"
 
     #if base is fixed, the location of the base
-    base_lat: 40.2462441   #degrees
-    base_lon: -111.6467831   #degrees
-    base_alt: 1399.787   #meters
+    # base_lat: 40.2462441   #degrees
+    # base_lon: -111.6467831   #degrees
+    # base_alt: 1399.787   #meters
 
     #if surveyed, the survey time and survey accuracy minimums
     Surveytime: 30 # seconds
@@ -29,7 +29,7 @@
 
     #These values are just for the base.
     #They need to be changed in the launch file for the rover
-    rover_quantity: 1    #number of rovers
+    # rover_quantity: 1    #number of rovers
 
 rover:
   f9p_rover:
