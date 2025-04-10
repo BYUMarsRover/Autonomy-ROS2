@@ -9,6 +9,7 @@ import time
 import queue
 import threading
 
+
 class MegaMiddleman(Node):
     def __init__(self):
         super().__init__('mega_middleman')
@@ -21,6 +22,18 @@ class MegaMiddleman(Node):
         self.last_wheel_msg_time = time.time()
         self.last_elev_msg_time = time.time()
 
+        # LOW PASS FITLER ON WHEELS
+        self.declare_parameter('alpha', 0.8)
+        self.alpha = self.get_parameter('alpha').value
+        # Initialize filtered speeds for each motor (assume all zero initially)
+        self.filtered_speeds = {
+            'left_front': 0.0,
+            'left_middle': 0.0,
+            'left_rear': 0.0,
+            'right_front': 0.0,
+            'right_middle': 0.0,
+            'right_rear': 0.0,
+        }
         
         # SUBSCRIBERS
         self.create_subscription(IWCMotors, '/IWC_motorControl', self.send_wheel, 1)
@@ -53,6 +66,12 @@ class MegaMiddleman(Node):
         self.create_timer(0.01, self.loop)  # 100 Hz
         self.get_logger().info("MegaMiddle Man started")
 
+    def alpha_filter(self, name, new_val):
+        prev = self.filtered_speeds[name]
+        filtered = self.alpha * new_val + (1 - self.alpha) * prev
+        self.filtered_speeds[name] = filtered
+        return filtered
+    
     def connect(self):
         failure_count = 0
         while failure_count < 10:
@@ -141,14 +160,14 @@ class MegaMiddleman(Node):
     
     def send_wheel(self, msg):
         motor_params = [
-            msg.left_front_speed, msg.left_front_dir,
-            msg.left_middle_speed, msg.left_middle_dir,
-            msg.left_rear_speed, msg.left_rear_dir,
-            msg.right_front_speed, msg.right_front_dir,
-            msg.right_middle_speed, msg.right_middle_dir,
-            msg.right_rear_speed, msg.right_rear_dir
+            int(self.alpha_filter('left_front', msg.left_front_speed)), msg.left_front_dir,
+            int(self.alpha_filter('left_middle', msg.left_middle_speed)), msg.left_middle_dir,
+            int(self.alpha_filter('left_rear', msg.left_rear_speed)), msg.left_rear_dir,
+            int(self.alpha_filter('right_front', msg.right_front_speed)), msg.right_front_dir,
+            int(self.alpha_filter('right_middle', msg.right_middle_speed)), msg.right_middle_dir,
+            int(self.alpha_filter('right_rear', msg.right_rear_speed)), msg.right_rear_dir
         ]
-        wheel_msg = "$WHEEL," + ",".join(str(int(param)) for param in motor_params) + "*"
+        wheel_msg = "$WHEEL," + ",".join(str(param) for param in motor_params) + "*"
         # self.write_debug(wheel_msg)
         self.latest_wheel_msg = wheel_msg
 
