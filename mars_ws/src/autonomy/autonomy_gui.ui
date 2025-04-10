@@ -9,7 +9,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>800</height>
+    <height>900</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -30,13 +30,13 @@
      <property name="minimumSize">
       <size>
        <width>1250</width>
-       <height>800</height>
+       <height>900</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
        <width>1250</width>
-       <height>800</height>
+       <height>900</height>
       </size>
      </property>
      <!-- Layout Widget -->
@@ -808,6 +808,55 @@
               </item>
              </layout>
             </item>
+            <!-- Enable and Disable Hazard Detection Buttons -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_9">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Enable Hazard Detection Button  -->
+              <item>
+               <widget class="QPushButton" name="EnableHazardDetectionButton">
+                <property name="text">
+                 <string>Enable Hazard Detection</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Disable Hazard Detection Button  -->
+              <item>
+               <widget class="QPushButton" name="DisableHazardDetectionButton">
+               <property name="text">
+                <string>Disable Hazard Detection</string>
+               </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Enable and Disable Hazard Avoidance Buttons -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_9">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Enable Hazard Detection Button  -->
+              <item>
+               <widget class="QPushButton" name="EnableHazardAvoidanceButton">
+                <property name="text">
+                 <string>Enable Hazard Avoidance</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Disable Hazard Detection Button  -->
+              <item>
+               <widget class="QPushButton" name="DisableHazardAvoidanceButton">
+               <property name="text">
+                <string>Disable Hazard Avoidance</string>
+               </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            
             <!-- Abort Button -->
             <item>
              <widget class="QPushButton" name="AbortButton">
@@ -859,13 +908,13 @@
            <property name="minimumSize">
             <size>
              <width>450</width>
-             <height>800</height>
+             <height>900</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
              <width>450</width>
-             <height>800</height>
+             <height>900</height>
             </size>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_10">
@@ -1204,6 +1253,58 @@
                  </property>
                 </widget>
                </item>
+               <!-- Horizontal Dividing Line -->
+            <item>
+             <widget class="Line" name="line_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <!-- Hazard Avoidance -->
+            <item>
+             <!-- Hazard Avoidance Dash Section Label -->
+             <widget class="QLabel" name="HazardAvoidanceLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Hazard Avoidance&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <!-- Vertical Box that has Hazard Avoidance Items -->
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_11">
+              <!-- Hazard Detection -->
+              <item>
+               <widget class="QLabel" name="HazardDetection">
+                <property name="text">
+                 <string>Hazard Detection: Disabled</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Rover State Singleton Lon -->
+              <item>
+               <widget class="QLabel" name="HazardAvoidance">
+                <property name="text">
+                 <string>Hazard Avoidance: Disabled</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Hazards Found -->
+              <item>
+               <widget class="QLabel" name="HazardsFound">
+                <property name="text">
+                 <string>No hazards found</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
               </layout>
              </widget>
             </item>

@@ -11,6 +11,7 @@ def generate_launch_description():
     aurco_config_file = os.path.join(get_package_share_directory('aruco_detect'),'config', 'DetectorParams.yaml' )
     cam_config_path = os.path.join(get_package_share_directory('start'), 'config', 'cam_config', 'head_cam_params.yaml')
     autonomy_params_file = os.path.join(get_package_share_directory('autonomy'), 'params', 'autonomy_params.yaml')
+    hazard_detection_params_dir = os.path.join(get_package_share_directory('hazard_detection', 'params'))
 
     try:
         # Path to the symlink
@@ -102,7 +103,17 @@ def generate_launch_description():
                 namespace='autonomy',
                 output='screen',
                 parameters=[autonomy_params_file]
+            ),
+            Node( # Launch hazard Detection
+                package='hazard_detection',
+                executable='hazard_detector',
+                name='hazard_detector',
+                namespace='autonomy',
+                output='screen',
+                parameters=[os.path.join(hazard_detection_params_dir, 'hazard_detection.yaml')]
             )
         ])
 
     ])
+
+

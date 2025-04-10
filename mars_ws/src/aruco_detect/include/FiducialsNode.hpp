@@ -24,8 +24,6 @@ protected:
 public:
     // Constructor
     explicit FiducialsNode();
-    // Initialize method to be called after construction
-    void initialize();
 
 private:
     // Parameters
