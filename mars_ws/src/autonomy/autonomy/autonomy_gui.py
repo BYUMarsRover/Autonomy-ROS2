@@ -122,6 +122,8 @@ class AutonomyGUI(Node, QWidget):
         self.selected_waypoint = None
         self.selected_waypoint_to_send = None
         self.selected_waypoint_for_path_planning = None
+        self.prev_lat = 0
+        self.prev_lon = 0
 
 
         # This should return a list like this: [lat, lon] and can be used for the plan path to selected waypoint
@@ -238,6 +240,7 @@ class AutonomyGUI(Node, QWidget):
             self.nav_state = 'TELEOPERATION'
         elif nav_state == 2:
             self.nav_state = 'ARRIVAL'
+            self.prev_lat, self.prev_lon = self.waypoints[self.selected_waypoint_to_send - 1][2:4]
             if self.selected_waypoint_to_send is not None and self.waypoints[self.selected_waypoint_to_send -1][4] == 'ACTIVE':
                 self.waypoints[self.selected_waypoint_to_send -1][4] = 'COMPLETE'
                 self.update_waypoint_list()
@@ -681,12 +684,13 @@ class AutonomyGUI(Node, QWidget):
     
     # Sends the selected waypoint to the state machine either via the path planner node or directly
     def send_waypoint(self):
+
         self.selected_waypoint_to_send = self.selected_waypoint
         # Error Handling
         if self.selected_waypoint_to_send is None:
             self.ros_signal.emit('logger_label', 'No waypoint selected!')
             return
-        
+
         # If the waypoint has a path planned, send the path
         if self.waypoints[self.selected_waypoint_to_send - 1][4] == 'PATH READY':
             self.waypoints[self.selected_waypoint_to_send - 1][4] = 'SENDING'
@@ -707,6 +711,7 @@ class AutonomyGUI(Node, QWidget):
             req.task_list.append(AutonomyTaskInfo(tag_id=tag_id, latitude=lat, longitude=lon))
             future = self.send_waypoint_client.call_async(req)
             future.add_done_callback(self.send_waypoint_callback)
+            
 
         self.update_waypoint_list()
         return
@@ -753,17 +758,10 @@ class AutonomyGUI(Node, QWidget):
         req = AutonomyAbort.Request()
         req.abort_status = True
 
-        try:
-            lat = float(self.latitude_input.text())
-            lon = float(self.longitude_input.text())
-        except ValueError:
-            self.ros_signal.emit('logger_label', 'Invalid latitude or longitude')
-            return
-
         # Create a task and append to the task list
         task = AutonomyTaskInfo()
-        req.lat = lat
-        req.lon = lon
+        req.lat = self.prev_lat
+        req.lon = self.prev_lon
 
         # Send the Abort Request
         future = self.abort_autonomy_client.call_async(req)
