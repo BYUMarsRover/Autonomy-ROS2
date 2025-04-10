@@ -33,7 +33,7 @@ class State(Enum):
     START_ABORT_STATE = "START_ABORT_STATE"
     ABORT_STATE = "ABORT_STATE"
 
-NAVIGATION_STATES = [State.SEARCH_FOR_WRONG_TAG, State.START_POINT_NAVIGATION, State.WAYPOINT_NAVIGATION, State.POINT_NAVIGATION, State.START_SPIN_SEARCH, State.SPIN_SEARCH, State.START_HEX_SEARCH ,State.HEX_SEARCH, State.START_OBJECT_HEX_SEARCH, State.ARUCO_NAVIGATE, State.OBJECT_NAVIGATE, State.ARUCO_GATE_NAVIGATION, State.ARUCO_GATE_ORIENTATION, State.ARUCO_GATE_APPROACH, State.ARUCO_GATE_PAST]
+NAVIGATION_STATES = [State.START_POINT_NAVIGATION, State.WAYPOINT_NAVIGATION, State.POINT_NAVIGATION, State.START_SPIN_SEARCH, State.SPIN_SEARCH, State.START_HEX_SEARCH ,State.HEX_SEARCH, State.START_OBJECT_HEX_SEARCH, State.ARUCO_NAVIGATE, State.OBJECT_NAVIGATE, State.ARUCO_GATE_NAVIGATION, State.ARUCO_GATE_ORIENTATION, State.ARUCO_GATE_APPROACH, State.ARUCO_GATE_PAST]
 
 class TagID(Enum):
     AR_TAG_1 = 1
@@ -161,8 +161,6 @@ class AutonomyStateMachine(Node):
         self.aruco_detect_enabled = False
         self.obj_detect_enabled = False
         self.prev_tag_id = TagID.GPS_ONLY
-        self.prev_lat = 0
-        self.prev_lon = 0
         self.dist_to_target = 1000          # Abitrary High number, Will be updated in point navigation
 
         # Data structure to hold all of the waypoints at a time
@@ -425,13 +423,6 @@ class AutonomyStateMachine(Node):
         self.abort_lon = request.lon
         self.abort_point = GPSCoordinate(self.abort_lat, self.abort_lon, 0)
 
-        # # Disable object detect/aruco detect 
-        # if self.aruco_detect_enabled:
-        #     self.toggle_aruco_detection(False)
-        #     self.get_logger().info(f"Disabling Aruco - State is: {self.state.value}")
-        # if self.obj_detect_enabled:
-        #     self.toggle_object_detection(False)
-        #     self.get_logger().info(f"Disabling Object Detect - State is: {self.state.value}")
 
         if self.abort_status:
             self.get_logger().info("Aborting...")
@@ -454,10 +445,6 @@ class AutonomyStateMachine(Node):
     def stop_backup(self):
         self.drive_controller.issue_drive_cmd(0.0, 0.0)
         self.state = State.START_POINT_NAVIGATION
-
-        # Disable aruco detection to save computational resources
-        if self.aruco_detect_enabled:
-            self.toggle_aruco_detection(False)
 
         # Destroy the timer and reset it
         if self.backup_timer is not None:
@@ -491,17 +478,16 @@ class AutonomyStateMachine(Node):
             # Only when actively navigating
         if self.state in NAVIGATION_STATES and self.enabled:
             #Toggle object detection or aruco detection if within a certain distance of the target point (saves computation time)
-            # TODO search for wrong tag state 
             if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and self.dist_to_target < self.obj_enable_distance:
                 if not self.obj_detect_enabled:
                     self.toggle_object_detection(True)
+                    self.get_logger().info(f"Enabling Aruco - State is: {self.state.value}, tag_id is: {self.tag_id.value}")
             elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3] and self.dist_to_target < self.aruco_enable_distance:
                 if not self.aruco_detect_enabled:
                     self.toggle_aruco_detection(True)
+                    self.get_logger().info(f"Enabling Aruco - State is: {self.state.value}, tag_id is: {self.tag_id.value}")
+
         else:
-            # Disable object detection and aruco detection when not navigating
-            # Only disable aruco detection if the previous tag was not an aruco tag so that when we go to SEARCH_FOR_WRONG_TAG state, we can make sure not to run into it
-            # TODO search for wrong tag state 
             if self.aruco_detect_enabled:
                 self.toggle_aruco_detection(False)
                 self.get_logger().info(f"Disabling Aruco - State is: {self.state.value}, tag_id is: {self.tag_id.value}")
@@ -517,8 +503,6 @@ class AutonomyStateMachine(Node):
         self.obj_distance = None
         self.obj_angle = None
         self.prev_tag_id = self.tag_id
-        self.prev_lat = self.target_latitude
-        self.prev_lon = self.target_longitude
         self.dist_to_target = 1000          # Arbitrary High number, will be updated in navigation
 
 
@@ -541,21 +525,11 @@ class AutonomyStateMachine(Node):
                 self.obj_distance = None
                 self.obj_angle = None
 
-                # Disable object detection and aruco detection when arrived
-                # Only disable aruco detection if the previous tag was not an aruco tag so that when we go to SEARCH_FOR_WRONG_TAG state, we can make sure not to run into it
-                if self.aruco_detect_enabled and self.prev_tag_id not in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3]:
-                    self.toggle_aruco_detection(False)
-                if self.obj_detect_enabled:
-                    self.toggle_object_detection(False)
-                elif self.prev_tag_id == None:  # not always running in the background, just in case state machine is restarted
-                    self.toggle_aruco_detection(True)
-
-
             #This SEARCH_FOR_WRONG_STATE state is used to ensure that after finishing one aruco tag task, the rover will
             #backup if the rover sees the wrong tag, to ensure it does not run into the aruco stand before starting the next task
             elif self.state == State.SEARCH_FOR_WRONG_TAG: 
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                if self.wrong_aruco_tag_found:
+                if self.prev_tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3]:    # instead of enabling aruco, just check if previous tag was an AR and backup anyways
 
                     #Find the angle to our new target point
                     target_latitude = self.waypoints[0].latitude
@@ -563,12 +537,6 @@ class AutonomyStateMachine(Node):
                     target_point = GPSCoordinate(target_latitude, target_longitude, 0)
                     chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, target_point)
                     des_heading = self.wrap(chi_rad - self.curr_heading, 0)
-
-                    # #Backup and turn the same direction as the angle to the next waypoint
-                    # if des_heading < 0:
-                    #     self.drive_controller.issue_drive_cmd(-2.0, -self.wrong_aruco_backup_spin_speed)
-                    # else:
-                    #     self.drive_controller.issue_drive_cmd(-2.0, self.wrong_aruco_backup_spin_speed)
                     linear_vel = -2.0
                     angular_vel = -self.wrong_aruco_backup_spin_speed if des_heading < 0 else self.wrong_aruco_backup_spin_speed
 
