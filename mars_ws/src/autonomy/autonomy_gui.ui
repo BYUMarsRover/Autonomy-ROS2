@@ -9,7 +9,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>800</height>
+    <height>900</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -30,13 +30,13 @@
      <property name="minimumSize">
       <size>
        <width>1250</width>
-       <height>800</height>
+       <height>900</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
        <width>1250</width>
-       <height>800</height>
+       <height>900</height>
       </size>
      </property>
      <!-- Layout Widget -->
@@ -808,6 +808,55 @@
               </item>
              </layout>
             </item>
+            <!-- Enable and Disable Hazard Detection Buttons -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_9">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Enable Hazard Detection Button  -->
+              <item>
+               <widget class="QPushButton" name="EnableHazardDetectionButton">
+                <property name="text">
+                 <string>Enable Hazard Detection</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Disable Hazard Detection Button  -->
+              <item>
+               <widget class="QPushButton" name="DisableHazardDetectionButton">
+               <property name="text">
+                <string>Disable Hazard Detection</string>
+               </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Enable and Disable Hazard Avoidance Buttons -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_9">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Enable Hazard Detection Button  -->
+              <item>
+               <widget class="QPushButton" name="EnableHazardAvoidanceButton">
+                <property name="text">
+                 <string>Enable Hazard Avoidance</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Disable Hazard Detection Button  -->
+              <item>
+               <widget class="QPushButton" name="DisableHazardAvoidanceButton">
+               <property name="text">
+                <string>Disable Hazard Avoidance</string>
+               </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            
             <!-- Abort Button -->
             <item>
              <widget class="QPushButton" name="AbortButton">
@@ -815,70 +864,6 @@
                <string>Abort</string>
               </property>
              </widget>
-            </item>
-            <!-- Turn Constant Setting Item -->
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
-              <property name="alignment">
-               <set>Qt::AlignTop</set>
-              </property>
-              <!-- Turn Constant Label -->
-              <item>
-               <widget class="QLabel" name="TurnConstantLabel">
-                <property name="text">
-                 <string>Update C_turn:</string>
-                </property>
-               </widget>
-              </item>
-              <!-- Turn Constant Input -->
-              <item>
-               <widget class="QLineEdit" name="TurnConstantInput">
-                <property name="placeholderText">
-                 <string>enter turn constant</string>
-                </property>
-               </widget>
-              </item>
-              <!-- Send Turn Constant Button -->
-              <item>
-               <widget class="QPushButton" name="SetTurnConstantButton">
-                <property name="text">
-                 <string>Send</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <!-- Speed Constant Setting Item -->
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
-              <property name="alignment">
-               <set>Qt::AlignTop</set>
-              </property>
-              <!-- Turn Constant Label -->
-              <item>
-               <widget class="QLabel" name="SpeedConstantLabel">
-                <property name="text">
-                 <string>Update C_speed:</string>
-                </property>
-               </widget>
-              </item>
-              <!-- Turn Constant Input -->
-              <item>
-               <widget class="QLineEdit" name="SpeedConstantInput">
-                <property name="placeholderText">
-                 <string>enter (0-10)</string>
-                </property>
-               </widget>
-              </item>
-              <!-- Send Turn Constant Button -->
-              <item>
-               <widget class="QPushButton" name="SetSpeedConstantButton">
-                <property name="text">
-                 <string>Send</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
             </item>
             <!-- Horizontal Dividing Line -->
             <item>
@@ -923,13 +908,13 @@
            <property name="minimumSize">
             <size>
              <width>450</width>
-             <height>800</height>
+             <height>900</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
              <width>450</width>
-             <height>800</height>
+             <height>900</height>
             </size>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_10">
@@ -1271,6 +1256,174 @@
               </layout>
              </widget>
             </item>
+            <!-- Horizontal Dividing Line -->
+            <item>
+             <widget class="Line" name="line_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <!-- Gain Setting Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- kp_linear Label -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLabel" name="kpLinearLabel">
+                <property name="text">
+                 <string>kp_lin:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- kp_linear Input -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLineEdit" name="kpLinearInput">
+                <property name="text">
+                 <string>1.0</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>1000</height> <!-- arbitrary max height -->
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <!-- kp_angular Label -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLabel" name="kpAngularLabel">
+                <property name="text">
+                 <string>kp_ang:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- kp_angular Input -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLineEdit" name="kpAngularInput">
+                <property name="text">
+                 <string>80.0</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>1000</height> <!-- arbitrary max height -->
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <!-- limit_linear Label -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLabel" name="LimitLinearLabel">
+                <property name="text">
+                 <string>limit_lin:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- limit_linear Input -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLineEdit" name="LimitLinearInput">
+                <property name="text">
+                 <string>3.0</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>1000</height> <!-- arbitrary max height -->
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <!-- limit_angular Label -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLabel" name="limitAngularLabel">
+                <property name="text">
+                 <string>limit_ang:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- limit_angular Input -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLineEdit" name="LimitAngularInput">
+                <property name="text">
+                 <string>30.0</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>1000</height> <!-- arbitrary max height -->
+                 </size>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Gain Type selection item  -->
+            <item>
+             <layout class="QHBoxLayout" name="GainsTypeSelectionLayout">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- GNSS Nav Gains Radio Button Item -->
+              <item>
+               <widget class="QRadioButton" name="GNSSGainsRadioButton">
+                <property name="text">
+                 <string>GNSS Nav Gains</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Obj/Aruco Nav Gains Radio Button Item -->
+              <item>
+               <widget class="QRadioButton" name="ObjArucoGainsRadioButton">
+                <property name="text">
+                 <string>Obj/Aruco Nav Gains</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Set Gains Button -->
+            <item>
+             <widget class="QPushButton" name="SetGainsButton">
+              <property name="text">
+               <string>Set</string>
+              </property>
+             </widget>
+            </item>
+            <!-- Set Speed Setting Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Set Speed Label -->
+              <item>
+               <widget class="QLabel" name="SpeedConstantLabel">
+                <property name="text">
+                 <string>Update Speed:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Set Speed Input -->
+              <item>
+               <widget class="QLineEdit" name="SpeedConstantInput">
+                <property name="placeholderText">
+                 <string>enter (0-10)</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Set Speed Button -->
+              <item>
+               <widget class="QPushButton" name="SetSpeedConstantButton">
+                <property name="text">
+                 <string>Send</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
            </layout>
           </widget>
          </item>
@@ -1288,13 +1441,13 @@
            <property name="minimumSize">
             <size>
              <width>250</width>
-             <height>500</height>
+             <height>750</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
              <width>250</width>
-             <height>500</height>
+             <height>750</height>
             </size>
            </property>
            <!-- Column 3 Layout (Previous State Column) -->
@@ -1305,7 +1458,7 @@
             <!-- Right Column Label Item -->
             <item alignment="Qt::AlignTop">
              <!-- Right Column Label Widget (Previous States) -->
-             <widget class="QLabel" name="LegInfoLabel">
+             <widget class="QLabel" name="PreviousStatesLabel">
               <property name="text">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Previous States&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
@@ -1325,7 +1478,97 @@
               <property name="alignment">
                 <set>Qt::AlignLeft</set>
               </property>
+              <property name="minimumSize">
+               <size>
+                <width>250</width>
+                <height>450</height>
+               </size>
+              </property>
              </widget>
+            </item>
+            <!-- Camera Feed Label Item -->
+            <item alignment="Qt::AlignTop">
+             <!-- Title for camera feed section -->
+             <widget class="QLabel" name="CameraFeedLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Camera Feed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+             </widget>
+            </item> 
+            <!-- Low Frequency Camera Feed that can be used as seen fit -->
+            <item>
+             <widget class="QLabel" name="CameraFeed">
+              <property name="text">
+               <string>Empty... Waiting for Feed</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>250</width>
+                <height>20</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <!-- Horizontal Dividing Line -->
+            <item>
+             <widget class="Line" name="line_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <!-- Hazard Avoidance -->
+            <item>
+             <!-- Hazard Avoidance Dash Section Label -->
+             <widget class="QLabel" name="HazardAvoidanceLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Hazard Avoidance&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <!-- Vertical Box that has Hazard Avoidance Items -->
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_11">
+              <!-- Hazard Detection -->
+              <item>
+               <widget class="QLabel" name="HazardDetection">
+                <property name="text">
+                 <string>Hazard Detection: Disabled</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Rover State Singleton Lon -->
+              <item>
+               <widget class="QLabel" name="HazardAvoidance">
+                <property name="text">
+                 <string>Hazard Avoidance: Disabled</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Hazards Found -->
+              <item>
+               <widget class="QLabel" name="HazardsFound">
+                <property name="text">
+                 <string>No hazards found</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>
