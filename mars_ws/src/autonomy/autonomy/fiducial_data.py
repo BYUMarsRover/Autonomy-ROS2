@@ -26,6 +26,7 @@ class FiducialDataNode(Node):
         self.distance = None
         self.angle_offset = None
         self.num_tags = None
+        self.get_logger().info('Fiducial Data (Autonomy) node initialized')
 
     def publish_msg(self):
         # Create and publish FiducialData message
