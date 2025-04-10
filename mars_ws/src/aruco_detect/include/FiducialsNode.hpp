@@ -24,8 +24,6 @@ protected:
 public:
     // Constructor
     explicit FiducialsNode();
-    // Initialize method to be called after construction
-    void initialize();
 
 private:
     // Parameters
@@ -36,6 +34,7 @@ private:
     bool do_pose_estimation_;
     bool have_cam_info_;
     double fiducial_len_;
+    int prev_num_markers_;
     cv::Ptr<cv::aruco::Dictionary> dictionary;
 
     // Publishers

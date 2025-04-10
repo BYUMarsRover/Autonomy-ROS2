@@ -17,9 +17,6 @@ mobility:
       angular_autopilot_Ts: 0.1
       angular_autopilot_limit: 30.0
 
-      percent_speed: 1.0
-
-
   # Aruco Autopilot Params
   aruco_autopilot_manager:
     ros__parameters:
@@ -34,11 +31,6 @@ mobility:
       aruco_angular_autopilot_ki: 0.0
       aruco_angular_autopilot_Ts: 0.1
       aruco_angular_autopilot_limit: 30.0
-
-      #Params for both autopilots
-
-      low_bound: 10.0 # lowerbound for piecewise function # this is in degrees
-      high_bound: 15.0 # highbound for piecewise function # this is in degrees 
       
 
   # Drive Params

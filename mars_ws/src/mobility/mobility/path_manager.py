@@ -11,7 +11,7 @@ will stream the needed distance and Chi angles
 import rclpy
 from rclpy.node import Node
 
-from rover_msgs.msg import RoverStateSingleton, MobilityAutopilotCommand, MobilityGPSWaypoint2Follow, ZedObstacles
+from rover_msgs.msg import RoverStateSingleton, MobilityAutopilotCommand, MobilityGPSWaypoint2Follow
 from sensor_msgs.msg import NavSatFix
 from std_msgs.msg import String
 from std_srvs.srv import SetBool
@@ -24,8 +24,6 @@ from mobility.utils.GPSTools import *
 
 class PathManager(Node):
 
-    avoid_hazards = False
-
     def __init__(self) -> None:
         super().__init__('path_manager')
 
@@ -34,19 +32,18 @@ class PathManager(Node):
         self.enabled = False
         self.autopilot_cmd = MobilityAutopilotCommand()
 
-        # ROS 2 Services
-        self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable)
-
-        # ROS 2 Publishers
-        self.autopilot_cmds_pub = self.create_publisher(MobilityAutopilotCommand, '/mobility/autopilot_cmds', 10)
-        self.debug_pub = self.create_publisher(String, '/mobility/PathManagerDebug', 10)
-
+        # Publish Autopilot command every 0.1 seconds
         timer_period = 0.1
         self.pub_timer = self.create_timer(timer_period, self.publish_autopilot_cmd)
 
-        # self.publish_debug("[__init__] ENTER")
+        # Services
+        self.create_service(SetBool, '/mobility/path_manager/enabled', self.enable)
 
-        # ROS 2 Subscribers
+        # Publishers
+        self.autopilot_cmds_pub = self.create_publisher(MobilityAutopilotCommand, '/mobility/autopilot_cmds', 10)
+        self.debug_pub = self.create_publisher(String, '/mobility/PathManagerDebug', 10) # Topic for debug messages specific to this node
+
+        # Subscribers
         self.gps_waypoint_2_follow_sub = self.create_subscription(
             MobilityGPSWaypoint2Follow,
             '/mobility/waypoint2follow',
@@ -59,21 +56,8 @@ class PathManager(Node):
             self.rover_state_singleton_callback,
             10
         )
-        # self.zed_obstacles_sub = self.create_subscription(
-        #     ZedObstacles,
-        #     '/zed/obstacles',
-        #     self.set_zed_obstacles,
-        #     qos_profile
-        # )
 
-        # Hazard avoidance parameters
-        self.roll = None
-        self.pitch = None
-        self.yaw = None
-        # self.obstacles = []
-
-        self.get_logger().warn("Path_Manager Initialized!")
-        # self.publish_debug("[__init__] EXIT")
+        self.get_logger().info("Path_Manager Initialized!")
 
     def publish_debug(self, message: str):
         """Publish debug messages."""
@@ -86,11 +70,10 @@ class PathManager(Node):
         curr_lat = msg.gps.latitude
         curr_lon = msg.gps.longitude
         curr_elv = msg.gps.altitude
-        self.roll = msg.map_roll
-        self.pitch = msg.map_pitch
-        self.yaw = msg.map_yaw
 
-        self.publish_debug("[rover_state_singleton_callback] Setting self.current_point")
+        # self.publish_debug("[rover_state_singleton_callback] Setting self.current_point")
+
+        # Update Current Point
         self.current_point = GPSCoordinate(curr_lat, curr_lon, curr_elv)
 
         self.update_autopilot_cmd()
@@ -102,43 +85,27 @@ class PathManager(Node):
             des_lon = msg.longitude
             des_elv = self.current_point.alt if self.current_point else 0.0
 
-            self.publish_debug("[waypoint_2_follow_callback] Setting self.desired_point")
+            # self.publish_debug("[waypoint_2_follow_callback] Setting self.desired_point")
             self.desired_point = GPSCoordinate(des_lat, des_lon, des_elv)
 
             self.update_autopilot_cmd()
         except Exception as e:
             self.get_logger().error(f"Exception in waypoint_2_follow_callback: {e}")
 
-    # def set_zed_obstacles(self, msg: ZedObstacles):
-    #     self.publish_debug("[set_zed_obstacles] ENTER")
-    #     rover_heading = self.get_rover_heading_from_orientation()
-
-    #     if self.current_point is not None:
-    #         try:
-    #             self.obstacles = []
-    #             for i in range(len(msg.x_coord)):
-    #                 rel_x = msg.x_coord[i] * np.cos(rover_heading) + msg.y_coord[i] * np.sin(rover_heading)
-    #                 rel_y = -1 * msg.x_coord[i] * np.sin(rover_heading) + msg.y_coord[i] * np.cos(rover_heading)
-    #                 self.obstacles.append((rel_x, rel_y))
-    #         except Exception as e:
-    #             self.get_logger().error(f"Exception in set_zed_obstacles: {e}")
-
-    #     self.update_autopilot_cmd()
-    #     self.publish_debug("[set_zed_obstacles] EXIT")
 
     def update_autopilot_cmd(self):
-        self.publish_debug("[update_autopilot_cmd] ENTER")
+        # self.publish_debug("[update_autopilot_cmd] ENTER")
 
         # If current point and desired point have been set, calculate the autopilot commands
         if self.current_point and self.desired_point:
-            self.publish_debug("[update_autopilot_cmd] Calculating autopilot commands")
+            # self.publish_debug("[update_autopilot_cmd] Calculating autopilot commands")
             self.chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, self.desired_point)
             self.distance = GPSTools.distance_between_lat_lon(self.current_point, self.desired_point)
 
             self.autopilot_cmd.distance_to_target = self.distance
             self.autopilot_cmd.course_angle = self.chi_rad
 
-        self.publish_debug("[update_autopilot_cmd] EXIT")
+        # self.publish_debug("[update_autopilot_cmd] EXIT")
 
     def enable(self, request: SetBool.Request, response: SetBool.Response):
         self.enabled = request.data
@@ -147,12 +114,6 @@ class PathManager(Node):
         response.message = f'Path Manager: {"ENABLED" if self.enabled else "DISABLED"}'
         return response
 
-    def get_rover_heading_from_orientation(self):
-        return self.yaw
-
-    def potential_fields(self):
-        # Placeholder for potential fields logic
-        pass
 
     def publish_autopilot_cmd(self):
 

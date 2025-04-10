@@ -65,8 +65,8 @@ class DriveControllerAPI:
     def issue_aruco_autopilot_cmd(self, angle: float, distance: float):
         # ArUco Autopilot Command: Sends movement commands relative to an ArUco marker/object.
         self._activate_managers([False, False, True, True, True])
-        self.aruco_autopilot_cmd.distance_to_target = distance
-        self.aruco_autopilot_cmd.angle_to_target = angle
+        self.aruco_autopilot_cmd.distance_to_target = float(distance)
+        self.aruco_autopilot_cmd.angle_to_target = float(angle)     # TODO probably need to add float checking for all these
         self.aruco_autopilot_cmds_pub.publish(self.aruco_autopilot_cmd)
 
     def _activate_managers(self, enable_list: list):
@@ -89,13 +89,15 @@ class DriveControllerAPI:
                 self._toggle_enable_wheel_manager(enable_list[3])
             if enable_list[4] != self.aruco_autopilot_manager_enabled:
                 self._toggle_enable_aruco_autopilot_manager(enable_list[4])
-            
-            # Log the current status of the managers
-            self.node.get_logger().info(f"Path Manager {'ENABLED' if self.path_manager_enabled else 'DISABLED'}")
-            self.node.get_logger().info(f"Autopilot Manager: {'ENABLED' if self.autopilot_manager_enabled else 'DISABLED'}")
-            self.node.get_logger().info(f"Drive Manager: {'ENABLED' if self.drive_manager_enabled else 'DISABLED'}")
-            self.node.get_logger().info(f"Wheel Manager: {'ENABLED' if self.wheel_manager_enabled else 'DISABLED'}")
-            self.node.get_logger().info(f"ArUco Autopilot Manager: {'ENABLED' if self.aruco_autopilot_manager_enabled else 'DISABLED'}")
+
+
+            if self.node.verbose:
+                # Log the current status of the managers
+                self.node.get_logger().info(f"Path Manager {'ENABLED' if self.path_manager_enabled else 'DISABLED'}")
+                self.node.get_logger().info(f"Autopilot Manager: {'ENABLED' if self.autopilot_manager_enabled else 'DISABLED'}")
+                self.node.get_logger().info(f"Drive Manager: {'ENABLED' if self.drive_manager_enabled else 'DISABLED'}")
+                self.node.get_logger().info(f"Wheel Manager: {'ENABLED' if self.wheel_manager_enabled else 'DISABLED'}")
+                self.node.get_logger().info(f"ArUco Autopilot Manager: {'ENABLED' if self.aruco_autopilot_manager_enabled else 'DISABLED'}")
 
     #TOGGLE & UPDATE FUNCTIONS-------------------------------------------------------------
     #  _toggle_enable_*_manager methods use ROS2 services (SetBool) to enable/disable the respective managers.

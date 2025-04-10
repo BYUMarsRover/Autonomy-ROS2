@@ -6,18 +6,19 @@
     obj_distance_tolerance: 1.5 #TODO: Tune
     abort_distance_tolerance: 5.0
     aruco_distance_tolerance: 2.0
-    hex_search_radius: 17.3
-    navigate_speed: 1.0
-    object_speed: 0.3
-    aruco_speed: 0.3
-    spin_speed: 30.0
+    hex_search_radius: 4.0
+    navigate_speed: 10.0
+    object_speed: 3.0
+    aruco_speed: 3.0
+    spin_speed: 20.0
     object_alpha_lpf: 0.5
     obj_enable_distance: 25.0
     aruco_enable_distance: 30.0
     aruco_alpha_lpf: 0.5
     spin_step_size: 0.6981
-    spin_delay_time: 1.2
+    spin_delay_time: 2.0
     wrong_aruco_backup_distance: 7.0
+    wrong_aruco_backup_spin_speed: 15.0
     hex_seach_angle_difference: 50.0
 
 fiducial_data:

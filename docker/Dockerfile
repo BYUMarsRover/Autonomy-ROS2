@@ -91,9 +91,10 @@ RUN pip3 install pydantic==1.10.9
 RUN pip3 install pyserial
 
 # Install rviz - Gabe Slade, Feb 2025
-# Needed in order to display various system GUIs
+# Needed in order to display various system GUIs (including rover orientation + hazards)
 USER root
 RUN apt update && apt install -y ros-humble-rviz-common
+RUN apt update && apt install -y ros-humble-rviz2
 USER $NAME
 
 # Install ROS 2 usb-cam package - Daniel Webb, Feb 2025
@@ -137,4 +138,24 @@ USER $NAME
 # Needed to publish raw gps data if we use gpsd
 USER root
 RUN apt update && apt install -y gpsd-clients
+USER $NAME
+
+# Install pcl and open3D - Gabe Slader Mar 2025
+# Needed for the hazard avoidance node 
+RUN pip3 install open3d
+RUN pip3 install pcl
+
+# Install libboost for ublox read - Braden Meyers, Mar 2025
+# Needed to run UBLOX_read_2
+USER root
+RUN apt update && apt install -y libboost-all-dev
+USER $NAME
+
+# Install urdf launch - Braden Meyers, Apr 2025
+# Needed to publish the urdf model of the rover
+# ZED messages for the the object detections
+USER root
+RUN apt update && apt install -y \
+    ros-humble-urdf-launch \
+    ros-humble-zed-msgs    
 USER $NAME

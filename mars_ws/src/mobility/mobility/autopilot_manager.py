@@ -9,14 +9,13 @@ for the drive manager given current vs desired heading, as well as distance to t
 
 import rclpy
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 
 import numpy as np
 import time
 
-from rover_msgs.msg import RoverStateSingleton, MobilityAutopilotCommand, MobilityVelocityCommands, ZedObstacles
-from rover_msgs.srv import SetFloat32
-from std_msgs.msg import Float32
-from geometry_msgs.msg import Twist
+from rover_msgs.msg import RoverStateSingleton, MobilityAutopilotCommand, MobilityVelocityCommands, HazardArray, Hazard
+from rover_msgs.srv import SetFloats
 from std_srvs.srv import SetBool
 
 # Import wrap from utils and PIDControl from controllers
@@ -31,7 +30,6 @@ class AutopilotManager(Node):
         self.declare_parameters(
             namespace='',
             parameters=[
-                ('percent_speed', 0.5),
                 ('linear_autopilot_kp', 1.0),
                 ('linear_autopilot_ki', 0.0),
                 ('linear_autopilot_kd', 0.0),
@@ -57,104 +55,203 @@ class AutopilotManager(Node):
         self.course_error = 0
 
         # Controller gains
-        self.speed = self.get_parameter("percent_speed").get_parameter_value().double_value
-
-        self.kp_linear = self.get_parameter("linear_autopilot_kp").get_parameter_value().double_value
-        self.ki_linear = self.get_parameter("linear_autopilot_ki").get_parameter_value().double_value
-        self.kd_linear = self.get_parameter("linear_autopilot_kd").get_parameter_value().double_value
+        kp_linear = self.get_parameter("linear_autopilot_kp").get_parameter_value().double_value
+        ki_linear = self.get_parameter("linear_autopilot_ki").get_parameter_value().double_value
+        kd_linear = self.get_parameter("linear_autopilot_kd").get_parameter_value().double_value
         Ts_linear = self.get_parameter("linear_autopilot_Ts").get_parameter_value().double_value
         limit_linear = self.get_parameter("linear_autopilot_limit").get_parameter_value().double_value
 
-        self.kp_angular = self.get_parameter("angular_autopilot_kp").get_parameter_value().double_value
-        self.ki_angular = self.get_parameter("angular_autopilot_ki").get_parameter_value().double_value
-        self.kd_angular = self.get_parameter("angular_autopilot_kd").get_parameter_value().double_value
+        kp_angular = self.get_parameter("angular_autopilot_kp").get_parameter_value().double_value
+        ki_angular = self.get_parameter("angular_autopilot_ki").get_parameter_value().double_value
+        kd_angular = self.get_parameter("angular_autopilot_kd").get_parameter_value().double_value
         Ts_angular = self.get_parameter("angular_autopilot_Ts").get_parameter_value().double_value
         limit_angular = self.get_parameter("angular_autopilot_limit").get_parameter_value().double_value
 
-        self.low_bound = np.deg2rad(self.get_parameter("low_bound").get_parameter_value().double_value)
-        self.high_bound = np.deg2rad(self.get_parameter("high_bound").get_parameter_value().double_value)
-
         # Other variables
-        self.heading_plus = 0.0
-        self.slow_down = 0.0
-        self.too_close_limit = 0.0  # TODO: Choose a reasonable value
-        self.detections = []
+        self.avoidance_heading = 0.0
+        self.heading_alpha = 0.0
+        self.obstacle_found = False
+        self.scaling_factor = 0.0
+        self.critical_distance = 1.0
+        self.target_distance_tolerance = 2.0
+        self.time_step = 3.0  # Example time step in seconds
+        self.last_callback_time = self.get_clock().now()  # Store last callback time
+        self.timer = None  # Timer starts as None
+        self.no_obstacle_alpha = 0.9
+        self.hazard_avoidance_enabled = False
 
-        # ROS subscribers
+        # subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
         self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, 10)
-        self.create_subscription(ZedObstacles, '/zed/obstacles', self.obstacle_callback, 10)
+        self.create_subscription(HazardArray, '/hazards', self.obstacle_callback, 10)
 
-        # ROS publishers
+        # publishers
         self.rover_vel_cmds_pub = self.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', 10)
 
-        # ROS services
+        # services
         self.create_service(SetBool, '/mobility/autopilot_manager/enabled', self.enable)
-        self.create_service(SetFloat32, '/mobility/speed_factor', self.set_speed)
+        self.create_service(SetFloats, '/mobility/autopilot_manager/set_gains', self.set_gains)
+        self.create_service(SetBool, '/mobility/autopilot_manager/enable_hazard_avoidance', self.enable_hazard_avoidance)
 
-        # PID controllers
-        self.linear_controller = PIDControl(self.speed * self.kp_linear, self.speed * self.ki_linear, self.speed * self.kd_linear,
+        # PID controllers (only proportional control used as of 4/2/2025)
+        self.linear_controller = PIDControl(kp_linear, ki_linear, kd_linear,
                                             Ts=Ts_linear, limit=limit_linear)
-        self.angular_controller = PIDControl(self.speed * self.kp_angular, self.speed * self.ki_angular, self.speed * self.kd_angular,
+        self.angular_controller = PIDControl(kp_angular, ki_angular, kd_angular,
                                              Ts=Ts_angular, limit=limit_angular)
+        
+        # Variables used to stop the rover if GPS is lost
+        self.previous_dist_to_target = None
+        self.distance_to_target_timepoint = time.time()
+        self.max_time_between_gps_messages = 0.5
 
         self.get_logger().info("Autopilot Manager initialized!")
 
 
     def autopilot_cmds_callback(self, msg: MobilityAutopilotCommand):
-        
+
         self.distance = msg.distance_to_target
+        lin_vel = self.linear_controller.update_with_error(self.distance)
+
+        if self.distance != self.previous_dist_to_target:
+            # Update the time since we got a unique distance to target
+            self.distance_to_target_timepoint = time.time()
+
+        if time.time() - self.distance_to_target_timepoint > self.max_time_between_gps_messages:
+            self.rover_vel_cmd.u_cmd = 0.0
+            self.rover_vel_cmd.omega_cmd = 0.0
+            self.rover_vel_cmd.course_heading_error = 0.0
+            self.publish_rover_vel_cmd()
+            self.get_logger().error('Oh no, we lost GPS, sending 0.0 linear and angular velocity commands!', throttle_duration_sec=1.0)
+            return
 
         # self.des_heading = wrap(msg.course_angle + self.heading_plus, 0)
-        self.des_heading = wrap(msg.course_angle, 0)
+        if self.obstacle_found:
+            #figure out new heading to avoid obstacle
+            new_heading  = msg.course_angle * (1 - self.heading_alpha) + self.avoidance_heading * self.heading_alpha
+            self.des_heading = wrap(new_heading, 0)
+            self.rover_vel_cmd.u_cmd = lin_vel * .5
+
+        else:
+            #Low pass filters to smooth out the heading and velocity
+            new_heading  = msg.course_angle * (1 - self.no_obstacle_alpha) + self.des_heading * self.no_obstacle_alpha
+            self.des_heading = wrap(new_heading, 0)
+
+            if self.distance < self.target_distance_tolerance:
+                #If we are close to the target rely on the linear controller to slow down
+                self.rover_vel_cmd.u_cmd = lin_vel
+            else:
+                #Else, rely on our low pass filter to smooth out the velocity
+                self.rover_vel_cmd.u_cmd = lin_vel * (1 - self.no_obstacle_alpha) + self.rover_vel_cmd.u_cmd * self.no_obstacle_alpha
+
         self.curr_heading = wrap(self.curr_heading, 0)
         self.course_error = wrap(self.des_heading - self.curr_heading, 0)
 
-        lin_vel = self.linear_controller.update_with_error(self.distance)
         angular_vel = self.angular_controller.update_with_error(self.course_error)
-
-        self.rover_vel_cmd.u_cmd = lin_vel
+            
         self.rover_vel_cmd.omega_cmd = angular_vel
         self.rover_vel_cmd.course_heading_error = self.course_error
 
         self.publish_rover_vel_cmd()
 
+        # Update previous distance to target
+        self.previous_dist_to_target = self.distance
+
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
         self.curr_heading = np.deg2rad(msg.map_yaw)
 
-    def obstacle_callback(self, msg: ZedObstacles):
-        if len(msg.x_coord) == 0:
+    def obstacle_callback(self, msg):
+        #Only avoid obstacles if the hazard avoidance is enabled
+        if not self.hazard_avoidance_enabled:
             return
 
-        x_coord = msg.x_coord[0]
-        dist = msg.dist[0]
-        side = 1 if x_coord > 100 else -1
+        #start a timer to stop avoiding the obstacle after a certain amount of time
+        if self.timer is None:
+            self.timer = self.create_timer(self.time_step, self.toggle_obstacle_avoidance)
+        else:
+            self.timer.cancel()  # Cancel the previous timer
+            self.timer = self.create_timer(self.time_step, self.toggle_obstacle_avoidance)
 
-        self.heading_plus += side
-        if abs(dist) < self.too_close_limit:
-            self.slow_down += 1
+        self.obstacle_found = False
 
-        self.detections.append((time.time_ns(), side))
+        if len(msg.hazards) == 0:
+            self.get_logger().error("No hazards included in hazard message")
+        if len(msg.hazards) == 1:
 
-    def heading_decay(self):
-        if not self.detections:
-            return
-        if time.time_ns() - self.detections[0][0] > 10.0:
-            self.heading_plus -= self.detections.pop(0)[1]
+            self.hazard_msg = msg
+            self.obstacle_found = True 
+            hazard = msg.hazards[0]
+            if hazard.type == Hazard.OBSTACLE:
 
-    def set_speed(self, request: SetFloat32.Request, response: SetFloat32.Response):
-        self.speed = request.data
+                #Calculate the distance to the obstacle
+                dist = np.sqrt(hazard.location_x**2 + hazard.location_y**2)
+                max_obs_radius = np.sqrt(hazard.length_x**2 + hazard.length_y**2)*.6 #.6 is a fudge factor
+                self.scaling_factor = self.critical_distance + max_obs_radius #the bigger the obstacle, the more space we want to give it
 
-        self.linear_controller.kp = self.speed * self.kp_linear
-        self.linear_controller.ki = self.speed * self.ki_linear
-        self.linear_controller.kd = self.speed * self.kd_linear
+                angle_to_obstacle = np.arctan2(hazard.location_y, hazard.location_x)
 
-        self.angular_controller.kp = self.speed * self.kp_angular
-        self.angular_controller.ki = self.speed * self.ki_angular
-        self.angular_controller.kd = self.speed * self.kd_angular
+                if(hazard.location_y > 0): #obtacle is on the right
+                    self.avoidance_heading = angle_to_obstacle - np.pi/2
+                    
+                elif(hazard.location_y <= 0): #obstacle is on the left
+                    self.avoidance_heading = angle_to_obstacle + np.pi/2
+
+                #Calculate the alpha value to to avoid the obstacle
+                self.heading_alpha = self.scaling_factor / dist #the closer we are to the obstacle, the more we want to avoid it
+                
+        #If there are multiple hazards, we need to decide which way we want to try to avoid it
+        else:
+            self.hazard_msg = msg
+            self.obstacle_found = True 
+
+            #Turn in the direction that has the least average distance to the obstacles
+            average_y = np.mean([hazard.location_y for hazard in msg.hazards])
+            if average_y > 0: #ave obstacle is on the right
+                max_avoidance_heading = np.max([np.arctan2(hazard.location_y, hazard.location_x) for hazard in msg.hazards])
+                self.avoidance_heading = max_avoidance_heading - np.pi/2
+
+            elif average_y <= 0: #ave obstacle is on the left
+                min_avoidance_heading = np.min([np.arctan2(hazard.location_y, hazard.location_x) for hazard in msg.hazards])
+                self.avoidance_heading = min_avoidance_heading + np.pi/2
+
+            #Calculate the distance to the closest obstacle and the maximum radius of the obstacles
+            min_dist = np.min([np.sqrt(hazard.location_x**2 + hazard.location_y**2) for hazard in msg.hazards])
+            max_obs_radius = np.max([np.sqrt(hazard.length_x**2 + hazard.length_y**2)*.6 for hazard in msg.hazards]) #.6 is a fudge factor
+            self.scaling_factor = self.critical_distance + max_obs_radius #the bigger the obstacle, the more space we want to give it
+
+            #Calculate the alpha value to to avoid the obstacle
+            self.heading_alpha = self.scaling_factor / min_dist #the closer we are to the obstacle, the more we want to avoid it               
+                    
+
+    def toggle_obstacle_avoidance(self):
+        #It has been self.time_step seconds since the last obstacle detection, so we can stop avoiding the obstacle
+        self.obstacle_found = False
+        #turn off the timer
+        self.timer.cancel()
+
+    def set_gains(self, request: SetFloats.Request, response: SetFloats.Response):
+
+        self.get_logger().info('New gains received')
+
+        # Unpack gains and limits
+        kp_linear = request.data[0]
+        kp_angular = request.data[1]
+        limit_linear = request.data[2]
+        limit_angular = request.data[3]
+
+        # Update Parameters
+        self.set_parameters([Parameter('linear_autopilot_kp', Parameter.Type.DOUBLE, kp_linear)])
+        self.set_parameters([Parameter('angular_autopilot_kp', Parameter.Type.DOUBLE, kp_angular)])
+        self.set_parameters([Parameter('linear_autopilot_limit', Parameter.Type.DOUBLE, limit_linear)])
+        self.set_parameters([Parameter('angular_autopilot_limit', Parameter.Type.DOUBLE, limit_angular)])
+
+        # Update the controller gains
+        self.linear_controller.kp = kp_linear
+        self.angular_controller.kp = kp_angular
+        self.linear_controller.limit = limit_linear
+        self.angular_controller.limit = limit_angular
 
         response.success = True
-        response.message = f"Autopilot Speed set to {self.speed}"
+        response.message = "Autopilot gains set successfully"
         return response
 
     def publish_rover_vel_cmd(self):
@@ -165,6 +262,13 @@ class AutopilotManager(Node):
         self.enabled = request.data
         response.success = True
         response.message = f"Autopilot Manager: {'ENABLED' if self.enabled else 'DISABLED'}"
+        return response
+    
+    def enable_hazard_avoidance(self, request, response):
+        self.get_logger().info(f"Hazard Avoidance: {'ENABLED' if request.data else 'DISABLED'}")
+        self.hazard_avoidance_enabled = request.data
+        response.success = True
+        response.message = f"Hazard Avoidance: {'ENABLED' if self.hazard_avoidance_enabled else 'DISABLED'}"
         return response
 
 
