@@ -53,8 +53,8 @@ def generate_launch_description():
             name='imu_filter_madgwick',
             output='screen',
             remappings=[
-                ('imu/data_raw', 'zed/imu/data'),
-                ('imu/mag', 'zed/imu/mag')
+                ('imu/data_raw', 'zed/zed_node/imu/data'),
+                ('imu/mag', 'zed/zed_node/imu/mag')
             ],
             parameters=[imu_config]
         ),

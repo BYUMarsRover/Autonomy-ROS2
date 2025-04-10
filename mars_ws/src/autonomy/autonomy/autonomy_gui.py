@@ -26,6 +26,7 @@ from std_srvs.srv import SetBool
 from std_msgs.msg import Header, Int8
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
+from zed_msgs.msg import ObjectsStamped
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloats, SetFloat32, OrderAutonomyWaypoint, PlanPath
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors, HazardArray
 from sensor_msgs.msg import Image
@@ -127,6 +128,7 @@ class AutonomyGUI(Node, QWidget):
 
         # This should return a list like this: [lat, lon] and can be used for the plan path to selected waypoint
         # lat, lon = self.waypoints[self.selected_waypoint - 1][2:4]
+        self.obj_to_label = {"Class ID: 0": 0 ,"Class ID: 1": 1}
 
         ################# ROS Communication #################
 
@@ -138,7 +140,7 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(NavState, '/nav_state', self.nav_state_callback, 10) # Navigation state (speed, direction, navigation state)
         self.create_subscription(RoverState, '/rover_state', self.rover_state_callback, 10) # Autonomy State machine state
         self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10) #Aruco Detection
-        self.create_subscription(ObjectDetections, '/zed/object_detection', self.obj_detect_callback, 10) #Object Detection
+        self.create_subscription(ObjectsStamped, '/zed/zed_node/obj_det/objects', self.obj_detect_callback, 10) #Object Detection
         self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, 10) #What mobility/path_manager is publishing
         self.create_subscription(MobilityVelocityCommands, '/mobility/rover_vel_cmds', self.vel_cmds_callback, 10) #What mobility/autopilot_manager is publishing
         self.create_subscription(MobilityDriveCommand, '/mobility/wheel_vel_cmds', self.wheel_vel_cmds_callback, 10) #What mobility/wheel_manager is publishing
@@ -309,16 +311,21 @@ class AutonomyGUI(Node, QWidget):
         obj_name = None
         objects_string = ''
         for obj in msg.objects:
-            if obj.label == 1:
+            obj_label = self.obj_to_label.get(obj.label, None)
+            if obj_label == 1:
                 obj_name = 'Bottle'
-            elif obj.label == 2:
+            elif obj_label == 2:
                 obj_name = 'Mallet'
             else:
                 obj_name = 'Unknown'
 
             # Low-pass filter the distance and heading information
-            obj_dist = np.sqrt((obj.y) ** 2 + (obj.x) ** 2)
-            obj_ang = -np.arctan(obj.y / obj.x)
+            # TODO: should we have a low pass filter for the this on the gui??
+            obj_x = obj.position[0]
+            obj_y = obj.position[1]
+
+            obj_dist = np.sqrt((obj_y) ** 2 + (obj_x) ** 2)
+            obj_ang = -np.arctan(obj_y / obj_x)
             if self.obj_distance is None:
                 self.obj_distance = obj_dist
                 self.obj_angle = obj_ang
