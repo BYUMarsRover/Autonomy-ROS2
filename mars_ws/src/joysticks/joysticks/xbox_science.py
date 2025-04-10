@@ -112,17 +112,18 @@ class XBOX(Node):
         self.secondary_cache_control.set(input_axis_secondary_cache)
         
         # Handle Switching Tools
-        if (msg.buttons[LB] and not self.prev_joy_state.buttons[LB]) or (msg.buttons[RB] and not self.prev_joy_state.buttons[RB]):
+        if (self.prev_joy_state is not None):
+            if (msg.buttons[LB] and not self.prev_joy_state.buttons[LB]) or (msg.buttons[RB] and not self.prev_joy_state.buttons[RB]):
 
-            # Turn of an actuator before we switch contexts
-            if (self.using_probe):
-                self.probe_control.set(0)
-            else:
-                self.auger_control.set(0)
+                # Turn of an actuator before we switch contexts
+                if (self.using_probe):
+                    self.probe_control.set(0)
+                else:
+                    self.auger_control.set(0)
 
-            # Switch Tool Context
-            self.using_probe = not self.using_probe
-            self.auger_control_callback(None)
+                # Switch Tool Context
+                self.using_probe = not self.using_probe
+                self.auger_control_callback(None)
 
         # Handle Probe and Auger
         if (self.using_probe):
