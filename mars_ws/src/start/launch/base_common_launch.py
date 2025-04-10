@@ -69,6 +69,6 @@ def generate_launch_description():
         xbox_drive_launch,
         base_home_gui_launch,
         heartbeat_base_launch,
-        mapviz_launch,
+        # mapviz_launch,
         odometry_base_launch
     ])
