@@ -52,7 +52,6 @@ class AutonomyStateMachine(Node):
 
     def __init__(self):
         super().__init__('state_machine')
-        self.get_logger().info('in init AutonomyStateMachine')
 
         # TODO add conditionals to see if in verbose state
         self.verbose = False       # If you want additional log output to debug
@@ -166,6 +165,8 @@ class AutonomyStateMachine(Node):
         # Data structure to hold all of the waypoints at a time
         self.waypoints: deque[AutonomyTaskInfo] = deque()
         self.last_waypoint: AutonomyTaskInfo = None
+
+        self.get_logger().info('Autonomy State Machine initialized')
 
     def set_task_callback(self, task_info: AutonomyTaskInfo):
 

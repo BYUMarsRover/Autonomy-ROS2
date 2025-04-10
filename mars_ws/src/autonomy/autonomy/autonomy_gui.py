@@ -28,7 +28,7 @@ from std_msgs.msg import Header, Int8
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloat32, OrderAutonomyWaypoint, PlanPath
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors, HazardArray
 from ament_index_python.packages import get_package_share_directory
 
 import threading
@@ -85,6 +85,12 @@ class AutonomyGUI(Node, QWidget):
         self.PlanPathButton.clicked.connect(self.request_plan_path)
         self.selected_waypoint = None
 
+        # Hazard Detection Buttons
+        self.EnableHazardDetectionButton.clicked.connect(self.enable_hazard_detection)
+        self.DisableHazardDetectionButton.clicked.connect(self.disable_hazard_detection)
+        self.EnableHazardAvoidanceButton.clicked.connect(self.enable_hazard_avoidance)
+        self.DisableHazardAvoidanceButton.clicked.connect(self.disable_hazard_avoidance)
+
         # GUI Input Fields
         self.latitude_input = self.LatitudeInput
         self.longitude_input = self.LongitudeInput
@@ -136,7 +142,8 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(MobilityDriveCommand, '/mobility/wheel_vel_cmds', self.wheel_vel_cmds_callback, 10) #What mobility/wheel_manager is publishing
         self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, 1) 
         self.create_subscription(PlanPath.Response, '/path_plan_response', self.plan_path_response_callback, 10) # Allows the path planner node to notify when the path is ready
-
+        self.create_subscription(HazardArray, '/hazards', self.hazard_callback, 10)
+        
         # Services
 
         # Clients
@@ -154,6 +161,10 @@ class AutonomyGUI(Node, QWidget):
         self.abort_autonomy_client = self.create_client(AutonomyAbort, '/autonomy/abort_autonomy')
         # Requests that the path planner plans the path to the selected waypoint
         self.plan_path_client = self.create_client(PlanPath, '/plan_path')
+        # Enables the hazard detection node
+        self.enable_hazard_detection_client = self.create_client(SetBool, '/hazard_detector/enable')
+        # Enables hazard avoidance in the autopilot manager
+        self.enable_hazard_avoidance_client = self.create_client(SetBool, '/mobility/autopilot_manager/enable_hazard_avoidance')
 
         #NOTE: depricated until mapviz capability added back
         # self.plan_order_mapviz_client = self.create_client(OrderPath, '/plan_order_mapviz')
@@ -371,6 +382,53 @@ class AutonomyGUI(Node, QWidget):
 
         self.ros_signal.emit('IWCCmds', IWC_cmd_string)
         
+        return
+
+
+    #Hazard Detection Code
+    def enable_hazard_detection(self):
+        req = SetBool.Request()
+        req.data = True
+        future = self.enable_hazard_detection_client.call_async(req)
+        self.gui_setText('logger_label', 'Enabling Hazard Detection...')
+        self.HazardDetection.setText(f'Hazard Detection: Enabled')
+
+    def disable_hazard_detection(self):
+        req = SetBool.Request()
+        req.data = False
+        future = self.enable_hazard_detection_client.call_async(req)
+        self.gui_setText('logger_label', 'Disabling Hazard Detection...')
+        self.HazardDetection.setText(f'Hazard Detection: Disabled')
+
+    def enable_hazard_avoidance(self):
+        req = SetBool.Request()
+        req.data = True
+        future = self.enable_hazard_avoidance_client.call_async(req)
+        self.gui_setText('logger_label', 'Enabling Hazard Avoidance...')
+        self.HazardAvoidance.setText(f'Hazard Avoidance: Enabled')
+
+    def disable_hazard_avoidance(self):
+        req = SetBool.Request()
+        req.data = False
+        future = self.enable_hazard_avoidance_client.call_async(req)
+        self.gui_setText('logger_label', 'Disabling Hazard Avoidance...')
+        self.HazardAvoidance.setText(f'Hazard Avoidance: Disabled')
+
+
+
+    def hazard_callback(self, msg):
+        # Clear the string
+        hazard_text = ''
+
+        for hazard in msg.hazards:
+            if hazard.type == hazard.OBSTACLE:
+                distance = np.sqrt(hazard.location_x**2 + hazard.location_y**2)
+                angle = np.rad2deg(np.arctan2(hazard.location_y, hazard.location_x))
+
+                hazard_text += f'Hazard {round(distance, 2)} m away, {round(angle, 2)} deg, {round(-hazard.location_z, 2)} m tall\n'
+
+        # Update the GUI with the hazards
+        self.ros_signal.emit('HazardsFound', hazard_text)
         return
 
     # Callback functions for buttons
