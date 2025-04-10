@@ -386,6 +386,10 @@ class AutonomyStateMachine(Node):
         self.abort_lon = request.lon
         self.abort_point = GPSCoordinate(self.abort_lat, self.abort_lon, 0)
 
+        # Reset the waypoints when aborting
+        self.get_logger().warn('Removing waypoints because of abort')
+        while len(self.waypoints) > 0:
+            self.last_waypoint = self.waypoints.popleft()
 
         if self.abort_status:
             self.get_logger().info("Aborting...")
@@ -407,10 +411,14 @@ class AutonomyStateMachine(Node):
 
     def stop_backup(self):
         self.drive_controller.issue_drive_cmd(0.0, 0.0)
-        self.state = State.START_POINT_NAVIGATION
+        if self.state == State.SEARCH_FOR_WRONG_TAG:
+            self.state = State.START_POINT_NAVIGATION
+        else:
+            self.get_logger().warn("Aborted during backup maneuver")
 
         # Destroy the timer and reset it
         if self.backup_timer is not None:
+            self.get_logger().info("Stopping backup timer")
             self.backup_timer.cancel()
             self.backup_timer = None
 
@@ -527,14 +535,7 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 self.dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
 
-                #Toggle object detection or aruco detection if within a certain distance of the target point (saves computation time)
-                if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and self.dist_to_target < self.obj_enable_distance:
-                    if not self.obj_detect_enabled:
-                        self.toggle_object_detection(True)
-                elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3] and self.dist_to_target < self.aruco_enable_distance:
-                    if not self.aruco_detect_enabled:
-                        self.toggle_aruco_detection(True)
-                
+                           
                 if self.dist_to_target < self.dist_tolerance:
                     if self.tag_id == TagID.GPS_ONLY:
                         self.get_logger().info('GPS Task is complete!')
