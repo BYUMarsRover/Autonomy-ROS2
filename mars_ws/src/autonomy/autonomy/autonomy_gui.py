@@ -120,6 +120,7 @@ class AutonomyGUI(Node, QWidget):
 
         # This should return a list like this: [lat, lon] and can be used for the plan path to selected waypoint
         # lat, lon = self.waypoints[self.selected_waypoint - 1][2:4]
+        self.obj_to_label = {"Class ID: 0": 0 ,"Class ID: 1": 1}
 
         ################# ROS Communication #################
 
@@ -284,7 +285,7 @@ class AutonomyGUI(Node, QWidget):
         obj_name = None
         objects_string = ''
         for obj in msg.objects:
-            obj_label = obj.label_id
+            obj_label = self.obj_to_label.get(obj.label, None)
             if obj_label == 1:
                 obj_name = 'Bottle'
             elif obj_label == 2:
