@@ -16,7 +16,6 @@ import os
 
 
 def generate_launch_description():
-    return
 
     # Declare launch arguments
     mapviz_location_arg = DeclareLaunchArgument('MAPVIZ_LOCATION', default_value='hanksville')
@@ -70,6 +69,6 @@ def generate_launch_description():
         xbox_drive_launch,
         base_home_gui_launch,
         heartbeat_base_launch,
-        mapviz_launch,
+        # mapviz_launch,
         odometry_base_launch
     ])

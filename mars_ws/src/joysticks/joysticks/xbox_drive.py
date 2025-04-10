@@ -35,6 +35,7 @@ class XBOX(Node):
 
     def __init__(self):
         super().__init__('xbox_drive')
+        self.get_logger().info('Running XBOX Drive')
 
         # Subscribers
         self.sub_joy_sub = self.create_subscription(
@@ -46,7 +47,12 @@ class XBOX(Node):
 
         # Publishers
         self.publisher_group = pubup.UpdatePublisherGroup()
-        self.joy_drive_enabled_pub = self.publisher_group.add_publisher(pubup.UpdatePublisher(self.create_publisher(Bool, "/mobility/joy_drive_enabled", 10)))
+        self.joy_drive_enabled_pub = self.publisher_group.add_publisher(
+            pubup.UpdatePublisher(
+                self.create_publisher(Bool, "/mobility/joy_drive_enabled", 10),
+                "std_msgs.msg.Bool"
+                )
+            )
         self.elevator_pub = self.publisher_group.add_publisher(pubup.ElevatorPublisher(self.create_publisher(Elevator, "/elevator", 10)))
 
         self.teleop_drive_cmds_pub = self.create_publisher(
@@ -88,7 +94,7 @@ class XBOX(Node):
             self.teleop_drive_cmds_pub.publish(IWC_cmd_msg)
 
             # Call to update elevator commands
-            self.elevator_commands()
+            self.elevator_commands(msg)
 
         # Post all changes to the publishers
         self.publisher_group.publish()
@@ -175,13 +181,15 @@ class XBOX(Node):
         back_button = msg.buttons[BACK]
 
         if back_button:
-            self.drive_enabled = False
-            self.joy_drive_enabled_pub(self.drive_enabled)
-            self.get_logger().info('Drive disabled')
+            if (self.drive_enabled):
+                self.drive_enabled = False
+                self.joy_drive_enabled_pub.set(self.drive_enabled)
+                self.get_logger().info('Drive disabled')
         elif start_button:
-            self.drive_enabled = True
-            self.joy_drive_enabled_pub(self.drive_enabled)
-            self.get_logger().info('Drive enabled')
+            if (not self.drive_enabled):
+                self.drive_enabled = True
+                self.joy_drive_enabled_pub.set(self.drive_enabled)
+                self.get_logger().info('Drive enabled')
 
     def _check_desired_drive_speed(self, msg: Joy):
         right_bumper = msg.buttons[RB]
@@ -208,10 +216,10 @@ class XBOX(Node):
         x_button = msg.buttons[X]
         y_button = msg.buttons[Y]
 
-        if x_button:
+        if x_button and not self.drivetrain_mode == 'tank':
             self.drivetrain_mode = 'tank'
             self.get_logger().info('Drive mode is now tank')
-        elif y_button:
+        elif y_button and not self.drivetrain_mode == 'arcade':
             self.drivetrain_mode = 'arcade'
             self.get_logger().info('Drive mode is now arcade')
 
