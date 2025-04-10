@@ -60,7 +60,6 @@ class AutonomyStateMachine(Node):
 
     def __init__(self):
         super().__init__('state_machine')
-        self.get_logger().info('in init AutonomyStateMachine')
 
         # TODO add conditionals to see if in verbose state
         self.verbose = False       # If you want additional log output to debug
@@ -89,7 +88,7 @@ class AutonomyStateMachine(Node):
 
         self.object_detect_client = self.create_client(SetBool, '/zed/zed_node/enable_obj_det')
         self.aruco_detect_client = self.create_client(SetBool, '/enable_detections')
-        self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
+        self.set_speed_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_speed')
         self.path_manager_client = self.create_client(SetBool, '/mobility/path_manager/enabled')
         self.autopilot_manager_client = self.create_client(SetBool, '/mobility/autopilot_manager/enabled')
         self.drive_manager_client = self.create_client(SetBool, '/mobility/drive_manager/enabled')
@@ -103,7 +102,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('aruco_distance_tolerance', 2.0)
         self.declare_parameter('abort_distance_tolerance', 2.0)
         self.declare_parameter('hex_search_radius', 17.0)
-        self.declare_parameter('navigate_speed', 1.0)
+        self.declare_parameter('navigate_speed', 10.0)
         self.declare_parameter('aruco_speed', 0.3)
         self.declare_parameter('spin_speed', 30.0)
         self.declare_parameter('object_alpha_lpf', 0.5)
@@ -177,6 +176,8 @@ class AutonomyStateMachine(Node):
         self.waypoints: deque[AutonomyTaskInfo] = deque()
         self.last_waypoint: AutonomyTaskInfo = None
 
+        self.get_logger().info('Autonomy State Machine initialized')
+
     def set_task_callback(self, task_info: AutonomyTaskInfo):
 
         self.target_latitude = task_info.latitude
@@ -223,8 +224,6 @@ class AutonomyStateMachine(Node):
         '''
         Sets current task to be the next one in the deque. Note that this also assumes that the TASK_COMPLETE task has popped
         the first waypoint off the front of the deque.
-        TODO: Confirm that popping off the completed task is most clearly done in the TASK_COMPLETE state, or if it is better
-        to pass in a task_complete parameter that tells this function to pop or not pop
         '''
         current_task: AutonomyTaskInfo = self.waypoints[0]
         self.set_task_callback(current_task)
@@ -402,26 +401,16 @@ class AutonomyStateMachine(Node):
             chi_1 += 2.0 * np.pi
         return chi_1
 
-    def set_autopilot_speed(self, speed):
-        print("Setting autopilot speed...")
-
-        # Wait until the service is available
-        if not self.srv_autopilot_speed.wait_for_service(timeout_sec=3.0): #Don't know what would be the appropriate time to wait here
-            self.get_logger().info("Service /mobility/speed_factor not available!")
-            return False
-        if self.verbose:
-            self.get_logger().warn("Service is live")
-
-        # Create a request object
-        self.autopilot_speed_request = SetFloat32.Request()  # Create a request instance
-        self.autopilot_speed_request.data = speed
-        if self.verbose:
-            self.get_logger().warn("Executing service")
-        
-        # Send the request and wait for the response
-        self.get_logger().info("Sending request to autopilot_speed_request", throttle_duration_sec=3.0)
-        future = self.srv_autopilot_speed.call_async(self.autopilot_speed_request)
-
+    # This is a service that adjusts the drive manager's max speed, different speeds should be used for local navigation vs GNSS navigation
+    def set_speed(self, speed):
+        # Speed is from 0 to 10
+        req = SetFloat32.Request()
+        req.data = float(speed)
+        if self.set_speed_client.service_is_ready():
+            future = self.set_speed_client.call_async(req)
+        else:
+            self.get_logger().warn("Set speed service is not available.")
+        return
 
     def check_detections(self):
         # Enable object detection and aruco detection:
@@ -485,7 +474,7 @@ class AutonomyStateMachine(Node):
             elif self.state == State.START_POINT_NAVIGATION:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 self.get_logger().info("Starting commands")
-                self.set_autopilot_speed(self.navigate_speed)
+                self.set_speed(self.navigate_speed)
                 self.get_logger().info(f"Number of waypoints {len(self.waypoints)}")
                 self.target_latitude = self.waypoints[0].latitude
                 self.target_longitude = self.waypoints[0].longitude
@@ -497,7 +486,7 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.path_waypoint_dist_tolerance:
                     if len(self.waypoints) > 1:
-                        self.waypoints.pop(0)
+                        self.waypoints.popleft()
                         self.get_logger().info("Popped intermediate waypoint!")
                         self.state = State.START_POINT_NAVIGATION
                     else:
@@ -513,6 +502,14 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 self.dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
 
+                #Toggle object detection or aruco detection if within a certain distance of the target point (saves computation time)
+                if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and self.dist_to_target < self.obj_enable_distance:
+                    if not self.obj_detect_enabled:
+                        self.toggle_object_detection(True)
+                elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3] and self.dist_to_target < self.aruco_enable_distance:
+                    if not self.aruco_detect_enabled:
+                        self.toggle_aruco_detection(True)
+                
                 if self.dist_to_target < self.dist_tolerance:
                     if self.tag_id == TagID.GPS_ONLY:
                         self.get_logger().info('GPS Task is complete!')
@@ -590,7 +587,7 @@ class AutonomyStateMachine(Node):
                     self.state = State.OBJECT_NAVIGATE
 
             elif self.state == State.ARUCO_NAVIGATE:
-                self.set_autopilot_speed(self.aruco_speed)
+                self.set_speed(self.aruco_speed)
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.correct_aruco_tag_found: #f we have seen the correct tag in the last second, navigate using angle and distance
                     self.drive_controller.issue_aruco_autopilot_cmd(self.aruco_tag_angle, self.aruco_tag_distance)
@@ -602,7 +599,7 @@ class AutonomyStateMachine(Node):
                     self.drive_controller.stop()
 
             elif self.state == State.OBJECT_NAVIGATE:
-                self.set_autopilot_speed(self.object_speed)
+                self.set_speed(self.object_speed)
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.correct_obj_found:
                     self.drive_controller.issue_aruco_autopilot_cmd(self.obj_angle, self.obj_distance)
@@ -628,7 +625,7 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.START_ABORT_STATE:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                self.set_autopilot_speed(self.navigate_speed)
+                self.set_speed(self.navigate_speed)
                 self.drive_controller.issue_path_cmd(self.abort_lat, self.abort_lon)
                 self.state = State.ABORT_STATE
 

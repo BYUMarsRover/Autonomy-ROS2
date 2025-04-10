@@ -1,0 +1,19 @@
+rosbag2_bagfile_information:
+  version: 4
+  storage_identifier: sqlite3
+  relative_file_paths:
+    - lidar_data_small_object_0.db3
+  duration:
+    nanoseconds: 19528095660
+  starting_time:
+    nanoseconds_since_epoch: 1741794157592097417
+  message_count: 193
+  topics_with_message_count:
+    - topic_metadata:
+        name: /unilidar/cloud
+        type: sensor_msgs/msg/PointCloud2
+        serialization_format: cdr
+        offered_qos_profiles: ""
+      message_count: 193
+  compression_format: ""
+  compression_mode: ""

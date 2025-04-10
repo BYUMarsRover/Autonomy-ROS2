@@ -86,14 +86,6 @@ FiducialsNode::FiducialsNode()
 
 }
 
-
-void FiducialsNode::initialize() {
-    // Initialize image_transport_ with shared_from_this()
-    //image_transport_ = image_transport::create_image_transport(node);
-
-    
-}
-
 // Image callback
 void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg) {
     if (!enable_detections_) {

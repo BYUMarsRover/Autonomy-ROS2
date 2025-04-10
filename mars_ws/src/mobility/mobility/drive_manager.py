@@ -32,11 +32,6 @@ class DriveManager(Node):
             '/mobility/drive_manager/enabled', 
             self.enable
         )
-        self.set_turn_constant_service = self.create_service(
-            SetFloat32,
-            '/mobility/drive_manager/set_turn_constant',
-            self.set_turn_constant
-        )
         self.set_speed_service = self.create_service(
             SetFloat32,
             '/mobility/drive_manager/set_speed',
@@ -54,22 +49,15 @@ class DriveManager(Node):
         self.r = 0.8382  # wheel radius (meters)
         self.B = 0.1335  # wheel base distance (meters)
         self.k = 0.5     # parameter for sigmoid function
-        self.turn_constant = 1.0
         self.rover_cmd = MobilityDriveCommand()
         self.enabled = False
 
         self.get_logger().info(f"Drive Manager initialized!")
-
-    def set_turn_constant(self, request, response):
-        self.turn_constant = request.data
-        response.success = True
-        response.message = f"Drive Manager: Turn Constant set to {self.turn_constant}"
-        return response
     
     def set_speed(self, request, response):
-        if request.data > 10.0:
+        if request.data < 0.0 or request.data > 10.0:
             response.success = False
-            response.message = f"Drive Manager: Max Speed cannot be greater than 10.0"
+            response.message = f"Speed must be between 0.0 and 10.0"
             return response
         else:
             self.max_speed = 10.1 - request.data
@@ -86,8 +74,8 @@ class DriveManager(Node):
             rw_speed = 0.0
             lw_speed = 0.0
         else:
-            v_l = u_cmd + omega_cmd * self.B / 2 * self.turn_constant # NOTE: turn constant was a quick fix
-            v_r = u_cmd - omega_cmd * self.B / 2 * self.turn_constant
+            v_l = u_cmd + omega_cmd * self.B / 2
+            v_r = u_cmd - omega_cmd * self.B / 2
             psidot_Ld = v_l / self.r
             psidot_Rd = v_r / self.r
             lw_speed = self.piecewise_sigmoid(psidot_Ld)
@@ -110,7 +98,6 @@ class DriveManager(Node):
         return response
 
     def piecewise_sigmoid(self, x):
-        # self.get_logger().info(f"IN: piecewise_sigmoid, x: {x}")
         m = (1 - self.cmd_lb) / self.max_speed
         if x < -self.max_speed:
             return -1

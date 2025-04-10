@@ -40,7 +40,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RoverState.msg"
   "msg/RoverStateSingleton.msg"
   "msg/WaypointNav.msg"
-  "msg/ZedObstacles.msg"
   "msg/Camera.msg"
   "msg/DeviceList.msg"
   "msg/ScienceFADIntensity.msg"
@@ -57,6 +56,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Elevator.msg"
   "msg/PointList.msg"
   "srv/OrderPath.srv"
+  "msg/Hazard.msg"
+  "msg/HazardArray.msg"
   "srv/CameraControl.srv"
   "srv/CameraControlResponse.srv"
   "srv/AutonomyAbort.srv"
@@ -64,6 +65,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/OrderAutonomyWaypoint.srv"
   "srv/AutonomyWaypointResponse.srv"
   "srv/SetFloat32.srv"
+  "srv/SetFloats.srv"
   "srv/PlanPath.srv"
   DEPENDENCIES std_msgs geometry_msgs nav_msgs sensor_msgs builtin_interfaces # Add packages that above messages depend on
 )
