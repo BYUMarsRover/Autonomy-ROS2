@@ -162,6 +162,9 @@ class AutonomyStateMachine(Node):
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)  
         self.tag_id = TagID.GPS_ONLY
         self.a_task_complete = False
+        # Object detection dict
+        # self.obj_to_label = {"mallet": "Class ID: 0", "bottle": "Class ID: 1"}
+        self.obj_to_label = {"Class ID: 0": 0 ,"Class ID: 1": 1}
 
         # Enabling Detections variables
         self.obj_toggle_hanlder = ServiceCaller(self.object_detect_client, self,'Object', OBJ_ENABLE_MSGS, OBJ_DISABLE_MSGS)
@@ -263,22 +266,24 @@ class AutonomyStateMachine(Node):
         correct_label = 0 
         if self.tag_id == TagID.BOTTLE:
             correct_label = 1
+
         
         found = False
         for obj in msg.objects:
+            label = self.obj_to_label.get(obj.label, None) # TODO verify this is working as expected
             debug_msg = String()
-            debug_msg.data = f"Object: {obj.label_id}, {obj.confidence}"
+            debug_msg.data = f"Object: {label}, {obj.confidence}"
             self.debug_pub.publish(debug_msg)
-            if obj.label_id != correct_label:
+            if label != correct_label:
                 continue
 
-            if obj.label_id in self.known_objects:
-                if is_recent(self.known_objects[obj.label_id][-1]):
-                    self.known_objects[obj.label_id].append(timestamp)
+            if label in self.known_objects:
+                if is_recent(self.known_objects[label][-1]):
+                    self.known_objects[label].append(timestamp)
 
-                if len(self.known_objects[obj.label_id]) < 5:
+                if len(self.known_objects[label]) < 5:
                     debug_msg = String()
-                    debug_msg.data = f"Num Detections: {len(self.known_objects[obj.label_id])}"
+                    debug_msg.data = f"Num Detections: {len(self.known_objects[label])}"
                     self.debug_pub.publish(debug_msg)
                     continue
 
@@ -302,7 +307,7 @@ class AutonomyStateMachine(Node):
                     self.get_logger().info(f"Found object for 15 frames: {obj.label}")
                     found = True
             else:
-                self.known_objects[obj.label_id] = [timestamp]
+                self.known_objects[label] = [timestamp]
 
 
     def ar_tag_callback(self, msg: FiducialTransformArray):
