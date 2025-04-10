@@ -123,8 +123,6 @@ class AutonomyGUI(Node, QWidget):
         self.selected_waypoint_for_path_planning = None
         self.prev_lat = 0
         self.prev_lon = 0
-        # self.lat = 0
-        # self.lon = 0
 
 
         # This should return a list like this: [lat, lon] and can be used for the plan path to selected waypoint
@@ -686,8 +684,6 @@ class AutonomyGUI(Node, QWidget):
             self.ros_signal.emit('logger_label', 'No waypoint selected!')
             return
 
-        # self.lat, self.lon = self.waypoints[self.selected_waypoint_to_send - 1][2:4] # Extract lat/lon of the selected waypoint
-            
         # If the waypoint has a path planned, send the path
         if self.waypoints[self.selected_waypoint_to_send - 1][4] == 'PATH READY':
             self.waypoints[self.selected_waypoint_to_send - 1][4] = 'SENDING'
@@ -754,13 +750,6 @@ class AutonomyGUI(Node, QWidget):
         #logic for aborting autonomy task
         req = AutonomyAbort.Request()
         req.abort_status = True
-
-        # try:
-        #     lat = float(self.latitude_input.text())
-        #     lon = float(self.longitude_input.text())
-        # except ValueError:
-        #     self.ros_signal.emit('logger_label', 'Invalid latitude or longitude')
-        #     return
 
         # Create a task and append to the task list
         task = AutonomyTaskInfo()
