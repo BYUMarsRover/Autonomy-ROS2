@@ -104,14 +104,14 @@ def generate_launch_description():
                 output='screen',
                 parameters=[autonomy_params_file]
             ),
-            Node( # Launch hazard Detection
-                package='hazard_detection',
-                executable='hazard_detector',
-                name='hazard_detector',
-                namespace='autonomy',
-                output='screen',
-                parameters=[os.path.join(hazard_detection_params_dir, 'hazard_detection.yaml')]
-            )
+            # Node( # Launch hazard Detection
+            #     package='hazard_detection',
+            #     executable='hazard_detector',
+            #     name='hazard_detector',
+            #     namespace='autonomy',
+            #     output='screen',
+            #     parameters=[os.path.join(hazard_detection_params_dir, 'hazard_detection.yaml')]
+            # )
         ])
 
     ])

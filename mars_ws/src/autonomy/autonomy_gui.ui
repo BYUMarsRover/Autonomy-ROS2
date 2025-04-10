@@ -865,70 +865,6 @@
               </property>
              </widget>
             </item>
-            <!-- Turn Constant Setting Item -->
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
-              <property name="alignment">
-               <set>Qt::AlignTop</set>
-              </property>
-              <!-- Turn Constant Label -->
-              <item>
-               <widget class="QLabel" name="TurnConstantLabel">
-                <property name="text">
-                 <string>Update C_turn:</string>
-                </property>
-               </widget>
-              </item>
-              <!-- Turn Constant Input -->
-              <item>
-               <widget class="QLineEdit" name="TurnConstantInput">
-                <property name="placeholderText">
-                 <string>enter turn constant</string>
-                </property>
-               </widget>
-              </item>
-              <!-- Send Turn Constant Button -->
-              <item>
-               <widget class="QPushButton" name="SetTurnConstantButton">
-                <property name="text">
-                 <string>Send</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <!-- Speed Constant Setting Item -->
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
-              <property name="alignment">
-               <set>Qt::AlignTop</set>
-              </property>
-              <!-- Turn Constant Label -->
-              <item>
-               <widget class="QLabel" name="SpeedConstantLabel">
-                <property name="text">
-                 <string>Update C_speed:</string>
-                </property>
-               </widget>
-              </item>
-              <!-- Turn Constant Input -->
-              <item>
-               <widget class="QLineEdit" name="SpeedConstantInput">
-                <property name="placeholderText">
-                 <string>enter (0-10)</string>
-                </property>
-               </widget>
-              </item>
-              <!-- Send Turn Constant Button -->
-              <item>
-               <widget class="QPushButton" name="SetSpeedConstantButton">
-                <property name="text">
-                 <string>Send</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
             <!-- Horizontal Dividing Line -->
             <item>
              <widget class="Line" name="line_3">
@@ -1317,7 +1253,272 @@
                  </property>
                 </widget>
                </item>
-               <!-- Horizontal Dividing Line -->
+              </layout>
+             </widget>
+            </item>
+            <!-- Horizontal Dividing Line -->
+            <item>
+             <widget class="Line" name="line_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <!-- Gain Setting Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- kp_linear Label -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLabel" name="kpLinearLabel">
+                <property name="text">
+                 <string>kp_lin:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- kp_linear Input -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLineEdit" name="kpLinearInput">
+                <property name="text">
+                 <string>1.0</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>1000</height> <!-- arbitrary max height -->
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <!-- kp_angular Label -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLabel" name="kpAngularLabel">
+                <property name="text">
+                 <string>kp_ang:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- kp_angular Input -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLineEdit" name="kpAngularInput">
+                <property name="text">
+                 <string>80.0</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>1000</height> <!-- arbitrary max height -->
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <!-- limit_linear Label -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLabel" name="LimitLinearLabel">
+                <property name="text">
+                 <string>limit_lin:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- limit_linear Input -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLineEdit" name="LimitLinearInput">
+                <property name="text">
+                 <string>3.0</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>1000</height> <!-- arbitrary max height -->
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <!-- limit_angular Label -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLabel" name="limitAngularLabel">
+                <property name="text">
+                 <string>limit_ang:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- limit_angular Input -->
+              <item alignment="Qt::AlignLeft">
+               <widget class="QLineEdit" name="LimitAngularInput">
+                <property name="text">
+                 <string>30.0</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>1000</height> <!-- arbitrary max height -->
+                 </size>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Gain Type selection item  -->
+            <item>
+             <layout class="QHBoxLayout" name="GainsTypeSelectionLayout">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- GNSS Nav Gains Radio Button Item -->
+              <item>
+               <widget class="QRadioButton" name="GNSSGainsRadioButton">
+                <property name="text">
+                 <string>GNSS Nav Gains</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Obj/Aruco Nav Gains Radio Button Item -->
+              <item>
+               <widget class="QRadioButton" name="ObjArucoGainsRadioButton">
+                <property name="text">
+                 <string>Obj/Aruco Nav Gains</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <!-- Set Gains Button -->
+            <item>
+             <widget class="QPushButton" name="SetGainsButton">
+              <property name="text">
+               <string>Set</string>
+              </property>
+             </widget>
+            </item>
+            <!-- Set Speed Setting Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <!-- Set Speed Label -->
+              <item>
+               <widget class="QLabel" name="SpeedConstantLabel">
+                <property name="text">
+                 <string>Update Speed:</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Set Speed Input -->
+              <item>
+               <widget class="QLineEdit" name="SpeedConstantInput">
+                <property name="placeholderText">
+                 <string>enter (0-10)</string>
+                </property>
+               </widget>
+              </item>
+              <!-- Set Speed Button -->
+              <item>
+               <widget class="QPushButton" name="SetSpeedConstantButton">
+                <property name="text">
+                 <string>Send</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        <!-- Vertical Dividing Line (divides the 2 columns)-->
+         <item>
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+        <!-- Column 3 Item -->
+         <item alignment="Qt::AlignTop">
+          <widget class="QWidget" name="column3_container">
+           <property name="minimumSize">
+            <size>
+             <width>250</width>
+             <height>750</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>250</width>
+             <height>750</height>
+            </size>
+           </property>
+           <!-- Column 3 Layout (Previous State Column) -->
+           <layout class="QVBoxLayout" name="verticalLayout_13">
+            <property name="alignment">
+             <set>Qt::AlignTop</set>
+            </property>
+            <!-- Right Column Label Item -->
+            <item alignment="Qt::AlignTop">
+             <!-- Right Column Label Widget (Previous States) -->
+             <widget class="QLabel" name="PreviousStatesLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Previous States&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="PreviousStatesList">
+              <property name="text">
+               <string>Waiting...</string>
+              </property>
+              <property name="alignment">
+                <set>Qt::AlignLeft</set>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>250</width>
+                <height>450</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <!-- Camera Feed Label Item -->
+            <item alignment="Qt::AlignTop">
+             <!-- Title for camera feed section -->
+             <widget class="QLabel" name="CameraFeedLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Camera Feed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+             </widget>
+            </item> 
+            <!-- Low Frequency Camera Feed that can be used as seen fit -->
+            <item>
+             <widget class="QLabel" name="CameraFeed">
+              <property name="text">
+               <string>Empty... Waiting for Feed</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>250</width>
+                <height>20</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <!-- Horizontal Dividing Line -->
             <item>
              <widget class="Line" name="line_3">
               <property name="orientation">
@@ -1368,65 +1569,6 @@
                </widget>
               </item>
              </layout>
-            </item>
-              </layout>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-        <!-- Vertical Dividing Line (divides the 2 columns)-->
-         <item>
-          <widget class="Line" name="line">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-          </widget>
-         </item>
-        <!-- Column 3 Item -->
-         <item alignment="Qt::AlignTop">
-          <widget class="QWidget" name="column3_container">
-           <property name="minimumSize">
-            <size>
-             <width>250</width>
-             <height>500</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>250</width>
-             <height>500</height>
-            </size>
-           </property>
-           <!-- Column 3 Layout (Previous State Column) -->
-           <layout class="QVBoxLayout" name="verticalLayout_13">
-            <property name="alignment">
-             <set>Qt::AlignTop</set>
-            </property>
-            <!-- Right Column Label Item -->
-            <item alignment="Qt::AlignTop">
-             <!-- Right Column Label Widget (Previous States) -->
-             <widget class="QLabel" name="LegInfoLabel">
-              <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Previous States&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="scaledContents">
-               <bool>false</bool>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignTop</set>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="PreviousStatesList">
-              <property name="text">
-               <string>Waiting...</string>
-              </property>
-              <property name="alignment">
-                <set>Qt::AlignLeft</set>
-              </property>
-             </widget>
             </item>
            </layout>
           </widget>
