@@ -5,17 +5,17 @@ mobility:
   autopilot_manager:
     ros__parameters:   
       # Regular Autopilot Params
-      linear_autopilot_kp: 1.0 # 0.1
+      linear_autopilot_kp: 0.1
       linear_autopilot_kd: 0.0
       linear_autopilot_ki: 0.0
       linear_autopilot_Ts: 0.1
-      linear_autopilot_limit: 3.0
+      linear_autopilot_limit: 1.0
 
-      angular_autopilot_kp: 80.0
+      angular_autopilot_kp: 40.0
       angular_autopilot_kd: 0.0
       angular_autopilot_ki: 0.0
       angular_autopilot_Ts: 0.1
-      angular_autopilot_limit: 30.0
+      angular_autopilot_limit: 500.0
 
   # Aruco Autopilot Params
   aruco_autopilot_manager:
@@ -24,13 +24,13 @@ mobility:
       aruco_linear_autopilot_kd: 0.0
       aruco_linear_autopilot_ki: 0.0
       aruco_linear_autopilot_Ts: 0.1
-      aruco_linear_autopilot_limit: 2.5
+      aruco_linear_autopilot_limit: 4.0
 
-      aruco_angular_autopilot_kp: 80.0
+      aruco_angular_autopilot_kp: 60.0
       aruco_angular_autopilot_kd: 0.0
       aruco_angular_autopilot_ki: 0.0
       aruco_angular_autopilot_Ts: 0.1
-      aruco_angular_autopilot_limit: 30.0
+      aruco_angular_autopilot_limit: 100.0
       
 
   # Drive Params
