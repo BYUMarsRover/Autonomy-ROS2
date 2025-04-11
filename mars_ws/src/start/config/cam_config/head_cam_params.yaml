@@ -23,4 +23,4 @@
       exposure: 100
       autofocus: false
       focus: -1
-      image_raw.enable_pub_plugins: ['image_transport/raw']
+      image_raw.enable_pub_plugins: ['image_transport/raw'] # Enabled topics. Default is a lot of unecessary topics
