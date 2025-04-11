@@ -352,3 +352,10 @@ esac
 # Attach to the 'rover_runtime' tmux session
 ssh -t -X marsrover@$ROVER_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
 
+# Attach to the beautiful tmux session we have created
+if $ATTACH; then
+  tmux a -t $SESSION_NAME
+else
+  printInfo "You may now attach to the running tmux session by running: tmux a -t $SESSION_NAME"
+fi
+

@@ -53,6 +53,7 @@ class XBOX(Node):
                 "std_msgs.msg.Bool"
                 )
             )
+            
         self.elevator_pub = self.publisher_group.add_publisher(pubup.ElevatorPublisher(self.create_publisher(Elevator, "/elevator", 10)))
 
         self.teleop_drive_cmds_pub = self.create_publisher(
@@ -106,12 +107,12 @@ class XBOX(Node):
         elevator_input = msg.axes[DPAD_VERTICAL]
         elevator_speed_input = msg.axes[DPAD_HORIZONTAL]
 
-        self.elevator_pub.set_speed(int(self.elevator_speed_multiplier * 255))
-
         if elevator_input == 1.0:
             self.elevator_pub.set_dir(ELEVATOR_DIR_UP)
+            self.elevator_pub.set_speed(int(self.elevator_speed_multiplier * 255))
         elif elevator_input == -1.0:
             self.elevator_pub.set_dir(ELEVATOR_DIR_DOWN)
+            self.elevator_pub.set_speed(int(self.elevator_speed_multiplier * 255))
         else: 
             self.elevator_pub.set_speed(0)
         
