@@ -91,7 +91,7 @@ RUN pip3 install pydantic==1.10.9
 RUN pip3 install pyserial
 
 # Install rviz - Gabe Slade, Feb 2025
-# Needed in order to display various system GUIs
+# Needed in order to display various system GUIs (including rover orientation + hazards)
 USER root
 RUN apt update && apt install -y ros-humble-rviz-common
 RUN apt update && apt install -y ros-humble-rviz2
@@ -113,14 +113,14 @@ USER $NAME
 
 # Install mapviz - Sarah Sanderson, Feb 2025
 # Necessary packages to run the mapviz viewer
-# USER root
-# RUN apt update && apt install -y \
-#     ros-humble-mapviz \
-#     ros-humble-mapviz-plugins \
-#     ros-humble-tile-map \
-#     ros-humble-multires-image \
-#     ros-humble-rosapi
-# USER $NAME
+USER root
+RUN apt update && apt install -y \
+    ros-humble-mapviz \
+    ros-humble-mapviz-plugins \
+    ros-humble-tile-map \
+    ros-humble-multires-image \
+    ros-humble-rosapi
+USER $NAME
 
 # Install domain bridge package - Nelson Durrant, Feb 2025
 # Necessary dependency for running the domain bridge scripts
@@ -152,3 +152,11 @@ USER $NAME
 # Needed for the hazard avoidance node
 RUN pip3 install open3d
 RUN pip3 install pcl
+# Install urdf launch - Braden Meyers, Apr 2025
+# Needed to publish the urdf model of the rover
+# ZED messages for the the object detections
+USER root
+RUN apt update && apt install -y \
+    ros-humble-urdf-launch \
+    ros-humble-zed-msgs    
+USER $NAME

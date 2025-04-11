@@ -36,7 +36,6 @@ int main(int argc, char** argv) {
 
     // Create an instance of FiducialsNode
     auto node = std::make_shared<FiducialsNode>();
-    node->initialize();
 
     RCLCPP_INFO(node->get_logger(), "Starting ArUco detection node");
 

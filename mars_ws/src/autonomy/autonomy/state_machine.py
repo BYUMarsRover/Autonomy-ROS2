@@ -33,7 +33,7 @@ class State(Enum):
     START_ABORT_STATE = "START_ABORT_STATE"
     ABORT_STATE = "ABORT_STATE"
 
-NAVIGATION_STATES = [State.SEARCH_FOR_WRONG_TAG, State.START_POINT_NAVIGATION, State.WAYPOINT_NAVIGATION, State.POINT_NAVIGATION, State.START_SPIN_SEARCH, State.SPIN_SEARCH, State.START_HEX_SEARCH ,State.HEX_SEARCH, State.START_OBJECT_HEX_SEARCH, State.ARUCO_NAVIGATE, State.OBJECT_NAVIGATE, State.ARUCO_GATE_NAVIGATION, State.ARUCO_GATE_ORIENTATION, State.ARUCO_GATE_APPROACH, State.ARUCO_GATE_PAST]
+NAVIGATION_STATES = [State.START_POINT_NAVIGATION, State.WAYPOINT_NAVIGATION, State.POINT_NAVIGATION, State.START_SPIN_SEARCH, State.SPIN_SEARCH, State.START_HEX_SEARCH ,State.HEX_SEARCH, State.START_OBJECT_HEX_SEARCH, State.ARUCO_NAVIGATE, State.OBJECT_NAVIGATE, State.ARUCO_GATE_NAVIGATION, State.ARUCO_GATE_ORIENTATION, State.ARUCO_GATE_APPROACH, State.ARUCO_GATE_PAST]
 
 class TagID(Enum):
     AR_TAG_1 = 1
@@ -52,7 +52,6 @@ class AutonomyStateMachine(Node):
 
     def __init__(self):
         super().__init__('state_machine')
-        self.get_logger().info('in init AutonomyStateMachine')
 
         # TODO add conditionals to see if in verbose state
         self.verbose = False       # If you want additional log output to debug
@@ -78,10 +77,9 @@ class AutonomyStateMachine(Node):
         self.srv_clear_waypoint = self.create_service(SetBool, '/AU_clear_waypoint_service', self.clear_waypoint)
 
         # Clients
-
-        self.object_detect_client = self.create_client(SetBool, '/toggle_object_detection')
+        self.object_detect_client = self.create_client(SetBool, '/zed/zed_node/enable_obj_det')
         self.aruco_detect_client = self.create_client(SetBool, '/enable_detections')
-        self.srv_autopilot_speed = self.create_client(SetFloat32, '/mobility/speed_factor')
+        self.set_speed_client = self.create_client(SetFloat32, '/mobility/drive_manager/set_speed')
         self.path_manager_client = self.create_client(SetBool, '/mobility/path_manager/enabled')
         self.autopilot_manager_client = self.create_client(SetBool, '/mobility/autopilot_manager/enabled')
         self.drive_manager_client = self.create_client(SetBool, '/mobility/drive_manager/enabled')
@@ -99,7 +97,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('aruco_distance_tolerance', 2.0)
         self.declare_parameter('abort_distance_tolerance', 2.0)
         self.declare_parameter('hex_search_radius', 17.0)
-        self.declare_parameter('navigate_speed', 1.0)
+        self.declare_parameter('navigate_speed', 10.0)
         self.declare_parameter('aruco_speed', 0.3)
         self.declare_parameter('spin_speed', 30.0)
         self.declare_parameter('object_alpha_lpf', 0.5)
@@ -109,8 +107,10 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('spin_step_size', 0.6981)
         self.declare_parameter('spin_delay_time', 1.2)
         self.declare_parameter('wrong_aruco_backup_distance', 7.0)
+        self.declare_parameter('wrong_aruco_backup_spin_speed', 15.0)
         self.declare_parameter('hex_seach_angle_difference', 50.0)
         self.declare_parameter('object_speed', 0.3)
+        
 
         # Get Parameters
         self.path_waypoint_dist_tolerance = self.get_parameter('path_waypoint_distance_tolerance').get_parameter_value().double_value #distance tolerance for switching to a different intermediate points in a path planned path
@@ -125,14 +125,13 @@ class AutonomyStateMachine(Node):
         self.spin_speed = self.get_parameter('spin_speed').get_parameter_value().double_value #angular speed during spin search
         self.obj_alpha_lpf = self.get_parameter('object_alpha_lpf').get_parameter_value().double_value #alpha value for the low pass filter for the angle and distance to an object after the rover starts seeing the object
         self.obj_enable_distance = self.get_parameter('obj_enable_distance').get_parameter_value().double_value # object detection gets enabled only when within a certain distance of the coordinate to conserve computational resources
-        self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value
-        self.spin_step_size = self.get_parameter('spin_step_size').get_parameter_value().double_value
-        self.spin_delay_time = self.get_parameter('spin_delay_time').get_parameter_value().double_value
-        self.wrong_aruco_backup_distance = self.get_parameter('wrong_aruco_backup_distance').get_parameter_value().double_value
-        self.hex_seach_angle_difference = self.get_parameter('hex_seach_angle_difference').get_parameter_value().double_value
-        self.aruco_enable_distance = self.get_parameter('aruco_enable_distance').get_parameter_value().double_value
-        # self.aruco_gate_approach_distance = rospy.get_param('aruco_gate_approach_distance').get_parameter_value().double_value
-        # self.aruco_gate_spin_speed = rospy.get_param('aruco_gate_spin_speed').get_parameter_value().double_value
+        self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value #alpha value for the low pass filter for the angle and distance to an aruco tag after the rover starts seeing the aruco tag
+        self.spin_step_size = self.get_parameter('spin_step_size').get_parameter_value().double_value # angle in radians that the rover turns in spin search, after which the rover stops, looks for a tag/object, and then continues spinning
+        self.spin_delay_time = self.get_parameter('spin_delay_time').get_parameter_value().double_value # time that the rover waits after spinning in spin search looking for tags/objects
+        self.wrong_aruco_backup_distance = self.get_parameter('wrong_aruco_backup_distance').get_parameter_value().double_value # distance that the rover backups up upon starting a new leg, after having just finished an aruco tag leg (so that the rover doesn't run into the aruco stand)
+        self.wrong_aruco_backup_spin_speed = self.get_parameter('wrong_aruco_backup_spin_speed').get_parameter_value().double_value # speed that the rover spins at when backing up after starting a new leg, after having just finished an aruco tag leg
+        self.hex_seach_angle_difference = self.get_parameter('hex_seach_angle_difference').get_parameter_value().double_value # angle in degrees between vertex points of the hex search
+        self.aruco_enable_distance = self.get_parameter('aruco_enable_distance').get_parameter_value().double_value # aruco detection gets enabled only when within a certain distance of the target coordinate to conserve computational resources
 
         #Initialize variables
         self.nav_state = NavState()
@@ -158,14 +157,25 @@ class AutonomyStateMachine(Node):
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)  
         self.tag_id = TagID.GPS_ONLY
         self.a_task_complete = False
-        self.aruco_detect_enabled = False
-        self.obj_detect_enabled = False
+        # Object detection dict
+        # self.obj_to_label = {"mallet": "Class ID: 0", "bottle": "Class ID: 1"}
+        self.obj_to_label = {"Class ID: 0": 0 ,"Class ID: 1": 1}
+
+        # Enabling Detections variables
+        self.obj_toggle_hanlder = ServiceCaller(self.object_detect_client, self,'Object', OBJ_ENABLE_MSGS, OBJ_DISABLE_MSGS)
+        self.aruco_toggle_handler = ServiceCaller(self.aruco_detect_client, self, 'Aruco',  AR_ENABLE_MSGS, AR_DISABLE_MSGS)
+
         self.prev_tag_id = TagID.GPS_ONLY
         self.dist_to_target = 1000          # Abitrary High number, Will be updated in point navigation
 
         # Data structure to hold all of the waypoints at a time
         self.waypoints: deque[AutonomyTaskInfo] = deque()
         self.last_waypoint: AutonomyTaskInfo = None
+
+        self.backup_timer = None
+        self.backup_duration = 4.0  # Tune this number 
+
+        self.get_logger().info('Autonomy State Machine initialized')
 
     def set_task_callback(self, task_info: AutonomyTaskInfo):
 
@@ -213,8 +223,6 @@ class AutonomyStateMachine(Node):
         '''
         Sets current task to be the next one in the deque. Note that this also assumes that the TASK_COMPLETE task has popped
         the first waypoint off the front of the deque.
-        TODO: Confirm that popping off the completed task is most clearly done in the TASK_COMPLETE state, or if it is better
-        to pass in a task_complete parameter that tells this function to pop or not pop
         '''
         current_task: AutonomyTaskInfo = self.waypoints[0]
         self.set_task_callback(current_task)
@@ -306,23 +314,25 @@ class AutonomyStateMachine(Node):
         correct_label = 0 
         if self.tag_id == TagID.BOTTLE:
             correct_label = 1
+
         
         found = False
         for obj in msg.objects:
-            msg = String()
-            msg.data = f"Object: {obj.label}, {obj.confidence}"
-            self.debug_pub.publish(msg)
-            if obj.label != correct_label or obj.confidence < 0.75:
+            label = self.obj_to_label.get(obj.label, None) # TODO verify this is working as expected
+            debug_msg = String()
+            debug_msg.data = f"Object: {label}, {obj.confidence}"
+            self.debug_pub.publish(debug_msg)
+            if label != correct_label:
                 continue
 
-            if obj.id in self.known_objects:
-                if is_recent(self.known_objects[obj.id][-1]):
-                    self.known_objects[obj.id].append(timestamp)
+            if label in self.known_objects:
+                if is_recent(self.known_objects[label][-1]):
+                    self.known_objects[label].append(timestamp)
 
-                if len(self.known_objects[obj.id]) < 5:
-                    msg = String()
-                    msg.data = f"Num Detections: {len(self.known_objects[obj.id])}"
-                    self.debug_pub.publish(msg)
+                if len(self.known_objects[label]) < 5:
+                    debug_msg = String()
+                    debug_msg.data = f"Num Detections: {len(self.known_objects[label])}"
+                    self.debug_pub.publish(debug_msg)
                     continue
 
                 # Low-pass filter the distance and heading information
@@ -343,7 +353,7 @@ class AutonomyStateMachine(Node):
                     self.get_logger().info(f"Found object for 15 frames: {obj}")
                     found = True
             else:
-                self.known_objects[obj.id] = [timestamp]
+                self.known_objects[label] = [timestamp]
 
 
     def ar_tag_callback(self, msg: FiducialTransformArray):
@@ -413,12 +423,17 @@ class AutonomyStateMachine(Node):
         response.message = f"Autonomy state machine is {self.enabled}!"
         return response
     
-    def abort(self, request: AutonomyAbort.Request, response: SetBool.Response):
+    def abort(self, request: AutonomyAbort.Request, response: SetBool.Response): 
         self.get_logger().info('in abort')
         self.abort_status = request.abort_status
         self.abort_lat = request.lat
         self.abort_lon = request.lon
         self.abort_point = GPSCoordinate(self.abort_lat, self.abort_lon, 0)
+
+        # Reset the waypoints when aborting
+        self.get_logger().warn('Removing waypoints because of abort')
+        while len(self.waypoints) > 0:
+            self.last_waypoint = self.waypoints.popleft()
 
         if self.abort_status:
             self.get_logger().info("Aborting...")
@@ -438,33 +453,36 @@ class AutonomyStateMachine(Node):
             chi_1 += 2.0 * np.pi
         return chi_1
 
-    def set_autopilot_speed(self, speed):
-        print("Setting autopilot speed...")
+    def stop_backup(self):
+        self.drive_controller.issue_drive_cmd(0.0, 0.0)
+        if self.state == State.SEARCH_FOR_WRONG_TAG:
+            self.state = State.START_POINT_NAVIGATION
+        else:
+            self.get_logger().warn("Aborted during backup maneuver")
 
-        # Wait until the service is available
-        if not self.srv_autopilot_speed.wait_for_service(timeout_sec=3.0): #Don't know what would be the appropriate time to wait here
-            self.get_logger().info("Service /mobility/speed_factor not available!")
-            return False
-        if self.verbose:
-            self.get_logger().warn("Service is live")
+        # Destroy the timer and reset it
+        if self.backup_timer is not None:
+            self.get_logger().info("Stopping backup timer")
+            self.backup_timer.cancel()
+            self.backup_timer = None
 
-        # Create a request object
-        self.autopilot_speed_request = SetFloat32.Request()  # Create a request instance
-        self.autopilot_speed_request.data = speed
-        if self.verbose:
-            self.get_logger().warn("Executing service")
-        
-        # Send the request and wait for the response
-        self.get_logger().info("Sending request to autopilot_speed_request", throttle_duration_sec=3.0)
-        future = self.srv_autopilot_speed.call_async(self.autopilot_speed_request)
 
+    # This is a service that adjusts the drive manager's max speed, different speeds should be used for local navigation vs GNSS navigation
+    def set_speed(self, speed):
+        # Speed is from 0 to 10
+        req = SetFloat32.Request()
+        req.data = float(speed)
+        if self.set_speed_client.service_is_ready():
+            future = self.set_speed_client.call_async(req)
+        else:
+            self.get_logger().warn("Set speed service is not available.")
+        return
 
     def check_detections(self):
         # Enable object detection and aruco detection:
             # Only when actively navigating
         if self.state in NAVIGATION_STATES and self.enabled:
             #Toggle object detection or aruco detection if within a certain distance of the target point (saves computation time)
-            # TODO search for wrong tag state 
             if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and self.dist_to_target < self.obj_enable_distance:
                 if not self.obj_detect_enabled:
                     self.toggle_object_detection(True)
@@ -484,7 +502,7 @@ class AutonomyStateMachine(Node):
 
 
     def reset_state_variables(self):
-        # Reset the state machine variables
+        # Reset the state machine variables, ONLY if task is complete
         self.correct_aruco_tag_found = False
         self.correct_obj_found = False
         self.obj_distance = None
@@ -516,10 +534,22 @@ class AutonomyStateMachine(Node):
             #backup if the rover sees the wrong tag, to ensure it does not run into the aruco stand before starting the next task
             elif self.state == State.SEARCH_FOR_WRONG_TAG: 
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                if self.wrong_aruco_tag_found and self.aruco_tag_distance < self.wrong_aruco_backup_distance:
-                    self.drive_controller.issue_drive_cmd(-2.0, 0.0)
-                    #TODO: Consider adding angular velocity to this command to ensure the rover backs up in such a way that it will not hit the stand
-                    #Perhaps in the opposite direction of the direction needed to get to get tot he next waypoint
+                if self.prev_tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3]:    # instead of enabling aruco, just check if previous tag was an AR and backup anyways
+
+                    #Find the angle to our new target point
+                    target_latitude = self.waypoints[0].latitude
+                    target_longitude = self.waypoints[0].longitude
+                    target_point = GPSCoordinate(target_latitude, target_longitude, 0)
+                    chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, target_point)
+                    des_heading = self.wrap(chi_rad - self.curr_heading, 0)
+                    linear_vel = -2.0
+                    angular_vel = -self.wrong_aruco_backup_spin_speed if des_heading < 0 else self.wrong_aruco_backup_spin_speed
+
+                    # Start backup maneuver with timer
+                    if self.backup_timer is None:
+                        self.drive_controller.issue_drive_cmd(linear_vel, angular_vel)
+                        self.backup_timer = self.create_timer(self.backup_duration, self.stop_backup)
+
                 else:
                     self.drive_controller.issue_drive_cmd(0.0, 0.0)
                     self.state = State.START_POINT_NAVIGATION
@@ -527,7 +557,7 @@ class AutonomyStateMachine(Node):
             elif self.state == State.START_POINT_NAVIGATION:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 self.get_logger().info("Starting commands")
-                self.set_autopilot_speed(self.navigate_speed)
+                self.set_speed(self.navigate_speed)
                 self.get_logger().info(f"Number of waypoints {len(self.waypoints)}")
                 self.target_latitude = self.waypoints[0].latitude
                 self.target_longitude = self.waypoints[0].longitude
@@ -539,7 +569,7 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.path_waypoint_dist_tolerance:
                     if len(self.waypoints) > 1:
-                        self.waypoints.pop(0)
+                        self.waypoints.popleft()
                         self.get_logger().info("Popped intermediate waypoint!")
                         self.state = State.START_POINT_NAVIGATION
                     else:
@@ -555,6 +585,7 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 self.dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
 
+                           
                 if self.dist_to_target < self.dist_tolerance:
                     if self.tag_id == TagID.GPS_ONLY:
                         self.get_logger().info('GPS Task is complete!')
@@ -632,7 +663,7 @@ class AutonomyStateMachine(Node):
                     self.state = State.OBJECT_NAVIGATE
 
             elif self.state == State.ARUCO_NAVIGATE:
-                self.set_autopilot_speed(self.aruco_speed)
+                self.set_speed(self.aruco_speed)
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.correct_aruco_tag_found: #f we have seen the correct tag in the last second, navigate using angle and distance
                     self.drive_controller.issue_aruco_autopilot_cmd(self.aruco_tag_angle, self.aruco_tag_distance)
@@ -644,7 +675,7 @@ class AutonomyStateMachine(Node):
                     self.drive_controller.stop()
 
             elif self.state == State.OBJECT_NAVIGATE:
-                self.set_autopilot_speed(self.object_speed)
+                self.set_speed(self.object_speed)
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.correct_obj_found:
                     self.drive_controller.issue_aruco_autopilot_cmd(self.obj_angle, self.obj_distance)
@@ -670,7 +701,7 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.START_ABORT_STATE:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                self.set_autopilot_speed(self.navigate_speed)
+                self.set_speed(self.navigate_speed)
                 self.drive_controller.issue_path_cmd(self.abort_lat, self.abort_lon)
                 self.state = State.ABORT_STATE
 
