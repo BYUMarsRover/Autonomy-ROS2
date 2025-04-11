@@ -111,11 +111,11 @@ s
         # Attach to the session
         tmux attach -t $SESSION
 
-        # ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "\
-        #     tmux split-window -h -t rover_runtime:0.0; \
-        #     tmux select-pane -t rover_runtime:0.1; \
-        #     tmux send-keys -t rover_runtime:0.1 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
-        #     tmux send-keys -t rover_runtime:0.1 'ros2 launch start rover_task_science_launch.py'" # NO ENTER
+        ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "\
+            tmux split-window -h -t rover_runtime:0.0; \
+            tmux select-pane -t rover_runtime:0.1; \
+            tmux send-keys -t rover_runtime:0.1 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
+            tmux send-keys -t rover_runtime:0.1 'ros2 launch start rover_task_science_launch.py'" # NO ENTER
         ;;
 
 
