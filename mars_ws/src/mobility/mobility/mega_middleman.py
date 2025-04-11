@@ -22,7 +22,8 @@ class MegaMiddleman(Node):
         self.last_wheel_msg_time = time.time()
         self.last_elev_msg_time = time.time()
 
-        # LOW PASS FITLER ON WHEELS
+        # Alpha FITLER ON WHEELS
+        # 
         self.declare_parameter('alpha', 0.8)
         self.alpha = self.get_parameter('alpha').value
         # Initialize filtered speeds for each motor (assume all zero initially)
@@ -67,8 +68,10 @@ class MegaMiddleman(Node):
         self.get_logger().info("MegaMiddle Man started")
 
     def alpha_filter(self, name, new_val):
+        # TODO: Could look into a low pass filter that actually takes into account how much time passes 
+        # for more consistent behavior
         prev = self.filtered_speeds[name]
-        filtered = self.alpha * new_val + (1 - self.alpha) * prev
+        filtered = self.alpha * prev + (1 - self.alpha) * new_val
         self.filtered_speeds[name] = filtered
         return filtered
     
@@ -160,12 +163,12 @@ class MegaMiddleman(Node):
     
     def send_wheel(self, msg):
         motor_params = [
-            int(self.alpha_filter('left_front', msg.left_front_speed)), msg.left_front_dir,
-            int(self.alpha_filter('left_middle', msg.left_middle_speed)), msg.left_middle_dir,
-            int(self.alpha_filter('left_rear', msg.left_rear_speed)), msg.left_rear_dir,
-            int(self.alpha_filter('right_front', msg.right_front_speed)), msg.right_front_dir,
-            int(self.alpha_filter('right_middle', msg.right_middle_speed)), msg.right_middle_dir,
-            int(self.alpha_filter('right_rear', msg.right_rear_speed)), msg.right_rear_dir
+            round(self.alpha_filter('left_front', msg.left_front_speed)), msg.left_front_dir,
+            round(self.alpha_filter('left_middle', msg.left_middle_speed)), msg.left_middle_dir,
+            round(self.alpha_filter('left_rear', msg.left_rear_speed)), msg.left_rear_dir,
+            round(self.alpha_filter('right_front', msg.right_front_speed)), msg.right_front_dir,
+            round(self.alpha_filter('right_middle', msg.right_middle_speed)), msg.right_middle_dir,
+            round(self.alpha_filter('right_rear', msg.right_rear_speed)), msg.right_rear_dir
         ]
         wheel_msg = "$WHEEL," + ",".join(str(param) for param in motor_params) + "*"
         # self.write_debug(wheel_msg)
