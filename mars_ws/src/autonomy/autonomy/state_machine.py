@@ -419,6 +419,8 @@ class AutonomyStateMachine(Node):
         else:
             self.get_logger().warn("Aborted during backup maneuver")
 
+        self.prev_tag_id = TagID.GPS_ONLY
+        
         # Destroy the timer and reset it
         if self.backup_timer is not None:
             self.get_logger().info("Stopping backup timer")
