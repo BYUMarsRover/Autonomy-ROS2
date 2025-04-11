@@ -160,13 +160,13 @@ class AutonomyStateMachine(Node):
         self.curr_heading = 0
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)  
         self.tag_id = TagID.GPS_ONLY
-        self.a_task_complete = False
+        self.task_just_completed = False
         # Object detection dict
         # self.obj_to_label = {"mallet": "Class ID: 0", "bottle": "Class ID: 1"}
         self.obj_to_label = {"Class ID: 0": 0 ,"Class ID: 1": 1}
 
         # Enabling Detections variables
-        self.obj_toggle_hanlder = ServiceCaller(self.object_detect_client, self,'Object', OBJ_ENABLE_MSGS, OBJ_DISABLE_MSGS)
+        self.obj_toggle_handler = ServiceCaller(self.object_detect_client, self,'Object', OBJ_ENABLE_MSGS, OBJ_DISABLE_MSGS)
         self.aruco_toggle_handler = ServiceCaller(self.aruco_detect_client, self, 'Aruco',  AR_ENABLE_MSGS, AR_DISABLE_MSGS)
 
         self.prev_tag_id = TagID.GPS_ONLY
@@ -257,7 +257,6 @@ class AutonomyStateMachine(Node):
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)
         self.curr_heading = np.deg2rad(msg.map_yaw)
 
-
     def obj_detect_callback(self, msg: ObjectsStamped):
         timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
         is_recent = lambda obj_ts: timestamp - obj_ts <= 1.0
@@ -265,9 +264,12 @@ class AutonomyStateMachine(Node):
         # Remove objects that haven't been seen in the last second
         self.known_objects = {k: v for k, v in self.known_objects.items() if is_recent(v[-1])}
 
-        correct_label = 0 
         if self.tag_id == TagID.BOTTLE:
             correct_label = 1
+        elif self.tag_id == TagID.MALLET:
+            correct_label = 0
+        else:
+            return
 
         
         found = False
@@ -276,7 +278,9 @@ class AutonomyStateMachine(Node):
             debug_msg = String()
             debug_msg.data = f"Object: {label}, {obj.confidence}"
             self.debug_pub.publish(debug_msg)
-            if label != correct_label:
+
+            #If wrong label, or if x or y position values are None, skip
+            if label != correct_label or obj.position[0] is None or obj.position[1] is None or obj.position[0] == 0.0:
                 continue
 
             if label in self.known_objects:
@@ -310,7 +314,6 @@ class AutonomyStateMachine(Node):
                     found = True
             else:
                 self.known_objects[label] = [timestamp]
-
 
     def ar_tag_callback(self, msg: FiducialTransformArray):
         if len(msg.transforms) == 1: 
@@ -422,7 +425,6 @@ class AutonomyStateMachine(Node):
             self.backup_timer.cancel()
             self.backup_timer = None
 
-
     # This is a service that adjusts the drive manager's max speed, different speeds should be used for local navigation vs GNSS navigation
     def set_speed(self, speed):
         # Speed is from 0 to 10
@@ -440,7 +442,7 @@ class AutonomyStateMachine(Node):
         if self.state in NAVIGATION_STATES and self.enabled:
             #Toggle object detection or aruco detection if within a certain distance of the target point (saves computation time)
             if self.tag_id in [TagID.MALLET, TagID.BOTTLE] and self.dist_to_target < self.obj_enable_distance:
-                self.obj_toggle_hanlder.toggle(True)
+                self.obj_toggle_handler.toggle(True)
             elif self.tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3] and self.dist_to_target < self.aruco_enable_distance:
                 self.aruco_toggle_handler.toggle(True)
         else:
@@ -448,8 +450,7 @@ class AutonomyStateMachine(Node):
             # Only disable aruco detection if the previous tag was not an aruco tag so that when we go to SEARCH_FOR_WRONG_TAG state, we can make sure not to run into it
             # TODO search for wrong tag state 
             self.aruco_toggle_handler.toggle(False)
-            self.obj_toggle_hanlder.toggle(False)
-
+            self.obj_toggle_handler.toggle(False)
 
     def reset_state_variables(self):
         # Reset the state machine variables, ONLY if task is complete
@@ -460,17 +461,15 @@ class AutonomyStateMachine(Node):
         self.prev_tag_id = self.tag_id
         self.dist_to_target = 1000          # Arbitrary High number, will be updated in navigation
 
-
     def state_loop(self):
         self.get_logger().info(f"State is: {self.state.value}", throttle_duration_sec=10)
         
         if self.enabled:
 
             if self.state == State.MANUAL:
-                if self.a_task_complete:
+                if self.task_just_completed:
                     #Keep the LED Green by keeping it in arrival state if a task has been completed
                     self.nav_state.navigation_state = NavState.ARRIVAL_STATE
-
                 else:
                     self.nav_state.navigation_state = NavState.TELEOPERATION_STATE
 
@@ -479,11 +478,15 @@ class AutonomyStateMachine(Node):
                 self.correct_obj_found = False
                 self.obj_distance = None
                 self.obj_angle = None
+                self.known_objects = {}
 
             #This SEARCH_FOR_WRONG_STATE state is used to ensure that after finishing one aruco tag task, the rover will
             #backup if the rover sees the wrong tag, to ensure it does not run into the aruco stand before starting the next task
             elif self.state == State.SEARCH_FOR_WRONG_TAG: 
+                #Reset variables
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.task_just_completed = False
+
                 if self.prev_tag_id in [TagID.AR_TAG_1, TagID.AR_TAG_2, TagID.AR_TAG_3]:    # instead of enabling aruco, just check if previous tag was an AR and backup anyways
 
                     #Find the angle to our new target point
@@ -638,7 +641,7 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.ARRIVAL_STATE
                 self.drive_controller.issue_drive_cmd(0, 0)
                 self.drive_controller.stop()
-                self.a_task_complete = True
+                self.task_just_completed = True
 
                 self.reset_state_variables()
 
