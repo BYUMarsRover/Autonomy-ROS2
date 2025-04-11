@@ -1,0 +1,82 @@
+# udev rules for BYU Mars Rover
+
+###################
+#     Cameras     #
+###################
+
+# ZED FRONT
+KERNEL=="video*", ATTRS{product}=="ZED 2", ATTR{index}=="0", SYMLINK+="rover/cameras/ZED_front"
+KERNEL=="video*", ATTRS{product}=="ZED 2i", ATTR{index}=="0", SYMLINK+="rover/cameras/ZED_front"
+
+# Science Leg Camera
+KERNEL=="video*", ATTRS{product}=="HD Pro Webcam C920", ATTRS{serial}=="943C726F", ATTR{index}=="0", SYMLINK+="rover/cameras/scienceLegCam"
+
+# Autonomy webcam
+KERNEL=="video*", ATTRS{product}=="HD Pro Webcam C920", ATTRS{serial}=="BBEFDF4F", ATTR{index}=="0", SYMLINK+="rover/cameras/autonomyWebCam"
+
+# Science Microscope
+KERNEL=="video*", ATTRS{product}=="Digital Microscope", ATTR{index}=="0", SYMLINK+="rover/cameras/microscopeCam"
+
+# Science FAD
+KERNEL=="video*", ATTRS{product}=="USB Microscope", ATTR{index}=="0", SYMLINK+="rover/cameras/fadCam"
+
+# Front-left ANKER USB hub Fish-eye Cameras
+#
+# This assumes that the ANKER USB hub is directly plugged into the USB-A
+# port on the Xavier. This is VERY important for the 'KERNELS' tag. If plugged
+# into a different port, these symlinks will not work.
+# 
+# These are listed from top to bottom of the USB ports on the ANKER USB hub.
+#
+# NOTE: Even though you could plug in 7 cameras into the hub, only 2 can
+# be streaming at a time due to memory bandwith on the USB port.
+
+# USB port 5
+KERNEL=="video*", KERNELS=="1-2.4.4.2:1.0", ATTR{index}=="0", SYMLINK+="rover/cameras/lowerFrontMastCam"
+# USB port 6
+KERNEL=="video*", KERNELS=="1-2.4.4.1:1.0", ATTR{index}=="0", SYMLINK+="rover/cameras/rearBirdCam"
+# USB port 7
+KERNEL=="video*", KERNELS=="1-2.4.4.4:1.0", ATTR{index}=="0", SYMLINK+="rover/cameras/birdCam"
+
+# Right ANKER USB hub Fish-eye Cameras
+#
+# This assumes that the ANKER USB hub is directly plugged into the rear USB-C
+# port on the Xavier. This is VERY important for the 'KERNELS' tag. If plugged
+# into a different port, these symlinks will not work.
+# 
+# These are listed from top to bottom of the USB ports on the ANKER USB hub.
+#
+# NOTE: Even though you could plug in 7 cameras into the hub, only 2 can
+# be streaming at a time due to memory bandwith on the USB port.
+
+# USB port 2
+KERNEL=="video*", KERNELS=="1-2.2.2:1.0", ATTR{index}=="0", SYMLINK +="rover/cameras/gripperCam"
+# USB port 3
+KERNEL=="video*", KERNELS=="1-2.2.3:1.0", ATTR{index}=="0", SYMLINK +="rover/cameras/clickerCam"
+# USB port 4
+KERNEL=="video*", KERNELS=="1-2.2.4.1:1.0", ATTR{index}=="0", SYMLINK +="rover/cameras/hexCam"
+
+##################
+#    Serial      #
+#################
+
+## Onboard Mega (generic)
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{manufacturer}=="Arduino (www.arduino.cc)", SYMLINK+="rover/onBoardMega"
+## Onboard Mega - Back up Board
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{serial}=="95530343834351116152", SYMLINK+="rover/onBoardMega"
+## Onboard Mega
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{serial}=="8573432373035171B141", SYMLINK+="rover/onBoardMega"
+## 2nd-rover Mega
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{serial}=="75130303735351314111", SYMLINK+="rover/onBoardMega"
+## Peripherals Nano ##
+SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{serial}=="A9082MM6", SYMLINK+="rover/peripheralsBoard"
+
+## UBLOX ZED-f9P RTK GPS ##
+# Both GPS modules are identified as the same device by udev, so you have to manually set the serial port in the config yaml files to use both on one machine
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", SYMLINK+="rover/rtk", MODE="0777"
+
+# Science Arduino #
+SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="rover/scienceArduinoNano"
+
+## Second Science Nano ##
+SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{serial}=="A5069RR4", SYMLINK+="rover/scienceArduinoNano"

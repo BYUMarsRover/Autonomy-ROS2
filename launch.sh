@@ -20,29 +20,30 @@ function printError {
 
 ROVER_IP_ADDRESS=192.168.1.120
 DOCKER_SSH_PORT=2233
+SESSION=base_station
 
 # Check for an SSH connection to the rover's Docker container
-if ! ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "echo" &> /dev/null
-then
-    printError "No available SSH connection to the rover's Docker container"
-    echo "Here's some debugging suggestions:"
-    echo "  - Make sure the SSH keys are setup by running the setup_ssh.sh script"
-    echo "  - Ensure the rover is powered on"
-    echo "  - Ensure the rover is connected with a static IP address"
-    echo "  - Ensure the rover's Docker container is running"
+# if ! ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "echo" &> /dev/null
+# then
+#     printError "No available SSH connection to the rover's Docker container"
+#     echo "Here's some debugging suggestions:"
+#     echo "  - Make sure the SSH keys are setup by running the setup_ssh.sh script"
+#     echo "  - Ensure the rover is powered on"
+#     echo "  - Ensure the rover is connected with a static IP address"
+#     echo "  - Ensure the rover's Docker container is running"
 
-    exit
-fi
+#     exit
+# fi
 
 # Check if tmux is running on the rover's Docker container
-if ! ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "tmux has-session -t rover_runtime" &> /dev/null
-then
-    printError "No tmux session found in the rover's Docker container"
-    echo "Here's some debugging suggestions:"
-    echo "  - Ensure the rover's Docker container is running the 'rover_runtime' tmux session"
+# if ! ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "tmux has-session -t rover_runtime" &> /dev/null
+# then
+#     printError "No tmux session found in the rover's Docker container"
+#     echo "Here's some debugging suggestions:"
+#     echo "  - Ensure the rover's Docker container is running the 'rover_runtime' tmux session"
 
-    exit
-fi
+#     exit
+# fi
 
 #TODO FIX THIS LATER
 
@@ -57,14 +58,14 @@ fi
 # fi
 
 # Check that only one pane is open in the 'rover_runtime' tmux session
-if [ $(ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "tmux list-panes -t rover_runtime | wc -l") -ne 1 ]
-then
-    printWarning "Multiple panes found in the 'rover_runtime' tmux session"
-    echo "Simply entering the current tmux session for cleanup..."
-    ssh -t -X marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
+# if [ $(ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "tmux list-panes -t rover_runtime | wc -l") -ne 1 ]
+# then
+#     printWarning "Multiple panes found in the 'rover_runtime' tmux session"
+#     echo "Simply entering the current tmux session for cleanup..."
+#     ssh -t -X marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
 
-    exit
-fi
+#     exit
+# fi
 
 # Launch the specified task configuration over SSH
 case "$1" in
@@ -84,8 +85,40 @@ case "$1" in
         printWarning "Not implemented yet"
         ;;
     "science")
-        printWarning "Not implemented yet"
+        printInfo "Setting up the science task..."
+        
+        # Start the session in the background if it doesn't exist
+        tmux has-session -t $SESSION 2>/dev/null
+        if [ $? != 0 ]; then
+            echo "[INFO] Creating tmux session '$SESSION'..."
+            tmux new-session -d -s $SESSION
+        fi
+
+        # send-keys -t $SESSION:science.0 'bash ./scripts/tools/reset_usb.sh' C-m \; \
+s
+        # Run tmux stuff
+        tmux new-window -t $SESSION -n science \; \
+            send-keys -t $SESSION:science.0 'cd ~/Autonomy-ROS2/' C-m \; \
+            send-keys -t $SESSION:science.0 'bash enter_docker.sh' C-m \; \
+            send-keys -t $SESSION:science.0 'ros2 launch start base_task_science_launch.py' C-m \; \
+            split-window -h -t $SESSION:science \; \
+            send-keys -t $SESSION:science.1 'ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT' C-m \; \
+            send-keys -t $SESSION:science.1 'tmux split-window -h -t rover_runtime:0.0' C-m \; \
+            send-keys -t $SESSION:science.1 'tmux select-pane -t rover_runtime:0.1' C-m \; \
+            send-keys -t $SESSION:science.1 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' C-m \; \
+            send-keys -t $SESSION:science.1 'ros2 launch start rover_task_science_launch.py' C-m
+
+        # Attach to the session
+        tmux attach -t $SESSION
+
+        # ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "\
+        #     tmux split-window -h -t rover_runtime:0.0; \
+        #     tmux select-pane -t rover_runtime:0.1; \
+        #     tmux send-keys -t rover_runtime:0.1 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
+        #     tmux send-keys -t rover_runtime:0.1 'ros2 launch start rover_task_science_launch.py'" # NO ENTER
         ;;
+
+
     *)
         printWarning "No task specified, simply entering the current tmux session..."
         echo "Specify a task using 'bash launch.sh <task>' "

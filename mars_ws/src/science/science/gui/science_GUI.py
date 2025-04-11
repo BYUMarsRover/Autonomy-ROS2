@@ -1,31 +1,70 @@
 #!/usr/bin/python3
 
 from PyQt5 import QtWidgets, uic
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer, Qt, QAbstractTableModel
+from PyQt5.QtWidgets import QApplication, QTableView
 from python_qt_binding.QtCore import QObject, Signal
 import rclpy
+from std_msgs.msg import Empty, Bool
 from rover_msgs.srv import CameraControl
-from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton
+from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton, ScienceSerialTxPacket, ScienceSpectroData, ScienceUvData
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.pyplot as plt
 import numpy as np
+import subprocess
 
 import os
 import sys
 
 class Signals(QObject):
     sensor_signal = Signal(ScienceSensorValues)
-    # auger_position = Signal(ScienceToolPosition)
+    auger_position = Signal(Bool)
     sensor_save_signal = Signal(ScienceSaveSensor)
     FAD_save_signal = Signal(ScienceSaveFAD)
     notes_save_signal = Signal(ScienceSaveNotes)
     fad_intensity_signal = Signal(ScienceFADIntensity)
 
+class WavelengthTableModel(QAbstractTableModel):
+    def __init__(self, wavelengths, values):
+        super().__init__()
+        self.wavelengths = wavelengths
+        self.values = values
+
+    def rowCount(self, parent=None):
+        return len(self.wavelengths)
+
+    def columnCount(self, parent=None):
+        return 2
+
+    def data(self, index, role):
+        if role == Qt.DisplayRole:
+            if index.column() == 0:
+                return f"{self.wavelengths[index.row()]} nm"
+            elif index.column() == 1:
+                return f"{self.values[index.row()]:.4f}"
+        return None
+
+    def headerData(self, section, orientation, role):
+        if role == Qt.DisplayRole:
+            if orientation == Qt.Horizontal:
+                return ["Wavelength (nm)", "Value"][section]
+            elif orientation == Qt.Vertical:
+                return str(section + 1)
+        return None
+    
+    def updateData(self, new_values):
+        if len(new_values) != len(self.wavelengths):
+            print("Error: Data length mismatch")
+            return
+        self.values = new_values
+        self.layoutChanged.emit() 
+
 class science_GUI(Node):
     def __init__(self):
         
         super().__init__('science_GUI')
-        self.qt = QtWidgets.QWidget()
+        self.qt = QtWidgets.QMainWindow()
 
         ui_file_path = os.path.join(
             get_package_share_directory('science'),
@@ -38,10 +77,14 @@ class science_GUI(Node):
 
         self.base_ip = self.get_base_ip()
         self.cli = self.create_client(CameraControl, 'camera_control')
-        # if not self.cli.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('Camera control not available, waiting...')
-        # self.req = CameraControl.Request()
-        # self.future = self.cli.call_async(self.req)
+        
+        # Set up the spectrometer data table
+        wavelengths = [400 + 20 * i for i in range(18)]
+        values = [0 for i in range(18)]
+
+        # Set Model to QTableView
+        self.spectro_table = WavelengthTableModel(wavelengths, values)
+        self.qt.tableView.setModel(self.spectro_table)
 
         self.temperature = 1
         self.moisture = 0
@@ -51,8 +94,9 @@ class science_GUI(Node):
 
         self.fad_calibration_interval = 2
         self.site_number = 1
-        self.initialize_timers()
         self.task_launcher_init()
+        self.initialize_timers()
+        self.setup_menu_bar()
         self.sensor_saving = [False] * 3  # temp, moisture, fad
         self.temperature_coefficients = [[],[],[],[],[],[]]
         self.moisture_coefficients = [[],[],[],[],[],[]]
@@ -60,36 +104,68 @@ class science_GUI(Node):
         self.science_data_path = os.path.expanduser("~/science_data/site-1")
 
         # Read in coefficients. 
-        moisture_path = os.path.join(self.science_data_path, "moisture_coefficients.txt")
-        temp_path = os.path.join(self.science_data_path, "temp_coefficients.txt")
-        if os.path.exists(moisture_path):
-            with open(moisture_path, 'r') as f:
-                moisture_values = f.readlines()
-                print(moisture_values)
-                moisture_values = moisture_values[0].split()
-                for i in range(len(moisture_values)):
-                    self.moisture_coefficients[i] = moisture_values[i]
-        else:
-            self.moisture_coefficients = []
-            print("Moisture coefficients file does not exist. Please use the show graph button to store coefficients.")
-        if os.path.exists(temp_path):
-            with open(temp_path, 'r') as f:
-                temp_values = f[1].split()
-                for i in range(len(temp_values)):
-                    self.temperature_coefficients[i] = temp_values[i]
-        else:
-            self.temperature_coefficients = []
-            print("Temperature coefficients file does not exist. Please use the show graph button to store coefficients.")
+        try:
+            moisture_path = os.path.join(self.science_data_path, "moisture_coefficients.txt")
+            temp_path = os.path.join(self.science_data_path, "temp_coefficients.txt")
+            if os.path.exists(moisture_path):
+                with open(moisture_path, 'r') as f:
+                    moisture_values = f.readlines()
+                    print(moisture_values)
+                    moisture_values = moisture_values[0].split()
+                    for i in range(len(moisture_values)):
+                        self.moisture_coefficients[i] = moisture_values[i]
+            else:
+                self.moisture_coefficients = []
+                print("Moisture coefficients file does not exist. Please use the show graph button to store coefficients.")
+            if os.path.exists(temp_path):
+                with open(temp_path, 'r') as f:
+                    temp_values = f[1].split()
+                    for i in range(len(temp_values)):
+                        self.temperature_coefficients[i] = temp_values[i]
+            else:
+                self.temperature_coefficients = []
+                print("Temperature coefficients file does not exist. Please use the show graph button to store coefficients.")
+        except Exception as e:
+            self.get_logger().error(f"Error reading coefficients: {str(e)}")
+            
+    
 
-        # if self.future.result() is not None:
-        #     self.get_logger().info(f"{self.future.result()}")
-        # else:
-        #     self.get_logger().error(f"Service call failed {self.future.exception()}")
+    def setup_menu_bar(self):
+        # Launch the GUI when the menu item is clicked
+        self.qt.actionLaunch_Function_Library.triggered.connect(lambda: self.launch_gui("science_debug"))
+        self.qt.actionLaunch_RX_TX_Monitor.triggered.connect(lambda: self.launch_gui("science_rxtx"))
+        self.qt.actionLaunch_Response_Parse.triggered.connect(lambda: self.launch_gui("science_response"))
+
+        # Begin sensor queries
+        self.qt.actionToggle_Sensor_Query.triggered.connect(self.toggle_sensor_queries)
+        self.qt.actionToggle_Sensor_Query.text = "Begin Sensor Queries"
+        self.is_reading_sensors = False
+        
+    def launch_gui(self, executable):
+        """
+        Launch the response_gui node as a subprocess when the menu item is clicked.
+        """
+        try:
+            # Launch the response_gui node using ros2 run
+            subprocess.Popen(["ros2", "run", "science", executable])
+            self.get_logger().info(f"Launched gui node {executable}.")
+        except Exception as e:
+            self.get_logger().error(f"Failed to launch gui: {str(e)}")
+
+    def toggle_sensor_queries(self):
+        self.is_reading_sensors = not self.is_reading_sensors
+        if self.is_reading_sensors:
+            self.temperature_timer = self.create_timer(1, lambda: self.pub_get_analog_sensors.publish(Bool( data=False ))) # 1 Hz - Get Raw 
+            self.mositure_timer = self.create_timer(0.5, lambda: self.pub_get_uv.publish(Empty())) # 1 Hz - Get Raw 
+            self.qt.actionToggle_Sensor_Query.setText("Stop Sensor Queries")
+        else:
+            self.temperature_timer.cancel()
+            self.mositure_timer.cancel()
+            self.qt.actionToggle_Sensor_Query.setText("Begin Sensor Queries")
 
     def initialize_timers(self):
         self.moisture_timer = self.create_timer(self.save_interval, self.stop_moist_saver)#These are probably redundant in ros2
         self.temp_timer = self.create_timer(self.save_interval, self.stop_temp_saver)
-        
 
     def task_launcher_init(self):
         self.signals = Signals()
@@ -106,6 +182,11 @@ class science_GUI(Node):
         self.qt.pushButton_temperature_2.clicked.connect(lambda: self.estimate_reading(1))
         self.qt.pushButton_fad_estimate.clicked.connect(lambda: self.estimate_reading(2))
 
+        self.qt.pushButton_spectro.clicked.connect(lambda: self.fetch_spectro_data())
+        self.qt.pushButton_uv.clicked.connect(lambda: self.fetch_uv_data())
+        self.qt.pushButton_spectro.clicked.connect(lambda: self.pub_get_spectro.publish(Empty()))
+        self.qt.pushButton_uv.clicked.connect(lambda: self.pub_get_uv.publish(Empty()))
+
         self.qt.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
         self.qt.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
         self.qt.fad_radio.toggled.connect(lambda: self.toggle_sensor_save(2))  # fad
@@ -116,18 +197,44 @@ class science_GUI(Node):
         self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1) #figure this out
         self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
         self.pub_save_fad = self.create_publisher(ScienceSaveFAD, '/science_save_fad', 1)
+        
+        self.pub_get_spectro = self.create_publisher(Empty, '/science_spectro_request', 1)
+        self.pub_get_uv = self.create_publisher(Empty, '/science_uv_request', 1)
+        self.pub_get_analog_sensors = self.create_publisher(Bool, '/science_sensor_request', 1)
+
+        self.pub_get_auger_position = self.create_publisher(Empty, '/science_auger_position', 1)
 
         self.signals.sensor_signal.connect(self.update_sensor_values)
-        # self.signals.auger_position.connect(self.update_auger_position)
+        self.signals.auger_position.connect(self.update_current_tool)
         self.signals.sensor_save_signal.connect(self.pub_save_sensor.publish)
         self.signals.FAD_save_signal.connect(self.pub_save_fad.publish)
         self.signals.notes_save_signal.connect(self.pub_save_notes.publish)
         self.signals.fad_intensity_signal.connect(self.update_fad_intensity_value)
 
         self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.signals.sensor_signal.emit, 10)
-        # self.science_auger_position = self.create_subscription(ScienceToolPosition, '/science_auger_position', self.signals.auger_position.emit, 10)
+        self.science_auger_position = self.create_subscription(Bool, '/science_using_probe', self.signals.auger_position.emit, 10)
         self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
         self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
+        # self.sub_spectro = self.create_subscription(ScienceSpectroData, '/science_spectro_data', self.update_spectro_data, 10)
+        # self.sub_uv = self.create_subscription(ScienceUvData, '/science_uv_data', self.update_uv_values, 10)
+
+    def fetch_spectro_data(self):
+        msg = Empty()
+        self.pub_get_spectro.publish(msg)
+
+    def fetch_uv_data(self):
+        msg = Empty()
+        self.pub_get_uv.publish(msg)
+
+    def update_spectro_data(self, msg):
+        vals = msg.values
+        self.spectro_table.updateData(vals)
+
+    def update_uv_values(self, msg):
+        uv = msg.uv
+        als = msg.als
+        self.qt.lcd_uv.display(uv)
+        self.qt.lcd_ambient.display(als)
     
     def toggle_sensor_save(self, p):
         """
@@ -247,17 +354,6 @@ class science_GUI(Node):
 
             plt.scatter(dummy_analog,dummy_manuals)
             plt.pause(0.5)
-            # Have it ask you to save the point or delete after showing you an updated graph.
-            # Need to decide if this is useful or not
-            # keep = "y"
-            # if not (keep == "y" or keep =="Y" or keep == "[Y]" or keep == "[y]" or keep == ""):
-            #     manual_points.pop()
-            #     analog_vals.pop()
-            #     plt.cla()
-            #     plt.scatter(dummy_analog,dummy_manuals)
-            #     plt.xlabel("Arduino Digital Readout")
-            #     plt.ylabel("Reference Temperature (deg C)")
-            #     plt.pause(0.5)
         #Add something so you can decide what order polynomial you want.
         order = int(input("What order polynomial do you want to fit? [0 - 6]\n"))
         P0 = np.zeros((1,6-order))
@@ -345,18 +441,13 @@ class science_GUI(Node):
         self.qt.lbl_heading.setText(heading)
         self.qt.lbl_coordinates.setText(coordinates)
 
-    # def update_auger_position(self, msg):
-    #     """
-    #     Updates the augur display.
-
-    #     This is like this because the photoresistors are backwards on the board.
-    #     """
-    #     if msg.position == 0:
-    #         self.qt.lcd_auger.display(2)
-    #     elif msg.position == 1:
-    #         self.qt.lcd_auger.display(1)
-    #     else:
-    #         self.qt.lcd_auger.display(-1)
+    def update_current_tool(self, msg):
+        if msg.data == True: # Using Probe
+            self.qt.current_tool_label.setText("PROBE")
+        elif msg.data == False: # Not using probe
+            self.qt.current_tool_label.setText("AUGER")
+        else:
+            self.qt.current_tool_label.setText("NONE")
 
     def fad_detector_get_point(self, event=None): #Written by chat
         print('Calibrate FAD')
@@ -381,16 +472,6 @@ class science_GUI(Node):
             self.update_fad_intensity_value(response)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {str(e)}")
-
-
-        # print('Calibrate FADD')
-        # site_name = 'fad_calibration'
-        # camera = Camera()
-        # camera.client_address = "{}@{}".format(os.getlogin(), self.base_ip)
-        # camera.camera_name = 'fadCam'
-        # response = self.camera_control(camera=camera, site_name=site_name, calibrate=True)
-
-        # self.update_fad_intensity_value(response.intensity)
 
     def get_base_ip(self):
         ip = os.getenv("BASE_ADDRESS")

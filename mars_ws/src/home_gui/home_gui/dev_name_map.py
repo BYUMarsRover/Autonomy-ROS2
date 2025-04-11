@@ -25,7 +25,7 @@ ROVER_DEV_NAME_MAP = {
 }
 
 BASE_DEV_NAME_MAP = {
-    "js/xbox_one" : "Xbox Controller (drive)",
+    "js/xbox_one_drive" : "Xbox Controller (drive)",
     "js/xbox_one_arm" : "Xbox Controller (arm)",
     "onBoardMega" : "Arduino Mega (Antenna)",
     "rtk" : "RTK GPS (base station)",

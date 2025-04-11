@@ -130,8 +130,9 @@ USER $NAME
 
 # Install the joy package - Alyssa Fielding, Feb 2025
 # Needed for the joystick control on the base station
+# TODO make sure we can delete the joy package and just migrate to JOY LINUX
 USER root
-RUN apt update && apt install -y ros-humble-joy
+RUN apt update && apt install -y ros-humble-joy ros-humble-joy-linux
 USER $NAME 
 
 # Install gpsd-client - Braden Meyers, Feb 2025
