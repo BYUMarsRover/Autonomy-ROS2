@@ -550,7 +550,7 @@ class AutonomyStateMachine(Node):
                         self.state = State.START_SPIN_SEARCH
                         self.hex_search_point_num = 0
                         self.hex_center_point = self.current_point
-                        self.hex_radius_factor = 1/3 if self.tag_id in [TagID.MALLET, TagID.BOTTLE] else 1
+                        self.hex_radius_factor = 1/2 if self.tag_id in [TagID.MALLET, TagID.BOTTLE] else 1
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE
                 elif self.correct_obj_found:
