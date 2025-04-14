@@ -1486,38 +1486,6 @@
               </property>
              </widget>
             </item>
-            <!-- Camera Feed Label Item -->
-            <item alignment="Qt::AlignTop">
-             <!-- Title for camera feed section -->
-             <widget class="QLabel" name="CameraFeedLabel">
-              <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Camera Feed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="scaledContents">
-               <bool>false</bool>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignTop</set>
-              </property>
-             </widget>
-            </item> 
-            <!-- Low Frequency Camera Feed that can be used as seen fit -->
-            <item>
-             <widget class="QLabel" name="CameraFeed">
-              <property name="text">
-               <string>Empty... Waiting for Feed</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignTop</set>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>250</width>
-                <height>20</height>
-               </size>
-              </property>
-             </widget>
-            </item>
             <!-- Horizontal Dividing Line -->
             <item>
              <widget class="Line" name="line_3">
