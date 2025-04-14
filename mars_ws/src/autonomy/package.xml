@@ -34,6 +34,7 @@
   <exec_depend>fiducial_msgs</exec_depend>  <!-- Added for FiducialTransformArray -->
   <exec_depend>image_tools</exec_depend>
   <exec_depend>usb-cam</exec_depend>
+  <exec_depend>zed_msgs</exec_depend>
 
   <depend>std_msgs</depend>
 

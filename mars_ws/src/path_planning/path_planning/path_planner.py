@@ -154,10 +154,28 @@ class PathPlanner(Node):
             # Get waypoints every 10 meters along path in x/y format
             waypoints_yx = self.path_planner.get_path_waypoints(dist_between_wp=10) #TODO: tune this distance between points
 
+
+            # Path to Mapviz
+            path = Path()
+            path.header = Header()
+            path.header.stamp = self.get_clock().now().to_msg()
+            path.header.frame_id = 'map'
+
             # Append coordinates to the waypoint list in lat/lon format
             for i, yx in enumerate(waypoints_yx):
                 y, x = yx  # Unpack (y, x) tuple
                 lat, lon = self.eMapper.xy_to_latlon(x, y)  # Convert xy to lat/lon
+                self.waypoints.task_list.append(AutonomyTaskInfo(latitude=float(lat), longitude=float(lon), tag_id=self.tag_id))
+
+                path.poses.append(
+                    PoseStamped(
+                        header=path.header,
+                        pose=Pose(
+                            position=Point(x=float(lat), y=float(lon), z=0.0),
+                            orientation=Pose().orientation
+                        )
+                    )
+                )
 
                 # Code to print distance and heading between waypoints for field testing
                 # if i > 0:
@@ -174,7 +192,10 @@ class PathPlanner(Node):
                 #     self.get_logger().info(f'Dist/Heading: {dist} m/{theta*180/np.pi} deg')
                 # self.get_logger().info(f'Waypoint {i}: ({lat}, {lon})')
 
-                self.waypoints.task_list.append(AutonomyTaskInfo(latitude=float(lat), longitude=float(lon), tag_id=self.tag_id))
+            # Publish Path to Mapviz
+            path = path_to_utm(path, self.utm_easting_zero, self.utm_northing_zero)
+            self.mapviz_path.publish(path)
+            self.get_logger().info(f"Path sent to mapviz: {len(path.poses)} waypoints")
 
             # Get explored nodes
             explored_nodes = self.path_planner.get_explored_nodes()
@@ -322,6 +343,22 @@ class PathPlanner(Node):
             response.success = False  # Indicate failure
             response.message = "No waypoints available to publish"
         return response
+
+def path_to_utm(path, utm_easting_zero, utm_northing_zero):
+    utm_path = Path()
+    utm_path.header = path.header
+    for pose in path.poses:
+        utm_coords = utm.from_latlon(pose.pose.position.x, pose.pose.position.y)
+        utm_path.poses.append(
+            PoseStamped(
+                header=pose.header,
+                pose=Pose(
+                    position=Point(x=utm_coords[0] - utm_easting_zero, y=utm_coords[1] - utm_northing_zero, z=0.0),
+                    orientation=pose.pose.orientation
+                )
+            )
+        )
+    return utm_path
     
 def main(args=None):
 

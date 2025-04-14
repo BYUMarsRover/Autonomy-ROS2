@@ -152,7 +152,7 @@
   <widget class="Line" name="line_4">
    <property name="geometry">
     <rect>
-     <x>840</x>
+     <x>850</x>
      <y>70</y>
      <width>20</width>
      <height>171</height>
@@ -337,7 +337,7 @@
   <widget class="QRadioButton" name="fad_radio">
    <property name="geometry">
     <rect>
-     <x>650</x>
+     <x>610</x>
      <y>220</y>
      <width>131</width>
      <height>31</height>
@@ -410,21 +410,21 @@
   <widget class="QPushButton" name="pushButton_fad">
    <property name="geometry">
     <rect>
-     <x>240</x>
-     <y>280</y>
-     <width>151</width>
+     <x>720</x>
+     <y>190</y>
+     <width>121</width>
      <height>25</height>
     </rect>
    </property>
    <property name="text">
-    <string>Calculate FAD Intensity</string>
+    <string>Get FAD intensity</string>
    </property>
   </widget>
   <widget class="QGroupBox" name="groupBox_2">
    <property name="geometry">
     <rect>
      <x>180</x>
-     <y>310</y>
+     <y>280</y>
      <width>281</width>
      <height>131</height>
     </rect>
@@ -511,9 +511,9 @@
   <widget class="QLineEdit" name="le_fad">
    <property name="geometry">
     <rect>
-     <x>610</x>
+     <x>600</x>
      <y>90</y>
-     <width>211</width>
+     <width>111</width>
      <height>131</height>
     </rect>
    </property>
@@ -714,7 +714,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>350</y>
+     <y>310</y>
      <width>161</width>
      <height>71</height>
     </rect>
@@ -731,13 +731,75 @@ p, li { white-space: pre-wrap; }
    <property name="geometry">
     <rect>
      <x>50</x>
-     <y>310</y>
+     <y>280</y>
      <width>111</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
     <string>Estimated Value</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>90</y>
+     <width>141</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enter yeast weight in grams</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_fad">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>110</y>
+     <width>121</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_fad_calibration">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>130</y>
+     <width>121</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enter calibration point</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_fad_graph">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>160</y>
+     <width>121</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Show Graph</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_fad_estimate">
+   <property name="geometry">
+    <rect>
+     <x>720</x>
+     <y>220</y>
+     <width>121</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Estimate weight life</string>
    </property>
   </widget>
   <zorder>groupBox</zorder>
@@ -778,6 +840,11 @@ p, li { white-space: pre-wrap; }
   <zorder>temperature_poly_label</zorder>
   <zorder>textBrowser</zorder>
   <zorder>label_8</zorder>
+  <zorder>label_9</zorder>
+  <zorder>lineEdit_fad</zorder>
+  <zorder>pushButton_fad_calibration</zorder>
+  <zorder>pushButton_fad_graph</zorder>
+  <zorder>pushButton_fad_estimate</zorder>
  </widget>
  <resources/>
  <connections/>
