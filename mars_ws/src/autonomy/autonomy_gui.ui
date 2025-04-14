@@ -921,109 +921,6 @@
             <property name="alignment">
              <set>Qt::AlignTop</set>
             </property>
-            <!-- Right Column Label (Dashboard) Item -->
-            <item>
-             <!-- Right Column Label Widget (Dashboard) -->
-             <widget class="QLabel" name="DashboardLabel">
-              <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Dashboard&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="scaledContents">
-               <bool>false</bool>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignCenter</set>
-              </property>
-             </widget>
-            </item>
-            <!-- Horizontal Dividing Line -->
-            <item>
-             <widget class="Line" name="line_3">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
-            </item>
-            <!-- State Machine Dash Section Label Item -->
-            <item>
-             <!-- State Machine Dash Section Label -->
-             <widget class="QLabel" name="StateMachineLabel">
-              <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;State Machine&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="scaledContents">
-               <bool>false</bool>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignCenter</set>
-              </property>
-             </widget>
-            </item>
-            <!-- State Machine previous and current Navigation states Item -->
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_5">
-              <!-- Vertical Box that has the PREVIOUS state -->
-              <item>
-               <layout class="QVBoxLayout" name="verticalLayout_11">
-                <item>
-                 <widget class="QLabel" name="PreviousNavStateLabel">
-                  <property name="text">
-                   <string>Previous Nav State</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="PreviousNavStateDisplay">
-                  <property name="text">
-                   <string>None</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <!-- Vertical Dividing Line (divides previous and current state columns) -->
-              <item>
-               <widget class="Line" name="line">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-               </widget>
-              </item>
-              <!-- Vertical Box that has the CURRENT state -->
-              <item>
-               <layout class="QVBoxLayout" name="verticalLayout_11">
-                <item>
-                 <widget class="QLabel" name="CurrentNavStateLabel">
-                  <property name="text">
-                   <string>Current Nav State</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="CurrentNavStateDisplay">
-                  <property name="text">
-                   <string>None</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </item>
-            <!-- Horizontal Dividing Line -->
-            <item>
-             <widget class="Line" name="line_3">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
-            </item>
             <!-- Rover State Singleton -->
             <item>
              <!-- Rover State Singleton Dash Section Label -->
@@ -1455,6 +1352,78 @@
             <property name="alignment">
              <set>Qt::AlignTop</set>
             </property>
+            <!-- State Machine Dash Section Label Item -->
+            <item>
+             <!-- State Machine Dash Section Label -->
+             <widget class="QLabel" name="StateMachineLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;State Machine&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <!-- State Machine previous and current Navigation states Item -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
+              <!-- Vertical Box that has the PREVIOUS state -->
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_11">
+                <item>
+                 <widget class="QLabel" name="PreviousNavStateLabel">
+                  <property name="text">
+                   <string>Previous Nav State</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="PreviousNavStateDisplay">
+                  <property name="text">
+                   <string>None</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <!-- Vertical Dividing Line (divides previous and current state columns) -->
+              <item>
+               <widget class="Line" name="line">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+               </widget>
+              </item>
+              <!-- Vertical Box that has the CURRENT state -->
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_11">
+                <item>
+                 <widget class="QLabel" name="CurrentNavStateLabel">
+                  <property name="text">
+                   <string>Current Nav State</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="CurrentNavStateDisplay">
+                  <property name="text">
+                   <string>None</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </item>
             <!-- Right Column Label Item -->
             <item alignment="Qt::AlignTop">
              <!-- Right Column Label Widget (Previous States) -->
@@ -1485,6 +1454,46 @@
                </size>
               </property>
              </widget>
+            </item>
+            <!-- System Status Label Item -->
+            <item alignment="Qt::AlignTop">
+             <!-- Title for camera feed section -->
+             <widget class="QLabel" name="SystemStatusLabel">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;System Statuses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignTop</set>
+              </property>
+             </widget>
+            </item> 
+            <!-- Statuses of all systems -->
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <item alignment="Qt::AlignTop">
+               <widget class="QLabel" name="ArucoSystemStatus">
+                <property name="text">
+                 <string>ARUCO DETECT</string>
+                </property>
+                <property name="styleSheet">
+                 <string>font-size: 12pt; font-weight: bold; color: rgb(57, 255, 20);</string>
+                </property>
+               </widget>
+              </item>
+              <!-- <item alignment="Qt::AlignTop">
+               <widget class="QLabel" name="ObjectSystemStatus">
+                <property name="text">
+                 <string>ARUCO DETECT</string>
+                </property>
+                <property name="styleSheet">
+                 <string>font-size: 12pt; font-weight: bold; color: rgb(57, 255, 20);</string>
+                </property>
+               </widget>
+              </item> -->
+             </layout>
             </item>
             <!-- Horizontal Dividing Line -->
             <item>
@@ -1520,7 +1529,7 @@
                 </property>
                </widget>
               </item>
-              <!-- Rover State Singleton Lon -->
+              <!-- Hazard Avoidance Status -->
               <item>
                <widget class="QLabel" name="HazardAvoidance">
                 <property name="text">
