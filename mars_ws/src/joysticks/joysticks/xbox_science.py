@@ -82,7 +82,7 @@ class XBOX(Node):
         self.elevator_axis = iptl.InputAxis(LEFT_STICK_VERTICAL)
         self.primary_cache_door_button = iptl.InputButton(A, FULL_STEAM_FORWARD, FULL_STEAM_BACKWARD)
         self.secondary_cache_axis = iptl.InputAxis(DPAD_HORIZONTAL, invert=True)
-        self.reset_flag = iptl.ButtonFlag(iptl.InputHold(BACK, 500))
+        self.reset_flag = iptl.ButtonFlag(iptl.InputHold(BACK, 1000))
         self.override_button = iptl.InputButton(POWER, True, False)
 
     def auger_control_callback(self, msg: Empty):
@@ -104,6 +104,7 @@ class XBOX(Node):
 
         # Handle Reset - Trigger the reset topic
         if input_reset_flag:
+            self.get_logger().info("Resetting science module...")
             self.reset_flag.acknowledge()
             self.pub_reset_science_module.publish(Empty())
 

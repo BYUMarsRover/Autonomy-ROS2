@@ -69,6 +69,7 @@ class ScienceSerialInterface(Node):
         super().__init__('science_serial_interface')
 
         # Begin serial interface
+        self.arduino = None
         self.establish_serial_connection()
 
         self.create_subscription(ScienceActuatorControl, '/science_serial_probe',                lambda msg: self.actuator_control_callback(msg, PROBE_ACTUATOR_INDEX), 10)
@@ -95,7 +96,8 @@ class ScienceSerialInterface(Node):
         # State Variable
         self.override_bit = False
 
-    def establish_serial_connection(self):
+    def establish_serial_connection(self, msg: Empty = None):
+        self.get_logger().info("Resetting serial connection...")
         if self.arduino is not None:
             self.arduino.close()
         try:

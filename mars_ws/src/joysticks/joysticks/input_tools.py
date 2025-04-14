@@ -39,12 +39,17 @@ class InputHold(InputButton):
         # When the button is pressed, start timer
         if msg.buttons[self.button_index]:
             if self.start_time == None:
-                self.start_time = msg.header.stamp.to_sec()
-            elif (msg.header.stamp() - self.start_time) * 1000 >= self.hold_time_ms:
+                self.start_time = InputHold._get_header_time(msg)
+            elif (InputHold._get_header_time(msg) - self.start_time) * 1000 >= self.hold_time_ms:
                 return True
         else:
             self.start_time = None
         return False
+    
+    @staticmethod
+    def _get_header_time(msg: Joy):
+        # Extract the time from the Joy message header
+        return msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
 
 class InputToggle(InputButton):
     '''When the button is pressed, the control will switch between the provided off and on states'''
@@ -97,14 +102,18 @@ class InputThrottle:
     
 class ButtonFlag:
     '''Persistent Signal that a InputButton '''
-    def __init__(self, input: InputButton):
+    def __init__(self, input: InputButton, rising_edge=True):
         self.input = input
         self.flag_set = False
+        self.prev_state = False
+        self.rising_edge = rising_edge
 
     def update(self, msg: Joy):
-        input.update(msg)
-        if input.state == True:
+        self.input.update(msg)
+        state = self.input.state
+        if state == self.rising_edge and not self.prev_state == self.rising_edge:
             self.flag_set = True
+        self.prev_state = state
         return self.flag_set
     
     def acknowledge(self):
