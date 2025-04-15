@@ -125,7 +125,7 @@ class PathPlanner(Node):
         elif 40.264015 < self.location[0] < 40.268993 and -111.6349 < self.location[1] < -111.628180:
             self.get_logger().info("Welcome to Rock Canyon!")
             file_path = os.path.join(get_package_share_directory('path_planning'), 'data', 'rock_canyon.asc')
-            self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='S')
+            self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='T')
 
         # Error Handling for unsupported locations
         else:
