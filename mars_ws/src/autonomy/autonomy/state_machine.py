@@ -673,6 +673,9 @@ class AutonomyStateMachine(Node):
 
 
         else:
+            # Reset known objects
+            self.known_objects = {}
+            
             if self.state != State.MANUAL:
                 self.drive_controller.issue_drive_cmd(0, 0)
                 self.drive_controller.stop()

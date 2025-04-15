@@ -5,7 +5,7 @@ mobility:
   autopilot_manager:
     ros__parameters:   
       # Regular Autopilot Params
-      linear_autopilot_kp: 0.1
+      linear_autopilot_kp: 1.0
       linear_autopilot_kd: 0.0
       linear_autopilot_ki: 0.0
       linear_autopilot_Ts: 0.1
