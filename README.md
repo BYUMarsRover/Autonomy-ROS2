@@ -1,18 +1,58 @@
-### Get Started:
+[Get Started](https://github.com/BYUMarsRover/Autonomy-ROS2?tab=readme-ov-file#get-started)
+
+[Essential Tutorials](https://github.com/BYUMarsRover/Autonomy-ROS2?tab=readme-ov-file#essential-tutorials)
+
+[Contributing](https://github.com/BYUMarsRover/Autonomy-ROS2?tab=readme-ov-file#contributing)
+
+--
+
+### Get Started
+
+> **NOTE:** Newer Macs that use ARM64 architecture (M1, M2, etc) are not able to run some code due to missing package support, and have not been extensively tested.
+
+**Windows:**
 
 - Install WSL2 on your Windows machine by following the instructions [here](https://docs.microsoft.com/en-us/windows/wsl/install).
 
 - Install Docker Desktop on your Windows machine by following the instructions [here](https://docs.docker.com/desktop/), and enable the WSL 2 backend by following the instructions [here](https://docs.docker.com/desktop/windows/wsl/).
 
-- Open a WSL terminal and clone the Autonomy-ROS2 repo into your Linux environment using `git clone https://github.com/BYUMarsRover/Autonomy-ROS2.git`.
+- Open a WSL terminal and clone the Autonomy-ROS2 repo into your WSL environment using `git clone https://github.com/BYUMarsRover/Autonomy-ROS2.git`.
 
 - Run `bash compose.sh` to pull and launch the latest Docker image from DockerHub.
 
-  > **NOTE:** If you ever need to restart the container, simply run `bash compose.sh down` to stop the container, and then `bash compose.sh` to start it again.
+**Linux:**
+
+- Install Docker Engine on your Linux machine by following the instructions [here](https://docs.docker.com/engine/install/ubuntu/).
+
+- Open a terminal and clone the Autonomy-ROS2 repo into your Linux environment using `git clone https://github.com/BYUMarsRover/Autonomy-ROS2.git`.
+
+- Run `bash compose.sh` to pull and launch the latest Docker image from DockerHub.
 
 --
 
-### Contributing:
+### Essential Tutorials
+
+> **NOTE:** <mark>We would **strongly encourage** each year's team to take a couple of months at the beginning of the first semester and simply work together through these tutorials before diving into software development.</mark> It may not seem romantic, but I promise it'll be worth it.
+
+[Linux CLI Tutorial](https://linuxjourney.com/lesson/the-shell)
+
+[GitHub Basics Tutorial](https://docs.github.com/en/get-started/start-your-journey/hello-world)
+
+[Docker Concepts and Tutorials](https://docs.docker.com/get-started/introduction/whats-next/)
+
+[ROS2 Concepts](https://docs.ros.org/en/humble/Concepts/Basic.html)
+
+[ROS2 CLI Tutorials](https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools.html)*
+
+[ROS2 Code Tutorials](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries.html)*
+
+[ROS2 Discovery Server Tutorial](https://docs.ros.org/en/humble/Tutorials/Advanced/Discovery-Server/Discovery-Server.html)*
+
+[Robotics in ROS2 Tutorial](https://github.com/henki-robotics/robotics_essentials_ros2/tree/main)
+
+--
+
+### Contributing
 
 - **Create a new branch.** Our main code branches are protected, so you'll need to create a new branch. Name your branch with a combination of your name and the feature you are working on (i.e. nelson/repo-docs).
 
@@ -26,23 +66,9 @@
 
 --
 
-### Helpful Resources:
-
-Linux Command Line Tutorial - [https://linuxjourney.com/lesson/the-shell](https://linuxjourney.com/lesson/the-shell)
-
-GitHub Basics Tutorial - [https://docs.github.com/en/get-started/start-your-journey/hello-world](https://docs.github.com/en/get-started/start-your-journey/hello-world)
-
-Docker Concepts and Tutorials - [https://docs.docker.com/get-started/introduction/whats-next/](https://docs.docker.com/get-started/introduction/whats-next/)
-
-ROS 2 Concepts - [https://docs.ros.org/en/humble/Concepts/Basic.html](https://docs.ros.org/en/humble/Concepts/Basic.html)
-
-ROS 2 CLI Tutorials - [https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools.html](https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools.html)
-
-ROS 2 Code Tutorials - [https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries.html](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries.html)
-
-Robotics in ROS 2 Tutorials - [https://github.com/henki-robotics/robotics_essentials_ros2/tree/main](https://github.com/henki-robotics/robotics_essentials_ros2/tree/main)
-
-GPS Navigation w Nav2 Tutorial - [https://docs.nav2.org/tutorials/docs/navigation2_with_gps.html](https://docs.nav2.org/tutorials/docs/navigation2_with_gps.html)
+> **TO THE 2026 MARS ROVER TEAM:** Consider checking this repository out as well:
+>
+> https://github.com/BYUMarsRover/marsrover_2.0
 
 --
 
