@@ -66,10 +66,4 @@
 
 --
 
-> **TO THE 2026 MARS ROVER TEAM:** Consider checking this repository out as well:
->
-> https://github.com/BYUMarsRover/marsrover_2.0
-
---
-
 Created by Nelson Durrant, Feb 2025.
