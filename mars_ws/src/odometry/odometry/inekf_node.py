@@ -7,6 +7,11 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseWithCovarianceStamped, Quaternion
 # from tf_transformations import euler_from_quaternion, quaternion_multiply, quaternion_inverse, quaternion_matrix, quaternion_from_euler
 from ublox_read_2.msg import PositionVelocityTime
+from threading import Lock
+# Use dedicated callback group for timer
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
+from rclpy.executors import SingleThreadedExecutor
+
 
 from collections import deque
 
@@ -41,9 +46,10 @@ class EKFNode(Node):
         self.start_filtering = [False, False]   # Dont start until we have GPS and Yaw
         self.imu_time = None
         # store only the last 10 gps positions
-        self.gps_heading_recall = 5
-        self.gps_pos = deque(maxlen= self.gps_heading_recall + 5)
+        self.gps_heading_recall = 3
+        self.gps_pos = deque(maxlen= self.gps_heading_recall + 3)
 
+        # self.buffer_lock = Lock()  # Add mutex
         self.sensor_buffer = deque()
 
         # self.gps_origin = None
@@ -52,42 +58,62 @@ class EKFNode(Node):
 
         # self.prev_odom = None
 
-        self.sub_imu = self.create_subscription(Imu, 'zed/zed_node/imu/data', self.imu_callback, 10)
-        self.ublox_subscription = self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.gps_callback, 10)  # Creates a subscriber to ublox node
+        self.new_imu = False
+        self.new_gps = False
+
+        # test_executor = SingleThreadedExecutor()
+        # self.imu_sub_cb = ReentrantCallbackGroup()
+        # self.gps_sub_cb = ReentrantCallbackGroup()
+
+        self.sub_imu = self.create_subscription(Imu, 'zed/zed_node/imu/data', self.imu_callback, 1)  # Creates a subscriber to IMU node
+        self.ublox_subscription = self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.gps_callback, 1)  # Creates a subscriber to ublox node
         # self.sub_odom = self.create_subscription(Odometry, 'zed/zed_node/odom', self.odom_callback, 10)
         # self.sub_gps_odom = self.create_subscription(Odometry, 'odometry/gps', self.gps_odom_callback, 10)
         self.pub_state = self.create_publisher(Odometry, 'ekf/odom', 10)
         self.pub_gps_xy = self.create_publisher(PoseWithCovarianceStamped, 'gps/xy', 10)
-        self.pub_odom_in_map = self.create_publisher(Odometry, 'odom/map', 10)
+        self.pub_gps_filtered = self.create_publisher(NavSatFix, 'gps/filtered', 10)
+        # self.pub_odom_in_map = self.create_publisher(Odometry, 'odom/map', 10)
 
 
-        # self.declare_ekf_parameters()
-        self.timer = self.create_timer(0.05, self.ekf_loop)  # 9 Hz loop  Just slower than GPS rate (GPS- 10Hz, Odom 12Hz, MAG 20hz, IMU )
-    
-    def declare_ekf_parameters(self):
-        #TODO: MAKE THE PARAMETERS IN THE CONFIG FILE
-        self.declare_parameter('gps_noise', 0.2)  # 0.2 m
-        self.declare_parameter('gps_yaw_noise_scalar', 1.0)  # 0.2 m
-        self.declare_parameter('imu_noise', 0.01)  # 0.1 rad
-        self.declare_parameter('odom_noise', 0.5) # 2.0 m
-    
+        timer_group = MutuallyExclusiveCallbackGroup()
+        self.timer = self.create_timer(0.005, self.ekf_loop)  # rates (GPS- 10Hz, Odom 12Hz, MAG 20hz, IMU )
     
     def ekf_loop(self):
-        
         if (all(self.start_filtering) and (self.inekf.filter_started == False)):
             self.inekf.initialize_filter(self.init_state, self.imu_time)
             self.get_logger().info('Initializing filter')
 
-        while len(self.sensor_buffer) > 0:
-            item = self.sensor_buffer.popleft()
-            if isinstance(item, Imu):
-                self.process_imu(item)
-                # self.get_logger().info('Processing IMU data')
-            elif isinstance(item, PositionVelocityTime):
-                self.process_gps(item)
-                # self.get_logger().info('Processing GPS data')
-                if self.inekf.filter_started:
-                    self.publish_state(item.header.stamp)
+
+        # with self.buffer_lock:  # Acquire lock
+        #     items_to_process = self.sensor_buffer.copy()  # Copy the buffer
+        #     self.sensor_buffer.clear()
+        #     print(len(items_to_process))
+        
+
+        # while items_to_process:
+        #     item = items_to_process.popleft()
+        # # print('Processing')
+        # # while self.sensor_buffer:
+        # #     item = self.sensor_buffer.popleft()
+        #     if isinstance(item, Imu):
+        #         self.process_imu(item)
+        #         # self.get_logger().info('Processing IMU data')
+        #     elif isinstance(item, PositionVelocityTime):
+        #         self.process_gps(item)
+        #         # self.get_logger().info('Processing GPS data')
+        #         if self.inekf.filter_started:
+        #             self.publish_state(item.header.stamp)
+        # # print('Processing done')
+
+
+        if self.new_imu:
+            self.new_imu = False
+            self.process_imu(self.newest_imu)
+        if self.new_gps:
+            self.new_gps = False
+            self.process_gps(self.newest_gps)
+            if self.inekf.filter_started:
+                self.publish_state(self.newest_gps.header.stamp)
 
 
     def process_gps(self, msg: PositionVelocityTime):
@@ -144,8 +170,15 @@ class EKFNode(Node):
 
 
     def gps_callback(self, msg: PositionVelocityTime):
-
-        self.sensor_buffer.append(msg)
+        self.newest_gps = msg
+        if self.new_gps:
+            self.get_logger().warn('Skipping GPS data because of higher rate than ekf checking')
+        else:
+            self.new_gps = True
+        
+        
+        # with self.buffer_lock:  # Thread-safe append
+        #     self.sensor_buffer.append(msg)
         # self.get_logger().info('Received GPS data')
 
 
@@ -191,7 +224,14 @@ class EKFNode(Node):
 
 
     def imu_callback(self, msg: Imu):
-        self.sensor_buffer.append(msg)
+        self.newest_imu = msg
+        if self.new_imu:
+            self.get_logger().warn('Skipping IMU data because of higher rate than ekf checking')
+        else:    
+            self.new_imu = True
+
+        # with self.buffer_lock:
+        #     self.sensor_buffer.append(msg)
         # self.get_logger().info('Received IMU data')
 
 
@@ -426,6 +466,22 @@ class EKFNode(Node):
         msg.pose.pose.orientation.z = q[2]
         msg.pose.pose.orientation.w = q[3]
         self.pub_state.publish(msg)
+
+        publish_filtered_gps = True
+        if publish_filtered_gps:
+            lat, lon = convert_xyz_to_gps(mu[0, 4], mu[1, 4], self.ref_lat, self.ref_lon)
+            gps_msg = NavSatFix()
+            gps_msg.header.frame_id = 'gps_link'
+            gps_msg.header.stamp = stamp
+            gps_msg.latitude = lat
+            gps_msg.longitude = lon
+            gps_msg.altitude = mu[2, 4]
+
+
+            self.pub_gps_filtered.publish(gps_msg)
+
+
+            
 
         # self.publish_map_transforms(msg)
         
