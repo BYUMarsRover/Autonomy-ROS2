@@ -115,6 +115,18 @@ class PathPlanner(Node):
             file_path = os.path.join(get_package_share_directory('path_planning'), 'data', '2024_autonomy_competition_site.asc')
             self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='S')
 
+        # Green River (Price)
+        elif 38.874790 < self.location[0] < 38.879579 and -110.354939 < self.location[1] < -110.348544:
+            self.get_logger().info("Welcome to Green River (Price)!")
+            file_path = os.path.join(get_package_share_directory('path_planning'), 'data', 'green_river.asc')
+            self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='S')
+
+        # Rock Canyon
+        elif 40.264015 < self.location[0] < 40.268993 and -111.6349 < self.location[1] < -111.628180:
+            self.get_logger().info("Welcome to Rock Canyon!")
+            file_path = os.path.join(get_package_share_directory('path_planning'), 'data', 'rock_canyon.asc')
+            self.eMapper = Mapper(file_path=file_path, zone=12, zone_letter='S')
+
         # Error Handling for unsupported locations
         else:
             self.get_logger().warn("Current location not supported for path planning.")
