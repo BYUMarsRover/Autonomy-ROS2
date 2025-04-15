@@ -7,3 +7,6 @@ imu_filter_madgwick:
     world_frame: 'ned'
     publish_tf: False
     publish_debug_topics: True
+    mag_bias_x: 0.0
+    mag_bias_y: 0.0
+    mag_bias_z: 0.0

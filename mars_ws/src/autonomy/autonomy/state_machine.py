@@ -569,7 +569,7 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 msg = String() # For Debugging TODO: remove
                 self.get_logger().info(f"spin_target_angle: {self.spin_target_angle}, curr_heading: {self.curr_heading}, spin_start_heading: {self.spin_start_heading}")
-                self.get_logger().info(f"spin_stop: {self.spin_stop}, spin_stop_time: {self.spin_stop_time}")
+                self.get_logger().info(f"spin_stop: {self.spin_stop}")
                 if self.spin_stop:
                     msg.data = "aruco spin Stopping"
                     # If the rover has spun self.spin_step_size and is stopped, wait for self.spin_delay_time seconds to look for a tag
