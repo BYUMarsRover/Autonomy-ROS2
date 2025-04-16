@@ -29,7 +29,6 @@ from geometry_msgs.msg import PoseStamped, Pose, Point
 from zed_msgs.msg import ObjectsStamped
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloats, SetFloat32, OrderAutonomyWaypoint, PlanPath
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors, HazardArray
-from sensor_msgs.msg import Image
 from ament_index_python.packages import get_package_share_directory
 
 import threading
@@ -147,7 +146,6 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, 1) 
         self.create_subscription(PlanPath.Response, '/path_plan_response', self.plan_path_response_callback, 10) # Allows the path planner node to notify when the path is ready
         self.create_subscription(HazardArray, '/hazards', self.hazard_callback, 10)
-        self.create_subscription(Image, '/image_raw', self.image_callback, 10) # Image from the camera
 
         # Services
 
@@ -340,15 +338,6 @@ class AutonomyGUI(Node, QWidget):
             objects_string = objects_string + f'{obj_name}: conf: {obj.confidence}, dist: {obj_distance} m @ {obj_angle} deg \n'
 
         self.ros_signal.emit('ObjStatus', objects_string)
-        return
-    
-    def image_callback(self, msg):
-        data = msg.data
-        # Convert the image data to a QImage and display it in the QLabel
-        image = QImage(data, msg.width, msg.height, QImage.Format_RGB888)
-        pixmap = QPixmap.fromImage(image)
-        self.CameraFeed.setPixmap(pixmap)
-        self.CameraFeed.setScaledContents(True)
         return
     
     ################# Callbacks for Mobility #################
