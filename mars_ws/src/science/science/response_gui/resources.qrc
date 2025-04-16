@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="images">
+    <file>accept.png</file>
+    <file>warning.png</file>
+    <file>bell.png</file>
+    <file>close.png</file>
+  </qresource>
+</RCC>

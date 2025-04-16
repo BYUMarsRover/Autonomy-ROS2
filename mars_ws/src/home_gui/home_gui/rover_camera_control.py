@@ -26,10 +26,12 @@ class RoverCameraControl(Node):
         self.camera_cleanup = self.create_client(
             CameraControl, 'camera_cleanup')
         
+        self.get_logger().info("Initializing camera scripts...")
         self.camera_scripts_init()
 
         # Publishers
         self.pub_fad_calibration = self.create_publisher(ScienceFADIntensity, '/science_fad_calibration', 1)
+        self.get_logger().info("Node initialized")
 
     def camera_scripts_init(self):
         self.cam_scripts_path = os.path.expanduser(
@@ -55,10 +57,11 @@ class RoverCameraControl(Node):
 
         self.cameras_init()
 
-        signal.signal(signal.SIGINT, self.handler_stop_signals)
-        signal.signal(signal.SIGTERM, self.handler_stop_signals)
+        # signal.signal(signal.SIGINT, self.handler_stop_signals)
+        # signal.signal(signal.SIGTERM, self.handler_stop_signals)
 
     def cameras_init(self):
+        self.get_logger().info("Initializing cameras...")
         self.usb_hub_cameras = Camera()
         self.usb_hub_cameras.camera_name = "usb_hub_cameras"
 
@@ -68,47 +71,55 @@ class RoverCameraControl(Node):
 
         self.single_cameras_dict = dict()
 
-    def camera_control_handler(self, req):
+    def camera_control_handler(self, req, resp):
         cam = req.camera
-        print("INFO: Handle camera request for \"{}\"".format(cam.camera_name))
-        if req.camera.camera_name == "ZED_front":
-            if not req.kill:
-                self.launch_zed_camera(cam.client_address, cam.channel)
-            else:
-                self.close_camera(cam.camera_name, self.zed_camera_process)
-        elif req.camera.camera_name == "navView":
-            if not req.kill:
-                self.launch_view(cam.client_address, cam.channel, cam.camera_name)
-            else:
-                self.close_camera(cam.camera_name, self.single_cameras_dict[cam.camera_name])
-        elif req.camera.camera_name == "fadCam":
-            if req.calibrate:
-                intensity = self.calibrate_fad(cam.camera_name, req.site_name)
+        # print("INFO: Handle camera request for \"{}\"".format(cam.camera_name))
+        self.get_logger().info("INFO: Handle camera request for \"{}\"".format(cam.camera_name))
+        # if req.camera.camera_name == "ZED_front":
+        #     if not req.kill:
+        #         self.launch_zed_camera(cam.client_address, cam.channel)
+        #     else:
+        #         self.close_camera(cam.camera_name, self.zed_camera_process)
+        # elif req.camera.camera_name == "navView":
+        #     if not req.kill:
+        #         self.launch_view(cam.client_address, cam.channel, cam.camera_name)
+        #     else:
+        #         self.close_camera(cam.camera_name, self.single_cameras_dict[cam.camera_name])
+        # elif req.camera.camera_name == "fadCam":
+        #     if req.calibrate:
+        #         intensity = self.calibrate_fad(cam.camera_name, req.site_name)
 
-                response = CameraControlResponse()
-                response.intensity = intensity
-                response.error = False
-                response.message = None
+        #         response = CameraControlResponse()
+        #         response.intensity = intensity
+        #         response.error = False
+        #         response.message = None
 
-                print('sending response')
-                return response
-            elif req.kill:
-                self.close_camera(cam.camera_name, self.single_cameras_dict[cam.camera_name])
-            elif req.screenshot:
+        #         print('sending response')
+        #         return response
+        #     elif req.kill:
+        #         self.close_camera(cam.camera_name, self.single_cameras_dict[cam.camera_name])
+        #     elif req.screenshot:
+        #         self.take_screenshot(cam.client_address, cam.camera_name, req.site_name)
+        #     else:
+        #         self.launch_single_camera(cam.client_address, cam.channel, cam.camera_name)
+        # else:
+        print(req.kill, req.screenshot)
+        if not req.kill:
+            if req.screenshot:
+                self.get_logger().info("Taking screenshot\n\n\n!!!\n\n")
                 self.take_screenshot(cam.client_address, cam.camera_name, req.site_name)
             else:
                 self.launch_single_camera(cam.client_address, cam.channel, cam.camera_name)
         else:
-            if not req.kill:
-                if req.screenshot:
-                    self.take_screenshot(cam.client_address, cam.camera_name, req.site_name)
-                else:
-                    self.launch_single_camera(cam.client_address, cam.channel, cam.camera_name)
-            else:
-                self.close_camera(cam.camera_name, self.single_cameras_dict[cam.camera_name])
-                pass
+            self.close_camera(cam.camera_name, self.single_cameras_dict[cam.camera_name])
+            pass
 
-        return False, None, 0
+        resp.error = False  # Set this depending on the logic in your handler
+        resp.message = "Camera operation successful"  # Set an appropriate message
+        resp.intensity = 0  # Set intensity as needed (e.g., if using FAD calibration)
+
+        return resp
+        # return False, None, 0
 
     def launch_zed_camera(self, base_ip, channel):
         self.zed_camera_process = self.launch_camera(

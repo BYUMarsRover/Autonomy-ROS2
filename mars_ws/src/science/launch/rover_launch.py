@@ -9,22 +9,10 @@ def generate_launch_description():
             name="science_serial_interface",
             output="screen"
         ),
-        # Node(
-        #     package="science",
-        #     executable="science_control",
-        #     name="science_control",
-        #     output="screen"
-        # )
-        # Node(
-        #     package="science",
-        #     executable="science_GUI",
-        #     name="science_GUI",
-        #     output="screen"
-        # ),
-        # Node(
-        #     package="science",
-        #     executable="science_data_saver",
-        #     name="science_data_saver",
-        #     output="screen"
-        # )
+        Node(
+            package="science",
+            executable="science_request_manager",
+            name="science_request_manager",
+            output="screen"
+        )
     ])
