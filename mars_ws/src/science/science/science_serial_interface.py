@@ -68,19 +68,9 @@ class ScienceSerialInterface(Node):
     def __init__(self):
         super().__init__('science_serial_interface')
 
-        try:
-            self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
-            # self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE) # - used for testing off of rover
-            self.get_logger().info("Serial port initialized")
-            print("Serial port initialized")
-        except Exception as e:
-            print("Error: scienceArduinoNano not yet ready")
-            print(str(e))
-            sys.stdout.flush()
-            self.get_logger().error("Error: scienceArduinoNano not yet ready")
-            self.get_logger().error(str(e))
-            rclpy.shutdown()
-            exit(0)
+        # Begin serial interface
+        self.arduino = None
+        self.establish_serial_connection()
 
         self.create_subscription(ScienceActuatorControl, '/science_serial_probe',                lambda msg: self.actuator_control_callback(msg, PROBE_ACTUATOR_INDEX), 10)
         self.create_subscription(ScienceActuatorControl, '/science_serial_auger',                lambda msg: self.actuator_control_callback(msg, AUGER_ACTUATOR_INDEX), 10)
@@ -89,6 +79,7 @@ class ScienceSerialInterface(Node):
         self.create_subscription(ScienceActuatorControl, '/science_serial_secondary_cache',      lambda msg: self.actuator_control_callback(msg, SECONDARY_CACHE_ACTUATOR_INDEX), 10)
         self.create_subscription(ScienceActuatorControl, '/science_serial_drill',                lambda msg: self.actuator_control_callback(msg, DRILL_ACTUATOR_INDEX), 10)
         self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
+        self.create_subscription(Empty, '/science_serial_reset', self.establish_serial_connection, 10)
 
         # Serial Communication Exchange
         self.sub_science_serial_tx_request = self.create_subscription(ScienceSerialTxPacket, '/science_serial_tx_request', self.perform_tx_request, 10)
@@ -105,13 +96,26 @@ class ScienceSerialInterface(Node):
         # State Variable
         self.override_bit = False
 
+    def establish_serial_connection(self, msg: Empty = None):
+        self.get_logger().info("Resetting serial connection...")
+        if self.arduino is not None:
+            self.arduino.close()
+        try:
+            self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
+            self.get_logger().info("Serial port initialized")
+        except Exception as e:
+            sys.stdout.flush()
+            self.get_logger().error("Error: Could not connect to scienceArduinoNano")
+            self.get_logger().error(str(e))
+            rclpy.shutdown()
+            exit(0)
+
     # Callbacks for Subscribers
 
     def actuator_control_callback(self, msg: ScienceActuatorControl, sensor_index):
         self.perform_tx_request(SMFL.get_tx_get_update_actuator_control(sensor_index, msg.control))
 
     def set_override_bit_callback(self, msg: Bool):
-        print("Received override change")
         self.override_bit = msg.data
 
     # Publishing for RXTX Monitoring

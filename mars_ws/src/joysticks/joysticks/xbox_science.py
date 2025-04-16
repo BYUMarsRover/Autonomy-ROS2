@@ -22,14 +22,14 @@ import joysticks.input_tools as iptl
 # Xbox button -> move sample to secondary cache
 
 A = 0  # Toggle trap door linear actuator
-B = 1  # Emergency stop secondary cache automation
+B = 1
 X = 2
 Y = 3
 LB = 4  # Switch actuator to previous
 RB = 5  # Switch actuator to next
-BACK = 6  # Toggle secondary cache out or in
+BACK = 6  
 START = 7
-POWER = 8  # (Xbox) Move sample to secondary cache
+POWER = 8
 BUTTON_STICK_LEFT = 9
 BUTTON_STICK_RIGHT = 10
 
@@ -42,13 +42,8 @@ RT = 5  # Drill forward
 DPAD_HORIZONTAL = 6 # Move secondary cache linear actuator in and out
 DPAD_VERTICAL = 7
 
-CACHE_DOOR_OPEN = True
-CACHE_DOOR_CLOSED = False
-
 FULL_STEAM_FORWARD = 127
 FULL_STEAM_BACKWARD = -128
-
-D_PAD_PREF = -1 # Change this to switch D-Pad Axis convention
 
 
 class XBOX(Node):
@@ -70,6 +65,10 @@ class XBOX(Node):
         self.pub_using_probe = self.create_publisher(
             Bool, "/science_using_probe", 10
         )
+        self.pub_reset_science_module = self.create_publisher(
+            Empty, '/science_serial_reset', 10
+        )
+
 
         # Initialize state variables
         self.prev_joy_state = None
@@ -83,6 +82,7 @@ class XBOX(Node):
         self.elevator_axis = iptl.InputAxis(LEFT_STICK_VERTICAL)
         self.primary_cache_door_button = iptl.InputButton(A, FULL_STEAM_FORWARD, FULL_STEAM_BACKWARD)
         self.secondary_cache_axis = iptl.InputAxis(DPAD_HORIZONTAL, invert=True)
+        self.reset_flag = iptl.ButtonFlag(iptl.InputHold(BACK, 1000))
         self.override_button = iptl.InputButton(POWER, True, False)
 
     def auger_control_callback(self, msg: Empty):
@@ -100,6 +100,13 @@ class XBOX(Node):
         input_axis_secondary_cache =        self.secondary_cache_axis.update(msg)
         input_override =                    self.override_button.update(msg)
         input_elevator =                    self.elevator_axis.update(msg)
+        input_reset_flag =                  self.reset_flag.update(msg)
+
+        # Handle Reset - Trigger the reset topic
+        if input_reset_flag:
+            self.get_logger().info("Resetting science module...")
+            self.reset_flag.acknowledge()
+            self.pub_reset_science_module.publish(Empty())
 
         # Handle Override - This sets the override bit for science module communications (see science_serial.py)
         self.override_control.set(input_override)
@@ -200,7 +207,7 @@ class XBOX(Node):
                 "std_msgs.msg.Bool"
                 )
             )
-
+        
 def main(args=None):
     rclpy.init(args=args)
     xbox = XBOX()
