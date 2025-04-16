@@ -5,6 +5,7 @@
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <std_srvs/srv/set_bool.hpp>
 #include <image_transport/image_transport.hpp>
 #include <opencv2/core.hpp>
@@ -40,6 +41,7 @@ private:
     // Publishers
     rclcpp::Publisher<rover_msgs::msg::FiducialTransformArray>::SharedPtr pose_pub_;
     image_transport::Publisher image_pub_;
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr aruco_status_pub_;
 
     // Subscribers
     rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr caminfo_sub_;
@@ -72,6 +74,10 @@ private:
     double perspective_remove_ignored_margin_per_cell_;
     int perspective_remove_pixel_per_cell_;
     double polygonal_approx_accuracy_rate_;
+
+    // Status variables
+    bool recieved_image_raw;
+    rclcpp::TimerBase::SharedPtr fiducial_status_timer_;
 
     // Camera parameters
     cv::Mat camera_matrix_;
