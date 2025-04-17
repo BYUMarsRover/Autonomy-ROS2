@@ -10,18 +10,21 @@ from ublox_read_2.msg import PositionVelocityTime
 from threading import Lock
 # Use dedicated callback group for timer
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
-from rclpy.executors import SingleThreadedExecutor
+from rclpy.executors import SingleThreadedExecutor, MultiThreadedExecutor
 
 
 from collections import deque
+import queue # Thread-safe python queue
+import threading
+
 
 # from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 # import tf2_ros
 # from geometry_msgs.msg import TransformStamped
 
-from odometry.inekf.helper_functions import *
-from odometry.inekf.rover_inekf import InEKF
-from odometry.inekf.rover_sys import RoverSystem
+from odometry.ekf_helper.helper_functions import *
+from odometry.ekf_helper.rover_inekf import InEKF
+from odometry.ekf_helper.rover_sys import RoverSystem
 
 '''
 To look at: move to the robot localization navsat transform?
@@ -49,8 +52,9 @@ class EKFNode(Node):
         self.gps_heading_recall = 3
         self.gps_pos = deque(maxlen= self.gps_heading_recall + 3)
 
-        # self.buffer_lock = Lock()  # Add mutex
-        self.sensor_buffer = deque()
+        self.lock = Lock()  # Add mutex
+        # self.sensor_buffer = deque()
+        self.sensor_buffer = queue.Queue(maxsize=100) # Magic number, set to be high so it's no infinite
 
         # self.gps_origin = None
         self.ref_lat = 0.0
@@ -61,59 +65,66 @@ class EKFNode(Node):
         self.new_imu = False
         self.new_gps = False
 
-        # test_executor = SingleThreadedExecutor()
-        # self.imu_sub_cb = ReentrantCallbackGroup()
+        imu_sub_cb = MutuallyExclusiveCallbackGroup()
         # self.gps_sub_cb = ReentrantCallbackGroup()
 
-        self.sub_imu = self.create_subscription(Imu, 'zed/zed_node/imu/data', self.imu_callback, 1)  # Creates a subscriber to IMU node
-        self.ublox_subscription = self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.gps_callback, 1)  # Creates a subscriber to ublox node
+        self.sub_imu = self.create_subscription(Imu, 'zed/zed_node/imu/data', self.imu_callback, 10) #, callback_group=imu_sub_cb)  # Creates a subscriber to IMU node
+        self.ublox_subscription = self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.gps_callback, 10) #, callback_group=imu_sub_cb)  # Creates a subscriber to ublox node
         # self.sub_odom = self.create_subscription(Odometry, 'zed/zed_node/odom', self.odom_callback, 10)
         # self.sub_gps_odom = self.create_subscription(Odometry, 'odometry/gps', self.gps_odom_callback, 10)
         self.pub_state = self.create_publisher(Odometry, 'ekf/odom', 10)
         self.pub_gps_xy = self.create_publisher(PoseWithCovarianceStamped, 'gps/xy', 10)
         self.pub_gps_filtered = self.create_publisher(NavSatFix, 'gps/filtered', 10)
+
+        self.main_thread = threading.Thread(target=self.main_processing_loop)
+        self.main_thread.daemon = True  # Allow the main program to exit even if this thread is running
+        self.main_thread.start()
+        self.get_logger().info('InEKF Node Initialized')
+
+
         # self.pub_odom_in_map = self.create_publisher(Odometry, 'odom/map', 10)
 
 
-        timer_group = MutuallyExclusiveCallbackGroup()
-        self.timer = self.create_timer(0.005, self.ekf_loop)  # rates (GPS- 10Hz, Odom 12Hz, MAG 20hz, IMU )
+        # timer_group = MutuallyExclusiveCallbackGroup()
+        # self.timer = self.create_timer(1.0, self.ekf_loop)  # rates (GPS- 10Hz, Odom 12Hz, MAG 20hz, IMU )
     
-    def ekf_loop(self):
-        if (all(self.start_filtering) and (self.inekf.filter_started == False)):
-            self.inekf.initialize_filter(self.init_state, self.imu_time)
-            self.get_logger().info('Initializing filter')
+    # def ekf_loop(self):
+    #     if (all(self.start_filtering) and (self.inekf.filter_started == False)):
+    #         self.inekf.initialize_filter(self.init_state, self.imu_time)
+    #         self.get_logger().info('Initializing filter')
 
+    #     if self.new_imu:
+    #         self.new_imu = False
+    #         self.process_imu(self.newest_imu)
+    #     if self.new_gps:
+    #         self.new_gps = False
+    #         self.process_gps(self.newest_gps)
+    #         if self.inekf.filter_started:
+    #             self.publish_state(self.newest_gps.header.stamp)
 
-        # with self.buffer_lock:  # Acquire lock
-        #     items_to_process = self.sensor_buffer.copy()  # Copy the buffer
-        #     self.sensor_buffer.clear()
-        #     print(len(items_to_process))
-        
+    def main_processing_loop(self):
+        self.get_logger().info('Starting main processing loop')
+        while rclpy.ok():
+            try:
+                msg = self.sensor_buffer.get(timeout=1.0)  # Wait for a message from the queue. Timeout is for handling shutdown
+                if (all(self.start_filtering) and (self.inekf.filter_started == False)):
+                    self.inekf.initialize_filter(self.init_state, self.imu_time)
+                    self.get_logger().info('Initializing filter')
+                
+                if isinstance(msg, PositionVelocityTime):
+                    # Process GPS message
+                    self.process_gps(msg)
+                    if self.inekf.filter_started:
+                        self.publish_state(msg.header.stamp)
+                elif isinstance(msg, Imu):
+                    # Process IMU message
+                    self.process_imu(msg)
+                else:
+                    self.get_logger().warn('Unknown message type received in processing loop')
+            except queue.Empty:
+                pass # No message received, continue to next iteration
 
-        # while items_to_process:
-        #     item = items_to_process.popleft()
-        # # print('Processing')
-        # # while self.sensor_buffer:
-        # #     item = self.sensor_buffer.popleft()
-        #     if isinstance(item, Imu):
-        #         self.process_imu(item)
-        #         # self.get_logger().info('Processing IMU data')
-        #     elif isinstance(item, PositionVelocityTime):
-        #         self.process_gps(item)
-        #         # self.get_logger().info('Processing GPS data')
-        #         if self.inekf.filter_started:
-        #             self.publish_state(item.header.stamp)
-        # # print('Processing done')
-
-
-        if self.new_imu:
-            self.new_imu = False
-            self.process_imu(self.newest_imu)
-        if self.new_gps:
-            self.new_gps = False
-            self.process_gps(self.newest_gps)
-            if self.inekf.filter_started:
-                self.publish_state(self.newest_gps.header.stamp)
+        self.get_logger().info('Processing loop terminated')
 
 
     def process_gps(self, msg: PositionVelocityTime):
@@ -132,9 +143,11 @@ class EKFNode(Node):
         head_acc = msg.head_acc # heading accuracy estimate both motion and vehicle
 
         if self.start_filtering[0] == False:
+            # self.get_logger().info('Initializing GPS, settings lat lon')
             # Convert latitude and longitude to local Cartesian coordinates (x, y)
             self.ref_lat = lat # Using first lat/lon as reference
             self.ref_lon = lon
+            self.get_logger().info(f'GPS reference lat: {self.ref_lat}, lon: {self.ref_lon}')
             # x, y = convert_gps_to_xyz(lat, lon, self.ref_lat, self.ref_lon)
             self.init_state[6:] = [0, 0, alt] # In this implementation, we are treating the initial position as the first GPS reading
             self.start_filtering[0] = True
@@ -142,6 +155,7 @@ class EKFNode(Node):
             # TODO handle a case where the GPS and IMU do not start at the same time
 
         else:   
+            # self.get_logger().info(f'calc gps with lat lon: {lat}, {lon}')
             x, y = convert_gps_to_xyz(lat, lon, self.ref_lat, self.ref_lon)
             pose_gps = PoseWithCovarianceStamped()
             pose_gps.header.frame_id = 'gps'
@@ -161,6 +175,7 @@ class EKFNode(Node):
     
                 self.inekf.gps_velocity_callback(vel_enu, vel_acc)
 
+                # x, y = 0, 0
                 self.gps_pos.append([x, y, alt])
 
                 if len(self.gps_pos) > (self.gps_heading_recall - 1):
@@ -170,40 +185,48 @@ class EKFNode(Node):
 
 
     def gps_callback(self, msg: PositionVelocityTime):
-        self.newest_gps = msg
-        if self.new_gps:
-            self.get_logger().warn('Skipping GPS data because of higher rate than ekf checking')
-        else:
-            self.new_gps = True
+        # timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        # lat, lon, alt = [val.item() for val in msg.lla]
+        # hor_acc = msg.h_acc
+        # vert_acc = msg.v_acc
+        # vel_ned = msg.vel_ned
+        # vel_acc = msg.s_acc
+
+        # head_mot = msg.head_mot
+        # head_acc = msg.head_acc
+        self.sensor_buffer.put(msg) # Add to the queue
+        # self.get_logger().info('GPS data added to buffer')
+
+        # self.newest_gps = msg
+        # if self.new_gps:
+        #     self.get_logger().warn('Skipping GPS data because of higher rate than ekf checking')
+        # else:
+        #     self.new_gps = True
+        
+        # self.process_gps(msg)
+        
+
+        # while self.sensor_buffer:   
+        #     msg = self.sensor_buffer.popleft()
+        #     self.process_imu(msg)
+
+        # # if self.new_imu:
+        # #     self.new_imu = False
+        # #     self.process_imu(self.newest_imu)
+        
+        # if self.inekf.filter_started:
+        #     self.publish_state(msg.header.stamp)
+
         
         
-        # with self.buffer_lock:  # Thread-safe append
-        #     self.sensor_buffer.append(msg)
-        # self.get_logger().info('Received GPS data')
-
-
-
-    # def gps_odom_callback(self, msg: Odometry):
-    #     if not self.gps_received:
-    #         self.gps_received = True
-    #         self.get_logger().info('Received First GPS data')
         
-    #     x = msg.pose.pose.position.x
-    #     y = msg.pose.pose.position.y
-
-
-    #     # LOW PASS FILTER?? What is the rate?
-    #     self.z_gps = np.array([[x], [y]])
-
-    #     self.new_gps = True
-
     def process_imu(self, msg: Imu):
         time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
         self.imu_time = time
 
         orientation = msg.orientation
         rpy = Rotation.from_quat([orientation.x, orientation.y, orientation.z, orientation.w]).as_euler('xyz', degrees=False)
-        R_matrix = Rotation.from_quat([orientation.x, orientation.y, orientation.z, orientation.w]).as_matrix()
+        # R_matrix = Rotation.from_quat([orientation.x, orientation.y, orientation.z, orientation.w]).as_matrix()
         
         angular_velocity = [msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z]
         linear_acceleration = [msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z]
@@ -224,228 +247,18 @@ class EKFNode(Node):
 
 
     def imu_callback(self, msg: Imu):
-        self.newest_imu = msg
-        if self.new_imu:
-            self.get_logger().warn('Skipping IMU data because of higher rate than ekf checking')
-        else:    
-            self.new_imu = True
+        # self.newest_imu = msg
+        # if self.new_imu:
+        #     self.get_logger().warn('Skipping IMU data because of higher rate than ekf checking')
+        # else:    
+        #     self.new_imu = True
+        self.sensor_buffer.put(msg) # Add to the queue
+        # self.get_logger().info('IMU data added to buffer')
 
-        # with self.buffer_lock:
-        #     self.sensor_buffer.append(msg)
-        # self.get_logger().info('Received IMU data')
-
-
-    # def publish_odom_transforms(self, msg: Odometry):
-    #     t = TransformStamped()
-
-    #     # TODO look at time and apply the frames from the message
-    #     t.header.stamp = msg.header.stamp
-    #     t.header.frame_id = 'odom'
-    #     t.child_frame_id = 'base_link'
-
-    #     t.transform.translation.x = msg.pose.pose.position.x
-    #     t.transform.translation.y = msg.pose.pose.position.y
-    #     t.transform.translation.z = msg.pose.pose.position.z
-
-    #     t.transform.rotation = msg.pose.pose.orientation
-
-    #     # Send the transformation
-    #     self.tf_broadcaster.sendTransform(t)
-
-    
-    # def get_delta_odom(self, msg: Odometry):
-    #     _, _, yaw = euler_from_quaternion([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
-    #     if self.prev_odom is not None:
-    #         dx = msg.pose.pose.position.x - self.prev_odom[0]
-    #         dy = msg.pose.pose.position.y - self.prev_odom[1]
-    #         dyaw = self.get_angle_diff(yaw,  self.prev_odom[2])
-    #         self.prev_odom = (msg.pose.pose.position.x, msg.pose.pose.position.y, yaw)
-        
-    #     else:
-    #         self.prev_odom = (msg.pose.pose.position.x, msg.pose.pose.position.y, yaw)
-    #         return 0.0, 0.0, 0.0
-
-    #     return dx, dy, dyaw
-    
-
-    # def publish_odom_map_frame(self, msg: Odometry):
-    #     try:
-    #         # Lookup transformation from map to odom
-    #         map_to_odom = self.tf_buffer.lookup_transform('map', 'odom', msg.header.stamp)
-        
-    #         if self.map_trans is None:
-    #             # Extract translation and rotation from map → odom
-    #             self.map_trans = np.array([
-    #                 map_to_odom.transform.translation.x,
-    #                 map_to_odom.transform.translation.y
-    #             ])
-
-    #         map_quat = [
-    #             map_to_odom.transform.rotation.x,
-    #             map_to_odom.transform.rotation.y,
-    #             map_to_odom.transform.rotation.z,
-    #             map_to_odom.transform.rotation.w
-    #         ]
-    #         _, _, map_yaw = euler_from_quaternion(map_quat)
-
-    #         # Apply map → odom rotation to odom → base_link position
-    #         R = np.array([
-    #             [np.cos(map_yaw), -np.sin(map_yaw)],
-    #             [np.sin(map_yaw),  np.cos(map_yaw)]
-    #         ])
-
-    #         # Extract odometry (odom → base_link)
-    #         base_trans = np.array([
-    #             msg.pose.pose.position.x,
-    #             msg.pose.pose.position.y
-    #         ])
-    #         # base_quat = [
-    #         #     msg.pose.pose.orientation.x,
-    #         #     msg.pose.pose.orientation.y,
-    #         #     msg.pose.pose.orientation.z,
-    #         #     msg.pose.pose.orientation.w
-    #         # ]
-    #         # _, _, base_yaw = euler_from_quaternion(base_quat)
-
-    #         base_trans_in_map = (R @ base_trans) + self.map_trans
-
-    #         odom_map = Odometry()
-    #         # Compute new orientation
-    #         # base_yaw_in_map = map_yaw + base_yaw
-    #         # new_quat = quaternion_from_euler(0, 0, base_yaw_in_map)
-    #         # odom_map.pose.pose.orientation.x = new_quat[0]
-    #         # odom_map.pose.pose.orientation.y = new_quat[1]
-    #         # odom_map.pose.pose.orientation.z = new_quat[2]
-    #         # odom_map.pose.pose.orientation.w = new_quat[3]
-
-    #         # Publish new odometry (map → base_link)
-    #         odom_map.header.frame_id = 'map'
-    #         odom_map.child_frame_id = 'base_link'
-    #         odom_map.header.stamp = msg.header.stamp
-    #         odom_map.pose.pose.position.x = base_trans_in_map[0]
-    #         odom_map.pose.pose.position.y = base_trans_in_map[1]
-
-    #         self.pub_odom_in_map.publish(odom_map)
-
-    #     except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
-    #         self.get_logger().warn(f'Transform error: {str(e)}', throttle_duration_sec=10.0)
-    
-
-    # # TODO: IS THIS ODOM TO MAP OR MAP TO ODOM?
-    # def odom_to_map_transorm(self, dx, dy, dyaw):
-    #     # Transform odom data to map frame
-    #     try:
-    #         map_to_odom = self.tf_buffer.lookup_transform('map', 'odom', self.latest_odom.header.stamp)
-
-    #         map_quat = [
-    #             map_to_odom.transform.rotation.x,
-    #             map_to_odom.transform.rotation.y,
-    #             map_to_odom.transform.rotation.z,
-    #             map_to_odom.transform.rotation.w
-    #         ]
-    #         _, _, map_yaw = euler_from_quaternion(map_quat)
-
-    #         # Apply map → odom rotation to odom → base_link position
-    #         R = np.array([
-    #             [np.cos(map_yaw), -np.sin(map_yaw)],
-    #             [np.sin(map_yaw),  np.cos(map_yaw)]
-    #         ])
-            
-    #         # Rotate only dx, dy
-    #         delta_pos = np.array([[dx], [dy]])
-    #         delta_pos_transformed = R @ delta_pos  # Apply rotation
-
-    #         # dyaw remains unchanged
-    #         dyaw_map = dyaw
-    #         dx_map, dy_map = delta_pos_transformed.flatten()
-    #         u = np.array([[dx_map], [dy_map], [dyaw_map]])
-    #         return u
-
-    #     except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
-    #         self.get_logger().warn(f'Transform error: {str(e)}', throttle_duration_sec=10.0)
-
-    
-    # def odom_callback(self, msg: Odometry):
-    #     if not self.odom_received:
-    #         self.get_logger().info('Received Odometry data')
-    #         self.odom_received = True
-
-    #     self.latest_odom = msg
-    #     self.new_odom = True
-
-    #     self.publish_odom_transforms(msg)
-    #     # self.publish_odom_map_frame(msg)
-
-    # def publish_map_transforms(self, msg: Odometry):
-    #     try:
-    #         # Step 1: Get the `map -> base_link` transform from the odometry message
-    #         q_map_to_base = [
-    #             msg.pose.pose.orientation.x,
-    #             msg.pose.pose.orientation.y,
-    #             msg.pose.pose.orientation.z,
-    #             msg.pose.pose.orientation.w
-    #         ]
-    #         map_to_base_translation = [
-    #             msg.pose.pose.position.x,
-    #             msg.pose.pose.position.y,
-    #             msg.pose.pose.position.z
-    #         ]
-
-    #         # Convert `map -> base_link` rotation into a rotation matrix
-    #         map_to_base_rot_matrix = quaternion_matrix(q_map_to_base)[:3, :3]  # Extract 3x3 rotation matrix
-
-    #         # Step 2: Get the `base_link -> odom` transform from TF buffer
-    #         base_to_odom = self.tf_buffer.lookup_transform(
-    #             'base_link', 'odom', msg.header.stamp
-    #         )
-
-    #         q_base_to_odom = [
-    #             base_to_odom.transform.rotation.x,
-    #             base_to_odom.transform.rotation.y,
-    #             base_to_odom.transform.rotation.z,
-    #             base_to_odom.transform.rotation.w
-    #         ]
-    #         base_to_odom_translation = [
-    #             base_to_odom.transform.translation.x,
-    #             base_to_odom.transform.translation.y,
-    #             base_to_odom.transform.translation.z
-    #         ]
-
-    #         # Step 3: Convert `base_link -> odom` translation into the `map` frame
-    #         transformed_translation = map_to_base_rot_matrix @ base_to_odom_translation
-
-    #         map_to_odom_translation = [
-    #             map_to_base_translation[0] + transformed_translation[0],
-    #             map_to_base_translation[1] + transformed_translation[1],
-    #             map_to_base_translation[2] + transformed_translation[2]  # Assuming full 3D transform
-    #         ]
-
-    #         # Step 4: Compute the `map -> odom` rotation
-    #         map_to_odom_rotation = quaternion_multiply(q_map_to_base, q_base_to_odom)
-
-    #         # Step 5: Publish the `map -> odom` transform
-    #         map_to_odom = TransformStamped()
-    #         map_to_odom.header.stamp = msg.header.stamp
-    #         map_to_odom.header.frame_id = 'map'
-    #         map_to_odom.child_frame_id = 'odom'
-
-    #         map_to_odom.transform.translation.x = map_to_odom_translation[0]
-    #         map_to_odom.transform.translation.y = map_to_odom_translation[1]
-    #         map_to_odom.transform.translation.z = map_to_odom_translation[2]
-
-    #         map_to_odom.transform.rotation.x = map_to_odom_rotation[0]
-    #         map_to_odom.transform.rotation.y = map_to_odom_rotation[1]
-    #         map_to_odom.transform.rotation.z = map_to_odom_rotation[2]
-    #         map_to_odom.transform.rotation.w = map_to_odom_rotation[3]
-
-    #         self.tf_broadcaster.sendTransform(map_to_odom)
-
-    #     except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
-    #         self.get_logger().warn(f'Transform error: {str(e)}', throttle_duration_sec=10.0)
-    
     
     def publish_state(self, stamp):
         # Publish the state and covariance
+        self.get_logger().info('Publishing state')
         mu = self.inekf.mu
         msg = Odometry()
         msg.header.frame_id = "map"
@@ -466,6 +279,7 @@ class EKFNode(Node):
         msg.pose.pose.orientation.z = q[2]
         msg.pose.pose.orientation.w = q[3]
         self.pub_state.publish(msg)
+        
 
         publish_filtered_gps = True
         if publish_filtered_gps:
@@ -481,15 +295,14 @@ class EKFNode(Node):
             self.pub_gps_filtered.publish(gps_msg)
 
 
-            
-
-        # self.publish_map_transforms(msg)
-        
 
 def main(args=None):
     rclpy.init(args=args)
     node = EKFNode()
     rclpy.spin(node)
+    # executor = MultiThreadedExecutor()
+    # executor.add_node(node)
+    # executor.spin() # or rclpy.spin(node) for the default single-threaded executor
     node.destroy_node()
     rclpy.shutdown()
 
