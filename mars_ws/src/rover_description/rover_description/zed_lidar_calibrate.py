@@ -1,6 +1,7 @@
 import math
 
 from geometry_msgs.msg import TransformStamped
+from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 
 import numpy as np
@@ -52,12 +53,14 @@ class FramePublisher(Node):
         self.subscription = self.create_subscription(
             Imu, "/zed/zed_node/imu/data", self.zed_imu_callback, 10
         )
-        self.subscription  # prevent unused variable warning
+
+        self.odom_subscription = self.create_subscription(
+            Odometry, "/zed/zed_node/odom", self.zed_odom_callback, 10
+        )
 
         self.lidar_subscription = self.create_subscription(
             Imu, "/unilidar/imu", self.lidar_imu_callback, 10
         )
-        self.subscription  # prevent unused variable warning
 
         # Create service to start the calibration
         self.calibrate_service = self.create_service(
@@ -84,27 +87,27 @@ class FramePublisher(Node):
         
         self.tf_broadcaster.sendTransform(zed_imu)
 
-        # Create a transform between the base_link and gravity frame
-        base_link_to_gravity = TransformStamped()
-        base_link_to_gravity.header.frame_id = "base_link"
-        base_link_to_gravity.child_frame_id = "gravity_base_link"
-        base_link_to_gravity.header.stamp = now
+        # # Create a transform between the base_link and gravity frame
+        # base_link_to_gravity = TransformStamped()
+        # base_link_to_gravity.header.frame_id = "base_link"
+        # base_link_to_gravity.child_frame_id = "gravity_base_link"
+        # base_link_to_gravity.header.stamp = now
 
-        # Set the translation to zero
-        base_link_to_gravity.transform.translation.x = 0.0
-        base_link_to_gravity.transform.translation.y = 0.0
-        base_link_to_gravity.transform.translation.z = 0.0
+        # # Set the translation to zero
+        # base_link_to_gravity.transform.translation.x = 0.0
+        # base_link_to_gravity.transform.translation.y = 0.0
+        # base_link_to_gravity.transform.translation.z = 0.0
 
-        try: 
-            # Get the current orientation of the rover
-            # Lookup transformation from odom to base_link
-            odom_to_base_link = self.tf_buffer.lookup_transform('odom', 'base_link', now, timeout=rclpy.duration.Duration(seconds=0.4))
+        # try: 
+        #     # Get the current orientation of the rover
+        #     # Lookup transformation from odom to base_link
+        #     odom_to_base_link = self.tf_buffer.lookup_transform('odom', 'base_link', now, timeout=rclpy.duration.Duration(seconds=0.4))
 
-            # Set the rotation to the current orientation of the rover
-            base_link_to_gravity.transform.rotation = odom_to_base_link.transform.rotation
+        #     # Set the rotation to the current orientation of the rover
+        #     base_link_to_gravity.transform.rotation = odom_to_base_link.transform.rotation
 
-        except Exception as e:
-            self.get_logger().error(f"Error looking up transform: {e}", throttle_duration_sec=5)
+        # except Exception as e:
+        #     self.get_logger().error(f"Error looking up transform: {e}", throttle_duration_sec=5)
 
         # Send the transform
         # self.tf_broadcaster.sendTransform(base_link_to_gravity)
@@ -218,6 +221,24 @@ class FramePublisher(Node):
 
         # self.get_logger().info('setting zed transform')
 
+    def zed_odom_callback(self, msg: Odometry):
+        # Publish base_link to odom transform from zed odometry
+        odom_transform = TransformStamped()
+        odom_transform.header.stamp = msg.header.stamp
+        odom_transform.header.frame_id = "odom"
+        odom_transform.child_frame_id = "base_link"
+
+        # TODO rotate the zed odom frame to match the rover frame
+        odom_transform.transform.translation.x = msg.pose.pose.position.x
+        odom_transform.transform.translation.y = msg.pose.pose.position.y
+        odom_transform.transform.translation.z = msg.pose.pose.position.z
+        odom_transform.transform.rotation.x = msg.pose.pose.orientation.x
+        odom_transform.transform.rotation.y = msg.pose.pose.orientation.y
+        odom_transform.transform.rotation.z = msg.pose.pose.orientation.z
+        odom_transform.transform.rotation.w = msg.pose.pose.orientation.w
+        self.tf_broadcaster.sendTransform(odom_transform)
+
+
     def zed_imu_callback(self, msg):
         # Read message content and assign it to
         # corresponding tf variables
@@ -225,7 +246,6 @@ class FramePublisher(Node):
         # roll, pitch, yaw = self.quaternion_to_euler(msg.orientation)
 
         self.current_stamp = msg.header.stamp
-        self.get_logger().info('setting zed transform')
 
         if self.new_zed_calibration:
             self.zed_transform.header.stamp = msg.header.stamp

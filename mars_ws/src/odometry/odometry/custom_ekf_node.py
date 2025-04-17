@@ -11,6 +11,8 @@ from ublox_read_2.msg import PositionVelocityTime
 from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 import tf2_ros
 from geometry_msgs.msg import TransformStamped
+from odometry.ekf_helper.helper_functions import *
+from collections import deque
 
 class EKFNode(Node):
     def __init__(self):
@@ -25,12 +27,21 @@ class EKFNode(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         self.gps_origin = None
-        self.gps_received = False
-        self.imu_received = False
-        self.odom_received = False
-        self.prev_odom = None
-
+        # self.gps_received = False
+        # self.imu_received = False
+        # self.odom_received = False
+        self.start_filtering = [False, False, False]
         self.start_filter = False
+
+        self.prev_odom = None
+        self.imu_time = None
+
+        self.gps_heading_recall = 3
+        self.gps_pos = deque(maxlen= self.gps_heading_recall + 3)
+
+        self.ref_lat = 0.0
+        self.ref_lon = 0.0
+
 
         self.new_imu = False
         self.new_odom = False
@@ -52,9 +63,8 @@ class EKFNode(Node):
 
         self.map_trans = None
 
-        
         self.declare_ekf_parameters()
-        self.timer = self.create_timer(0.11, self.ekf_loop)  # 9 Hz loop  Just slower than GPS rate (GPS- 10Hz, Odom 12Hz, MAG 20hz)
+        self.timer = self.create_timer(0.05, self.ekf_loop)  # 9 Hz loop  Just slower than GPS rate (GPS- 10Hz, Odom 12Hz, MAG 20hz)
     
     def declare_ekf_parameters(self):
         #TODO: MAKE THE PARAMETERS IN THE CONFIG FILE
@@ -64,7 +74,9 @@ class EKFNode(Node):
         self.declare_parameter('odom_noise', 0.5) # 2.0 m
     
     def ekf_loop(self):
-        self.start_filter = self.gps_received and self.imu_received and self.odom_received
+        if (all(self.start_filtering) and (self.start_filter == False)):
+            self.start_filter = True
+            self.get_logger().info('Initializing filter')
 
         if self.new_odom:
             if self.start_filter:
@@ -74,6 +86,7 @@ class EKFNode(Node):
                 u = self.odom_to_map_transorm(dx, dy, dyaw)
 
                 if u is not None:  # the case where the transform is not valid
+                    self.new_odom = False
                     F = np.eye(3)
                     B = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
                     # Q = np.eye(3) * odom_noise
@@ -81,34 +94,18 @@ class EKFNode(Node):
                     # TODO fix my letters
                     self.kalman_predict(F, B, u, Q)
 
-                    self.new_odom = False
                   
-                if self.new_gps_yaw:
-                    gps_yaw_noise = self.get_parameter('gps_yaw_noise_scalar').value * self.heading_acc_rad
-                
-                    H = np.array([[0, 0, 1]])
-                    R = np.eye(1) * gps_yaw_noise
-                    # self.kalman_update(self.z_gps_yaw, H, R)
-
-                    self.new_gps_yaw = False
-
                 if self.new_imu:
-                    imu_noise = self.get_parameter('imu_noise').value
-                
-                    H = np.array([[0, 0, 1]])
-                    R = np.eye(1) * imu_noise
-                    self.kalman_update(self.z_imu, H, R)
-
                     self.new_imu = False
-                
+                    
+                    self.process_imu(self.newest_imu)
+
+
                 if self.new_gps:
-                    gps_noise = self.get_parameter('gps_noise').value
-
-                    H = np.array([[1, 0, 0], [0, 1, 0]])
-                    R = np.eye(2) * gps_noise
-                    self.kalman_update(self.z_gps, H, R)
-
                     self.new_gps = False
+                    self.process_gps(self.newest_gps)
+                    
+
 
 
             self.publish_state(self.latest_odom.header.stamp)
@@ -116,33 +113,103 @@ class EKFNode(Node):
 
     def gps_callback(self, msg: PositionVelocityTime):
         # Get heading from message
-        if msg.head_acc < 50.0:
+        self.newest_gps = msg
+        if self.new_gps:
+            self.get_logger().warn('Skipping GPS data because of higher rate than ekf checking')
+        else:
+            self.new_gps = True
+        
+        
+    def process_gps(self, msg: PositionVelocityTime):
+        # Get heading from message
+        # time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        lat, lon, alt = [val.item() for val in msg.lla]
 
-            heading_deg_enu = (90 - msg.head_mot)
+        hor_acc = msg.h_acc
+        vert_acc = msg.v_acc
 
-            heading_rad_enu = np.rad2deg(heading_deg_enu)
-            self.heading_acc_rad = np.deg2rad(msg.head_acc)
+        vel_ned = msg.vel_ned # to incorporate later, need to check frames, assume global
+        vel_acc = msg.s_acc
 
-            gps_yaw = self.wrap_angle(heading_rad_enu)
+        # head_mot = msg.head_mot # deg heading of motion (2-D)
+        # head_veh = msg.head_veh # deg heading of vehicle (2-D) (IGNORE: always 0)
+        head_acc = msg.head_acc # heading accuracy estimate both motion and vehicle
 
-            self.z_gps_yaw = np.array([[gps_yaw]])
 
-            self.new_gps_yaw = True
+        if self.start_filtering[0] == False:
+            # Convert latitude and longitude to local Cartesian coordinates (x, y)
+            lat, lon, alt = 0, 0, 0
+            self.ref_lat = lat # Using first lat/lon as reference
+            self.ref_lon = lon
+            # x, y = convert_gps_to_xyz(lat, lon, self.ref_lat, self.ref_lon)
+            self.init_state[6:] = [0, 0, alt] # In this implementation, we are treating the initial position as the first GPS reading
+            self.start_filtering[0] = True
+
+            # TODO handle a case where the GPS and IMU do not start at the same time
+
+
+
+
+        else:   
+            x, y = convert_gps_to_xyz(lat, lon, self.ref_lat, self.ref_lon)
+            pose_gps = PoseWithCovarianceStamped()
+            pose_gps.header.frame_id = 'gps'
+            pose_gps.header.stamp = msg.header.stamp
+            pose_gps.pose.pose.position.x = x
+            pose_gps.pose.pose.position.y = y
+            self.pub_gps_xy.publish(pose_gps)
+            # Need to check if altitude is in the same units as the rover system (height above ellipsoid)
+
+            if self.start_filter:
+                # self.inekf.gps_callback(x, y, alt, hor_acc, vert_acc)
+                # self.inekf.heading_callback(head_mot+90, head_acc) # coordinate frame may be wrong, needs to be in ENU
+
+                # Convert velocity from NED (North-East-Down) to ENU (East-North-Up)
+                # (world is in ENU frame)
+
+                # COULD USE THIS IN THE FUTURE IF INCREASE NUMBER OF ESTIMATED STATES
+                # vel_enu = np.array([vel_ned[1], vel_ned[0], -vel_ned[2]])
+    
+                # self.inekf.gps_velocity_callback(vel_enu, vel_acc)
+
+                # x, y = 0, 0
+                self.gps_pos.append([x, y, alt])
+
+                if len(self.gps_pos) > (self.gps_heading_recall - 1):
+                    # atan2 function should give values in ENU frame
+                    heading_diff = math.atan2(self.gps_pos[-1][1] - self.gps_pos[-self.gps_heading_recall][1], self.gps_pos[-1][0] - self.gps_pos[-self.gps_heading_recall][0])
+                    # self.inekf.heading_callback(np.rad2deg(heading_diff), head_acc)
+
+
+                gps_yaw_noise = self.get_parameter('gps_yaw_noise_scalar').value * head_acc
+
+                H = np.array([[0, 0, 1]])
+                R = np.eye(1) * gps_yaw_noise
+                
+                self.kalman_update(heading_diff, H, R)
+
+                self.new_gps_yaw = False
+            
+                gps_noise = self.get_parameter('gps_noise').value
+
+                H = np.array([[1, 0, 0], [0, 1, 0]])
+                R = np.eye(2) * gps_noise
+                self.kalman_update(self.z_gps, H, R)
 
     
-    def gps_odom_callback(self, msg: Odometry):
-        if not self.gps_received:
-            self.gps_received = True
-            self.get_logger().info('Received First GPS data')
+    # def gps_odom_callback(self, msg: Odometry):
+    #     if not self.gps_received:
+    #         self.gps_received = True
+    #         self.get_logger().info('Received First GPS data')
         
-        x = msg.pose.pose.position.x
-        y = msg.pose.pose.position.y
+    #     x = msg.pose.pose.position.x
+    #     y = msg.pose.pose.position.y
 
 
-        # LOW PASS FILTER?? What is the rate?
-        self.z_gps = np.array([[x], [y]])
+    #     # LOW PASS FILTER?? What is the rate?
+    #     self.z_gps = np.array([[x], [y]])
 
-        self.new_gps = True
+    #     self.new_gps = True
 
                 
     def imu_callback(self, msg: Imu):
@@ -152,17 +219,26 @@ class EKFNode(Node):
             _, _, yaw = euler_from_quaternion([msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w])
             self.yaw_value = yaw
             return
+
+        self.newest_imu = msg
+        
+
+    def process_imu(self, msg: Imu):
         
         _, _, yaw = euler_from_quaternion([msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w])
         yaw = self.wrap_angle(yaw)
 
-        self.alpha_yaw = 0.9
+        z_imu = np.array([[yaw]])
 
-        self.yaw_value = self.yaw_value * self.alpha_yaw + (1.0 - self.alpha_yaw) * yaw
+        imu_noise = self.get_parameter('imu_noise').value
+                
+        H = np.array([[0, 0, 1]])
+        R = np.eye(1) * imu_noise
 
-        self.z_imu = np.array([[self.yaw_value]])
+        self.kalman_update(z_imu, H, R)
 
         self.new_imu = True
+
 
 
     def publish_odom_transforms(self, msg: Odometry):
