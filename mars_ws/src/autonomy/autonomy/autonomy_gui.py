@@ -30,6 +30,7 @@ from geometry_msgs.msg import PoseStamped, Pose, Point
 from zed_msgs.msg import ObjectsStamped
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloats, SetFloat32, OrderAutonomyWaypoint, PlanPath
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors, HazardArray
+from ublox_read_2.msg import SurveyStatus, RelPosFlags
 from ament_index_python.packages import get_package_share_directory
 
 import threading
@@ -148,7 +149,9 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(PlanPath.Response, '/path_plan_response', self.plan_path_response_callback, 10) # Allows the path planner node to notify when the path is ready
         self.create_subscription(HazardArray, '/hazards', self.hazard_callback, 10)
         self.create_subscription(Bool, 'aruco_status', self.aruco_status_callback, 10) # ArUco status for ensuring image_raw from webcam is being published and fiducial node is running
-
+        self.create_subscription(SurveyStatus, 'base/SurveyStatus', self.base_survey_status_callback, 10) # Survey status for ensuring rover is in survey mode
+        self.create_subscription(RelPosFlags, 'rover/RelPosFlags', self.rover_rel_pos_flags_callback, 10) # Rel pos flags for ensuring rover is in survey mode
+        
         # Services
 
         # Clients
@@ -456,7 +459,7 @@ class AutonomyGUI(Node, QWidget):
         self.ros_signal.emit('HazardsFound', hazard_text, 'setText')
         return
     
-    # Callbacks for Status
+    ########## Callbacks for Statuses ############
     def aruco_status_callback(self, msg):
         self.aruco_status_timepoint = time.time()
         
@@ -466,6 +469,25 @@ class AutonomyGUI(Node, QWidget):
         else:
             #Turn Aruco Status to red
             self.ros_signal.emit('ArucoSystemStatus', 'font-size: 12pt; color:rgb(255, 0, 0); font-weight: bold;', 'setStyleSheet')
+
+    def base_survey_status_callback(self, msg):
+        # Check dur, mean_acc, valid, and active
+        self.get_logger().info(f"Base Survey Status: {msg}")
+
+        #If active is true, then the base is currently surveying
+        if msg.active:
+            #Set status to red and give the time and mean accuracy
+            self.ros_signal.emit("RTKSystemStatus", f"RTK: SURVEYING({msg.dur}s @{np.round(msg.mean_acc, 2)})", 'setText')
+            self.ros_signal.emit("RTKSystemStatus", "font-size: 12pt; color:rgb(255, 0, 0); font-weight: bold;", 'setStyleSheet')
+        elif msg.valid:
+            #Set status to green
+            self.ros_signal.emit("RTKSystemStatus", "RTK: FIXED", 'setText')
+            self.ros_signal.emit("RTKSystemStatus", "font-size: 12pt; color:rgb(57, 255, 20); font-weight: bold;", 'setStyleSheet')
+    
+    def rover_rel_pos_flags_callback(self, msg):
+        # Check gnss_fix_ok, diff_soln
+        pass
+
 
     # Callback functions for buttons
     def enable_autonomy(self):

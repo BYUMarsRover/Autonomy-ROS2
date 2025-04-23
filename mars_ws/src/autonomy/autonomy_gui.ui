@@ -1479,7 +1479,7 @@
             <property name="toolTip">
              <string>
                &lt;html&gt;&lt;body&gt;
-               This section displays the current system statuses.&lt;br&gt;
+               This section displays the current status of the rover's various systems.&lt;br&gt;
                &lt;span style="color:gray;"&gt;Grey&lt;/span&gt;: No status is being published.&lt;br&gt;
                &lt;span style="color:red;"&gt;Red&lt;/span&gt;: System is not good.&lt;br&gt;
                &lt;span style="color:green;"&gt;Green&lt;/span&gt;: System is running.
@@ -1517,7 +1517,7 @@
 
             <!-- Statuses of all systems -->
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <layout class="QVBoxLayout" name="horizontalLayout_3">
               <item alignment="Qt::AlignTop">
                <widget class="QLabel" name="ArucoSystemStatus">
                 <property name="text">
@@ -1528,6 +1528,18 @@
                 </property>
                </widget>
               </item>
+              <item alignment="Qt::AlignTop">
+               <widget class="QLabel" name="RTKSystemStatus">
+                <property name="text">
+                 <string>RTK</string>
+                </property>
+                <property name="styleSheet">
+                 <string>font-size: 12pt; font-weight: bold; color: rgb(150, 150, 150);</string>
+                </property>
+               </widget>
+              </item>
+
+              
               <!-- <item alignment="Qt::AlignTop">
                <widget class="QLabel" name="ObjectSystemStatus">
                 <property name="text">
