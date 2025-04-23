@@ -273,22 +273,21 @@ class InEKF:
     # Both functions will need to be updated to handle variable noise params, currently hardcoded in this file
     ############################################################################################################
 
-    def full_orientation_callback(self, time, R_mat):
+    def full_orientation_callback(self, R_mat, r_acc, p_acc, y_acc):
         """Runs Update step for full orientation measurement
 
-        :time: timestamp of IMU measurement in seconds (msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9)
         :R_mat: 3x3 ndarray of rotation matrix as estimated by the IMU
-        
+        :r_acc, p_acc, y_acc: radian std dev or roll, pitch and yaw        
         :return:None
         """
 
         # 90 degree CCW rotation matrix about Z-axis
-        R_z_90 = np.array([
-            [0, -1, 0],
-            [1,  0, 0],
-            [0,  0, 1]
-        ])
-        R_mat = R_z_90 @ R_mat # Rotate 90 degrees CCW about Z-axis to match frames
+        # R_z_90 = np.array([
+        #     [0, -1, 0],
+        #     [1,  0, 0],
+        #     [0,  0, 1]
+        # ])
+        # R_mat = R_z_90 @ R_mat # Rotate 90 degrees CCW about Z-axis to match frames
 
         R_hat = self.mu[:3,:3]        
     
@@ -304,7 +303,7 @@ class InEKF:
 
         # make our special measurement covariance
         sigma_S = np.linalg.inv(H @ self.sigma @ H.T)
-        R_orientation_sensor_noise = np.diag([np.deg2rad(5), np.deg2rad(5), np.deg2rad(5)])
+        R_orientation_sensor_noise = np.diag([r_acc, p_acc, y_acc])**2
         S = sigma_S - sigma_S@np.linalg.inv(R_hat.T@R_orientation_sensor_noise@R_hat)@sigma_S
 
         K = self.sigma @ H.T @ inv(S) # Kalman gain

@@ -25,44 +25,26 @@ def generate_launch_description():
             )
         ),
         Node(
-            package='robot_localization',
-            executable='navsat_transform_node',
-            name='navsat_transform_node',
+            package='odometry',
+            executable='inekf_node',
+            name='inekf_node',
             output='screen',
             parameters=[config],
-            remappings=[
-                ('odometry/filtered', 'odometry/filtered_map'),
-                ('imu', 'imu/data'),
-                ('gps/fix', 'ins/lla'),
-            ],
-            arguments=['--ros-args', '--log-level', 'info'],
-            emulate_tty=True
         ),
-
-        Node(
-            package='robot_localization',
-            executable='ekf_node',
-            name='ekf_se_map',
-            output='screen',
-            parameters=[config],
-            remappings=[
-                ('odometry/filtered', 'odometry/filtered_map')
-            ],
-            emulate_tty=True
-        ),
+        
 
 
         #Condition to run the singleton creator only on the rover and not
-        # GroupAction(
-        #     actions=[
-        #         Node(
-        #             package='odometry',
-        #             executable='rover_state_singleton_creator',
-        #             name='rover_state_singleton_creator',
-        #             output='screen'
-        #         ),
-        #     ],
-        # ),
+        GroupAction(
+            actions=[
+                Node(
+                    package='odometry',
+                    executable='rover_state_singleton_creator',
+                    name='rover_state_singleton_creator',
+                    output='screen'
+                ),
+            ],
+        ),
 
         #TODO: Maybe take this out of the other launch file
         Node(
@@ -75,15 +57,16 @@ def generate_launch_description():
             ],
             output='screen'
         ),
-        # Node(
-        #     package='imu_filter_madgwick',
-        #     executable='imu_filter_madgwick_node',
-        #     name='imu_filter_madgwick',
-        #     output='screen',
-        #     remappings=[
-        #         ('imu/data_raw', 'zed/zed_node/imu/data'),
-        #         ('imu/mag', 'zed/zed_node/imu/mag')
-        #     ],
-        #     parameters=[config]
-        # ),
+        
+        Node(
+            package='imu_filter_madgwick',
+            executable='imu_filter_madgwick_node',
+            name='imu_filter_madgwick',
+            output='screen',
+            remappings=[
+                ('imu/data_raw', 'zed/zed_node/imu/data'),
+                ('imu/mag', 'zed/zed_node/imu/mag')
+            ],
+            parameters=[config]
+        ),
     ])
