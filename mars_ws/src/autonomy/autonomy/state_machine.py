@@ -588,10 +588,11 @@ class AutonomyStateMachine(Node):
                     # If the rover has spun self.aruco_spin_step_size, stop the rover and look for tag
                     if self.wrap(self.curr_heading - self.spin_target_angle, 0) > 0:
                         msg.data = "Here 2"
-                        self.spin_stop = True
+                        self.spin_stop = False
+                        self.spin_target_angle = self.wrap(self.spin_target_angle + self.spin_step_size, 0)
                         self.spin_stop_time = time.time()
-                        self.drive_controller.issue_drive_cmd(0, 0)
-                        self.drive_controller.stop()
+                        # self.drive_controller.issue_drive_cmd(0, 0)
+                        # self.drive_controller.stop()
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE
                 elif self.correct_obj_found:

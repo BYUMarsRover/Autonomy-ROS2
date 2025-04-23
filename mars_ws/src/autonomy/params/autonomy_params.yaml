@@ -10,7 +10,7 @@
     navigate_speed: 10.0
     object_speed: 3.0
     aruco_speed: 3.0
-    spin_speed: 10.0
+    spin_speed: 5.0
     object_alpha_lpf: 0.5
     obj_enable_distance: 25.0
     aruco_enable_distance: 30.0
