@@ -13,6 +13,12 @@ from enum import Enum
 import numpy as np
 import time
 from collections import deque
+from autonomy.autonomy.utils.planner import Planner
+from autonomy.utils.gps_utils import (
+    latLonYaw2Geopose,
+    meters2LatLon,
+    latLon2Meters,
+)
 
 class State(Enum):
     MANUAL = "MANUAL"
@@ -83,6 +89,7 @@ class AutonomyStateMachine(Node):
         self.srv_switch_abort = self.create_service(AutonomyAbort, '/autonomy/abort_autonomy', self.abort)
         self.srv_receive_waypoint = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.receive_waypoint)
         self.srv_clear_waypoint = self.create_service(SetBool, '/AU_clear_waypoint_service', self.clear_waypoint)
+        self.srv_planned_waypoint = self.create_service(AutonomyWaypoint, 'waypoint/planner', self.plan_waypoints)
 
         # Clients
         self.object_detect_client = self.create_client(SetBool, '/zed/zed_node/enable_obj_det')
@@ -179,6 +186,8 @@ class AutonomyStateMachine(Node):
         self.backup_timer = None
         self.backup_duration = 4.0  # Tune this number 
 
+        self.planner = Planner(self)
+
         self.get_logger().info('Autonomy State Machine initialized')
 
     def set_task_callback(self, task_info: AutonomyTaskInfo):
@@ -203,8 +212,7 @@ class AutonomyStateMachine(Node):
     # Service callback to receive waypoints in the form messages
     def receive_waypoint(self, request: AutonomyWaypoint.Request, response: AutonomyWaypoint.Response) -> AutonomyWaypoint.Response:
         # Clear current waypoint before receiving a new one
-        while len(self.waypoints) > 0:
-            self.waypoints.pop()
+        self.waypoints.clear()
 
         waypoints = request.task_list
         for wp in waypoints:
@@ -217,6 +225,34 @@ class AutonomyStateMachine(Node):
             self.get_logger().info("Waypoint(s) added, Waiting for autonomy enable")
         else:
             self.get_logger().warn("No waypoints received, staying idle")
+
+        self.planner.use_planned_path = False
+        response.success = True
+        response.message = 'Adding waypoints was successful'
+        self.get_logger().info(f"Response: success={response.success}, message='{response.message}'")
+        return response
+
+    # Service callback to receive waypoints in the form messages
+    def plan_path_points(self, request: AutonomyWaypoint.Request, response: AutonomyWaypoint.Response) -> AutonomyWaypoint.Response:
+        self.get_logger().info('Plan Path command received')
+        
+        # Clear current waypoint before receiving a new one
+        self.waypoints.clear()
+
+        waypoints = request.task_list
+        for wp in waypoints:
+            self.waypoints.append(wp) # Append new waypoints to the deque
+        
+        # Currently functional for one waypoint only TODO
+        first_wp = self.waypoints[0]
+
+        wp_gepose = latLonYaw2Geopose(first_wp.latitude, first_wp.longitude)
+
+        self.planner.navigate_helper(self.curr_geopose, wp_gepose)
+
+        # Make sure this is how I want to do this
+        self.planner.use_planned_path = True
+        self.get_logger().info(f'Path Planned to waypoint: {first_wp}')
 
         response.success = True
         response.message = 'Adding waypoints was successful'
@@ -231,17 +267,18 @@ class AutonomyStateMachine(Node):
         current_task: AutonomyTaskInfo = self.waypoints[0]
         self.set_task_callback(current_task)
 
-        # TODO: Do I want to make this be the current location or the first waypoint?
+        # TODO: I think we want to change here for the abort point.
         if self.last_waypoint is None:
             self.last_waypoint = current_task
 
     def clear_waypoint(self, request: SetBool.Request, response: SetBool.Response):
+        # TODO: I think this clears all waypoints so update to reflect that
+        self.planner.clear_path()
         if len(self.waypoints) > 0:
-            while len(self.waypoints) > 0:
-                self.waypoints.pop()
-            self.get_logger().info('Waypoint removed')
+            self.waypoints.clear()
+            self.get_logger().info('Waypoints removed')
             response.success = True
-            response.message = f'Waypoint removed successfully'
+            response.message = f'Waypoints removed successfully'
         else:
             self.get_logger().warn('No waypoint to remove')
             response.success = False
@@ -256,6 +293,9 @@ class AutonomyStateMachine(Node):
         # TODO: Get our filtered GPS POSITION INSTEAD OF RAW
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)
         self.curr_heading = np.deg2rad(msg.map_yaw)
+
+        # Planner info
+        self.curr_geopose = latLonYaw2Geopose(self.curr_latitude, self.curr_longitude)
 
     def obj_detect_callback(self, msg: ObjectsStamped):
         timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
@@ -391,8 +431,7 @@ class AutonomyStateMachine(Node):
 
         # Reset the waypoints when aborting
         self.get_logger().warn('Removing waypoints because of abort')
-        while len(self.waypoints) > 0:
-            self.last_waypoint = self.waypoints.popleft()
+        self.waypoints.clear()
 
         if self.abort_status:
             self.get_logger().info("Aborting...")
@@ -513,23 +552,36 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 self.get_logger().info("Starting commands")
                 self.set_speed(self.navigate_speed)
-                self.get_logger().info(f"Number of waypoints {len(self.waypoints)}")
+                # self.get_logger().info(f"Number of waypoints {len(self.waypoints)}")
                 self.target_latitude = self.waypoints[0].latitude
                 self.target_longitude = self.waypoints[0].longitude
                 self.target_point = GPSCoordinate(self.target_latitude, self.target_longitude, 0)
-                self.drive_controller.issue_path_cmd(self.target_latitude, self.target_longitude)
-                self.state = State.WAYPOINT_NAVIGATION
+
+                # TODO make sure we dont have the final waypoint in the path
+                # TODO make sure this logic works
+                if self.planner.use_planned_path and self.planner.path:
+                    # WHICH point am i getting?
+                    geopose = self.planner.path.popleft()
+                    lat = geopose.position.latitude
+                    lon = geopose.position.longitude
+                    self.path_target_point = GPSCoordinate(lat, lon, 0)
+                    self.get_logger().info(f"On next waypoint: lat - {lat}, lon - {lon}")
+                    self.drive_controller.issue_path_cmd(lat, lon)
+                    self.state = State.WAYPOINT_NAVIGATION
+                else:
+                    self.drive_controller.issue_path_cmd(self.target_latitude, self.target_longitude)
+                    self.get_logger().info("Approaching coordinate")
+                    self.state = State.POINT_NAVIGATION
 
             elif self.state == State.WAYPOINT_NAVIGATION:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                if GPSTools.distance_between_lat_lon(self.current_point, self.target_point) < self.path_waypoint_dist_tolerance:
-                    if len(self.waypoints) > 1:
-                        self.waypoints.popleft()
-                        self.get_logger().info("Popped intermediate waypoint!")
-                        self.state = State.START_POINT_NAVIGATION
-                    else:
-                        self.get_logger().info("Approaching coordinate")
-                        self.state = State.POINT_NAVIGATION
+                # TODO make this distance tolerance larger and then make a precise GPS navigation state
+                
+                # UPDATE DIST TO Final TARGET FOR OBJECT/ARUCO DETECTIONS
+                self.dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
+
+                if GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point) < self.path_waypoint_dist_tolerance:
+                    self.state = State.START_POINT_NAVIGATION
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE
                 elif self.correct_obj_found:

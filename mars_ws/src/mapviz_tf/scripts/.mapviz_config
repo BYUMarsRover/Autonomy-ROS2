@@ -60,8 +60,8 @@ displays:
       collapsed: true
       frame: rover
       image: /home/marsrover/mars_ws/src/mapviz_tf/image/Rover.png
-      width: 30
-      height: 30
+      width: 4
+      height: 4
       offset_x: 0
       offset_y: 0
       ratio: original
