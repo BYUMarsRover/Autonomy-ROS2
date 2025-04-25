@@ -20,5 +20,15 @@ def generate_launch_description():
                 ublox_config
             ],
             output='screen'
-        )
+        ),
+        Node(
+            package='odometry',
+            executable='position_velocity_time_translator',
+            namespace='base',
+            name='position_velocity_time_translator',
+            remappings=[
+                ('/ins/lla', 'fix')
+            ],
+            output='screen'
+        ),
     ])

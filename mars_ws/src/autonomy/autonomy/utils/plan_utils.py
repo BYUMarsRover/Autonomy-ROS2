@@ -1,6 +1,6 @@
 import math
 from itertools import permutations
-from rover_navigation.utils.gps_utils import (
+from autonomy.utils.gps_utils import (
     latLonYaw2Geopose,
     quaternion_from_euler,
     latLon2Meters,

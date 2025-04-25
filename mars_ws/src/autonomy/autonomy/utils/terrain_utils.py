@@ -5,7 +5,7 @@ import math
 import os
 import rasterio
 from rasterio.transform import rowcol
-from rover_navigation.utils.gps_utils import latLonYaw2Geopose, latLon2Meters
+from autonomy.utils.gps_utils import latLonYaw2Geopose, latLon2Meters
 import utm
 
 

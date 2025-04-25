@@ -156,7 +156,7 @@ class AutonomyGUI(Node, QWidget):
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
         # Sends a single waypoint in the case that path planning is not being used
         # self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
-        self.send_waypoint_client = self.create_client(AutonomyWaypoint, 'waypoint/planner')
+        self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/autonomy/waypoint/planner')
         # Commands the path_planner node to send the waypoints corresponding to the planned path to the state machine
         self.send_path_client = self.create_client(SetBool, '/send_path_service')
         # Clears the state machine's waypoint if there is one

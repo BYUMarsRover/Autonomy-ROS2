@@ -27,19 +27,22 @@ displays:
           type: wmts
       bing_api_key: ""
       source: Google Maps Rover
-  - type: mapviz_plugins/gps
+  - type: mapviz_plugins/navsat
     name: Base GPS
     config:
-      visible: true
-      collapsed: true
-      topic: /GPSFix_base
+      topic: /base/fix
       color: "#204a87"
       draw_style: points
       position_tolerance: 0
       buffer_size: 1
-      show_laps: false
-      static_arrow_sizes: false
-      arrow_size: 260
+  - type: mapviz_plugins/navsat
+    name: Rover GPS
+    config:
+      topic: /ins/lla
+      color: "#aa0000"
+      draw_style: points
+      position_tolerance: 0
+      buffer_size: 5
   # - type: mapviz_plugins/gps
   #   name: GPS Waypoint
   #   config:
@@ -66,12 +69,19 @@ displays:
       offset_y: 0
       ratio: original
   - type: mapviz_plugins/path
-    name: Path Planning
+    name: Order Planning
     config:
       visible: true
       collapsed: false
       topic: /mapviz/path
       color: "#00ff00"
+  - type: mapviz_plugins/path
+    name: Path Planning
+    config:
+      visible: true
+      collapsed: false
+      topic: /autonomy/waypoint/path
+      color: "#430aff"
   # - type: mapviz_plugins/point_click_publisher
   #   name: new display
   #   config:

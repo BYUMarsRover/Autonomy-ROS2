@@ -13,7 +13,7 @@ from enum import Enum
 import numpy as np
 import time
 from collections import deque
-from autonomy.autonomy.utils.planner import Planner
+from autonomy.utils.planner import Planner
 from autonomy.utils.gps_utils import (
     latLonYaw2Geopose,
     meters2LatLon,
@@ -89,7 +89,7 @@ class AutonomyStateMachine(Node):
         self.srv_switch_abort = self.create_service(AutonomyAbort, '/autonomy/abort_autonomy', self.abort)
         self.srv_receive_waypoint = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.receive_waypoint)
         self.srv_clear_waypoint = self.create_service(SetBool, '/AU_clear_waypoint_service', self.clear_waypoint)
-        self.srv_planned_waypoint = self.create_service(AutonomyWaypoint, 'waypoint/planner', self.plan_waypoints)
+        self.srv_planned_waypoint = self.create_service(AutonomyWaypoint, 'waypoint/planner', self.plan_path_points)
 
         # Clients
         self.object_detect_client = self.create_client(SetBool, '/zed/zed_node/enable_obj_det')
@@ -248,6 +248,7 @@ class AutonomyStateMachine(Node):
 
         wp_gepose = latLonYaw2Geopose(first_wp.latitude, first_wp.longitude)
 
+        # TODO TRY EXCEPT ON GETTING THE GEOPOSE BECAUSE if the current position has not come in
         self.planner.navigate_helper(self.curr_geopose, wp_gepose)
 
         # Make sure this is how I want to do this
@@ -550,7 +551,7 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.START_POINT_NAVIGATION:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                self.get_logger().info("Starting commands")
+                self.get_logger().info("Starting Point Navigation")
                 self.set_speed(self.navigate_speed)
                 # self.get_logger().info(f"Number of waypoints {len(self.waypoints)}")
                 self.target_latitude = self.waypoints[0].latitude

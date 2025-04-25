@@ -19,19 +19,21 @@ from collections import deque
 
 class Planner():
     def __init__(self, node):
+        self.node = node
         
-        node.declare_parameter("use_terrain_path_planner", False)
+        node.declare_parameter("use_terrain_path_planner", True)
         node.declare_parameter("use_terrain_order_planner", False)
         node.declare_parameter("elevation_cost", 0.1)
         node.declare_parameter("waypoint_distance", 15.0)
 
         self.use_terrain_path_planner = node.get_parameter("use_terrain_path_planner").value
         self.use_terrain_order_planner = node.get_parameter("use_terrain_order_planner").value
-        self.elevation_cost = node.get_parameter("elevation_cost").value
-        self.waypoint_distance = node.get_parameter("waypoint_distance").value
 
         self.path_publisher = node.create_publisher(Path, 'waypoint/path', 10)
 
+        utm_origin = utm.from_latlon(40.2497218, -111.649276)
+        self.utm_easting_zero = utm_origin[0]
+        self.utm_northing_zero = utm_origin[1]
 
         self.search_points = [
             (4.5, 7.79),
@@ -76,10 +78,12 @@ class Planner():
 
         # TODO do like a try except to make sure something doesnt error out and everything looks good
         # 1. Generate a path to the destination waypoint
+        distance = self.node.get_parameter("waypoint_distance").value
         if self.use_terrain_path_planner:
-            path = terrainPathPlanner(start_wp, dest_wp, self.waypoint_distance, self.elevation_cost)
+            cost = self.node.get_parameter("elevation_cost").value
+            path = terrainPathPlanner(start_wp, dest_wp, distance, cost)
         else:
-            path = basicPathPlanner(start_wp, dest_wp, self.waypoint_distance)
+            path = basicPathPlanner(start_wp, dest_wp, distance)
         
         self.path.clear()
         self.path.extend(path)
@@ -89,15 +93,17 @@ class Planner():
         # TODO if statement if we want to publish the planned path
         # Path to Mapviz
         path_msg = Path()
-        path_msg.header.stamp = self.get_clock().now().to_msg()
+        path_msg.header.stamp = self.node.get_clock().now().to_msg()
         path_msg.header.frame_id = 'map'
 
         # Append coordinates to the waypoint list in lat/lon format
         for geopose in self.path:
             pose = PoseStamped()
+            utm_coords = utm.from_latlon(geopose.position.latitude, geopose.position.longitude)
+
             pose.header = path_msg.header
-            pose.position.x = geopose.position.latitude
-            pose.position.y = geopose.position.longitude
+            pose.pose.position.x = utm_coords[0] - self.utm_easting_zero
+            pose.pose.position.y = utm_coords[1] - self.utm_northing_zero
             
             path_msg.poses.append(pose)
 
