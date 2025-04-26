@@ -3,7 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import IWCMotors
-# TODO: See if we can convert mobility drive enable to a service
+# TODO: See if we can convert mobility drive enable to higher quality of service
 from std_msgs.msg import Bool
 from geometry_msgs.msg import Twist
 
@@ -13,7 +13,7 @@ class Transition(Node):
         
         # ROS Publishers
         self.IWC_control_pub = self.create_publisher(IWCMotors, '/IWC_motorControl', 1)
-        self.sim_control_pub = self.create_publisher(Twist, '/mobility/cmd_vel', 1)
+        # self.sim_control_pub = self.create_publisher(Twist, '/mobility/cmd_vel', 1)
 
         # ROS Subscribers
         self.joy_drive_enabled_sub = self.create_subscription(

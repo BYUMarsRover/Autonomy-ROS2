@@ -109,21 +109,4 @@ class Planner():
 
         self.path_publisher.publish(path_msg)
 
-        
-        # TODO publish the path instead of the waypoints?
-        # for the path message do it in xy
-
-        # # 2. Publish the GPS positions to mapviz
-        # for wp in path:
-        #     navsat_fix = NavSatFix()
-        #     navsat_fix.header.frame_id = "map"
-        #     navsat_fix.header.stamp = self.get_clock().now().to_msg()
-        #     navsat_fix.latitude = wp.position.latitude
-        #     navsat_fix.longitude = wp.position.longitude
-
-        #     # 2.1 Publish to different topics based on type
-        #     if wp != dest_wp:
-        #         self.mapviz_inter_publisher.publish(navsat_fix)
-        #     else:
-        #         self.mapviz_goal_publisher.publish(navsat_fix)
-        #     time.sleep(0.1)  # give time to publish
+        # TODO: Publish the circles around each point

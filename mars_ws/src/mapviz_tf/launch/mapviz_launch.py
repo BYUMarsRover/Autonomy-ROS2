@@ -9,11 +9,11 @@ from pathlib import Path
 
 def generate_launch_description():
     # Mapviz_config
-    config_path = os.path.join(get_package_share_directory('mapviz_tf'), 'scripts', '.mapviz_config')
-
+    home_path = os.getenv('HOME', '/home/marsrover')
+    config_path = os.path.join(home_path, 'mars_ws/src/mapviz_tf', 'scripts', '.mapviz_config')
     # Mapviz origins param file
     mapviz_origins_path = os.path.join(
-        os.getenv('HOME', '/home/marsrover'), 'mars_ws/src/mapviz_tf/params/mapviz_origins.yaml'
+        home_path, 'mars_ws/src/mapviz_tf/params/mapviz_origins.yaml'
     )
     
     mapviz_origins = Path(mapviz_origins_path).read_text()
