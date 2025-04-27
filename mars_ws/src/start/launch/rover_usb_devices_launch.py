@@ -71,7 +71,7 @@ def generate_launch_description():
             remappings=[
                 # ('/image_raw', '/head_camera/image_raw')  # Uncomment and adjust if remapping is needed
             ]
-        ),
+        )
 
 
 
