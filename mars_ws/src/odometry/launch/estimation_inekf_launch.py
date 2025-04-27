@@ -58,15 +58,15 @@ def generate_launch_description():
             output='screen'
         ),
         
-        Node(
-            package='imu_filter_madgwick',
-            executable='imu_filter_madgwick_node',
-            name='imu_filter_madgwick',
-            output='screen',
-            remappings=[
-                ('imu/data_raw', 'zed/zed_node/imu/data'),
-                ('imu/mag', 'zed/zed_node/imu/mag')
-            ],
-            parameters=[config]
-        ),
+        # Node(
+        #     package='imu_filter_madgwick',
+        #     executable='imu_filter_madgwick_node',
+        #     name='imu_filter_madgwick',
+        #     output='screen',
+        #     remappings=[
+        #         ('imu/data_raw', 'zed/zed_node/imu/data'),
+        #         ('imu/mag', 'zed/zed_node/imu/mag')
+        #     ],
+        #     parameters=[config]
+        # ),
     ])
