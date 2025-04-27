@@ -143,7 +143,10 @@ USER $NAME
 # Install pcl and open3D - Gabe Slader Mar 2025
 # Needed for the hazard avoidance node 
 RUN pip3 install open3d
-RUN pip3 install pcl
+RUN pip3 install pcl 
+
+# Install astar for path planning
+RUN pip3 install astar rasterio
 
 # Install libboost for ublox read - Braden Meyers, Mar 2025
 # Needed to run UBLOX_read_2
