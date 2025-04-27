@@ -36,4 +36,6 @@ fi
 sudo /usr/sbin/sshd -D
 
 # IMPORTANT! Keeps the container running
-exec "$@"
+set -e
+
+exec /bin/bash

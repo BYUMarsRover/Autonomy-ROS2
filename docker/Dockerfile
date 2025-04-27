@@ -33,8 +33,8 @@ RUN apt update && apt install -y \
     x11-apps \
     x11-utils \
     x11-xserver-utils \
-    xauth \
-    ros-humble-rqt*
+    xauth 
+    # ros-humble-rqt*
 
 # Set up a new user
 RUN useradd -ms /bin/bash $NAME
@@ -52,9 +52,23 @@ RUN echo "source /home/$NAME/mars_ws/install/setup.bash" >> ~/.bashrc
 RUN echo "export RCUTILS_COLORIZED_OUTPUT=1" >> ~/.bashrc
 RUN touch ~/.hushlogin
 
+
+# TODO Is this messing something up??
 # Quick permissions fix (might be too heavy-handed)
 USER root
 RUN chown -R $NAME: /usr/local
+USER $NAME
+
+
+# Add local python binaries to the PATH
+ENV PATH="$PATH:/home/$NAME/.local/bin"
+
+# For some reason these packages need to be installed in this order to get the inekf to work
+# Not sure whats going on with this...  
+USER root
+RUN apt update && apt install -y \
+    ros-humble-navigation2 \
+    ros-humble-rqt* 
 USER $NAME
 
 ###############################################################
@@ -73,14 +87,17 @@ RUN pip3 install utm
 
 # Install OpenCV - Gabe Slade, Feb 2025
 # Used for detecting and locating aruco tags
+# TODO I think this one might already be installed in a previous installation
 USER root
 RUN apt update && apt install -y libopencv-dev 
 USER $NAME
 
-# Downgrade numpy - Nelson Durrant, Feb 2025
-# "transforms3d" (quaternion conversion) uses a function depreciated in numpy 2.0
-RUN pip3 uninstall -y numpy
-RUN pip3 install numpy==1.26.0
+
+# TODO HERREEEE
+# # Downgrade numpy - Nelson Durrant, Feb 2025
+# # "transforms3d" (quaternion conversion) uses a function depreciated in numpy 2.0
+# RUN pip3 uninstall -y numpy
+# RUN pip3 install numpy==1.26.0
 
 # Install pydantic 1.10.9 - Daniel Webb, Feb 2025
 # Necessary dependency for usb_cam launch file
@@ -93,69 +110,67 @@ RUN pip3 install pyserial
 # Install rviz - Gabe Slade, Feb 2025
 # Needed in order to display various system GUIs (including rover orientation + hazards)
 USER root
-RUN apt update && apt install -y ros-humble-rviz-common
-RUN apt update && apt install -y ros-humble-rviz2
+RUN apt install -y ros-humble-rviz-common ros-humble-rviz2
 USER $NAME
 
 # Install ROS 2 usb-cam package - Daniel Webb, Feb 2025
 # Needed to interface with the camera for aruco tag detection
 USER root
-RUN apt update && apt install -y ros-humble-usb-cam
+RUN apt install -y ros-humble-usb-cam
 USER $NAME
 
 # Install ROS 2 SLAM packages - Braden Meyers, Feb 2025
 # Needed to fuse the magnetometer and visual odom data
 USER root
-RUN apt update && apt install -y \
+RUN apt install -y \
     ros-humble-robot-localization \
     ros-humble-tf-transformations
 USER $NAME
 
-# Install mapviz - Sarah Sanderson, Feb 2025
-# Necessary packages to run the mapviz viewer
-# USER root
-# RUN apt update && apt install -y \
-#     ros-humble-mapviz \
-#     ros-humble-mapviz-plugins \
-#     ros-humble-tile-map \
-#     ros-humble-multires-image \
-#     ros-humble-rosapi
-# USER $NAME
+# # Install mapviz - Sarah Sanderson, Feb 2025
+# # Necessary packages to run the mapviz viewer
+# # TODO make this TARGET ARCH functional
+# # USER root
+# # RUN if [ "$TARGETARCH" = "amd64" ]; then \
+# #     apt install -y \
+# #     ros-humble-mapviz \
+# #     ros-humble-mapviz-plugins \
+# #     ros-humble-multires-image \
+# #     ros-humble-rosapi \
+# #     ros-humble-tile-map; \
+# # fi
+# # USER $NAME
 
-# Install domain bridge package - Nelson Durrant, Feb 2025
-# Necessary dependency for running the domain bridge scripts
-USER root
-RUN apt update && apt install -y ros-humble-domain-bridge
-USER $NAME
 
 # Install the joy package - Alyssa Fielding, Feb 2025
 # Needed for the joystick control on the base station
+# possibly created an issue? Not sure yet
 USER root
-RUN apt update && apt install -y ros-humble-joy
+RUN apt install -y ros-humble-joy
 USER $NAME 
 
-# Install gpsd-client - Braden Meyers, Feb 2025
-# Needed to publish raw gps data if we use gpsd
-USER root
-RUN apt update && apt install -y gpsd-clients
-USER $NAME
 
 # Install pcl and open3D - Gabe Slader Mar 2025
 # Needed for the hazard avoidance node 
-RUN pip3 install open3d
-RUN pip3 install pcl
+# OPEN3D libary installs numpy 2.2.5 
+# RUN pip3 install open3d
+USER root
+RUN apt install -y python3-open3d python3-pcl
+USER $NAME
+
+# RUN pip3 install pcl
 
 # Install libboost for ublox read - Braden Meyers, Mar 2025
 # Needed to run UBLOX_read_2
 USER root
-RUN apt update && apt install -y libboost-all-dev
+RUN apt install -y libboost-all-dev
 USER $NAME
 
 # Install urdf launch - Braden Meyers, Apr 2025
 # Needed to publish the urdf model of the rover
 # ZED messages for the the object detections
 USER root
-RUN apt update && apt install -y \
+RUN apt install -y \
     ros-humble-urdf-launch \
     ros-humble-zed-msgs    
 USER $NAME

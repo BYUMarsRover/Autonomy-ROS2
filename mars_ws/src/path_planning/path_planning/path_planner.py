@@ -126,8 +126,13 @@ class PathPlanner(Node):
         self.path_needed = False
 
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
-        self.curr_latitude = msg.gps.latitude
-        self.curr_longitude = msg.gps.longitude
+        filtered = True
+        if filtered:
+            self.curr_latitude = msg.filter_gps.latitude
+            self.curr_longitude = msg.filter_gps.longitude
+        else:
+            self.curr_latitude = msg.gps.latitude
+            self.curr_longitude = msg.gps.longitude
         if self.location is None:
             self.location = (self.curr_latitude, self.curr_longitude)
             self.initialize_mapper()

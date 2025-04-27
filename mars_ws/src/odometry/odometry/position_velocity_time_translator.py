@@ -23,8 +23,9 @@ class PositionVelocityTimeTranslator(Node):
         self.lla_publisher = self.create_publisher(NavSatFix, '/ins/lla', 10)  # Creates a publisher to NavSatFix
 
     def ublox_callback(self, message):
-        h_var = self.ublox_accuracy_to_variance(message.h_acc)  # Horizontal covariance
-        v_var = self.ublox_accuracy_to_variance(message.v_acc)  # Vertical covariance
+        # I dont think this is right
+        # h_var = self.ublox_accuracy_to_variance(message.h_acc)  # Horizontal covariance
+        # v_var = self.ublox_accuracy_to_variance(message.v_acc)  # Vertical covariance
 
         # fixMe
         # The following line is a sanity test, I will comment it out/delete it after I am sure it
@@ -35,9 +36,9 @@ class PositionVelocityTimeTranslator(Node):
         # position_covariance is a measure of the accuracy of the gps reading.
         # h_var is for x and y, v_var is for z
         position_covariance = [
-            h_var, 0, 0,
-            0, h_var, 0,
-            0, 0, v_var,
+            message.h_acc, 0, 0,
+            0, message.h_acc, 0,
+            0, 0, message.v_acc,
         ]
 
         # Creates navsat message
@@ -50,25 +51,28 @@ class PositionVelocityTimeTranslator(Node):
             position_covariance_type=NavSatFix.COVARIANCE_TYPE_DIAGONAL_KNOWN,
         )
 
-        navsatfix_message.header.frame_id = 'gps_frame'  # Adds information to the navsat message header
+        navsatfix_message.header.frame_id = 'gps_link'  # Adds information to the navsat message header
+
+        # FIX THIS to get the actual time stamp from GPS measurment
+        navsatfix_message.header.stamp = message.header.stamp
 
         self.lla_publisher.publish(navsatfix_message)  # publishes message using publisher
 
-    @staticmethod
-    def ublox_accuracy_to_variance(acc):
-        """Converts the accuracy given from the UBlox chip to variance 
+    # @staticmethod
+    # def ublox_accuracy_to_variance(acc):
+    #     """Converts the accuracy given from the UBlox chip to variance 
 
-        Arguments:
-            acc {float} -- The accuracy given from the UBlox chip
+    #     Arguments:
+    #         acc {float} -- The accuracy given from the UBlox chip
 
-        Returns:
-            float -- The variance of from the given accuracy
-        """
-        # TODO Verify this procedure. The docs don't explain exactly what the 'accuracy' is, but this is assuming
-        #  it is standard deviation
-        acc_in_meters = acc * 1000
-        variance = acc_in_meters * acc_in_meters
-        return variance
+    #     Returns:
+    #         float -- The variance of from the given accuracy
+    #     """
+    #     # TODO Verify this procedure. The docs don't explain exactly what the 'accuracy' is, but this is assuming
+    #     #  it is standard deviation
+    #     acc_in_meters = acc * 1000
+    #     variance = acc_in_meters * acc_in_meters
+    #     return variance
 
 
 def main(args=None):

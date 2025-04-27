@@ -9,7 +9,7 @@ import os
 
 def generate_launch_description():
 
-    config = os.path.join(get_package_share_directory('odometry'), 'config', 'estimation.yaml'),
+    config = os.path.join(get_package_share_directory('odometry'), 'config', 'ekf.yaml'),
     imu_config = os.path.join(get_package_share_directory('odometry'), 'config', 'imu_filter.yaml'),
 
     return LaunchDescription([
@@ -25,19 +25,14 @@ def generate_launch_description():
             )
         ),
         Node(
-            package='robot_localization',
-            executable='navsat_transform_node',
-            name='navsat_transform_node',
+            package='odometry',
+            executable='inekf_node',
+            name='inekf_node',
             output='screen',
             parameters=[config],
-            remappings=[
-                ('odometry/filtered', 'ekf/odom'),
-                ('imu', 'imu/data'),
-                ('gps/fix', 'ins/lla'),
-            ],
-            arguments=['--ros-args', '--log-level', 'info'],
-            emulate_tty=True
         ),
+        
+
 
         #Condition to run the singleton creator only on the rover and not
         GroupAction(
@@ -62,7 +57,7 @@ def generate_launch_description():
             ],
             output='screen'
         ),
-
+        
         Node(
             package='imu_filter_madgwick',
             executable='imu_filter_madgwick_node',
@@ -72,13 +67,6 @@ def generate_launch_description():
                 ('imu/data_raw', 'zed/zed_node/imu/data'),
                 ('imu/mag', 'zed/zed_node/imu/mag')
             ],
-            parameters=[imu_config]
+            parameters=[config]
         ),
-        Node(
-            package='odometry',
-            executable='custom_ekf_node',
-            name='custom_ekf_node',
-            output='screen',
-            parameters=[config],
-        )
     ])

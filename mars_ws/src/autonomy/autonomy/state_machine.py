@@ -288,10 +288,17 @@ class AutonomyStateMachine(Node):
         return response
 
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
-        self.curr_latitude = msg.gps.latitude
-        self.curr_longitude = msg.gps.longitude
-        self.curr_elevation = msg.gps.altitude
-        # TODO: Get our filtered GPS POSITION INSTEAD OF RAW
+        # TODO Move param to config
+        use_filtered = True
+
+        if use_filtered:
+            self.curr_latitude = msg.filter_gps.latitude
+            self.curr_longitude = msg.filter_gps.longitude
+            self.curr_elevation = msg.filter_gps.altitude
+        else:
+            self.curr_latitude = msg.gps.latitude
+            self.curr_longitude = msg.gps.longitude
+            self.curr_elevation = msg.gps.altitude
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)
         self.curr_heading = np.deg2rad(msg.map_yaw)
 
