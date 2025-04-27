@@ -628,12 +628,15 @@ class AutonomyStateMachine(Node):
             elif self.state == State.SPIN_SEARCH:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 msg = String() # For Debugging TODO: remove
+                # self.get_logger().info(f"spin_target_angle: {self.spin_target_angle}, curr_heading: {self.curr_heading}, spin_start_heading: {self.spin_start_heading}")
+                # self.get_logger().info(f"spin_stop: {self.spin_stop}, spin_stop_time: {self.spin_stop_time}")
                 if self.spin_stop:
                     msg.data = "aruco spin Stopping"
                     # If the rover has spun self.spin_step_size and is stopped, wait for self.spin_delay_time seconds to look for a tag
                     if time.time() - self.spin_stop_time > self.spin_delay_time:
                         self.spin_stop = False
                         self.spin_target_angle = self.wrap(self.spin_target_angle + self.spin_step_size, 0)
+                        # self.get_logger().info(f"NEW spin_target_angle: {self.spin_target_angle}")
                         self.drive_controller.issue_drive_cmd(0.0, self.spin_speed)
                 else:
                     msg.data = "Here 1"
@@ -645,10 +648,11 @@ class AutonomyStateMachine(Node):
                     # If the rover has spun self.aruco_spin_step_size, stop the rover and look for tag
                     if self.wrap(self.curr_heading - self.spin_target_angle, 0) > 0:
                         msg.data = "Here 2"
-                        self.spin_stop = True
+                        self.spin_stop = False
+                        self.spin_target_angle = self.wrap(self.spin_target_angle + self.spin_step_size, 0)
                         self.spin_stop_time = time.time()
-                        self.drive_controller.issue_drive_cmd(0, 0)
-                        self.drive_controller.stop()
+                        # self.drive_controller.issue_drive_cmd(0, 0)
+                        # self.drive_controller.stop()
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE
                 elif self.correct_obj_found:
