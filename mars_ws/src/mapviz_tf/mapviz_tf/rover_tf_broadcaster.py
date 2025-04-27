@@ -175,7 +175,7 @@ class RoverTransformBroadcaster(Node):
         # Handle the case where both sides have the same velocity (straight line)
         velocity = (left_middle_velocity + right_middle_velocity) / 2.0
         omega = (left_middle_velocity - right_middle_velocity) / 2.0  # IN NED frame which is being used right now I believe
-        self.get_logger().info(f"left velocity: {left_middle_velocity}, right: {right_middle_velocity}")
+        # self.get_logger().info(f"left velocity: {left_middle_velocity}, right: {right_middle_velocity}")
 
         return omega, velocity
 
@@ -236,7 +236,7 @@ class RoverTransformBroadcaster(Node):
         marker.color.a = 1.0  # Alpha (transparency)
 
         self.marker_pub.publish(marker)
-        self.get_logger().info(f"Published marker with direction: {angle:.2f} radians, and velocity: {velocity}")
+        # self.get_logger().info(f"Published marker with direction: {angle:.2f} radians, and velocity: {velocity}")
 
 
 def main(args=None):
