@@ -72,6 +72,16 @@ def generate_launch_description():
                 {'MAPVIZ_LOCATION': LaunchConfiguration('MAPVIZ_LOCATION')},
             ],
         ),
+        Node(
+            package='odometry',
+            executable='position_velocity_time_translator',
+            namespace='base',
+            name='position_velocity_time_translator',
+            remappings=[
+                ('/ins/lla', 'fix')
+            ],
+            output='screen'
+        ),
 
         # Other nodes
         # Node(package='mapviz_tf', executable='path_to_mapviz', name='path_to_mapviz', output='log'),
