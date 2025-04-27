@@ -74,10 +74,7 @@ case "$1" in
             tmux split-window -h -t rover_runtime:0.0; \
             tmux select-pane -t rover_runtime:0.1; \
             tmux send-keys -t rover_runtime:0.1 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
-            tmux send-keys -t rover_runtime:0.1 'ros2 launch start rover_task_autonomy_new_launch.py'; \
-            tmux new-window -t rover_runtime -n ublox; \
-            tmux send-keys -t rover_runtime:ublox 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
-            tmux send-keys -t rover_runtime:ublox 'ros2 launch odometry rover_launch.py' Enter"
+            tmux send-keys -t rover_runtime:0.1 'ros2 launch start rover_task_autonomy_new_launch.py'"
         ;;
     "servicing")
         printWarning "Not implemented yet"
