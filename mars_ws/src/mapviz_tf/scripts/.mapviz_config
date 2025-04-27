@@ -106,7 +106,7 @@ displays:
       units: percent
       offset_x: 8
       offset_y: 0
-      postfix_text: " Deg"
+      postfix_text: " Deg Pitch"
       qos_depth: 10
       qos_history: 1
       qos_reliability: 1
@@ -119,11 +119,12 @@ displays:
       font: Sans Serif,28,-1,5,50,0,0,0,0,0
       color: "#ff0000"
       topic: /roll_float
+      field: data
       anchor: top right
       units: percent
       offset_x: 8
       offset_y: 10
-      postfix_text: " Deg"
+      postfix_text: " Deg Roll"
       qos_depth: 10
       qos_history: 1
       qos_reliability: 1

@@ -52,11 +52,11 @@ class RoverTransformBroadcaster(Node):
         self.marker_pub = self.create_publisher(Marker, 'mapviz_markers', 10)  # Added marker publisher
 
         # Roll and Pitch Display
-        self.imu_sub = self.create_subscription(Imu, 'imu/data', self.roll_pitch_display, 10)
+        self.imu_sub = self.create_subscription(Imu, '/zed/zed_node/imu/data', self.roll_pitch_display, 10)
         self.roll_pub = self.create_publisher(Float32, 'roll_float', 1)
         self.pitch_pub = self.create_publisher(Float32, 'pitch_float', 1)
         # Low-pass filter parameters
-        self.alpha = 0.02  # adjust between 0 (super smooth) and 1 (no filtering)
+        self.alpha = 0.06  # adjust between 0 (super smooth) and 1 (no filtering)
         self.filtered_roll = 0.0
         self.filtered_pitch = 0.0
 
