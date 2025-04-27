@@ -84,15 +84,16 @@ def generate_launch_description():
         #     parameters=[autonomy_params_file]
         # ),
 
-        Node(
-            package='path_planning',
-            executable='path_planner',
-            name='path_planner',
-            output='screen',
-            parameters=[
-                {'MAPVIZ_LOCATION': LaunchConfiguration('MAPVIZ_LOCATION')}
-            ]
-        ),
+        # Removed from autonomy launch by Braden Meyers Apr 26. Will be testing integrated state machine path planner
+        # Node(
+        #     package='path_planning',
+        #     executable='path_planner',
+        #     name='path_planner',
+        #     output='screen',
+        #     parameters=[
+        #         {'MAPVIZ_LOCATION': LaunchConfiguration('MAPVIZ_LOCATION')}
+        #     ]
+        # ),
 
         # Launch state machine with autonomy namespace
         GroupAction([

@@ -20,6 +20,8 @@
     wrong_aruco_backup_distance: 7.0
     wrong_aruco_backup_spin_speed: 15.0
     hex_seach_angle_difference: 50.0
+    waypoint_distance: 10.0
+    elevation_cost: 150.0
 
 fiducial_data:
   ros__parameters:
