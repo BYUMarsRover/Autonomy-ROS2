@@ -174,3 +174,16 @@ RUN apt install -y \
     ros-humble-urdf-launch \
     ros-humble-zed-msgs    
 USER $NAME
+
+
+# Install tools for terrain maps - Nelson Durrant, Apr 2025
+# Used for loading in and parsing GeoTIFF elevation maps
+USER root
+RUN apt update && apt install -y \
+    libgdal-dev \
+    python3-rasterio
+USER $NAME
+
+# Install AStar planning package - Nelson Durrant, Apr 2025
+# Simple A* path planning algorithm implementation for 2D maps
+RUN pip3 install astar
