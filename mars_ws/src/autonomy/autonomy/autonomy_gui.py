@@ -232,9 +232,10 @@ class AutonomyGUI(Node, QWidget):
                 self.ros_signal.emit('ArucoSystemStatus', 'font-size: 12pt; color:rgb(150, 150, 150); font-weight: bold;', 'setStyleSheet')
 
         if self.rover_gps_status_timepoint is not None:
-            if time.time() - self.rover_gps_status_timepoint > 3.0:
+            if time.time() - self.rover_gps_status_timepoint > 8.0:
                 #Set status to grey
                 self.ros_signal.emit('RoverGPSStatus', 'font-size: 12pt; color:rgb(150, 150, 150); font-weight: bold;', 'setStyleSheet')
+    
     
     def clear_rover_state_singleton_info(self):
         self.ros_signal.emit('RoverStateMapYaw', 'Map Yaw: ...', 'setText')
