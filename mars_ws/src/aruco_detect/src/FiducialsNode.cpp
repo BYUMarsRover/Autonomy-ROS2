@@ -103,13 +103,13 @@ FiducialsNode::FiducialsNode()
 
 // Image callback
 void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg) {
+    recieved_image_raw = true;
+    
     if (!enable_detections_) {
         return;
     }
 
-    recieved_image_raw = true;
     frame_num_++;
-
     cv_bridge::CvImagePtr cv_ptr;
 
     auto fta = rover_msgs::msg::FiducialTransformArray();

@@ -1538,6 +1538,16 @@
                 </property>
                </widget>
               </item>
+              <item alignment="Qt::AlignTop">
+               <widget class="QLabel" name="RoverGPSStatus">
+                <property name="text">
+                 <string>ROVER GPS</string>
+                </property>
+                <property name="styleSheet">
+                 <string>font-size: 12pt; font-weight: bold; color: rgb(150, 150, 150);</string>
+                </property>
+               </widget>
+              </item>
 
               
               <!-- <item alignment="Qt::AlignTop">

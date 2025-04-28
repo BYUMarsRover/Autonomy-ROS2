@@ -187,6 +187,7 @@ class AutonomyGUI(Node, QWidget):
         self.timepoints_timer = self.create_timer(0.5, self.check_timepoints)
         self.rover_state_singleton_timepoint = None
         self.aruco_status_timepoint = None
+        self.rover_gps_status_timepoint = None
 
         ################# Mapviz Communication Setup #################
 
@@ -227,7 +228,13 @@ class AutonomyGUI(Node, QWidget):
 
         if self.aruco_status_timepoint is not None:
             if time.time() - self.aruco_status_timepoint > 3.0:
-                self.ros_signal.emit('ArucoSystemStatus', 'font-size: 12pt; zcolor:rgb(150, 150, 150); font-weight: bold;', 'setStyleSheet')
+                #Set status to grey
+                self.ros_signal.emit('ArucoSystemStatus', 'font-size: 12pt; color:rgb(150, 150, 150); font-weight: bold;', 'setStyleSheet')
+
+        if self.rover_gps_status_timepoint is not None:
+            if time.time() - self.rover_gps_status_timepoint > 3.0:
+                #Set status to grey
+                self.ros_signal.emit('RoverGPSStatus', 'font-size: 12pt; color:rgb(150, 150, 150); font-weight: bold;', 'setStyleSheet')
     
     def clear_rover_state_singleton_info(self):
         self.ros_signal.emit('RoverStateMapYaw', 'Map Yaw: ...', 'setText')
@@ -485,8 +492,17 @@ class AutonomyGUI(Node, QWidget):
             self.ros_signal.emit("RTKSystemStatus", "font-size: 12pt; color:rgb(57, 255, 20); font-weight: bold;", 'setStyleSheet')
     
     def rover_rel_pos_flags_callback(self, msg):
-        # Check gnss_fix_ok, diff_soln
-        pass
+        self.rover_gps_status_timepoint = time.time()
+
+        if msg.gnss_fix_ok:
+            if msg.diff_soln:
+                #Set status to green, everything is good
+                self.ros_signal.emit('RoverGPSStatus', "font-size: 12pt; color:rgb(57, 255, 20); font-weight: bold;", 'setStyleSheet')
+            else:
+                #Set status to yellow. We ar getting GPS, but not differential
+                self.ros_signal.emit('RoverGPSStatus', "font-size: 12pt; color:rgb(255, 255, 0); font-weight: bold;", 'setStyleSheet')
+
+
 
 
     # Callback functions for buttons
