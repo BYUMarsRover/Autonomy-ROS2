@@ -479,9 +479,6 @@ class AutonomyGUI(Node, QWidget):
             self.ros_signal.emit('ArucoSystemStatus', 'font-size: 12pt; color:rgb(255, 0, 0); font-weight: bold;', 'setStyleSheet')
 
     def base_survey_status_callback(self, msg):
-        # Check dur, mean_acc, valid, and active
-        self.get_logger().info(f"Base Survey Status: {msg}")
-
         #If active is true, then the base is currently surveying
         if msg.active:
             #Set status to red and give the time and mean accuracy
