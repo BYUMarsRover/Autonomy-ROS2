@@ -25,6 +25,7 @@ class Planner():
         node.declare_parameter("use_terrain_order_planner", False)
         node.declare_parameter("elevation_cost", 0.1)
         node.declare_parameter("waypoint_distance", 15.0)
+        node.declare_parameter("elevation_limit", 0.7)
 
         self.use_terrain_path_planner = node.get_parameter("use_terrain_path_planner").value
         self.use_terrain_order_planner = node.get_parameter("use_terrain_order_planner").value
@@ -81,6 +82,7 @@ class Planner():
         distance = self.node.get_parameter("waypoint_distance").value
         if self.use_terrain_path_planner:
             cost = self.node.get_parameter("elevation_cost").value
+            limit = self.node.get_parameter("elevation_limit").value
             path = terrainPathPlanner(start_wp, dest_wp, distance, cost)
         else:
             path = basicPathPlanner(start_wp, dest_wp, distance)

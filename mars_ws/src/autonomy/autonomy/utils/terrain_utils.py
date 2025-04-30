@@ -18,11 +18,12 @@ class TerrainGraph(AStar):
     :date: Apr 2025
     """
 
-    def __init__(self, elevation_data, transform, elev_cost):
+    def __init__(self, elevation_data, transform, elev_cost, elev_limit):
         self.elevation_data = elevation_data
         self.transform = transform
         self.rows, self.cols = elevation_data.shape
         self.elev_cost = elev_cost
+        self.elev_limit = elev_limit
 
     def heuristic_cost_estimate(self, n1, n2):
         # Simple Euclidean distance in pixel space
@@ -55,6 +56,10 @@ class TerrainGraph(AStar):
         elevation1 = self.elevation_data[n1]
         elevation2 = self.elevation_data[n2]
         elevation_diff = abs(elevation1 - elevation2)
+
+        if elevation_diff > self.elev_limit:
+            # If it's too steep, report an infinite cost
+            return float("inf")
 
         cost = d + elevation_diff * self.elev_cost
         return cost
@@ -117,7 +122,7 @@ def downsample_points(num_points, des_dist):
     return sorted(list(selected_indices_set))
 
 
-def terrainPathPlanner(start_geopose, end_geopose, wp_dist, elev_cost):
+def terrainPathPlanner(start_geopose, end_geopose, wp_dist, elev_cost, elev_limit):
     """
     Generate intermediary waypoints between two GPS coordinates with terrain consideration
 
@@ -163,7 +168,7 @@ def terrainPathPlanner(start_geopose, end_geopose, wp_dist, elev_cost):
         utm_zone = start_utm_zone
 
         # Initialize and run A*
-        terrain_graph = TerrainGraph(elevation_data, transform, elev_cost)
+        terrain_graph = TerrainGraph(elevation_data, transform, elev_cost, elev_limit)
         path_pixels = terrain_graph.astar(start_pixel, end_pixel)
         if not path_pixels:
             raise Exception("No viable path found by terrain-based AStar planner")
@@ -186,7 +191,7 @@ def terrainPathPlanner(start_geopose, end_geopose, wp_dist, elev_cost):
         return final_path_result
 
 
-def terrainOrderPlanner(legs, fix, wp_dist, elev_cost):
+def terrainOrderPlanner(legs, fix, wp_dist, elev_cost, elev_limit):
     """
     Brute force the optimal order to complete the task legs (based on terrain)
 
@@ -207,7 +212,7 @@ def terrainOrderPlanner(legs, fix, wp_dist, elev_cost):
         fix_geopose = latLonYaw2Geopose(fix.position.latitude, fix.position.longitude)
         order_geopose = latLonYaw2Geopose(order[0].latitude, order[0].longitude)
 
-        path = terrainPathPlanner(fix_geopose, order_geopose, wp_dist, elev_cost)
+        path = terrainPathPlanner(fix_geopose, order_geopose, wp_dist, elev_cost, elev_limit)
 
         # Add up the cost of the path from the fix to the first leg
         for stop in path:
