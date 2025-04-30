@@ -83,7 +83,7 @@ class Planner():
         if self.use_terrain_path_planner:
             cost = self.node.get_parameter("elevation_cost").value
             limit = self.node.get_parameter("elevation_limit").value
-            path = terrainPathPlanner(start_wp, dest_wp, distance, cost)
+            path = terrainPathPlanner(start_wp, dest_wp, distance, cost, limit)
         else:
             path = basicPathPlanner(start_wp, dest_wp, distance)
         
