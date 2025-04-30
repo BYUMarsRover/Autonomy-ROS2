@@ -17,19 +17,20 @@ from PyQt5.QtCore import *
 import sys
 import os
 import numpy as np
+import time
 
 # Used by Mapviz and others
 import yaml
 import utm
 
 from std_srvs.srv import SetBool
-from std_msgs.msg import Header, Int8
+from std_msgs.msg import Header, Int8, Bool
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
 from zed_msgs.msg import ObjectsStamped
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloats, SetFloat32, OrderAutonomyWaypoint, PlanPath
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors, HazardArray
-from sensor_msgs.msg import Image
+from ublox_read_2.msg import SurveyStatus, RelPosFlags
 from ament_index_python.packages import get_package_share_directory
 
 import threading
@@ -37,7 +38,7 @@ import threading
 
 class AutonomyGUI(Node, QWidget):
     # This signal is used to isolate the updating of graphical elements from the ROS callbacks
-    ros_signal = pyqtSignal(str, str)
+    ros_signal = pyqtSignal(str, str, str)
 
     def __init__(self):
         # Initialize ROS2 node
@@ -50,7 +51,7 @@ class AutonomyGUI(Node, QWidget):
         self.show()  # Show the GUI
         
         ############################## GUI #############################
-        self.ros_signal.connect(self.gui_setText)
+        self.ros_signal.connect(self.gui_setAction)
         #################### GUI Button Connections ####################
         # Connect Leg Type Radio Buttons to update_leg_subselection function
         self.GNSSRadioButton.toggled.connect(self.update_leg_subselection)
@@ -148,15 +149,18 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.auto_drive_cmds_callback, 1) 
         self.create_subscription(PlanPath.Response, '/path_plan_response', self.plan_path_response_callback, 10) # Allows the path planner node to notify when the path is ready
         self.create_subscription(HazardArray, '/hazards', self.hazard_callback, 10)
-        self.create_subscription(Image, '/image_raw', self.image_callback, 10) # Image from the camera
-
+        self.create_subscription(Bool, 'aruco_status', self.aruco_status_callback, 10) # ArUco status for ensuring image_raw from webcam is being published and fiducial node is running
+        self.create_subscription(SurveyStatus, 'base/SurveyStatus', self.base_survey_status_callback, 10) # Survey status for ensuring rover is in survey mode
+        self.create_subscription(RelPosFlags, 'rover/RelPosFlags', self.rover_rel_pos_flags_callback, 10) # Rel pos flags for ensuring rover is in survey mode
+        
         # Services
 
         # Clients
         # Enables Autonomy
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
         # Sends a single waypoint in the case that path planning is not being used
-        self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
+        # self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/AU_waypoint_service')
+        self.send_waypoint_client = self.create_client(AutonomyWaypoint, '/autonomy/waypoint/planner')
         # Commands the path_planner node to send the waypoints corresponding to the planned path to the state machine
         self.send_path_client = self.create_client(SetBool, '/send_path_service')
         # Clears the state machine's waypoint if there is one
@@ -184,6 +188,8 @@ class AutonomyGUI(Node, QWidget):
         # for the purpose of clearing the information if it is not recent
         self.timepoints_timer = self.create_timer(0.5, self.check_timepoints)
         self.rover_state_singleton_timepoint = None
+        self.aruco_status_timepoint = None
+        self.rover_gps_status_timepoint = None
 
         ################# Mapviz Communication Setup #################
 
@@ -219,13 +225,24 @@ class AutonomyGUI(Node, QWidget):
     # Clears displays in the gui if information stops being received.
     def check_timepoints(self):
         if self.rover_state_singleton_timepoint is not None:
-            if self.get_clock().now().to_msg().sec - self.rover_state_singleton_timepoint > 1:
+            if time.time() - self.rover_state_singleton_timepoint > 1.0:
                 self.clear_rover_state_singleton_info()
+
+        if self.aruco_status_timepoint is not None:
+            if time.time() - self.aruco_status_timepoint > 3.0:
+                #Set status to grey
+                self.ros_signal.emit('ArucoSystemStatus', 'font-size: 12pt; color:rgb(150, 150, 150); font-weight: bold;', 'setStyleSheet')
+
+        if self.rover_gps_status_timepoint is not None:
+            if time.time() - self.rover_gps_status_timepoint > 8.0:
+                #Set status to grey
+                self.ros_signal.emit('RoverGPSStatus', 'font-size: 12pt; color:rgb(150, 150, 150); font-weight: bold;', 'setStyleSheet')
+    
     
     def clear_rover_state_singleton_info(self):
-        self.ros_signal.emit('RoverStateMapYaw', 'Map Yaw: ...')
-        self.ros_signal.emit('RoverStateLat','Latitude: ...')
-        self.ros_signal.emit('RoverStateLon', 'Longitude: ...')
+        self.ros_signal.emit('RoverStateMapYaw', 'Map Yaw: ...', 'setText')
+        self.ros_signal.emit('RoverStateLat','Latitude: ...', 'setText')
+        self.ros_signal.emit('RoverStateLon', 'Longitude: ...', 'setText')
         return
     
     def load_waypoints(self):
@@ -262,8 +279,8 @@ class AutonomyGUI(Node, QWidget):
             self.nav_state = 'UNKNOWN'
         # Update GUI fields
         if self.CurrentNavStateDisplay.text() != self.nav_state:
-            self.ros_signal.emit('PreviousNavStateDisplay', self.CurrentNavStateDisplay.text())
-            self.ros_signal.emit('CurrentNavStateDisplay', self.nav_state)
+            self.ros_signal.emit('PreviousNavStateDisplay', self.CurrentNavStateDisplay.text(), 'setText')
+            self.ros_signal.emit('CurrentNavStateDisplay', self.nav_state, 'setText')
         return
 
     def rover_state_callback(self, msg): #State machine status (state, auto_enable)
@@ -272,14 +289,14 @@ class AutonomyGUI(Node, QWidget):
             if self.state_machine_list_string.count('\n') > 27:
                 self.state_machine_list_string = self.state_machine_list_string[:self.state_machine_list_string.rfind('\n')]
             self.state_machine_list_string = f'{msg.state}\n' + self.state_machine_list_string
-            self.ros_signal.emit('PreviousStatesList', self.state_machine_list_string)
+            self.ros_signal.emit('PreviousStatesList', self.state_machine_list_string, 'setText')
 
             self.prev_state_machine_state = self.state_machine_state
 
         #Show the first state on the previous state column
         if self.state_machine_state == None:
             self.state_machine_list_string = f'{msg.state}\n'
-            self.ros_signal.emit('PreviousStatesList', self.state_machine_list_string)
+            self.ros_signal.emit('PreviousStatesList', self.state_machine_list_string, 'setText')
 
         #Update current state and autonomous enable
         self.state_machine_state = msg.state
@@ -318,7 +335,7 @@ class AutonomyGUI(Node, QWidget):
             else:
                 aruco_text = aruco_text + f"Incorrect tagID: {msg.transforms[0].fiducial_id}, Correct id: {self.tag_id}"
             
-            self.ros_signal.emit('ArucoStatus', aruco_text)
+            self.ros_signal.emit('ArucoStatus', aruco_text, 'setText')
         return
     
     def obj_detect_callback(self, msg):
@@ -353,16 +370,7 @@ class AutonomyGUI(Node, QWidget):
 
             objects_string = objects_string + f'{obj_name}: conf: {obj.confidence}, dist: {obj_distance} m @ {obj_angle} deg \n'
 
-        self.ros_signal.emit('ObjStatus', objects_string)
-        return
-    
-    def image_callback(self, msg):
-        data = msg.data
-        # Convert the image data to a QImage and display it in the QLabel
-        image = QImage(data, msg.width, msg.height, QImage.Format_RGB888)
-        pixmap = QPixmap.fromImage(image)
-        self.CameraFeed.setPixmap(pixmap)
-        self.CameraFeed.setScaledContents(True)
+        self.ros_signal.emit('ObjStatus', objects_string, 'setText')
         return
     
     ################# Callbacks for Mobility #################
@@ -377,13 +385,13 @@ class AutonomyGUI(Node, QWidget):
             autopilot_cmds_string = f'E_lin: {msg.distance_to_target:.1f}m, cw N: {np.rad2deg(msg.course_angle):.1f}°'
         else:
             autopilot_cmds_string = f'E_lin: {msg.distance_to_target:.1f}m, cw N: {np.rad2deg(msg.course_angle):.1f}°, E_ang: {np.rad2deg(self.course_heading_error):.1f}°'
-        self.ros_signal.emit('AutopilotCmds', autopilot_cmds_string)
+        self.ros_signal.emit('AutopilotCmds', autopilot_cmds_string, 'setText')
         return
     
     def vel_cmds_callback(self, msg):
         self.course_heading_error = msg.course_heading_error
         vel_cmds_string = f'Lin Vel: {round(msg.u_cmd, 2)}, Ang Vel: {round(msg.omega_cmd, 2)}'
-        self.ros_signal.emit('VelocityCmds', vel_cmds_string)
+        self.ros_signal.emit('VelocityCmds', vel_cmds_string, 'setText')
 
         # If we have a course heading error, update the autopilot string
         if self.autopilot_cmds_msg is not None:
@@ -393,7 +401,7 @@ class AutonomyGUI(Node, QWidget):
 
     def wheel_vel_cmds_callback(self, msg):
         wheel_vel_cmds_string = f'LW Speed: {round(msg.lw, 2)}, RW Speed: {round(msg.rw, 2)}'
-        self.ros_signal.emit('WheelVelocityCmds', wheel_vel_cmds_string)
+        self.ros_signal.emit('WheelVelocityCmds', wheel_vel_cmds_string, 'setText')
         return
 
     def auto_drive_cmds_callback(self, msg):
@@ -425,7 +433,7 @@ class AutonomyGUI(Node, QWidget):
         else:
             IWC_cmd_string = IWC_cmd_string + f', RRW: -{round(msg.right_rear_speed, 2)}'
 
-        self.ros_signal.emit('IWCCmds', IWC_cmd_string)
+        self.ros_signal.emit('IWCCmds', IWC_cmd_string, 'setText')
         
         return
 
@@ -459,8 +467,6 @@ class AutonomyGUI(Node, QWidget):
         self.gui_setText('logger_label', 'Disabling Hazard Avoidance...')
         self.HazardAvoidance.setText(f'Hazard Avoidance: Disabled')
 
-
-
     def hazard_callback(self, msg):
         # Clear the string
         hazard_text = ''
@@ -473,8 +479,44 @@ class AutonomyGUI(Node, QWidget):
                 hazard_text += f'Hazard {round(distance, 2)} m away, {round(angle, 2)} deg, {round(-hazard.location_z, 2)} m tall\n'
 
         # Update the GUI with the hazards
-        self.ros_signal.emit('HazardsFound', hazard_text)
+        self.ros_signal.emit('HazardsFound', hazard_text, 'setText')
         return
+    
+    ########## Callbacks for Statuses ############
+    def aruco_status_callback(self, msg):
+        self.aruco_status_timepoint = time.time()
+        
+        if msg.data:
+            #Turn Aruco Status to green
+            self.ros_signal.emit('ArucoSystemStatus', 'font-size: 12pt; color:rgb(57, 255, 20); font-weight: bold;', 'setStyleSheet')
+        else:
+            #Turn Aruco Status to red
+            self.ros_signal.emit('ArucoSystemStatus', 'font-size: 12pt; color:rgb(255, 0, 0); font-weight: bold;', 'setStyleSheet')
+
+    def base_survey_status_callback(self, msg):
+        #If active is true, then the base is currently surveying
+        if msg.active:
+            #Set status to red and give the time and mean accuracy
+            self.ros_signal.emit("RTKSystemStatus", f"RTK: SURVEYING({msg.dur}s @{np.round(msg.mean_acc, 2)})", 'setText')
+            self.ros_signal.emit("RTKSystemStatus", "font-size: 12pt; color:rgb(255, 0, 0); font-weight: bold;", 'setStyleSheet')
+        elif msg.valid:
+            #Set status to green
+            self.ros_signal.emit("RTKSystemStatus", "RTK: FIXED", 'setText')
+            self.ros_signal.emit("RTKSystemStatus", "font-size: 12pt; color:rgb(57, 255, 20); font-weight: bold;", 'setStyleSheet')
+    
+    def rover_rel_pos_flags_callback(self, msg):
+        self.rover_gps_status_timepoint = time.time()
+
+        if msg.gnss_fix_ok:
+            if msg.diff_soln:
+                #Set status to green, everything is good
+                self.ros_signal.emit('RoverGPSStatus', "font-size: 12pt; color:rgb(57, 255, 20); font-weight: bold;", 'setStyleSheet')
+            else:
+                #Set status to yellow. We ar getting GPS, but not differential
+                self.ros_signal.emit('RoverGPSStatus', "font-size: 12pt; color:rgb(255, 255, 0); font-weight: bold;", 'setStyleSheet')
+
+
+
 
     # Callback functions for buttons
     def enable_autonomy(self):
@@ -484,13 +526,13 @@ class AutonomyGUI(Node, QWidget):
             self.waypoints[self.selected_waypoint_to_send -1][4] = 'ACTIVE'
         self.update_waypoint_list()
         future = self.enable_autonomy_client.call_async(req)
-        self.ros_signal.emit('logger_label', 'Enabling Autonomy...')
+        self.ros_signal.emit('logger_label', 'Enabling Autonomy...', 'setText')
 
     def disable_autonomy(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_autonomy_client.call_async(req)
-        self.ros_signal.emit('logger_label', 'Disabling Autonomy...')
+        self.ros_signal.emit('logger_label', 'Disabling Autonomy...', 'setText')
 
     # This sends the waypoint to mapviz for preview
     def preview_waypoint(self):
@@ -524,16 +566,16 @@ class AutonomyGUI(Node, QWidget):
                         self.utm_northing_zero)
             )
         
-        self.ros_signal.emit('logger_label', 'Waypoint Sent for Preview')
+        self.ros_signal.emit('logger_label', 'Waypoint Sent for Preview', 'setText')
 
     # This adds the waypoint to the waypoint list that is held in the autonomy gui
     def add_waypoint(self):
         try:
-            self.ros_signal.emit('logger_label', 'Adding Waypoint...')
+            self.ros_signal.emit('logger_label', 'Adding Waypoint...', 'setText')
             lat = float(self.latitude_input.text())
             lon = float(self.longitude_input.text())
         except ValueError:
-            self.ros_signal.emit('logger_label', 'Invalid latitude or longitude')
+            self.ros_signal.emit('logger_label', 'Invalid latitude or longitude', 'setText')
             return
         waypoint = [int(len(self.waypoints) + 1), self.tag_id, lat, lon, 'IDLE']
 
@@ -542,10 +584,10 @@ class AutonomyGUI(Node, QWidget):
 
     def remove_selected_waypoint(self):
         if self.selected_waypoint is None:
-            self.ros_signal.emit('logger_label', 'No waypoint selected')
+            self.ros_signal.emit('logger_label', 'No waypoint selected', 'setText')
             return
         if self.selected_waypoint > len(self.waypoints):
-            self.ros_signal.emit('logger_label', 'Empty Waypoint Selected')
+            self.ros_signal.emit('logger_label', 'Empty Waypoint Selected', 'setText')
             return
         
         if self.selected_waypoint_to_send == self.selected_waypoint:
@@ -583,13 +625,13 @@ class AutonomyGUI(Node, QWidget):
 
         # Error Handling
         if not self.plan_path_client.wait_for_service(timeout_sec=2.0):
-            self.ros_signal.emit('logger_label', "Plan Path service is unavailable.")
+            self.ros_signal.emit('logger_label', "Plan Path service is unavailable.", 'setText')
             return
         if self.selected_waypoint_for_path_planning is None:
-            self.ros_signal.emit('logger_label', 'No waypoint selected')
+            self.ros_signal.emit('logger_label', 'No waypoint selected', 'setText')
             return
         if self.waypoints[self.selected_waypoint_for_path_planning - 1][4] == 'PATH READY':
-            self.ros_signal.emit('logger_label', 'Path already planned')
+            self.ros_signal.emit('logger_label', 'Path already planned', 'setText')
             return
 
         tag_id, lat, lon = self.waypoints[self.selected_waypoint_for_path_planning -1][1:4] # Extract tag_id and lat/lon of the selected waypoint
@@ -605,14 +647,14 @@ class AutonomyGUI(Node, QWidget):
         try:
             response = future.result()
             if response.success:
-                self.ros_signal.emit('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message, 'setText')
                 self.waypoints[self.selected_waypoint_for_path_planning - 1][4] = 'PLANNING'
             else:
-                self.ros_signal.emit('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message, 'setText')
                 self.waypoints[self.selected_waypoint_for_path_planning - 1][4] = 'IDLE'
         except Exception as e:
             self.get_logger().error(f'Plan Path Service call failed! {e}')
-            self.ros_signal.emit('logger_label', f'Plan Path Service call failed! (See Logger)')
+            self.ros_signal.emit('logger_label', f'Plan Path Service call failed! (See Logger)', 'setText')
 
         self.update_waypoint_list()
 
@@ -623,10 +665,10 @@ class AutonomyGUI(Node, QWidget):
                 if wp[4] != 'COMPLETE':
                     wp[4] = 'IDLE'
             self.waypoints[self.selected_waypoint_for_path_planning - 1][4] = 'PATH READY'
-            self.ros_signal.emit('logger_label', msg.message)
+            self.ros_signal.emit('logger_label', msg.message, 'setText')
         else:
             self.waypoints[self.selected_waypoint_for_path_planning - 1][4] = 'IDLE'
-            self.ros_signal.emit('logger_label', msg.message)
+            self.ros_signal.emit('logger_label', msg.message, 'setText')
         self.update_waypoint_list()
         return
 
@@ -637,24 +679,30 @@ class AutonomyGUI(Node, QWidget):
             count += 1
 
             # Set attributes
-            getattr(self, f'WP{count}Label').setText(str(waypoint[0]))
-            getattr(self, f'TagID{count}Label').setText(str(waypoint[1]))
-            getattr(self, f'Lat{count}Label').setText(str(waypoint[2]))
-            getattr(self, f'Lon{count}Label').setText(str(waypoint[3]))
-            getattr(self, f'Status{count}Label').setText(str(waypoint[4]))
+            self.ros_signal.emit(f'WP{count}Label', str(waypoint[0]), 'setText')
+            self.ros_signal.emit(f'TagID{count}Label', str(waypoint[1]), 'setText')
+            self.ros_signal.emit(f'Lat{count}Label', str(waypoint[2]), 'setText')
+            self.ros_signal.emit(f'Lon{count}Label', str(waypoint[3]), 'setText')
+            self.ros_signal.emit(f'Status{count}Label', str(waypoint[4]), 'setText')
 
             # Formatting Status Entry
             match str(waypoint[4]):
                 case 'IDLE':
-                    getattr(self, f'Status{count}Label').setStyleSheet('color:rgb(150, 150, 150); \
-                                                                        font-weight: bold;')
+                    self.ros_signal.emit(f'Status{count}Label', 
+                                         'color:rgb(150, 150, 150); font-weight: bold;',
+                                         'setStyleSheet')
                 case 'ACTIVE':
-                    getattr(self, f'Status{count}Label').setStyleSheet('color:rgb(0, 61, 216);')
+                    self.ros_signal.emit(f'Status{count}Label',
+                                         'color:rgb(0, 61, 216);',
+                                         'setStyleSheet')
                 case 'COMPLETE':
-                    getattr(self, f'Status{count}Label').setStyleSheet('color:rgb(0, 255, 34); \
-                                                                        font-weight: bold;')
+                    self.ros_signal.emit(f'Status{count}Label',
+                                         'color:rgb(0, 255, 34); font-weight: bold;',
+                                         'setStyleSheet')
                 case _:
-                    getattr(self, f'Status{count}Label').setStyleSheet('color:rgb(0, 0, 0);')
+                    self.ros_signal.emit(f'Status{count}Label',
+                                         'color:rgb(0, 0, 0);',
+                                         'setStyleSheet')
 
         for i in range(count + 1, 9):
             # Set Empty entries
@@ -677,7 +725,7 @@ class AutonomyGUI(Node, QWidget):
             req.task_list.append(task)
 
         future = self.plan_order_client.call_async(req)
-        self.ros_signal.emit('logger_label', 'Planning order...')
+        self.ros_signal.emit('logger_label', 'Planning order...', 'setText')
         future.add_done_callback(self.plan_order_service_callback)
     
     def plan_order_service_callback(self, future):
@@ -690,11 +738,11 @@ class AutonomyGUI(Node, QWidget):
                 for i in range(len(response.ids)):
                     self.waypoints[i][0] = response.ids[i].data
                 self.update_waypoint_list()
-                self.ros_signal.emit('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message, 'setText')
             else:
-                self.ros_signal.emit('logger_label', "Failed to plan order")
+                self.ros_signal.emit('logger_label', "Failed to plan order", 'setText')
         except Exception as e:
-            self.ros_signal.emit('logger_label', f'Plan Order Service call failed!')
+            self.ros_signal.emit('logger_label', f'Plan Order Service call failed!', 'setText')
     
     # Sends the selected waypoint to the state machine either via the path planner node or directly
     def send_waypoint(self):
@@ -702,14 +750,14 @@ class AutonomyGUI(Node, QWidget):
         self.selected_waypoint_to_send = self.selected_waypoint
         # Error Handling
         if self.selected_waypoint_to_send is None:
-            self.ros_signal.emit('logger_label', 'No waypoint selected!')
+            self.ros_signal.emit('logger_label', 'No waypoint selected!', 'setText')
             return
 
         # If the waypoint has a path planned, send the path
         if self.waypoints[self.selected_waypoint_to_send - 1][4] == 'PATH READY':
             self.waypoints[self.selected_waypoint_to_send - 1][4] = 'SENDING'
             if not self.send_path_client.wait_for_service(timeout_sec=2.0) and not self.send_waypoint_client.wait_for_service(timeout_sec=2.0):
-                self.ros_signal.emit('logger_label', 'Send path service or AU_waypoint_service unavailable!')
+                self.ros_signal.emit('logger_label', 'Send path service or AU_waypoint_service unavailable!', 'setText')
                 return
             future = self.send_path_client.call_async(SetBool.Request(data=True))
             future.add_done_callback(self.send_waypoint_callback)
@@ -717,7 +765,7 @@ class AutonomyGUI(Node, QWidget):
         # If the waypoint does not have a path planned, send the single waypoint directly
         else:
             if not self.send_waypoint_client.wait_for_service(timeout_sec=2.0):
-                self.ros_signal.emit('logger_label', '/AU_waypoint_service service unavailable!')
+                self.ros_signal.emit('logger_label', '/AU_waypoint_service service unavailable!', 'setText')
                 return
             self.waypoints[self.selected_waypoint_to_send - 1][4] = 'SENDING'
             tag_id, lat, lon = self.waypoints[self.selected_waypoint_to_send -1][1:4] # Extract tag_id and lat/lon of the selected waypoint
@@ -736,14 +784,14 @@ class AutonomyGUI(Node, QWidget):
             if response.success:
                 if self.selected_waypoint_to_send is not None:
                     self.waypoints[self.selected_waypoint_to_send -1][4] = 'READY'
-                self.ros_signal.emit('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message, 'setText')
             else:
                 if self.selected_waypoint_to_send is not None:
                     self.waypoints[self.selected_waypoint_to_send -1][4] = 'SEND FAILURE'
-                self.ros_signal.emit('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message, 'setText')
         except Exception as e:
             self.get_logger().error(f'Send Waypoint Service call failed! {e}')
-            self.ros_signal.emit('logger_label', f'Send Waypoint Service call failed! (see logger)')
+            self.ros_signal.emit('logger_label', f'Send Waypoint Service call failed! (see logger)', 'setText')
         
         self.update_waypoint_list()
         return
@@ -753,18 +801,18 @@ class AutonomyGUI(Node, QWidget):
         req = SetBool.Request()
         req.data = True
         future = self.clear_waypoint_client.call_async(req)
-        self.ros_signal.emit('logger_label', 'Removing Last Waypoint')
+        self.ros_signal.emit('logger_label', 'Removing Last Waypoint', 'setText')
         future.add_done_callback(self.clear_waypoint_callback)
 
     def clear_waypoint_callback(self, future):
         try:
             response = future.result()
             if response.success:
-                self.ros_signal.emit('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message, 'setText')
             else:
-                self.ros_signal.emit('logger_label', "Failed to remove waypoint")
+                self.ros_signal.emit('logger_label', "Failed to remove waypoint", 'setText')
         except Exception as e:
-            self.ros_signal.emit('logger_label', f'Remove Waypoint Service call failed!')
+            self.ros_signal.emit('logger_label', f'Remove Waypoint Service call failed!', 'setText')
 
     # This calls the abort service
     def abort_autonomy(self):
@@ -779,25 +827,25 @@ class AutonomyGUI(Node, QWidget):
 
         # Send the Abort Request
         future = self.abort_autonomy_client.call_async(req)
-        self.ros_signal.emit('logger_label', 'Attempting Abort')
+        self.ros_signal.emit('logger_label', 'Attempting Abort', 'setText')
 
     # This is a service that adjusts the drive manager's max speed, different speeds should be used for local navigation vs GNSS navigation
     def set_speed(self):
         req = SetFloat32.Request()
         req.data = float(self.SpeedConstantInput.text())
         future = self.set_speed_client.call_async(req)
-        self.ros_signal.emit('logger_label', 'Sending Speed Constant...')
+        self.ros_signal.emit('logger_label', 'Sending Speed Constant...', 'setText')
         future.add_done_callback(self.set_speed_callback)
 
     def set_speed_callback(self, future):
         try:
             response = future.result()
             if response.success:
-                self.ros_signal.emit('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message, 'setText')
             else:
-                self.ros_signal.emit('logger_label', "Failed! Must be in range (0-10)")
+                self.ros_signal.emit('logger_label', "Failed! Must be in range (0-10)", 'setText')
         except Exception as e:
-            self.ros_signal.emit('logger_label', f'Send Speed Constant Service call failed!')
+            self.ros_signal.emit('logger_label', f'Send Speed Constant Service call failed!', 'setText')
 
     def set_gains(self):
 
@@ -807,12 +855,12 @@ class AutonomyGUI(Node, QWidget):
             limit_linear = float(self.LimitLinearInput.text())
             limit_angular = float(self.LimitAngularInput.text())
         except ValueError as e:
-            self.ros_signal.emit('logger_label', str(e))
+            self.ros_signal.emit('logger_label', str(e), 'setText')
             return
 
         # Input Validation
         if kp_linear <= 0 or kp_angular <= 0 or limit_linear <= 0 or limit_angular <= 0:
-            self.ros_signal.emit('logger_label', 'Invalid input: Gains must be positive values.')
+            self.ros_signal.emit('logger_label', 'Invalid input: Gains must be positive values.', 'setText')
             return
 
         req = SetFloats.Request()
@@ -823,21 +871,21 @@ class AutonomyGUI(Node, QWidget):
         elif self.ObjArucoGainsRadioButton.isChecked():
             future = self.set_aruco_autopilot_gains_client.call_async(req)
         else:
-            self.ros_signal.emit('logger_label', 'Please Select an Autopilot Gain Type')
+            self.ros_signal.emit('logger_label', 'Please Select an Autopilot Gain Type', 'setText')
             return
 
         future.add_done_callback(self.set_gains_callback)
-        self.ros_signal.emit('logger_label', 'Sending Gains...')
+        self.ros_signal.emit('logger_label', 'Sending Gains...', 'setText')
 
     def set_gains_callback(self, future):
         try:
             response = future.result()
             if response.success:
-                self.ros_signal.emit('logger_label', response.message)
+                self.ros_signal.emit('logger_label', response.message, 'setText')
             else:
-                self.ros_signal.emit('logger_label', "Failed to send gains")
+                self.ros_signal.emit('logger_label', "Failed to send gains", 'setText')
         except Exception as e:
-            self.ros_signal.emit('logger_label', f'Send Gains Service call failed! {e}')
+            self.ros_signal.emit('logger_label', f'Send Gains Service call failed! {e}', 'setText')
         return
 
     # def set_aruco_autopilot_gains(self, kp_linear, kp_angular, limit_linear, limit_angular):
@@ -845,7 +893,7 @@ class AutonomyGUI(Node, QWidget):
 
 
     def rover_state_singleton_callback(self, msg):
-        self.rover_state_singleton_timepoint = self.get_clock().now().to_msg().sec
+        self.rover_state_singleton_timepoint = time.time()
         self.RoverStateLat.setText(f'Latitude: {msg.gps.latitude}')
         self.RoverStateLon.setText(f'Longitude: {msg.gps.longitude}')
         self.RoverStateMapYaw.setText(f'Map Yaw: {msg.map_yaw}')
@@ -898,11 +946,17 @@ class AutonomyGUI(Node, QWidget):
         return
     
     # NOTE: This function is to fix errors caused by differing gui and ros2 threading protocol causing false positives for gui attribute deletion
-    def gui_setText(self, name, text):
-        if hasattr(self, str(name)):
-            getattr(self, str(name)).setText(text)
-        else:
-            self.get_logger().warn(f'Could not find {name} field of gui')
+    def gui_setAction(self, name, text, type='setText'):
+        if type == 'setText':
+            if hasattr(self, str(name)):
+                getattr(self, str(name)).setText(text)
+            else:
+                self.get_logger().warn(f'Could not find {name} field of gui')
+        elif type == 'setStyleSheet':
+            if hasattr(self, str(name)):
+                getattr(self, str(name)).setStyleSheet(text)
+            else:
+                self.get_logger().warn(f'Could not find {name} field of gui')
 
 
     #NOTE: depricated until mapviz capability added back
@@ -912,7 +966,7 @@ class AutonomyGUI(Node, QWidget):
     #     req.path = self.current_previewed_waypoints
 
     #     future = self.plan_order_mapviz_client.call_async(req)
-    #     self.ros_signal.emit('logger_label', 'Planning order on mapviz...')
+    #     self.ros_signal.emit('logger_label', 'Planning order on mapviz...', 'setText')
 
     # This clears all previewed waypoints from mapviz
     def clear_mapviz(self):
@@ -944,7 +998,7 @@ class AutonomyGUI(Node, QWidget):
         msg.poses = [pose_stamped]
 
         self.path_publisher.publish(msg)
-        self.ros_signal.emit('logger_label', 'Mapviz Cleared')
+        self.ros_signal.emit('logger_label', 'Mapviz Cleared', 'setText')
     
 #NOTE: not used anywhere
 # Converts a path from UTM to lat/lon
