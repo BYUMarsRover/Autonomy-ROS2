@@ -32,7 +32,9 @@ class Planner():
 
         self.path_publisher = node.create_publisher(Path, 'waypoint/path', 10)
 
-        utm_origin = utm.from_latlon(40.2497218, -111.649276)
+        # TODO FIX THE ORIGIN!!!
+        utm_origin = utm.from_latlon(40.245070, -111.62960)
+
         self.utm_easting_zero = utm_origin[0]
         self.utm_northing_zero = utm_origin[1]
 
@@ -89,8 +91,10 @@ class Planner():
         
         self.path.clear()
         self.path.extend(path)
+        
+        # take off the last point because it will be close to the destination
+        self.path.pop()
 
-        # TODO Maybe take off the last point if it includes the destination
 
         # TODO if statement if we want to publish the planned path
         # Path to Mapviz

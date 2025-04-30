@@ -22,10 +22,10 @@
     hex_seach_angle_difference: 50.0
     waypoint_distance: 10.0
     
-    elevation_cost: 1.0 # How much elevation affects the cost of the computed AStar path
+    elevation_cost: 100.0 # How much elevation affects the cost of the computed AStar path
     # The below distance in meters creates angle with an 1 meter AStar step on the xy plane
     # For example, if you set the distance to 0.7, the maximum traversable angle is tan^-1(0.7/1.0) = 35 degrees
-    elevation_limit: 0.7 # The maximum allowable elevation difference in the AStar planner to be considered traversable
+    elevation_limit: 0.35 # The maximum allowable elevation difference in the AStar planner to be considered traversable
 
 fiducial_data:
   ros__parameters:
