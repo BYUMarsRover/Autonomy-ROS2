@@ -32,8 +32,8 @@ class Planner():
         # Search Path Parameters
         # TAKE INTO ACCOUNT THE FACT THERE IS A THRESHOLD ON COMPLETING ON OF THE WAYPOINTS
         node.declare_parameter("spiral_inital_radius", 4.0)
-        node.declare_parameters("spiral_growth_factor", 1.0) # Meter in radius growth beteween each point
-        node.declare_parameters("spiral_step_size", 45.0) # Spiral Angle step size (degrees) beteween each point
+        node.declare_parameter("spiral_growth_factor", 1.0) # Meter in radius growth beteween each point
+        node.declare_parameter("spiral_step_size", 45.0) # Spiral Angle step size (degrees) beteween each point
 
         self.use_terrain_path_planner = node.get_parameter("use_terrain_path_planner").value
         self.use_terrain_order_planner = node.get_parameter("use_terrain_order_planner").value
@@ -121,9 +121,9 @@ class Planner():
         # ]
         scalar = 1.0
         # Make a bunch of x y points in a spriral outward
-        initial_radius = self.node.get_parameter("spiral_inital_radius")
-        growth_factor = self.node.get_parameter("spiral_growth_factor")
-        step_deg = self.node.get_parameter("spiral_step_size")
+        initial_radius = self.node.get_parameter("spiral_inital_radius").value
+        growth_factor = self.node.get_parameter("spiral_growth_factor").value
+        step_deg = self.node.get_parameter("spiral_step_size").value
         search_points = generate_spiral_points(20, initial_radius, growth_factor, step_deg)
         # Multiply all the points by the scalar factor
 

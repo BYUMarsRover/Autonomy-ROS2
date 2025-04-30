@@ -636,7 +636,7 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.SPIN_SEARCH:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                if time.time() - self.spin_stop_time > self.spin_delay_time:
+                if (time.time() - self.spin_stop_time) > self.spin_delay_time:
                      # Add the search points to the path and return to waypoint navigation
                     self.path = self.planner.search_path.copy()
                     self.state = State.START_POINT_NAVIGATION
