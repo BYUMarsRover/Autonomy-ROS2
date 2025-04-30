@@ -4,7 +4,7 @@ from sensor_msgs.msg import PointCloud2
 import struct
 import open3d as o3d
 
-def ros_to_pcl_and_transform(ros_cloud, transformation_point, name):
+def ros_to_pcl_and_transform(ros_cloud, transformation_point, name, verbose=False):
     """
     Converts a ROS PointCloud2 message to an Open3D PointCloud and transforms the points so origin is from the start of the bounding box.
      
@@ -67,20 +67,43 @@ def ros_to_pcl_and_transform(ros_cloud, transformation_point, name):
     if len(pcl_data.points) < 3:
         return pcl_data
     else:
-          # Visualize the point cloud
-        # visualize_point_cloud(pcl_data)
+        if verbose:
+            # Visualize the point cloud
+            print(f"Point cloud has {len(pcl_data.points)} points.")
+            visualize_point_cloud(pcl_data, "Point Cloud Visualization", zoom=0.25) 
         return pcl_data
 
 
-def visualize_point_cloud(pc):
+def visualize_point_cloud(pc, name, zoom):
     # Visualize the point cloud
 
     # Create a coordinate frame with a specified size
     axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
 
     # Visualize the point cloud with the axis
-    o3d.visualization.draw_geometries([pc, axis])
-    # o3d.visualization.draw_geometries([pc])
+    # o3d.visualization.draw_geometries([pc, axis], window_name="Point Cloud Visualization")
+
+    # Create window and geometry
+    vis = o3d.visualization.Visualizer()
+    vis.create_window(window_name=name)
+    vis.add_geometry(pc)
+    vis.add_geometry(axis)
+
+    # Set the view control (camera parameters)
+    ctr = vis.get_view_control()
+
+    # Set camera position: eye, lookat, up
+    # Example: looking at origin, from (2,2,2), with Z-down
+    ctr.set_lookat([0, 0, 0])
+    ctr.set_front([0, 1, 0])    # X forward
+    ctr.set_up([0, 0, -1])      # Z down
+
+    ctr.set_zoom(zoom)  # Optional: zoom level
+
+    vis.run()
+    vis.destroy_window()
+
+
 
 def generate_fake_point_cloud():
     """

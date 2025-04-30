@@ -27,6 +27,7 @@ class HazardDetector(Node):
         self.declare_parameter('bounding_box_height_ditch', 3.0)  #below the ground 
         self.declare_parameter('epsilon_clustering_density', 0.4)  #Change if the density of the points is not large enough to detect hazards, in meters?
         self.declare_parameter('min_points_to_cluster', 50) #Increase if we are getting false positives for hazard detection, decrease if we aren't detecting anything
+        self.declare_parameter('verbose', False)
         
 
         self.height_threshold = self.get_parameter('height_threshold').value
@@ -40,6 +41,7 @@ class HazardDetector(Node):
         self.box_height_ditch = self.get_parameter('bounding_box_height_ditch').value
         self.epsilon_clustering_density = self.get_parameter('epsilon_clustering_density').value
         self.min_points_to_cluster = self.get_parameter('min_points_to_cluster').value
+        self.verbose = self.get_parameter('verbose').get_parameter_value().bool_value
 
         # print('epsilon_clustering_density:', self.epsilon_clustering_density)
         # print('min_points_to_cluster:', self.min_points_to_cluster)
@@ -49,6 +51,7 @@ class HazardDetector(Node):
         self.enabled = False
 
         #Quality of Service Profile for zed publisher
+        #Ensures that only the latest point cloud is used for processing
         qos_profile = QoSProfile(
             depth=1,
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -112,7 +115,7 @@ class HazardDetector(Node):
         #TODO: save the cloud in a queue to be processed in a separate thread outside of the callback
            
         # Convert PointCloud2 to Open3D format and transform to the bounding box frame
-        cloud = ros_to_pcl_and_transform(msg, self.bounding_box_start_point, 'lidar')
+        cloud = ros_to_pcl_and_transform(msg, self.bounding_box_start_point, 'lidar', self.verbose)
         self.point_cloud_callback(cloud)
 
         return
@@ -128,7 +131,7 @@ class HazardDetector(Node):
         
 
         # Convert PointCloud2 to Open3D format and transform to the bounding box frame
-        cloud = ros_to_pcl_and_transform(msg, self.bounding_box_start_point, 'zed')
+        cloud = ros_to_pcl_and_transform(msg, self.bounding_box_start_point, 'zed', self.verbose)
         self.point_cloud_callback(cloud)
     
         return 
@@ -144,6 +147,10 @@ class HazardDetector(Node):
         # Downsample for efficiency
         cloud_filtered = cloud.voxel_down_sample(voxel_size=self.voxel_grid_size) 
 
+        if self.verbose:
+            print("Original point cloud size: ", len(cloud.points))
+            print("Downsampled point cloud size: ", len(cloud_filtered.points))
+
         # Convert point cloud to numpy array
         transformed_points = np.asarray(cloud_filtered.points)
 
@@ -157,10 +164,9 @@ class HazardDetector(Node):
         #Get cloud of only points in the bounding box
         cloud_bounded = cloud_filtered.select_by_index(np.where(bounding_mask)[0].tolist())
 
-        # # View the bounding box points
-        # print("Bounding box points: ", len(cloud_bounded.points))
-        # axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
-        # o3d.visualization.draw_geometries([cloud_bounded, axis])
+        if self.verbose:
+            # View the bounding box points
+            visualize_point_cloud(cloud_bounded, "Bounding Box Points", zoom=1.0)
 
         # Segment ground plane
         plane_model, inliers = cloud_bounded.segment_plane(
@@ -171,12 +177,10 @@ class HazardDetector(Node):
         ground = cloud_bounded.select_by_index(inliers)
         non_ground = cloud_bounded.select_by_index(inliers, invert=True)
 
-        # # Visualize ground and non-ground points
-        # axis = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
-        # print("Ground points:")
-        # o3d.visualization.draw_geometries([ground, axis])
-        # print("Non-ground points:")
-        # o3d.visualization.draw_geometries([non_ground, axis])
+        if self.verbose:
+            # Visualize ground and non-ground points
+            visualize_point_cloud(ground, "Ground Points", zoom=1.0)
+            visualize_point_cloud(non_ground, "Non-Ground Points", zoom=1.0)
 
         # Detect obstacles by height
         high_points = self.detect_high_obstacles(non_ground)
@@ -225,8 +229,6 @@ class HazardDetector(Node):
         # Convert PointCloud2 to a NumPy array
         points = pcl_to_array(cloud)  # converts to Nx3 numpy array
 
-        # self.get_logger().info(f"Point cloud contains {points.shape[0]} points.")
-
         if points.shape[0] == 0:
             self.get_logger().warn("Point cloud is empty after conversion!")
             return []
@@ -262,8 +264,6 @@ class HazardDetector(Node):
                 # Create a hazard message for each cluster of high points by averaging the x, y, z coordinates
                 hazard = Hazard()
                 hazard.type = Hazard.OBSTACLE
-
-                #Need to convert from the LIDAR frame(Xup, y is right of the rover, and Z is out away from the rover) to the rover frame (x forward, y is right, z is down)
                 hazard.location_x = np.mean(high_point[:, 0]) #X axis (forward)
                 hazard.location_y = np.mean(high_point[:, 1]) #Y axis (right)
                 hazard.location_z = np.mean(high_point[:, 2]) #Z axis (down)
