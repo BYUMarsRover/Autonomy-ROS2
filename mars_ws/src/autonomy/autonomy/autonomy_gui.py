@@ -124,6 +124,7 @@ class AutonomyGUI(Node, QWidget):
         self.selected_waypoint_for_path_planning = None
         self.prev_lat = 0
         self.prev_lon = 0
+        self.load_waypoints()
 
 
         # This should return a list like this: [lat, lon] and can be used for the plan path to selected waypoint
@@ -225,6 +226,19 @@ class AutonomyGUI(Node, QWidget):
         self.ros_signal.emit('RoverStateMapYaw', 'Map Yaw: ...')
         self.ros_signal.emit('RoverStateLat','Latitude: ...')
         self.ros_signal.emit('RoverStateLon', 'Longitude: ...')
+        return
+    
+    def load_waypoints(self):
+        waypoint_data_path = os.path.expanduser('~') + '/mars_ws/src/autonomy/params/waypoints.yaml'
+        # Open mapviz origins file
+        with open(waypoint_data_path, 'r') as file:
+            waypoint_data = yaml.safe_load(file)
+        i = 1
+        for wp in waypoint_data: # iterate over dictionaries to find the lat/lon of the location
+            self.waypoints.append([i, wp['tag_id'], wp['latitude'], wp['longitude'], 'IDLE'])
+            i += 1
+        # Update waypoint list
+        self.update_waypoint_list()
         return
 
     ################# Callbacks for Subscribers #################
@@ -416,7 +430,7 @@ class AutonomyGUI(Node, QWidget):
         return
 
 
-    #Hazard Detection Code
+    # Hazard Detection Code
     def enable_hazard_detection(self):
         req = SetBool.Request()
         req.data = True
