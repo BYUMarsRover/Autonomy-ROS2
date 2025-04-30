@@ -20,5 +20,5 @@ def generate_launch_description():
                 ublox_config
             ],
             output='screen'
-        )
+        ),
     ])

@@ -143,7 +143,10 @@ USER $NAME
 # Install pcl and open3D - Gabe Slader Mar 2025
 # Needed for the hazard avoidance node 
 RUN pip3 install open3d
-RUN pip3 install pcl
+RUN pip3 install pcl 
+
+# Install astar for path planning
+RUN pip3 install astar rasterio
 
 # Install libboost for ublox read - Braden Meyers, Mar 2025
 # Needed to run UBLOX_read_2
@@ -159,3 +162,16 @@ RUN apt update && apt install -y \
     ros-humble-urdf-launch \
     ros-humble-zed-msgs    
 USER $NAME
+
+
+# Install tools for terrain maps - Nelson Durrant, Apr 2025
+# Used for loading in and parsing GeoTIFF elevation maps
+USER root
+RUN apt update && apt install -y \
+    libgdal-dev \
+    python3-rasterio
+USER $NAME
+
+# Install AStar planning package - Nelson Durrant, Apr 2025
+# Simple A* path planning algorithm implementation for 2D maps
+RUN pip3 install astar
