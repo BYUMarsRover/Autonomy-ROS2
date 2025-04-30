@@ -49,19 +49,18 @@ class TerrainGraph(AStar):
         return neighbors_list
 
     def distance_between(self, n1, n2):
-        # Simple Euclidean distance in pixel space
         d = math.sqrt((n1[0] - n2[0]) ** 2 + (n1[1] - n2[1]) ** 2)
 
-        # Add cost based on elevation change
         elevation1 = self.elevation_data[n1]
         elevation2 = self.elevation_data[n2]
-        elevation_diff = abs(elevation1 - elevation2)
+        rise = elevation2 - elevation1
+        slope = rise / (d + 1e-6)  # avoid division by zero
 
-        if elevation_diff > self.elev_limit:
-            # If it's too steep, report an infinite cost
+        if abs(rise) > self.elev_limit:
             return float("inf")
 
-        cost = d + elevation_diff * self.elev_cost
+        cost = d * (1 + (slope ** 3) * self.elev_cost)
+
         return cost
 
 
@@ -155,7 +154,8 @@ def terrainPathPlanner(start_geopose, end_geopose, wp_dist, elev_cost, elev_limi
                     break
 
     if not geotiff_file:
-        raise Exception("No viable map found for terrain-based planning")
+        print('ERROR: NO TERRAIN MAP FOUND FOR THIS AREA')
+        return None
 
     # https://rasterio.readthedocs.io/en/stable/quickstart.html#opening-a-dataset-in-reading-mode
     with rasterio.open(geotiff_file) as src:

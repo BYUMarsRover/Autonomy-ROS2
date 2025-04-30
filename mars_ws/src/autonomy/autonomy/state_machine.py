@@ -187,6 +187,7 @@ class AutonomyStateMachine(Node):
         self.backup_duration = 4.0  # Tune this number 
 
         self.planner = Planner(self)
+        self.path = deque()
 
         self.get_logger().info('Autonomy State Machine initialized')
 
@@ -250,6 +251,11 @@ class AutonomyStateMachine(Node):
 
         # TODO TRY EXCEPT ON GETTING THE GEOPOSE BECAUSE if the current position has not come in
         self.planner.navigate_helper(self.curr_geopose, wp_gepose)
+        self.path = self.planner.path.copy()
+
+        # Create search path for object and aruco searching
+        if first_wp.tag_id != 'GPS_only':
+            self.planner.search_helper(wp_gepose)
 
         # Make sure this is how I want to do this
         self.planner.use_planned_path = True
@@ -274,7 +280,10 @@ class AutonomyStateMachine(Node):
 
     def clear_waypoint(self, request: SetBool.Request, response: SetBool.Response):
         # TODO: I think this clears all waypoints so update to reflect that
-        self.planner.clear_path()
+        
+        # Clear all path information too
+        self.clear_path_variables()
+
         if len(self.waypoints) > 0:
             self.waypoints.clear()
             self.get_logger().info('Waypoints removed')
@@ -357,7 +366,8 @@ class AutonomyStateMachine(Node):
                 self.known_objects[label] = [timestamp]
 
     def ar_tag_callback(self, msg: FiducialTransformArray):
-        if len(msg.transforms) == 1: 
+        # TODO If we see both sides of the tag or if we see two tags make sure we still look for our tag
+        if len(msg.transforms) >= 1: 
 
             #For the webcam giving us this data, X is to the right, Y is down, Z is forward. All in meters. we want a positive angle to be counterclockwise from the z-axis
             aruco_x = msg.transforms[0].transform.translation.x
@@ -423,7 +433,11 @@ class AutonomyStateMachine(Node):
         response.message = f"Autonomy state machine is {self.enabled}!"
         return response
     
+
+
     def abort(self, request: AutonomyAbort.Request, response: SetBool.Response): 
+        self.clear_path_variables()
+        
         self.get_logger().info('in abort')
         self.abort_status = request.abort_status
         self.abort_lat = request.lat
@@ -494,6 +508,12 @@ class AutonomyStateMachine(Node):
             self.aruco_toggle_handler.toggle(False)
             self.obj_toggle_handler.toggle(False)
 
+    def clear_path_variables(self):
+        # Path planning clear on Task Complete
+        self.planner.path.clear()
+        self.planner.search_path.clear()
+        self.path.clear()
+
     def reset_state_variables(self):
         # Reset the state machine variables, ONLY if task is complete
         self.correct_aruco_tag_found = False
@@ -502,6 +522,8 @@ class AutonomyStateMachine(Node):
         self.obj_angle = None
         self.prev_tag_id = self.tag_id
         self.dist_to_target = 1000          # Arbitrary High number, will be updated in navigation
+        
+        self.clear_path_variables()
 
     def state_loop(self):
         self.get_logger().info(f"State is: {self.state.value}", throttle_duration_sec=10)
@@ -557,12 +579,9 @@ class AutonomyStateMachine(Node):
                 self.target_latitude = self.waypoints[0].latitude
                 self.target_longitude = self.waypoints[0].longitude
                 self.target_point = GPSCoordinate(self.target_latitude, self.target_longitude, 0)
-
-                # TODO make sure we dont have the final waypoint in the path
-                # TODO make sure this logic works
-                if self.planner.use_planned_path and self.planner.path:
-                    # WHICH point am i getting?
-                    geopose = self.planner.path.popleft()
+            
+                if self.planner.use_planned_path and self.path:
+                    geopose = self.path.popleft()
                     lat = geopose.position.latitude
                     lon = geopose.position.longitude
                     self.path_target_point = GPSCoordinate(lat, lon, 0)
@@ -633,7 +652,11 @@ class AutonomyStateMachine(Node):
                     # If the rover is back at its start heading (360 degrees), move to hex search
                     if abs(self.wrap(self.spin_start_heading - self.spin_target_angle, 0)) < 0.01:
                         self.drive_controller.issue_drive_cmd(0, self.spin_speed)
-                        self.state = State.START_HEX_SEARCH
+                        # self.state = State.START_HEX_SEARCH
+
+                        # Add the search points to the path and return to waypoint navigation
+                        self.path = self.planner.search_path.copy()
+                        self.state = State.START_POINT_NAVIGATION
                     
                     # If the rover has spun self.aruco_spin_step_size, stop the rover and look for tag
                     if self.wrap(self.curr_heading - self.spin_target_angle, 0) > 0:

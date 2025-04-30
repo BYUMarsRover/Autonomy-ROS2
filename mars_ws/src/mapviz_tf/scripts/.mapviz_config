@@ -88,6 +88,13 @@ displays:
       collapsed: true
       topic: /autonomy/waypoint/path
       color: "#430aff"
+  - type: mapviz_plugins/path
+    name: Search Path Planning
+    config:
+      visible: true
+      collapsed: true
+      topic: /autonomy/path/search
+      color: "#ff0000"
   - type: mapviz_plugins/marker
     name: Markers
     config:
@@ -98,7 +105,7 @@ displays:
     name: Pitch Display
     config:
       visible: true
-      collapsed: false
+      collapsed: true
       font: Sans Serif,28,-1,5,50,0,0,0,0,0
       color: "#ff0000"
       topic: /pitch_float
@@ -115,7 +122,7 @@ displays:
     name: Roll Display
     config:
       visible: true
-      collapsed: false
+      collapsed: true
       font: Sans Serif,28,-1,5,50,0,0,0,0,0
       color: "#ff0000"
       topic: /roll_float
