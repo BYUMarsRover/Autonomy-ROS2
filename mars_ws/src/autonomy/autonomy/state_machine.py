@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, HazardArray
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from std_srvs.srv import SetBool
 from std_msgs.msg import String
@@ -77,6 +77,7 @@ class AutonomyStateMachine(Node):
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
         self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10)
         self.create_subscription(ObjectsStamped, '/zed/zed_node/obj_det/objects', self.obj_detect_callback, 10)
+        self.create_subscription(HazardArray, '/hazards', self.hazard_callback, 10)
 
         # Publishers
         self.aruco_pose_pub = self.create_publisher(FiducialData, '/autonomy/aruco_pose', 10)
@@ -410,6 +411,10 @@ class AutonomyStateMachine(Node):
             self.wrong_aruco_tag_found = False
             # self.both_aruco_tags_found = False
 
+    def hazard_callback(self, msg: HazardArray):
+        self.most_recent_hazard = time.time()
+
+
     def enable(self, request: SetBool.Request, response: SetBool.Response):
         self.enabled = request.data
         
@@ -587,6 +592,7 @@ class AutonomyStateMachine(Node):
                     self.path_target_point = GPSCoordinate(lat, lon, 0)
                     self.get_logger().info(f"On next waypoint: lat - {lat}, lon - {lon}")
                     self.drive_controller.issue_path_cmd(lat, lon)
+                    self.waypoint_start_time = time.time()
                     self.state = State.WAYPOINT_NAVIGATION
                 else:
                     self.drive_controller.issue_path_cmd(self.target_latitude, self.target_longitude)
@@ -599,9 +605,15 @@ class AutonomyStateMachine(Node):
                 
                 # UPDATE DIST TO Final TARGET FOR OBJECT/ARUCO DETECTIONS
                 self.dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
-
-                if GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point) < self.path_waypoint_dist_tolerance:
+                time_since_hazard = time.time() - self.most_recent_hazard
+                dist_to_path = GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point)
+                if dist_to_path < self.path_waypoint_dist_tolerance:
                     self.state = State.START_POINT_NAVIGATION
+                elif (time_since_hazard < 2.0) and (dist_to_path < 8.0):        # TODO TUNE THESE PARAMETERS BELOW
+                    self.state = State.START_POINT_NAVIGATION
+                elif (time.time() - self.waypoint_start_time) > 30.0:
+                    self.state = State.START_POINT_NAVIGATION
+
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE
                 elif self.correct_obj_found:
