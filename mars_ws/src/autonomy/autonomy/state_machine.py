@@ -116,7 +116,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('aruco_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that aruco deteciton is enabled
         self.declare_parameter('aruco_alpha_lpf', 0.5)
         self.declare_parameter('spin_step_size', 0.6981)
-        self.declare_parameter('spin_delay_time', 1.2)
+        self.declare_parameter('spin_delay_time', 10.0)     # Spin delay time is the time for the whole spin 
         self.declare_parameter('wrong_aruco_backup_distance', 7.0)
         self.declare_parameter('wrong_aruco_backup_spin_speed', 15.0)
         self.declare_parameter('hex_seach_angle_difference', 50.0)
@@ -630,46 +630,22 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.START_SPIN_SEARCH:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                self.spin_start_heading = self.wrap(self.curr_heading, 0)
-                self.spin_stop = False
-                self.spin_target_angle = self.wrap(self.curr_heading + self.spin_step_size, 0)
-                self.get_logger().info(f"target: {self.spin_target_angle}")
                 self.drive_controller.issue_drive_cmd(0.0, self.spin_speed)
+                self.spin_stop_time = time.time()
                 self.state = State.SPIN_SEARCH
 
             elif self.state == State.SPIN_SEARCH:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
-                msg = String() # For Debugging TODO: remove
-                if self.spin_stop:
-                    msg.data = "aruco spin Stopping"
-                    # If the rover has spun self.spin_step_size and is stopped, wait for self.spin_delay_time seconds to look for a tag
-                    if time.time() - self.spin_stop_time > self.spin_delay_time:
-                        self.spin_stop = False
-                        self.spin_target_angle = self.wrap(self.spin_target_angle + self.spin_step_size, 0)
-                        self.drive_controller.issue_drive_cmd(0.0, self.spin_speed)
-                else:
-                    msg.data = "Here 1"
-                    # If the rover is back at its start heading (360 degrees), move to hex search
-                    if abs(self.wrap(self.spin_start_heading - self.spin_target_angle, 0)) < 0.01:
-                        self.drive_controller.issue_drive_cmd(0, self.spin_speed)
-                        # self.state = State.START_HEX_SEARCH
-
-                        # Add the search points to the path and return to waypoint navigation
-                        self.path = self.planner.search_path.copy()
-                        self.state = State.START_POINT_NAVIGATION
-                    
-                    # If the rover has spun self.aruco_spin_step_size, stop the rover and look for tag
-                    if self.wrap(self.curr_heading - self.spin_target_angle, 0) > 0:
-                        msg.data = "Here 2"
-                        self.spin_stop = True
-                        self.spin_stop_time = time.time()
-                        self.drive_controller.issue_drive_cmd(0, 0)
-                        self.drive_controller.stop()
+                if time.time() - self.spin_stop_time > self.spin_delay_time:
+                     # Add the search points to the path and return to waypoint navigation
+                    self.path = self.planner.search_path.copy()
+                    self.state = State.START_POINT_NAVIGATION
+                
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE
                 elif self.correct_obj_found:
                     self.state = State.OBJECT_NAVIGATE
-                self.debug_pub.publish(msg) # For debugging TODO: Remove
+
 
             elif self.state == State.START_HEX_SEARCH:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE

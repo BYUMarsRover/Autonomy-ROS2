@@ -10,13 +10,13 @@
     navigate_speed: 10.0
     object_speed: 3.0
     aruco_speed: 3.0
-    spin_speed: 20.0
+    spin_speed: 0.5
     object_alpha_lpf: 0.5
     obj_enable_distance: 25.0
     aruco_enable_distance: 30.0
     aruco_alpha_lpf: 0.5
     spin_step_size: 0.6981
-    spin_delay_time: 2.0
+    spin_delay_time: 10.0     # Time in seconds for the rover to spin before moving to search points
     wrong_aruco_backup_distance: 7.0
     wrong_aruco_backup_spin_speed: 15.0
     hex_seach_angle_difference: 50.0
