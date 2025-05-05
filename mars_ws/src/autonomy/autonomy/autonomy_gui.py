@@ -390,30 +390,29 @@ class AutonomyGUI(Node, QWidget):
         req = SetBool.Request()
         req.data = True
         future = self.enable_hazard_detection_client.call_async(req)
-        self.gui_setText('logger_label', 'Enabling Hazard Detection...')
-        self.HazardDetection.setText(f'Hazard Detection: Enabled')
+        self.ros_signal.emit('logger_label', 'Enabling Hazard Detection...')
+        self.ros_signal.emit('HazardDetection', 'Hazard Detection: Enabled')
 
     def disable_hazard_detection(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_hazard_detection_client.call_async(req)
-        self.gui_setText('logger_label', 'Disabling Hazard Detection...')
-        self.HazardDetection.setText(f'Hazard Detection: Disabled')
+        self.ros_signal.emit('logger_label', 'Disabling Hazard Detection...')
+        self.ros_signal.emit('HazardDetection', 'Hazard Detection: Disabled')
 
     def enable_hazard_avoidance(self):
         req = SetBool.Request()
         req.data = True
         future = self.enable_hazard_avoidance_client.call_async(req)
-        self.gui_setText('logger_label', 'Enabling Hazard Avoidance...')
-        self.HazardAvoidance.setText(f'Hazard Avoidance: Enabled')
+        self.ros_signal.emit('logger_label', 'Enabling Hazard Avoidance...')
+        self.ros_signal.emit('HazardAvoidance', 'Hazard Avoidance: Enabled')
 
     def disable_hazard_avoidance(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_hazard_avoidance_client.call_async(req)
-        self.gui_setText('logger_label', 'Disabling Hazard Avoidance...')
-        self.HazardAvoidance.setText(f'Hazard Avoidance: Disabled')
-
+        self.ros_signal.emit('logger_label', 'Disabling Hazard Avoidance...')
+        self.ros_signal.emit('HazardAvoidance', 'Hazard Avoidance: Disabled')
 
 
     def hazard_callback(self, msg):

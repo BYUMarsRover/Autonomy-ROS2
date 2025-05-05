@@ -2,6 +2,7 @@
 """
 Adam Welker     BYU MARS ROVER  MAY 2023
 Braden Meyers   ROS2 Conversion DEC 2024
+Gabe Slade      Hazard Avoidance FEB 2025
 
 autopilot_manager.py -- This class will output linear and angular velocity commands 
 for the drive manager given current vs desired heading, as well as distance to target objective
