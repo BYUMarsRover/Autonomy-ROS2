@@ -42,7 +42,7 @@ class Planner():
         self.search_path_publisher = node.create_publisher(Path, 'path/search', 10)
 
         # TODO FIX THE ORIGIN!!!
-        utm_origin = utm.from_latlon(40.245070, -111.62960)
+        utm_origin = utm.from_latlon(40.2497218, -111.649276)
 
         self.utm_easting_zero = utm_origin[0]
         self.utm_northing_zero = utm_origin[1]
