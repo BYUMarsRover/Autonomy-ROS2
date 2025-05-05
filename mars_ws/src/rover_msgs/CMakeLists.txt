@@ -65,6 +65,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/OrderAutonomyWaypoint.srv"
   "srv/AutonomyWaypointResponse.srv"
   "srv/SetFloat32.srv"
+  "srv/SetFloats.srv"
   "srv/PlanPath.srv"
   DEPENDENCIES std_msgs geometry_msgs nav_msgs sensor_msgs builtin_interfaces # Add packages that above messages depend on
 )

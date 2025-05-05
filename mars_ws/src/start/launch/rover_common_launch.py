@@ -53,11 +53,11 @@ def generate_launch_description():
         #         mobility_dir, 'launch', 'rover_drive_launch.py'))
         # ),
 
-        # GPS
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(
-                odometry_dir, 'launch', 'rover_launch.py'))
-        ),
+        # GPS # LAUNCHED SEPERATELY for MOCK in PRICE
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join(
+        #         odometry_dir, 'launch', 'rover_launch.py'))
+        # ),
 
         # # Dummy publisher for rover state data when running locally
         GroupAction(

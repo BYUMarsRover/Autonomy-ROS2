@@ -147,7 +147,7 @@ class RoverStateSingletonCreator(Node):
             'map',
             rclpy.time.Time())
         except TransformException as ex:
-            self.get_logger().info(
+            self.get_logger().debug(
                 f'Could not transform map to odom: {ex}')
             return
     

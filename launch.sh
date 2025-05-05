@@ -1,5 +1,4 @@
 #!/bin/bash
-# Created by Nelson Durrant, Feb 2025
 #
 # Launches tasks over SSH using the 'rover_runtime' tmux session
 
@@ -61,7 +60,7 @@ if [ $(ssh marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT "tmux list-panes -t r
 then
     printWarning "Multiple panes found in the 'rover_runtime' tmux session"
     echo "Simply entering the current tmux session for cleanup..."
-    ssh -t -X marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
+    ssh -t marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
 
     exit
 fi
@@ -75,7 +74,7 @@ case "$1" in
             tmux split-window -h -t rover_runtime:0.0; \
             tmux select-pane -t rover_runtime:0.1; \
             tmux send-keys -t rover_runtime:0.1 'export ROS_DISCOVERY_SERVER=127.0.0.1:11811' Enter; \
-            tmux send-keys -t rover_runtime:0.1 'ros2 launch start rover_task_autonomy_new_launch.py'" # NO ENTER 
+            tmux send-keys -t rover_runtime:0.1 'ros2 launch start rover_task_autonomy_new_launch.py'"
         ;;
     "servicing")
         printWarning "Not implemented yet"
@@ -93,4 +92,4 @@ case "$1" in
 esac
 
 # Attach to the 'rover_runtime' tmux session
-ssh -t -X marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
+ssh -t marsrover@$ROVER_IP_ADDRESS -p $DOCKER_SSH_PORT 'tmux attach -t rover_runtime'
