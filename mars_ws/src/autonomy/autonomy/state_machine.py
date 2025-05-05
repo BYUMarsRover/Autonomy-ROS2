@@ -169,6 +169,7 @@ class AutonomyStateMachine(Node):
         self.current_point = GPSCoordinate(self.curr_latitude, self.curr_longitude, self.curr_elevation)  
         self.tag_id = TagID.GPS_ONLY
         self.task_just_completed = False
+        self.most_recent_hazard = None
         # Object detection dict
         # self.obj_to_label = {"mallet": "Class ID: 0", "bottle": "Class ID: 1"}
         self.obj_to_label = {"Class ID: 0": 0 ,"Class ID: 1": 1}
@@ -605,7 +606,10 @@ class AutonomyStateMachine(Node):
                 
                 # UPDATE DIST TO Final TARGET FOR OBJECT/ARUCO DETECTIONS
                 self.dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
-                time_since_hazard = time.time() - self.most_recent_hazard
+                if self.most_recent_hazard is not None:
+                    time_since_hazard = time.time() - self.most_recent_hazard
+                else: 
+                    time_since_hazard = 4.0
                 dist_to_path = GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point)
                 if dist_to_path < self.path_waypoint_dist_tolerance:
                     self.state = State.START_POINT_NAVIGATION
