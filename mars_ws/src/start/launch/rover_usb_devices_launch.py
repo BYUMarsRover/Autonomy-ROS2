@@ -78,6 +78,6 @@ def generate_launch_description():
     return LaunchDescription([
         include_mobility,
         include_gps,
-        include_usb_cam
+        # include_usb_cam
         
     ])
