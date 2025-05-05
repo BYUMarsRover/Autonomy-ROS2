@@ -65,8 +65,10 @@ def generate_launch_description():
             output=['screen'],
             parameters=[aurco_config_file],
             remappings=[
-                ('camera/compressed', '/usb_cam/image_raw/compressed'),
-                ('camera_info', '/usb_cam/camera_info'),
+                # ('camera/compressed', '/usb_cam/image_raw/compressed'),
+                # ('camera_info', '/usb_cam/camera_info'),
+                ('head_camera/image_raw', "/zed/zed_node/left_raw_gray/image_raw_gray"),
+                ("head_camera/camera_info", "/zed/zed_node/left_raw/camera_info"),
                 ('/fiducial_transforms', 'aruco_detect_logi/fiducial_transforms'),
                 ('/fiducial_vertices', 'aruco_detect_logi/fiducial_vertices'),
                 ('/fiducial_data', 'aruco_detect_logi/fiducial_data'),
