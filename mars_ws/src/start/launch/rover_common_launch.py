@@ -30,10 +30,11 @@ def generate_launch_description():
 
         # NOTE: Comment not pushed because it is a temporary fix
         # Peripherals
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join( 
-                peripherals_dir, 'launch', 'peripherals.launch.py'))
-        ),
+        # Moved to USB devices launch file
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join( 
+        #         peripherals_dir, 'launch', 'peripherals.launch.py'))
+        # ),
 
         # Heartbeat
         # IncludeLaunchDescription(
