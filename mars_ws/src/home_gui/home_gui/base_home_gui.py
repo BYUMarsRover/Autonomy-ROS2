@@ -154,7 +154,7 @@ class HomeGuiUI(Node, QWidget):
 
     def camera_scripts_init(self):
         cam_scripts_path = os.path.expanduser(
-            '~') + '/BYU-Mars-Rover/scripts/camera/'
+            '~') + '/scripts/camera/'
 
         self.launch_camera_script = cam_scripts_path + "base-launch-camera-window.sh -c {} -b {} -o {}"
 
