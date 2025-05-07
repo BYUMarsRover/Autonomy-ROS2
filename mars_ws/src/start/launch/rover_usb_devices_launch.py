@@ -16,6 +16,7 @@ import os
 def generate_launch_description():
     # Start USB devices launch files specific to the Autonomy Task on the rover
     cam_config_path = os.path.join(get_package_share_directory('start'), 'config', 'cam_config', 'head_cam_params.yaml')
+    peripherals_dir = get_package_share_directory('peripherals')
 
     include_mobility = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
@@ -73,11 +74,15 @@ def generate_launch_description():
             ]
         )
 
+    include_nano = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join( 
+                peripherals_dir, 'launch', 'peripherals.launch.py'))
+        )
 
 
     return LaunchDescription([
         include_mobility,
         include_gps,
-        include_usb_cam
-        
+        include_usb_cam,
+        include_nano,
     ])
