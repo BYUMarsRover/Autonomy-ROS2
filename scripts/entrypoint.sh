@@ -29,7 +29,6 @@ sleep 3
 tmux send-keys -t rover_runtime:0.0 "export ROS_DISCOVERY_SERVER=127.0.0.1:11811" Enter
 tmux send-keys -t rover_runtime:0.0 "ros2 launch start rover_usb_devices_launch.py"
 
-fi
 
 # Start the SSH daemon in the Docker container
 sudo /usr/sbin/sshd -D
