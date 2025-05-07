@@ -278,10 +278,12 @@ class AutonomyGUI(Node, QWidget):
             self.nav_state = 'TELEOPERATION'
         elif nav_state == 2:
             self.nav_state = 'ARRIVAL'
-            if (self.selected_waypoint_to_send is not None) and (self.waypoints[self.selected_waypoint_to_send -1][4] == 'ACTIVE'):
-                self.prev_lat, self.prev_lon = self.waypoints[self.selected_waypoint_to_send - 1][2:4]
-                self.waypoints[self.selected_waypoint_to_send -1][4] = 'COMPLETE'
-                self.update_waypoint_list()
+            if (self.selected_waypoint_to_send is not None):
+                 if self.selected_waypoint_to_send <= len(self.waypoints):
+                    if (self.waypoints[self.selected_waypoint_to_send -1][4] == 'ACTIVE'):
+                        self.prev_lat, self.prev_lon = self.waypoints[self.selected_waypoint_to_send - 1][2:4]
+                        self.waypoints[self.selected_waypoint_to_send -1][4] = 'COMPLETE'
+                        self.update_waypoint_list()
         else:
             self.nav_state = 'UNKNOWN'
         # Update GUI fields
