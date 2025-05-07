@@ -190,6 +190,7 @@ class AutonomyGUI(Node, QWidget):
         self.rover_state_singleton_timepoint = None
         self.aruco_status_timepoint = None
         self.rover_gps_status_timepoint = None
+        self.hazard_timepoint = None
 
         ################# Mapviz Communication Setup #################
 
@@ -229,20 +230,28 @@ class AutonomyGUI(Node, QWidget):
                 self.clear_rover_state_singleton_info()
 
         if self.aruco_status_timepoint is not None:
-            if time.time() - self.aruco_status_timepoint > 3.0:
+            if time.time() - self.aruco_status_timepoint > 3.0: #seconds
                 #Set status to grey
                 self.ros_signal.emit('ArucoSystemStatus', 'font-size: 12pt; color:rgb(150, 150, 150); font-weight: bold;', 'setStyleSheet')
 
         if self.rover_gps_status_timepoint is not None:
-            if time.time() - self.rover_gps_status_timepoint > 8.0:
+            if time.time() - self.rover_gps_status_timepoint > 2.0: #seconds
                 #Set status to grey
                 self.ros_signal.emit('RoverGPSStatus', 'font-size: 12pt; color:rgb(150, 150, 150); font-weight: bold;', 'setStyleSheet')
+
+        if self.hazard_timepoint is not None:
+            if time.time() - self.hazard_timepoint > 4.0:
+                self.clear_hazard_info()
     
     
     def clear_rover_state_singleton_info(self):
         self.ros_signal.emit('RoverStateMapYaw', 'Map Yaw: ...', 'setText')
         self.ros_signal.emit('RoverStateLat','Latitude: ...', 'setText')
         self.ros_signal.emit('RoverStateLon', 'Longitude: ...', 'setText')
+        return
+    
+    def clear_hazard_info(self):
+        self.ros_signal.emit('HazardsFound', 'No hazards found', 'setText')
         return
     
     def load_waypoints(self):
@@ -469,7 +478,8 @@ class AutonomyGUI(Node, QWidget):
 
 
     def hazard_callback(self, msg):
-        # Clear the string
+        # Clear the string and reset timepoint
+        self.hazard_timepoint = time.time()
         hazard_text = ''
 
         for hazard in msg.hazards:
