@@ -26,7 +26,7 @@ echo "4) All of the above"
 read -p "Enter your choice (1/2/3/4): " choice
 
 # Define the target IP address of the rover and the port for the Docker container
-ROVER_IP_ADDRESS="192.168.1.120"  # The rover's network address
+ROVER_IP_ADDRESS="192.168.1.121"  # The rover's network address
 DOCKER_SSH_PORT="2233"  # The SSH port used by the Docker container on the rover
 
 DOCKER_PWD="marsrover"  # The password for the Docker container

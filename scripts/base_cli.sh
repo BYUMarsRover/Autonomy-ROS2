@@ -1,5 +1,5 @@
 
-IP_ADDRESS="192.168.1.120"  
+IP_ADDRESS="192.168.1.121"  
 export FASTRTPS_DEFAULT_PROFILES_FILE="/home/marsrover/mars_ws/super_base_client_configuration_file.xml"
 
 # Set up the ROS 2 CLI tools with Fast DDS

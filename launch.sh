@@ -17,7 +17,7 @@ function printError {
   echo -e "\033[0m\033[31m[ERROR] $1\033[0m"
 }
 
-ROVER_IP_ADDRESS=192.168.1.120
+ROVER_IP_ADDRESS=192.168.1.121
 DOCKER_SSH_PORT=2233
 
 # Check for an SSH connection to the rover's Docker container
