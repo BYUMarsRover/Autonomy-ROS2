@@ -545,7 +545,7 @@ class AutonomyGUI(Node, QWidget):
     def preview_waypoint(self):
         # Find the x and y to be sent to mapviz
         if self.latitude_input.text() == '' or self.longitude_input.text() == '':
-            self.ros_signal.emit('logger_label', 'Please enter a valid latitude and longitude')
+            self.ros_signal.emit('logger_label', 'Please enter a valid latitude and longitude', 'setText')
             return
         
         lat = float(self.latitude_input.text())
@@ -612,7 +612,7 @@ class AutonomyGUI(Node, QWidget):
                         self.utm_northing_zero)
             )
         
-        self.ros_signal.emit('logger_label', 'All Waypoints Sent for Preview')
+        self.ros_signal.emit('logger_label', 'All Waypoints Sent for Preview', 'setText')
 
     # This adds the waypoint to the waypoint list that is held in the autonomy gui
     def add_waypoint(self):
