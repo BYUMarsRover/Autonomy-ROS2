@@ -70,6 +70,7 @@ class AutonomyGUI(Node, QWidget):
 
         # Mapviz Buttons
         self.PreviewMapvizButton.clicked.connect(self.preview_waypoint)
+        self.PreviewAllMapvizButton.clicked.connect(self.preview_all_waypoints)
         # self.PlanOrderMapvizButton.clicked.connect(self.plan_order_mapviz_service_call)
         self.ClearMapvizButton.clicked.connect(self.clear_mapviz)
 
@@ -124,7 +125,6 @@ class AutonomyGUI(Node, QWidget):
         self.selected_waypoint_for_path_planning = None
         self.prev_lat = 0
         self.prev_lon = 0
-        self.load_waypoints()
 
 
         # This should return a list like this: [lat, lon] and can be used for the plan path to selected waypoint
@@ -189,7 +189,7 @@ class AutonomyGUI(Node, QWidget):
 
         # Retrieve Mapviz Location
         self.declare_parameter('MAPVIZ_LOCATION', 'hanksville')
-        mapviz_location = self.get_parameter('MAPVIZ_LOCATION').value
+        self.mapviz_location = self.get_parameter('MAPVIZ_LOCATION').value
 
         # Use Location to get the lat and lon corresponding to the mapviz (0, 0) coordinate
         mapviz_origins_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_origins.yaml')
@@ -197,7 +197,7 @@ class AutonomyGUI(Node, QWidget):
         with open(mapviz_origins_path, 'r') as file:
             mapviz_origins = yaml.safe_load(file)
         for location in mapviz_origins: # iterate over dictionaries to find the lat/lon of the location
-            if location['name'] == mapviz_location:
+            if location['name'] == self.mapviz_location:
                 self.origin_latlon = np.array([location['latitude'], location['longitude']])
                 break
         # Get mapviz origin in UTM coordinates
@@ -211,6 +211,9 @@ class AutonomyGUI(Node, QWidget):
         self.current_previewed_waypoints = Path() #NOTE: used by mapviz
 
         self.troubleshooting_timer = self.create_timer(5.0, self.troubleshooting_timer_callback)
+
+        # Load Waypoints after mapviz location is set
+        self.load_waypoints()
 
     def troubleshooting_timer_callback(self):
         self.get_logger().info('ROS Side is still running')
@@ -230,7 +233,11 @@ class AutonomyGUI(Node, QWidget):
     
     def load_waypoints(self):
         waypoint_data_path = os.path.expanduser('~') + '/mars_ws/src/autonomy/params/waypoints.yaml'
-        # Open mapviz origins file
+        if self.mapviz_location == 'byu':
+            waypoint_data_path = os.path.expanduser('~') + '/mars_ws/src/autonomy/params/waypoints_byu.yaml'
+        elif self.mapviz_location == 'gravel_pit':
+            waypoint_data_path = os.path.expanduser('~') + '/mars_ws/src/autonomy/params/waypoints_gravel_pit.yaml'
+        # Open waypoints yaml file
         with open(waypoint_data_path, 'r') as file:
             waypoint_data = yaml.safe_load(file)
         i = 1
@@ -495,6 +502,10 @@ class AutonomyGUI(Node, QWidget):
     # This sends the waypoint to mapviz for preview
     def preview_waypoint(self):
         # Find the x and y to be sent to mapviz
+        if self.latitude_input.text() == '' or self.longitude_input.text() == '':
+            self.ros_signal.emit('logger_label', 'Please enter a valid latitude and longitude')
+            return
+        
         lat = float(self.latitude_input.text())
         lon = float(self.longitude_input.text())
 
@@ -525,6 +536,41 @@ class AutonomyGUI(Node, QWidget):
             )
         
         self.ros_signal.emit('logger_label', 'Waypoint Sent for Preview')
+
+    def preview_all_waypoints(self):
+
+        self.current_previewed_waypoints = Path()
+        
+        current_time = self.get_clock().now().to_msg()
+        self.current_previewed_waypoints.header = Header()
+        self.current_previewed_waypoints.header.stamp = current_time
+        self.current_previewed_waypoints.header.frame_id = "map"
+
+
+        for waypoint in self.waypoints:
+            pose_stamped = PoseStamped()
+            pose_stamped.header.stamp = self.get_clock().now().to_msg()
+            pose_stamped.header.frame_id = "map"
+
+            pose_stamped.pose.position.z = 0.0
+
+            pose_stamped.pose.orientation.x = 0.0
+            pose_stamped.pose.orientation.y = 0.0
+            pose_stamped.pose.orientation.z = 0.0
+            pose_stamped.pose.orientation.w = 1.0
+
+            self.get_logger().info(f'{waypoint[2]}, {waypoint[3]}')
+            pose_stamped.pose.position.x = float(waypoint[2])
+            pose_stamped.pose.position.y = float(waypoint[3])
+            self.current_previewed_waypoints.poses.append(pose_stamped)
+
+        self.path_publisher.publish(
+            path_to_utm(self.current_previewed_waypoints, 
+                        self.utm_easting_zero, 
+                        self.utm_northing_zero)
+            )
+        
+        self.ros_signal.emit('logger_label', 'All Waypoints Sent for Preview')
 
     # This adds the waypoint to the waypoint list that is held in the autonomy gui
     def add_waypoint(self):
