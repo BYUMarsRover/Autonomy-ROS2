@@ -444,7 +444,7 @@ class CameraHandler(Node):
             self.channel_dict[str(i)] = False
 
     def camera_scripts_init(self):
-        cam_scripts_path = os.path.expanduser('~') + '/BYU-Mars-Rover/scripts/camera/'
+        cam_scripts_path = os.path.expanduser('~') + '/scripts/camera/'
         self.launch_camera_script = cam_scripts_path + "base-launch-camera-window.sh -c {} -b {} -o {}"
 
     def get_available_channel(self):

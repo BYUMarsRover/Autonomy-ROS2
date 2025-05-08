@@ -35,7 +35,7 @@ class RoverCameraControl(Node):
 
     def camera_scripts_init(self):
         self.cam_scripts_path = os.path.expanduser(
-            '~') + '/BYU-Mars-Rover/scripts/camera/'
+            '~') + 'scripts/camera/'
 
         usb_hub_cameras_script_args = ""
         zed_camera_script_args = " -c 1 -d ZED_front -q ZED-left"

@@ -152,3 +152,16 @@ USER $NAME
 # Needed for the hazard avoidance node
 RUN pip3 install open3d
 RUN pip3 install pcl
+
+# Install gstreamer - Michael Crandall May 2025
+# Needed for streaming camera feed from the rover
+USER root
+RUN apt-get update && apt-get install -y \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    && apt-get clean
+USER $NAME
