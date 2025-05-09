@@ -106,7 +106,8 @@ def generate_launch_description():
                 name='state_machine',
                 namespace='autonomy',
                 output='screen',
-                parameters=[autonomy_params_file]
+                parameters=[autonomy_params_file,
+                            {'map': LaunchConfiguration('MAPVIZ_LOCATION')}]
             ),
             # Node( # Launch hazard Detection
             #     package='hazard_detection',

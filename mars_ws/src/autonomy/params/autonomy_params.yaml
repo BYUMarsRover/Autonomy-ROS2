@@ -29,6 +29,10 @@
     spiral_inital_radius: 4.0  # Initial Radius for first spiral point (Meters)
     spiral_growth_factor: 1.0  # Growth between each point  (Meters)
     spiral_step_size: 45.0    # Spiral Angle step size (degrees)
+    roll_cost: 1.0 # How much roll affects the cost of the computed AStar path
+    # The below distance in meters creates angle with two 1 meter AStar steps on the xy plane
+    # For example, if you set the distance to 0.7, the maximum traversable angle is tan^-1(1.4/2.0) = 35 degrees
+    roll_limit: 1.4 # The maximum allowable roll difference in the AStar planner to be considered traversable
 
 
 fiducial_data:

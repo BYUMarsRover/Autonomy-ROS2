@@ -18,6 +18,12 @@ from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from collections import deque
 
+## Origin getting TODO fix later
+import os
+import yaml
+from ament_index_python.packages import get_package_share_directory
+import numpy as np
+
 class Planner():
     def __init__(self, node):
         self.node = node
@@ -28,6 +34,8 @@ class Planner():
         node.declare_parameter("elevation_cost", 0.1)
         node.declare_parameter("waypoint_distance", 15.0)
         node.declare_parameter("elevation_limit", 0.7)
+        node.declare_parameter("roll_cost", 1.0)
+        node.declare_parameter("roll_limit", 1.4)
 
         # Search Path Parameters
         # TAKE INTO ACCOUNT THE FACT THERE IS A THRESHOLD ON COMPLETING ON OF THE WAYPOINTS
@@ -42,7 +50,21 @@ class Planner():
         self.search_path_publisher = node.create_publisher(Path, 'path/search', 10)
 
         # TODO FIX THE ORIGIN!!!
-        utm_origin = utm.from_latlon(40.245070, -111.62960)
+        # Find origin
+        node.declare_parameter('map', 'hanksville') # Declare Mapviz Location Parameter (passed in from launch file)
+        mapviz_location = node.get_parameter('map').value # Extract location
+        mapviz_origins_path = os.path.join(get_package_share_directory('mapviz_tf'), 'params', 'mapviz_origins.yaml')
+        # Open mapviz origins file
+        with open(mapviz_origins_path, 'r') as file:
+            mapviz_origins = yaml.safe_load(file)
+        for location in mapviz_origins: # iterate over dictionaries to find the lat/lon of the location
+            if location['name'] == mapviz_location:
+                lat = location['latitude']
+                lon = location['longitude']
+                node.get_logger().info(f"Mapviz location: {mapviz_location} ({lat}, {lon})")
+                break
+
+        utm_origin = utm.from_latlon(lat, lon)
 
         self.utm_easting_zero = utm_origin[0]
         self.utm_northing_zero = utm_origin[1]
@@ -56,6 +78,7 @@ class Planner():
         self.search_path = deque() # TODO consider making this a queue?? or deque
 
         self.use_planned_path = False
+
 
 
     def clear_path(self):
@@ -81,7 +104,9 @@ class Planner():
         if self.use_terrain_path_planner:
             cost = self.node.get_parameter("elevation_cost").value
             limit = self.node.get_parameter("elevation_limit").value
-            path = terrainPathPlanner(start_wp, dest_wp, distance, cost, limit)
+            roll_cost = self.node.get_parameter("roll_cost").value
+            roll_limit = self.node.get_parameter("roll_limit").value
+            path = terrainPathPlanner(start_wp, dest_wp, distance, cost, limit, roll_cost, roll_limit)
         
         if path is None:
             path = basicPathPlanner(start_wp, dest_wp, distance)

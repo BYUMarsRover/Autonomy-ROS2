@@ -18,12 +18,14 @@ class TerrainGraph(AStar):
     :date: Apr 2025
     """
 
-    def __init__(self, elevation_data, transform, elev_cost, elev_limit):
+    def __init__(self, elevation_data, transform, elev_cost, elev_limit, roll_cost, roll_limit):
         self.elevation_data = elevation_data
         self.transform = transform
         self.rows, self.cols = elevation_data.shape
         self.elev_cost = elev_cost
         self.elev_limit = elev_limit
+        self.roll_cost = roll_cost
+        self.roll_limit = roll_limit
 
     def heuristic_cost_estimate(self, n1, n2):
         # Simple Euclidean distance in pixel space
@@ -49,17 +51,55 @@ class TerrainGraph(AStar):
         return neighbors_list
 
     def distance_between(self, n1, n2):
+        # Simple Euclidean distance in pixel space
         d = math.sqrt((n1[0] - n2[0]) ** 2 + (n1[1] - n2[1]) ** 2)
 
+        # Add cost based on elevation change
         elevation1 = self.elevation_data[n1]
         elevation2 = self.elevation_data[n2]
-        rise = elevation2 - elevation1
-        slope = rise / (d + 1e-6)  # avoid division by zero
+        elevation_diff = abs(elevation1 - elevation2)
 
-        if abs(rise) > self.elev_limit:
+        # Find the left and right neighbors (based on where we are moving)
+        if n1[0] == n2[0]:
+            # Moving horizontally
+            left_neighbor = (n1[0], n1[1] - 1)
+            right_neighbor = (n1[0], n1[1] + 1)
+        elif n1[1] == n2[1]:
+            # Moving vertically
+            left_neighbor = (n1[0] - 1, n1[1])
+            right_neighbor = (n1[0] + 1, n1[1])
+        else:
+            # Moving diagonally
+            if n1[0] < n2[0]:
+                left_neighbor = (n1[0], n1[1] - 1)
+                right_neighbor = (n1[0] + 1, n1[1])
+            else:
+                left_neighbor = (n1[0] + 1, n1[1])
+                right_neighbor = (n1[0], n1[1] - 1)
+
+        roll_diff = 0
+
+        # Check if the left and right neighbors are valid
+        if (
+            0 <= left_neighbor[0] < self.rows
+            and 0 <= left_neighbor[1] < self.cols
+            and 0 <= right_neighbor[0] < self.rows
+            and 0 <= right_neighbor[1] < self.cols
+        ):
+            # Calculate the elevation difference between the left and right neighbors
+            left_elevation = self.elevation_data[left_neighbor]
+            right_elevation = self.elevation_data[right_neighbor]
+            roll_diff = abs(left_elevation - right_elevation)
+            
+        if elevation_diff > self.elev_limit:
+            # If it's too steep, report an infinite cost
+            return float("inf")
+        
+        if roll_diff > self.roll_limit:
+            # If the roll is too steep, report an infinite cost
             return float("inf")
 
-        cost = d * (1 + (slope ** 3) * self.elev_cost)
+        cost = d + (elevation_diff ** 3) * self.elev_cost + roll_diff * self.roll_cost
 
         return cost
 
@@ -121,7 +161,7 @@ def downsample_points(num_points, des_dist):
     return sorted(list(selected_indices_set))
 
 
-def terrainPathPlanner(start_geopose, end_geopose, wp_dist, elev_cost, elev_limit):
+def terrainPathPlanner(start_geopose, end_geopose, wp_dist, elev_cost, elev_limit, roll_cost, roll_limit):
     """
     Generate intermediary waypoints between two GPS coordinates with terrain consideration
 
@@ -168,7 +208,7 @@ def terrainPathPlanner(start_geopose, end_geopose, wp_dist, elev_cost, elev_limi
         utm_zone = start_utm_zone
 
         # Initialize and run A*
-        terrain_graph = TerrainGraph(elevation_data, transform, elev_cost, elev_limit)
+        terrain_graph = TerrainGraph(elevation_data, transform, elev_cost, elev_limit, roll_cost, roll_limit)
         path_pixels = terrain_graph.astar(start_pixel, end_pixel)
         if not path_pixels:
             raise Exception("No viable path found by terrain-based AStar planner")
