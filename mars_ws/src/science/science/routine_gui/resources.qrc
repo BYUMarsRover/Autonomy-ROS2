@@ -1,0 +1,14 @@
+<RCC>
+  <qresource prefix="images">
+    <file>cache_body.svg</file>
+    <file>cache_door.svg</file>
+    <file>drill_bit.svg</file>
+    <file>drill_body.svg</file>
+    <file>drill_head_1.svg</file>
+    <file>drill_head_2.svg</file>
+    <file>drill_head_3.svg</file>
+    <file>linear_actuator_arm.svg</file>
+    <file>probe_head.svg</file>
+    <file>linear_actuator_body.svg</file>
+  </qresource>
+</RCC>
