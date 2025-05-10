@@ -99,7 +99,7 @@ class TerrainGraph(AStar):
             # If the roll is too steep, report an infinite cost
             return float("inf")
 
-        cost = d + (elevation_diff ** 3) * self.elev_cost + roll_diff * self.roll_cost
+        cost = d * (1 + (elevation_diff ** 3) * self.elev_cost + roll_diff * self.roll_cost)
 
         return cost
 
@@ -138,6 +138,9 @@ def downsample_points(num_points, des_dist):
     Downsamples points such that the points are approximately evenly spaced, with the spacing being
     less than or equal to the desired distance (assumes points are fairly evenly spaced).
     """
+
+    # TODO We should probably not just select points from the path but also make sure we are not getting
+    # outliers
 
     path_length = num_points - 1
 

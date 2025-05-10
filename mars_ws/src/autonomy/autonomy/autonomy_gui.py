@@ -250,10 +250,10 @@ class AutonomyGUI(Node, QWidget):
     
     def load_waypoints(self):
         waypoint_data_path = os.path.expanduser('~') + '/mars_ws/src/autonomy/params/waypoints.yaml'
-        if self.mapviz_location == 'byu':
-            waypoint_data_path = os.path.expanduser('~') + '/mars_ws/src/autonomy/params/waypoints_byu.yaml'
-        elif self.mapviz_location == 'gravel_pit':
-            waypoint_data_path = os.path.expanduser('~') + '/mars_ws/src/autonomy/params/waypoints_gravel_pit.yaml'
+
+        waypoint_file_list = ['byu', 'gravel_pit', 'slate']
+        if self.mapviz_location in waypoint_file_list:
+            waypoint_data_path = os.path.expanduser('~') + '/mars_ws/src/autonomy/params/waypoints_' + self.mapviz_location + '.yaml'
         # Open waypoints yaml file
         with open(waypoint_data_path, 'r') as file:
             waypoint_data = yaml.safe_load(file)
