@@ -38,4 +38,9 @@
   longitude: -110.352047
   altitude: 1292.0
   heading: 0.0
+- name: slate
+  latitude: 40.2229
+  longitude: -111.62762
+  altitude: 1376.0
+  heading: 0.0
 
