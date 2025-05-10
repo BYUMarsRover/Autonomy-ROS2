@@ -205,6 +205,10 @@ class science_GUI(Node):
 
         self.pub_get_auger_position = self.create_publisher(Empty, '/science_auger_position', 1)
 
+        # Kill Switch
+        self.pub_kill_switch = self.create_publisher(Empty, "/science_emergency_stop", 10)
+        self.qt.pushButton_kill_switch.clicked.connect(lambda: self.pub_kill_switch.publish(Empty()))
+
         self.signals.sensor_signal.connect(self.update_sensor_values)
         self.signals.auger_position.connect(self.update_current_tool)
         self.signals.sensor_save_signal.connect(self.pub_save_sensor.publish)
