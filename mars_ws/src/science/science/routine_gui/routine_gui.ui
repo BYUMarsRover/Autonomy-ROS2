@@ -42,6 +42,9 @@
           <height>491</height>
          </rect>
         </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
@@ -114,7 +117,7 @@
          <rect>
           <x>20</x>
           <y>40</y>
-          <width>81</width>
+          <width>111</width>
           <height>561</height>
          </rect>
         </property>
@@ -142,7 +145,7 @@
           <rect>
            <x>1</x>
            <y>10</y>
-           <width>51</width>
+           <width>101</width>
            <height>551</height>
           </rect>
          </property>
@@ -213,55 +216,56 @@
            <string/>
           </property>
          </widget>
+         <widget class="QFrame" name="primary_cache_frame">
+          <property name="geometry">
+           <rect>
+            <x>30</x>
+            <y>330</y>
+            <width>71</width>
+            <height>51</height>
+           </rect>
+          </property>
+          <widget class="QLabel" name="primary_door">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>26</y>
+             <width>31</width>
+             <height>20</height>
+            </rect>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">image: url(:/images/cache_door.svg);</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+          <widget class="QLabel" name="primary_body">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>30</width>
+             <height>41</height>
+            </rect>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">image: url(:/images/cache_body.svg);</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </widget>
          <zorder>drill_bit</zorder>
          <zorder>drill_arm</zorder>
          <zorder>drill_body</zorder>
          <zorder>drill_head</zorder>
+         <zorder>primary_cache_frame</zorder>
         </widget>
         <zorder>drill_arm_group</zorder>
         <zorder>actuator_body_drill</zorder>
-       </widget>
-       <widget class="QFrame" name="primary_cache_frame">
-        <property name="geometry">
-         <rect>
-          <x>50</x>
-          <y>380</y>
-          <width>71</width>
-          <height>51</height>
-         </rect>
-        </property>
-        <widget class="QLabel" name="primary_door">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>26</y>
-           <width>31</width>
-           <height>20</height>
-          </rect>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">image: url(:/images/cache_door.svg);</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-        <widget class="QLabel" name="primary_body">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>31</width>
-           <height>41</height>
-          </rect>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">image: url(:/images/cache_body.svg);</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
        </widget>
        <widget class="Line" name="line">
         <property name="geometry">
@@ -327,7 +331,6 @@
        <zorder>line</zorder>
        <zorder>probe_frame</zorder>
        <zorder>drill_frame</zorder>
-       <zorder>primary_cache_frame</zorder>
        <zorder>secondary_frame</zorder>
       </widget>
      </item>
@@ -336,7 +339,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -547,21 +550,21 @@ background-color: rgb(249, 240, 107);</string>
           <item>
            <layout class="QGridLayout" name="gridLayout_2">
             <item row="0" column="1">
-             <widget class="QPushButton" name="pushButton_9">
+             <widget class="QPushButton" name="probe_forward">
               <property name="text">
                <string>ADVANCE</string>
               </property>
              </widget>
             </item>
             <item row="0" column="2">
-             <widget class="QPushButton" name="pushButton_10">
+             <widget class="QPushButton" name="probe_backward">
               <property name="text">
                <string>RETRACT</string>
               </property>
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QPushButton" name="pushButton_12">
+             <widget class="QPushButton" name="auger_forward">
               <property name="text">
                <string>ADVANCE</string>
               </property>
@@ -596,7 +599,7 @@ background-color: rgb(249, 240, 107);</string>
              </widget>
             </item>
             <item row="1" column="2">
-             <widget class="QPushButton" name="pushButton_11">
+             <widget class="QPushButton" name="auger_backward">
               <property name="text">
                <string>RETRACT</string>
               </property>
@@ -610,42 +613,42 @@ background-color: rgb(249, 240, 107);</string>
              </widget>
             </item>
             <item row="2" column="1">
-             <widget class="QPushButton" name="pushButton_14">
+             <widget class="QPushButton" name="primary_forward">
               <property name="text">
                <string>OPEN</string>
               </property>
              </widget>
             </item>
             <item row="3" column="1">
-             <widget class="QPushButton" name="pushButton_16">
+             <widget class="QPushButton" name="secondary_forward">
               <property name="text">
-               <string>ENGAGE</string>
+               <string>ADVANCE</string>
               </property>
              </widget>
             </item>
             <item row="4" column="1">
-             <widget class="QPushButton" name="pushButton_18">
+             <widget class="QPushButton" name="drill_forward">
               <property name="text">
                <string>FORWARD</string>
               </property>
              </widget>
             </item>
             <item row="2" column="2">
-             <widget class="QPushButton" name="pushButton_13">
+             <widget class="QPushButton" name="primary_backward">
               <property name="text">
                <string>CLOSE</string>
               </property>
              </widget>
             </item>
             <item row="3" column="2">
-             <widget class="QPushButton" name="pushButton_15">
+             <widget class="QPushButton" name="secondary_backward">
               <property name="text">
                <string>RETRACT</string>
               </property>
              </widget>
             </item>
             <item row="4" column="2">
-             <widget class="QPushButton" name="pushButton_17">
+             <widget class="QPushButton" name="drill_backward">
               <property name="text">
                <string>REVERSE</string>
               </property>
@@ -653,10 +656,28 @@ background-color: rgb(249, 240, 107);</string>
             </item>
            </layout>
           </item>
+          <item>
+           <widget class="Line" name="line_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="stop_all_button">
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(224, 27, 36);
+color: rgb(255, 255, 255);</string>
+            </property>
+            <property name="text">
+             <string>STOP ALL</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
-       <item row="2" column="0">
+       <item row="3" column="0">
         <widget class="QGroupBox" name="groupBox_4">
          <property name="title">
           <string>Options</string>
@@ -665,14 +686,14 @@ background-color: rgb(249, 240, 107);</string>
           <item>
            <widget class="QCheckBox" name="checkBox">
             <property name="text">
-             <string>Disable Science XBOX Controller</string>
+             <string>Disable Science XBOX Controller - In development</string>
             </property>
            </widget>
           </item>
          </layout>
         </widget>
        </item>
-       <item row="1" column="0">
+       <item row="2" column="0">
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -691,9 +712,9 @@ background-color: rgb(249, 240, 107);</string>
       <attribute name="title">
        <string>Data</string>
       </attribute>
-      <layout class="QHBoxLayout" name="horizontalLayout_6">
+      <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="QTableWidget" name="tableWidget">
+        <widget class="QTableWidget" name="actuator_state_table">
          <attribute name="horizontalHeaderCascadingSectionResizes">
           <bool>true</bool>
          </attribute>
@@ -727,12 +748,17 @@ background-color: rgb(249, 240, 107);</string>
          </row>
          <row>
           <property name="text">
-           <string>Primary Cache</string>
+           <string>Primary Cache Door</string>
           </property>
          </row>
          <row>
           <property name="text">
            <string>Secondary Cache</string>
+          </property>
+         </row>
+         <row>
+          <property name="text">
+           <string>Secondary Cache Door</string>
           </property>
          </row>
          <row>
@@ -755,6 +781,43 @@ background-color: rgb(249, 240, 107);</string>
            <string>Reserved</string>
           </property>
          </column>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_7">
+         <property name="title">
+          <string>Options</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="passive_rate_lineEdit">
+            <property name="text">
+             <string>1000</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Passive Poll Rate (ms)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>Active Poll Rate (ms)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="active_rate_lineEdit">
+            <property name="text">
+             <string>100</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>

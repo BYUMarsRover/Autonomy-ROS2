@@ -135,6 +135,7 @@ class science_GUI(Node):
         self.qt.actionLaunch_Function_Library.triggered.connect(lambda: self.launch_gui("science_debug"))
         self.qt.actionLaunch_RX_TX_Monitor.triggered.connect(lambda: self.launch_gui("science_rxtx"))
         self.qt.actionLaunch_Response_Parse.triggered.connect(lambda: self.launch_gui("science_response"))
+        self.qt.actionLaunch_Actuator_Command.triggered.connect(lambda: self.launch_gui("science_routine"))
 
         # Begin sensor queries
         self.qt.actionToggle_Sensor_Query.triggered.connect(self.toggle_sensor_queries)

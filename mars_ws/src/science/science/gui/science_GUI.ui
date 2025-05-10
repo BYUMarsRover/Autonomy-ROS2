@@ -758,6 +758,7 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionLaunch_Function_Library"/>
     <addaction name="actionLaunch_RX_TX_Monitor"/>
     <addaction name="actionLaunch_Response_Parse"/>
+    <addaction name="actionLaunch_Actuator_Command"/>
    </widget>
    <widget class="QMenu" name="menuAutomated_Queries">
     <property name="title">
@@ -787,6 +788,11 @@ p, li { white-space: pre-wrap; }
   <action name="actionToggle_Sensor_Query">
    <property name="text">
     <string>Begin Sensor Queries</string>
+   </property>
+  </action>
+  <action name="actionLaunch_Actuator_Command">
+   <property name="text">
+    <string>Launch Actuator Command</string>
    </property>
   </action>
  </widget>

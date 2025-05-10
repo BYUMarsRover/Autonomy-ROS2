@@ -49,6 +49,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HeartbeatStatusRover.msg"
   "msg/HeartbeatStatusBase.msg"
   "msg/ScienceActuatorControl.msg"
+  "msg/ScienceActuatorState.msg"
   "msg/ScienceSaveNotes.msg"
   "msg/ScienceSaveSecondaryCache.msg"
   "msg/ScienceSaveSensor.msg"
