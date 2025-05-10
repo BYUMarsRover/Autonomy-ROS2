@@ -30,7 +30,7 @@ from geometry_msgs.msg import PoseStamped, Pose, Point
 from zed_msgs.msg import ObjectsStamped
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloats, SetFloat32, OrderAutonomyWaypoint, PlanPath
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors, HazardArray
-from ublox_read_2.msg import SurveyStatus, RelPosFlags
+from ublox_read_2.msg import SurveyStatus, RelPosFlags, PositionVelocityTime
 from ament_index_python.packages import get_package_share_directory
 
 import threading
@@ -150,11 +150,10 @@ class AutonomyGUI(Node, QWidget):
         self.create_subscription(PlanPath.Response, '/path_plan_response', self.plan_path_response_callback, 10) # Allows the path planner node to notify when the path is ready
         self.create_subscription(HazardArray, '/hazards', self.hazard_callback, 10)
         self.create_subscription(Bool, 'aruco_status', self.aruco_status_callback, 10) # ArUco status for ensuring image_raw from webcam is being published and fiducial node is running
-        self.create_subscription(SurveyStatus, 'base/SurveyStatus', self.base_survey_status_callback, 10) # Survey status for ensuring rover is in survey mode
-        self.create_subscription(RelPosFlags, 'rover/RelPosFlags', self.rover_rel_pos_flags_callback, 10) # Rel pos flags for ensuring rover is in survey mode
+        self.create_subscription(SurveyStatus, '/base/SurveyStatus', self.base_survey_status_callback, 10) # Survey status for ensuring rover is in survey mode
+        self.create_subscription(RelPosFlags, '/rover/RelPosFlags', self.rover_rel_pos_flags_callback, 10) # Rel pos flags for getting information about the rover GPS status
+        self.create_subscription(PositionVelocityTime, '/rover/PosVelTime', self.rover_gps_status_callback, 10) # Rover GPS status to ensure we are getting rover GPS
         
-        # Services
-
         # Clients
         # Enables Autonomy
         self.enable_autonomy_client = self.create_client(SetBool, '/autonomy/enable_autonomy')
@@ -190,6 +189,7 @@ class AutonomyGUI(Node, QWidget):
         self.rover_state_singleton_timepoint = None
         self.aruco_status_timepoint = None
         self.rover_gps_status_timepoint = None
+        self.hazard_timepoint = None
 
         ################# Mapviz Communication Setup #################
 
@@ -228,24 +228,32 @@ class AutonomyGUI(Node, QWidget):
     # Clears displays in the gui if information stops being received.
     def check_timepoints(self):
         if self.rover_state_singleton_timepoint is not None:
-            if time.time() - self.rover_state_singleton_timepoint > 1.0:
+            if time.time() - self.rover_state_singleton_timepoint > 1.0: #seconds
                 self.clear_rover_state_singleton_info()
 
         if self.aruco_status_timepoint is not None:
-            if time.time() - self.aruco_status_timepoint > 3.0:
+            if time.time() - self.aruco_status_timepoint > 3.0: #seconds
                 #Set status to grey
                 self.ros_signal.emit('ArucoSystemStatus', 'font-size: 12pt; color:rgb(150, 150, 150); font-weight: bold;', 'setStyleSheet')
 
         if self.rover_gps_status_timepoint is not None:
-            if time.time() - self.rover_gps_status_timepoint > 8.0:
+            if time.time() - self.rover_gps_status_timepoint > 2.0: #seconds
                 #Set status to grey
                 self.ros_signal.emit('RoverGPSStatus', 'font-size: 12pt; color:rgb(150, 150, 150); font-weight: bold;', 'setStyleSheet')
+
+        if self.hazard_timepoint is not None:
+            if time.time() - self.hazard_timepoint > 4.0: #seconds
+                self.clear_hazard_info()
     
     
     def clear_rover_state_singleton_info(self):
         self.ros_signal.emit('RoverStateMapYaw', 'Map Yaw: ...', 'setText')
         self.ros_signal.emit('RoverStateLat','Latitude: ...', 'setText')
         self.ros_signal.emit('RoverStateLon', 'Longitude: ...', 'setText')
+        return
+    
+    def clear_hazard_info(self):
+        self.ros_signal.emit('HazardsFound', 'No hazards found', 'setText')
         return
     
     def load_waypoints(self):
@@ -452,32 +460,34 @@ class AutonomyGUI(Node, QWidget):
         req = SetBool.Request()
         req.data = True
         future = self.enable_hazard_detection_client.call_async(req)
-        self.gui_setText('logger_label', 'Enabling Hazard Detection...')
-        self.HazardDetection.setText(f'Hazard Detection: Enabled')
+        self.ros_signal.emit('logger_label', 'Enabling Hazard Detection...')
+        self.ros_signal.emit('HazardDetection', 'Hazard Detection: Enabled')
 
     def disable_hazard_detection(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_hazard_detection_client.call_async(req)
-        self.gui_setText('logger_label', 'Disabling Hazard Detection...')
-        self.HazardDetection.setText(f'Hazard Detection: Disabled')
+        self.ros_signal.emit('logger_label', 'Disabling Hazard Detection...')
+        self.ros_signal.emit('HazardDetection', 'Hazard Detection: Disabled')
 
     def enable_hazard_avoidance(self):
         req = SetBool.Request()
         req.data = True
         future = self.enable_hazard_avoidance_client.call_async(req)
-        self.gui_setText('logger_label', 'Enabling Hazard Avoidance...')
-        self.HazardAvoidance.setText(f'Hazard Avoidance: Enabled')
+        self.ros_signal.emit('logger_label', 'Enabling Hazard Avoidance...')
+        self.ros_signal.emit('HazardAvoidance', 'Hazard Avoidance: Enabled')
 
     def disable_hazard_avoidance(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_hazard_avoidance_client.call_async(req)
-        self.gui_setText('logger_label', 'Disabling Hazard Avoidance...')
-        self.HazardAvoidance.setText(f'Hazard Avoidance: Disabled')
+        self.ros_signal.emit('logger_label', 'Disabling Hazard Avoidance...')
+        self.ros_signal.emit('HazardAvoidance', 'Hazard Avoidance: Disabled')
+
 
     def hazard_callback(self, msg):
-        # Clear the string
+        # Clear the string and reset timepoint
+        self.hazard_timepoint = time.time()
         hazard_text = ''
 
         for hazard in msg.hazards:
@@ -514,8 +524,6 @@ class AutonomyGUI(Node, QWidget):
             self.ros_signal.emit("RTKSystemStatus", "font-size: 12pt; color:rgb(57, 255, 20); font-weight: bold;", 'setStyleSheet')
     
     def rover_rel_pos_flags_callback(self, msg):
-        self.rover_gps_status_timepoint = time.time()
-
         if msg.gnss_fix_ok:
             if msg.diff_soln:
                 #Set status to green, everything is good
@@ -524,7 +532,11 @@ class AutonomyGUI(Node, QWidget):
                 #Set status to yellow. We ar getting GPS, but not differential
                 self.ros_signal.emit('RoverGPSStatus', "font-size: 12pt; color:rgb(255, 255, 0); font-weight: bold;", 'setStyleSheet')
 
-
+    #rover gps
+    def rover_gps_status_callback(self, msg):
+        #Rover GPS is coming from rover state singleton
+        #This callback is merely to update the timepoint for the status of the rover gps
+        self.rover_gps_status_timepoint = time.time()
 
 
     # Callback functions for buttons

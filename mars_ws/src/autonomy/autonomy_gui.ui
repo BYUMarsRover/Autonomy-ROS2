@@ -1489,6 +1489,7 @@
                This section displays the current status of the rover's various systems.&lt;br&gt;
                &lt;span style="color:gray;"&gt;Grey&lt;/span&gt;: No status is being published.&lt;br&gt;
                &lt;span style="color:red;"&gt;Red&lt;/span&gt;: System is not good.&lt;br&gt;
+               &lt;span style="color:yellow;"&gt;Yellow&lt;/span&gt;: Rover GPS is publishing, but not using RTK.&lt;br&gt;
                &lt;span style="color:green;"&gt;Green&lt;/span&gt;: System is running.
                &lt;/body&gt;&lt;/html&gt;
             </string>

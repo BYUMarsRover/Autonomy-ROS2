@@ -2,6 +2,7 @@
 """
 Adam Welker     BYU MARS ROVER  MAY 2023
 Braden Meyers   ROS2 Conversion DEC 2024
+Gabe Slade      Hazard Avoidance FEB 2025
 
 autopilot_manager.py -- This class will output linear and angular velocity commands 
 for the drive manager given current vs desired heading, as well as distance to target objective
@@ -83,7 +84,7 @@ class AutopilotManager(Node):
         # subscribers
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
         self.create_subscription(MobilityAutopilotCommand, '/mobility/autopilot_cmds', self.autopilot_cmds_callback, 10)
-        self.create_subscription(HazardArray, '/hazards', self.obstacle_callback, 10)
+        self.create_subscription(HazardArray, '/hazards', self.hazard_callback, 10)
 
         # publishers
         self.rover_vel_cmds_pub = self.create_publisher(MobilityVelocityCommands, '/mobility/rover_vel_cmds', 10)
@@ -159,7 +160,7 @@ class AutopilotManager(Node):
     def rover_state_singleton_callback(self, msg: RoverStateSingleton):
         self.curr_heading = np.deg2rad(msg.map_yaw)
 
-    def obstacle_callback(self, msg):
+    def hazard_callback(self, msg):
         #Only avoid obstacles if the hazard avoidance is enabled
         if not self.hazard_avoidance_enabled:
             return
@@ -184,7 +185,7 @@ class AutopilotManager(Node):
 
                 #Calculate the distance to the obstacle
                 dist = np.sqrt(hazard.location_x**2 + hazard.location_y**2)
-                max_obs_radius = np.sqrt(hazard.length_x**2 + hazard.length_y**2)*.6 #.6 is a fudge factor
+                max_obs_radius = np.sqrt(hazard.length_x**2 + hazard.length_y**2)*.4 #.4 is a fudge factor
                 self.scaling_factor = self.critical_distance + max_obs_radius #the bigger the obstacle, the more space we want to give it
 
                 angle_to_obstacle = np.arctan2(hazard.location_y, hazard.location_x)
