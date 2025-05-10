@@ -21,7 +21,7 @@ import numpy as np
 import utm
 
 class Planner:
-    def __init__(self):
+    def __init__(self, tiff_path):
         # Configurable parameters
         self.use_terrain_path_planner = True
         self.use_terrain_order_planner = False
@@ -34,7 +34,7 @@ class Planner:
         self.margin = 10  # pixels
 
         # Load raster image
-        self.tiff_path = "autonomy/maps/slate_canyon.tif"
+        self.tiff_path = tiff_path
         with rasterio.open(self.tiff_path) as src:
             self.full_image = src.read(1)
             self.transform = src.transform
@@ -95,7 +95,9 @@ class Planner:
 
 
 if __name__ == "__main__":
-    planner = Planner()
+    tiff_path = "autonomy/maps/slate_canyon.tif"
+    planner = Planner(tiff_path)
+
     start = (40.2231137, -111.6273118)  # lat, lon
     end = (40.2233902, -111.6271029)    # lat, lon
     planner.plot_path(start, end)
