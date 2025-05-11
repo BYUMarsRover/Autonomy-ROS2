@@ -4,6 +4,7 @@ from rclpy.node import Node
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from std_srvs.srv import SetBool
+from sensor_msgs.msg import NavSatFix
 from std_msgs.msg import String
 from zed_msgs.msg import ObjectsStamped 
 from autonomy.drive_controller_api import DriveControllerAPI
@@ -83,6 +84,7 @@ class AutonomyStateMachine(Node):
         self.nav_state_pub = self.create_publisher(NavState, '/nav_state', 10) # Navigation State
         self.rover_state_pub = self.create_publisher(RoverState, '/rover_state', 10) # State Machine State
         self.debug_pub = self.create_publisher(String, '/state_machine_debug', 10)
+        self.debug_path_pub = self.create_publisher(NavSatFix, 'current_path_point', 10)
 
         # Services
         self.srv_switch_auto = self.create_service(SetBool, '/autonomy/enable_autonomy', self.enable)
@@ -188,6 +190,7 @@ class AutonomyStateMachine(Node):
 
         self.planner = Planner(self)
         self.path = deque()
+        self.path_target_point = None
 
         self.get_logger().info('Autonomy State Machine initialized')
 
@@ -737,12 +740,20 @@ class AutonomyStateMachine(Node):
         self.nav_state_pub.publish(self.nav_state)
         self.publish_status()
         self.check_detections()
+        self.publish_current_path_point(self.path_target_point)
 
     def publish_status(self):
         msg = RoverState()
         msg.state = str(self.state.name.upper())
         self.rover_state_pub.publish(msg)
 
+    def publish_current_path_point(self, path_target_point):
+        if self.path_target_point is None:
+            return
+        msg = NavSatFix()
+        msg.latitude = path_target_point.lat
+        msg.longitude = path_target_point.lon
+        self.debug_path_pub.publish(msg)
 
 def main(args=None):
     """

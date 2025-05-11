@@ -40,6 +40,16 @@ displays:
       position_tolerance: 0
       buffer_size: 1
   - type: mapviz_plugins/navsat
+    name: Next Path Point
+    config:
+      visible: true
+      collapsed: true
+      topic: /autonomy/current_path_point
+      color: "#ff55ff"
+      draw_style: points
+      position_tolerance: 0
+      buffer_size: 1
+  - type: mapviz_plugins/navsat
     name: Rover GPS
     config:
       visible: true
