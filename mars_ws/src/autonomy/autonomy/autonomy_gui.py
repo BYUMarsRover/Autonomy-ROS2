@@ -460,29 +460,29 @@ class AutonomyGUI(Node, QWidget):
         req = SetBool.Request()
         req.data = True
         future = self.enable_hazard_detection_client.call_async(req)
-        self.ros_signal.emit('logger_label', 'Enabling Hazard Detection...')
-        self.ros_signal.emit('HazardDetection', 'Hazard Detection: Enabled')
+        self.ros_signal.emit('logger_label', 'Enabling Hazard Detection...', 'setText')
+        self.ros_signal.emit('HazardDetection', 'Hazard Detection: Enabled', 'setText')
 
     def disable_hazard_detection(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_hazard_detection_client.call_async(req)
-        self.ros_signal.emit('logger_label', 'Disabling Hazard Detection...')
-        self.ros_signal.emit('HazardDetection', 'Hazard Detection: Disabled')
+        self.ros_signal.emit('logger_label', 'Disabling Hazard Detection...', 'setText')
+        self.ros_signal.emit('HazardDetection', 'Hazard Detection: Disabled', 'setText')
 
     def enable_hazard_avoidance(self):
         req = SetBool.Request()
         req.data = True
         future = self.enable_hazard_avoidance_client.call_async(req)
-        self.ros_signal.emit('logger_label', 'Enabling Hazard Avoidance...')
-        self.ros_signal.emit('HazardAvoidance', 'Hazard Avoidance: Enabled')
+        self.ros_signal.emit('logger_label', 'Enabling Hazard Avoidance...', 'setText')
+        self.ros_signal.emit('HazardAvoidance', 'Hazard Avoidance: Enabled', 'setText')
 
     def disable_hazard_avoidance(self):
         req = SetBool.Request()
         req.data = False
         future = self.enable_hazard_avoidance_client.call_async(req)
-        self.ros_signal.emit('logger_label', 'Disabling Hazard Avoidance...')
-        self.ros_signal.emit('HazardAvoidance', 'Hazard Avoidance: Disabled')
+        self.ros_signal.emit('logger_label', 'Disabling Hazard Avoidance...', 'setText')
+        self.ros_signal.emit('HazardAvoidance', 'Hazard Avoidance: Disabled', 'setText')
 
 
     def hazard_callback(self, msg):
