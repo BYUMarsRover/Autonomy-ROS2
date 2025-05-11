@@ -16,7 +16,7 @@ import os
 import sys
 
 FULL_STEAM_FORWARD = 127
-FULL_STEAM_BACKWARD = -128
+FULL_STEAM_BACKWARD = -127
 FULL_STEAM_STOP = 0
 
 class Signals(QObject):

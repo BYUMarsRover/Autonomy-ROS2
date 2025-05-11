@@ -790,6 +790,7 @@ MODULE</string>
      <string>Automated Queries</string>
     </property>
     <addaction name="actionToggle_Sensor_Query"/>
+    <addaction name="actionRead_Calibrated_from_Module"/>
    </widget>
    <addaction name="menuDebug_GUI"/>
    <addaction name="menuAutomated_Queries"/>
@@ -818,6 +819,14 @@ MODULE</string>
   <action name="actionLaunch_Actuator_Command">
    <property name="text">
     <string>Launch Actuator Command</string>
+   </property>
+  </action>
+  <action name="actionRead_Calibrated_from_Module">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Read Calibrated from Module</string>
    </property>
   </action>
  </widget>

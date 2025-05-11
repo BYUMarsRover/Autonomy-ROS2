@@ -63,9 +63,9 @@ class ScienceRequestManager(Node):
 
     def sensor_request(self, msg: Bool):
         if msg.data == True:
-            self.requests.append(self.CalibratedAnalogSensorValues(self, self.pub_spectrograph))
+            self.requests.append(self.CalibratedAnalogSensorValues(self, self.pub_analog_sensors))
         else:
-            self.requests.append(self.RawAnalogSensorValues(self, self.pub_spectrograph))
+            self.requests.append(self.RawAnalogSensorValues(self, self.pub_analog_sensors))
 
     def spectrograph_request(self, msg: Empty):
         self.requests.append(self.SpectrographRequest(self, self.pub_spectrograph))
@@ -180,16 +180,16 @@ class ScienceRequestManager(Node):
             self.attempts = attempts
 
             # Tell the spectrograph to start taking data
-            self.pub_tx.publish(tx_start)
+            self.request_manager.pub_tx.publish(tx_start)
 
             # Create a timer to poll the spectrograph data
             self.timer = request_manager.create_timer(poll_speed, 
-                lambda: self.check_if_data_ready(self, poll_speed) # Check every second
+                lambda: self.check_if_data_ready(poll_speed) # Check every second
             )
 
         def check_if_data_ready(self, poll_rate):
             # Check if the data is ready
-            self.request_manager.do_SMFL_async_call("func_name_return", [], lambda data: self.receive(data), poll_rate)
+            self.request_manager.do_SMFL_async_call(self.func_name_return, [], lambda data: self.receive(data), poll_rate)
 
         def receive(self, data):
             if data != None:
@@ -216,7 +216,7 @@ class ScienceRequestManager(Node):
         def publish(self, data):
             self.pub_forward.publish(
                 ScienceSpectroData(
-                    values = self.data
+                    values = data
                 )
             )
 
