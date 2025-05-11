@@ -416,6 +416,7 @@ class AutonomyStateMachine(Node):
                     offset_wp = GPSTools.get_offset_waypoint(self.current_point, curr_heading, direction, offset_distance=5.0)
                     self.drive_controller.issue_path_cmd(offset_wp.lat, offset_wp.lon)
                     self.path_target_point = offset_wp
+                    self.get_logger().info(f"Offset waypoint to: {offset_wp}, direction: {direction}, heading: {curr_heading}, ")
             # else: 
             #     # If neither side is open then we need to spin to find a way out
             #     # TODO this is not the best approach but hopefully it it works.
