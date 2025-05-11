@@ -36,11 +36,11 @@ class GPSTools:
         - offset_distance: meters to offset
         """
 
-        # angle in NED: left = +30°, right = -30°
+        # TODO make this a parmeter how far to offset
         if direction == "left":
-            offset_angle = wrap(initial_heading_rad + np.pi/6, 0.0)
+            offset_angle = wrap(initial_heading_rad + 0.35, 0.0)
         elif direction == "right":
-            offset_angle = wrap(initial_heading_rad - np.pi/6, 0.0)
+            offset_angle = wrap(initial_heading_rad - 0.35, 0.0)
         else:
             raise ValueError("Direction must be 'left' or 'right'")
 

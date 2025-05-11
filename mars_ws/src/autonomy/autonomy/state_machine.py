@@ -389,7 +389,7 @@ class AutonomyStateMachine(Node):
         # TODO this is gonna keep returning when the rover is spinnig
         chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, path_target)
         course_error = wrap(chi_rad - curr_heading, 0)
-        if abs(course_error) > 0.5:
+        if abs(course_error) > 0.25:
             self.get_logger().info(f"Course error too large before avoiding hazards: {course_error}", throttle_duration_sec=1.0)
             self.hazard_info = {}
             return
@@ -405,15 +405,18 @@ class AutonomyStateMachine(Node):
                 # self.get_logger().info("Path Forward is clear, proceeding as normal")
                 pass
 
-            elif self.hazard_info.get("clear", False):
-                self.get_logger().info(f"{direction.capitalize()} side is clear, offsetting waypoint.")
+            else:
+                if self.hazard_info.get("clear", False):
+                    self.get_logger().info(f"{direction.capitalize()} side is clear, offsetting waypoint.")
+                else:
+                    self.get_logger().warn(f"No clear path on either side, Need to spin {direction.capitalize()}.")
                 
                 if time_since_update < 1.0:
-                    offset_wp = GPSTools.get_offset_waypoint(path_target, chi_rad, direction, offset_distance=4.0)
+                    # TODO check and see if anything is new since the last time we offset
+                    offset_wp = GPSTools.get_offset_waypoint(self.current_point, curr_heading, direction, offset_distance=5.0)
                     self.drive_controller.issue_path_cmd(offset_wp.lat, offset_wp.lon)
                     self.path_target_point = offset_wp
-            else: 
-                self.get_logger().warn(f"No clear path on either side, Need to spin {direction.capitalize()}.")
+            # else: 
             #     # If neither side is open then we need to spin to find a way out
             #     # TODO this is not the best approach but hopefully it it works.
             #     self.get_logger().info(f" both sides are blocked, spinning {direction.capitalize()}.")
