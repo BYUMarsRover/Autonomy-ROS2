@@ -5,7 +5,7 @@ query,2,get_actuator_control,actuator_index,uint8_t,1,,void,0,,void,0,control,in
 query,3,get_analog_sensor_raw,sensor_index,uint8_t,1,,void,0,,void,0,raw_result,uint16_t,1,Returns the analog voltage returned by the Nano's 10 bit ADC for a given sensor index,
 query,4,get_analog_sensor_calibrated,sensor_index,uint8_t,1,,void,0,,void,0,result,float,1,Returns the calibrated value for a given sensor index,
 query,5,get_calibration_style,,void,0,,void,0,,void,0,is_polynomial,uint8_t,1,"Returns true if the nano is complied to run polynomial calibration, false if using linear interpolation",
-query,6,get_calibration_data,sensor_index,uint8_t,1,,void,0,,void,0,data,uint8_t,variable,Returns a blob of data containing the calibration coefficients or points depending on the compiled calibration style
+query,6,get_calibration_data,sensor_index,uint8_t,1,,void,0,,void,0,data,uint8_t,variable,Returns a blob of data containing the calibration coefficients or points depending on the compiled calibration style,
 query,7,query_positional_controller,actuator_index,uint8_t,1,,void,0,,void,0,report,char_array,1,Returns a string with information on the position controller,
 query,8,query_speed_controller,actuator_index,uint8_t,1,,void,0,,void,0,report,char_array,1,Returns a string with information on the speed controller,
 query,9,query_routine_controller,,void,0,,void,0,,void,0,report,char_array,1,Returns a string with information on the routine controller,

@@ -36,7 +36,7 @@ namespace routine_manager {
         const bool lockdown_actuators;
     };
 
-    void begin_routine(routine_t* routine);
+    void begin_routine(const routine_t* routine);
     void init();
     void tick();
     void step();

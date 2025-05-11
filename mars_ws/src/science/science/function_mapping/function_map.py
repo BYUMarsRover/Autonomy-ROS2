@@ -8,9 +8,11 @@ ACTUATOR_COUNT = 6
 ACTUATOR_INDEX_PROBE = 0
 ACTUATOR_INDEX_AUGER = 1
 ACTUATOR_INDEX_PRIMARY_CACHE_DOOR = 2
-ACTUATOR_INDEX_SECONDARY_CACHE = 3
-ACTUATOR_INDEX_SECONDARY_CACHE_DOOR = 4
+ACTUATOR_INDEX_SECONDARY_CACHE_DOOR = 3
+ACTUATOR_INDEX_SECONDARY_CACHE = 4
 ACTUATOR_INDEX_DRILL = 5
+
+ENTIRE_MESSAGE = -1
 
 class ScienceModuleFunctionList:
 
@@ -63,8 +65,7 @@ class ScienceModuleFunctionList:
         tx_packet = ScienceSerialTxPacket()
         tx_packet.command_word = ScienceModuleFunctionList.get_command_word(func, flags)
         tx_packet.operands = operand_blob
-        return tx_packet
-            
+        return tx_packet   
     
     @staticmethod
     def verify_operands(func, operand_blob):
@@ -131,7 +132,7 @@ class ScienceModuleFunctionList:
             raise Exception(f"More data was provided then expected for func {func['function_name']} len: {len(operand_blob)}")
         
     @staticmethod
-    def __blob_data(number, datatype):
+    def blob_data(number, datatype):
         try:
             if datatype in ['uint8_t', 'int8_t']:
                 return [number & 0xFF]
@@ -175,6 +176,8 @@ class ScienceModuleFunctionList:
                 result = 4
             case 'float':
                 result = 4
+            case 'char_array':
+                result = ENTIRE_MESSAGE
             case 'void':
                 result = 0
             case _:
@@ -225,10 +228,16 @@ class ScienceModuleFunctionList:
     def get_return_data(func_def, msg: ScienceSerialRxPacket):
         output = msg.message
         data_type = func_def['return_type']
-        cnt = int(func_def['return_cnt'])
-        size = ScienceModuleFunctionList.length_of_datatype(data_type)
         conversion_func = ScienceModuleFunctionList.conversion_function(data_type)
-
+        size = ScienceModuleFunctionList.length_of_datatype(data_type)
+        if size is ENTIRE_MESSAGE:
+            size = len(msg.message) # Use entire message in function
+        if func_def['return_cnt'] == 'variable':
+            # Determine the size at runtime
+            cnt = int(len(msg.message) / size)
+        else:
+            # Pre determined size
+            cnt = int(func_def['return_cnt'])
         out = []
         for i in range(cnt):
             out.append(conversion_func(output, i*size))
@@ -249,12 +258,13 @@ class ScienceModuleFunctionList:
                 result = lambda data, index=0: struct.unpack('<f', bytes(data[index:index+4]))[0]
             case 'bool':
                 result = lambda data, index=0: bool(struct.unpack('<B', bytes(data[index:index+1]))[0])
+            case 'char_array':
+                result = lambda data, index=0: ''.join(chr(b) for b in data[index:])
             case 'void':
                 result = lambda data, index=0: None
             case _:
                 raise Exception(f"Unknown data_type: {datatype}")
         return result
-        
     # Mapping Functions
     
     @staticmethod
@@ -293,15 +303,16 @@ class ScienceModuleFunctionList:
         )
     
     @staticmethod
-    def get_tx_update_actuator_control(actuator_index, control):
+    def get_tx_update_actuator_control(actuator_index, control, override=False):
         return ScienceModuleFunctionList.build_tx_packet(
             ScienceModuleFunctionList.get_function_by_function_name("update_actuator_control"),
-            operand_blob = [actuator_index, control & 0xFF] # Make Control be interpreted as uint8_t
+            operand_blob = [actuator_index, control & 0xFF], # Make Control be interpreted as uint8_t
+            flags = [override, False]
         )
     
     @staticmethod
     def get_tx_sample_spectrograph(sample_cnt, sample_interval_ms, bulb_on):
-        sample_interval_blob = ScienceModuleFunctionList.__blob_data(sample_interval_ms, 'uint32_t')
+        sample_interval_blob = ScienceModuleFunctionList.blob_data(sample_interval_ms, 'uint32_t')
         return ScienceModuleFunctionList.build_tx_packet(
             ScienceModuleFunctionList.get_function_by_function_name("sample_spectrograph"),
             operand_blob = [sample_cnt] + sample_interval_blob + [bulb_on]
@@ -325,11 +336,46 @@ class ScienceModuleFunctionList:
             ScienceModuleFunctionList.get_function_by_function_name("return_ltr_data")
         )
     
+    # Routine Methods
+    
+    @staticmethod
+    def get_tx_run_routine(routine_index):
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("run_routine"),
+            operand_blob = [routine_index]
+        )
+    
+    @staticmethod
+    def get_tx_pause_routine():
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("pause_routine")
+        )
+    
+    @staticmethod
+    def get_tx_resume_routine():
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("resume_routine")
+        )
+    
+    @staticmethod
+    def get_tx_step_routine():
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("step_routine")
+        )
+    
     @staticmethod
     def get_tx_abort_routine():
         return ScienceModuleFunctionList.build_tx_packet(
             ScienceModuleFunctionList.get_function_by_function_name("abort_routine")
         )
+    
+    @staticmethod
+    def get_tx_query_routine_controller():
+        return ScienceModuleFunctionList.build_tx_packet(
+            ScienceModuleFunctionList.get_function_by_function_name("query_routine_controller")
+        )
+    
+    # Controllers
     
     @staticmethod
     def get_tx_clear_speed_controller(actuator_index):

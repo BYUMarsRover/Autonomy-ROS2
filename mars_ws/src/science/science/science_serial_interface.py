@@ -128,7 +128,7 @@ class ScienceSerialInterface(Node):
         self.perform_tx_request(SMFL.get_tx_abort_routine())
         for index in range(0, TOTAL_ACTUATORS):
             if index != DRILL_ACTUATOR_INDEX:
-                print(index, type(index))
+                #print(index, type(index))
                 self.perform_tx_request(SMFL.get_tx_clear_positional_controller(index))
                 self.perform_tx_request(SMFL.get_tx_clear_speed_controller(index))
             self.perform_tx_request(SMFL.get_tx_free_actuator(index))
@@ -157,25 +157,21 @@ class ScienceSerialInterface(Node):
             self.write_serial(msg.packet)
         else:
             # If the packet is empty, build from command word and operands
-            self.author_packet([msg.command_word, len(msg.operands)] + list(msg.operands), self.override_bit)
+            self.write_serial(ScienceSerialInterface.author_packet(msg, self.override_bit))
 
     def write_serial(self, packet):
         self.arduino.write(struct.pack('B' * len(packet), *packet))
         self.publish_serial_tx_notification(packet)
 
-    def author_packet(self, byte_array, override):
-         # Configure a payload with the overhead formatting and send to arduino
+    @staticmethod
+    def author_packet(tx: ScienceSerialTxPacket, override=False):
+        byte_array = [tx.command_word, len(tx.operands)] + list(tx.operands)
         if len(byte_array) > MAXIMUM_PACKET_SIZE:
-            # todo proper error message
-            print(f"Provided command packet is of size {len(byte_array)}, maximum is {MAXIMUM_PACKET_SIZE}")
-        elif self.arduino:
-            byte_array[0] |= 0b01000000 if override else 0b00000000  # Set the Override Bit
-            byte_array.insert(0, COMMAND_PACKET_HEADER)
-            byte_array.append(COMMAND_PACKET_FOOTER)
-            self.write_serial(byte_array)
-
-            # hex_array = [ hex(x) for x in byte_array]
-            # print(f"Sending to arduino: {','.join(hex_array)}")
+            raise ValueError(f"Provided command packet is of size {len(byte_array)}, maximum is {MAXIMUM_PACKET_SIZE}")
+        byte_array[0] |= 0b01000000 if override else 0b00000000  # Set the Override Bit
+        byte_array.insert(0, COMMAND_PACKET_HEADER)
+        byte_array.append(COMMAND_PACKET_FOOTER)
+        return byte_array
 
     # Reading in from the Serial Bus
 
@@ -265,9 +261,9 @@ class ScienceSerialInterface(Node):
         # print(f'Received Reponse Packet:\n\tEcho: [{",".join([ hex(x) for x in response_packet])}]\n\tError Code: {error_code}\n\tError Message: [{",".join([ hex(x) for x in error_message])}]')
         # print(f'ASCII: {bytes(error_message).decode()}')
         try:
-            print(f'Received Response Packet [len={len(error_message)}]:({error_code}) {bytes(error_message).decode()}')
+            self.get_logger().info(f'Received Response Packet [len={len(error_message)}]:({error_code}) {bytes(error_message).decode()}')
         except:
-            print(f'Received Response Packet with invalid ascii:({error_code}) {",".join([ hex(x) for x in error_message])}')
+            self.get_logger().info(f'Received Response Packet with invalid ascii:({error_code}) {",".join([ hex(x) for x in error_message])}')
 
         # Publish packet notification to ROS
         rx_packet = ScienceSerialRxPacket(

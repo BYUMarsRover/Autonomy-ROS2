@@ -474,14 +474,14 @@ namespace routine_manager {
         const actuator_speed_action_t align_auger_first_cache_transfer = {
             .actuator_index = AUGER_ACTUATOR_INDEX,
             .control = FULL_FORWARD_CONTROL,
-            .timeout = 3.3e6,
+            .timeout = 1350,
             .fun_ptr = nullptr
         };
 
         const actuator_speed_action_t align_secondary_first_cache_transfer = {
             .actuator_index = SECONDARY_CACHE_ACTUATOR_INDEX,
             .control = FULL_FORWARD_CONTROL,
-            .timeout = 4e6,
+            .timeout = 9000,
             .fun_ptr = nullptr
         };
 

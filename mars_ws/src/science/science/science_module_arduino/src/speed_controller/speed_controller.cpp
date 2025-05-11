@@ -38,7 +38,7 @@ namespace speed_controller {
         }
     }
 
-    void configureDataAndStartControl(uint8_t actuator_index, int8_t control, int32_t timeout, bool authorized, void (*callback)(void)) {
+    void configureDataAndStartControl(uint8_t actuator_index, int8_t control, int32_t timeout, bool authorized, const void (*callback)(void)) {
         // Configure Data
         speed_request_t* request = &(speed_req_buffer[actuator_index]);
         request->control = control;
