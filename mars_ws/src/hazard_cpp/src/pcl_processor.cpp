@@ -189,10 +189,16 @@ void process_and_publish()
     bbox_pub_->publish(marker_right);
 
     rover_msgs::msg::BBoxStatsArray stats_array;
+    // IMPORTANT FOR NOW MAKE THE STRAIGHT BOX THE FIRST, RIGHT THE SECOND AND LEFT THE LAST
     stats_array.boxes.push_back(make_stats(*cropped_cloud, "straight"));
-    stats_array.boxes.push_back(make_stats(*cropped_left, "left"));
     stats_array.boxes.push_back(make_stats(*cropped_right, "right"));
+    stats_array.boxes.push_back(make_stats(*cropped_left, "left"));
+    stats_array.header.frame_id = "zed_camera_link";
+    stats_array.header.stamp = this->now();
     bbox_stats_pub_->publish(stats_array);
+
+    // Clear the latest cloud to avoid reprocessing
+    latest_cloud_->clear();
   }
 
     visualization_msgs::msg::Marker create_bbox_marker(

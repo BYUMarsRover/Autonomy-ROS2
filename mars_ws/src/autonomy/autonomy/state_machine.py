@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections
+from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, BBoxStatsArray
 from rover_msgs.srv import SetFloat32, AutonomyAbort, AutonomyWaypoint
 from std_srvs.srv import SetBool
 from sensor_msgs.msg import NavSatFix
@@ -9,7 +9,7 @@ from std_msgs.msg import String
 from zed_msgs.msg import ObjectsStamped 
 from autonomy.drive_controller_api import DriveControllerAPI
 from autonomy.service_client_handler import ServiceCaller
-from autonomy.GPSTools import GPSTools, GPSCoordinate
+from autonomy.GPSTools import GPSTools, GPSCoordinate, wrap
 from enum import Enum
 import numpy as np
 import time
@@ -43,6 +43,7 @@ class State(Enum):
     ABORT_STATE = "ABORT_STATE"
 
 NAVIGATION_STATES = [State.START_POINT_NAVIGATION, State.WAYPOINT_NAVIGATION, State.POINT_NAVIGATION, State.START_SPIN_SEARCH, State.SPIN_SEARCH, State.START_HEX_SEARCH ,State.HEX_SEARCH, State.START_OBJECT_HEX_SEARCH, State.ARUCO_NAVIGATE, State.OBJECT_NAVIGATE, State.ARUCO_GATE_NAVIGATION, State.ARUCO_GATE_ORIENTATION, State.ARUCO_GATE_APPROACH, State.ARUCO_GATE_PAST]
+AVOIDANCE_STATES = [State.WAYPOINT_NAVIGATION]
 
 class TagID(Enum):
     AR_TAG_1 = 1
@@ -78,7 +79,8 @@ class AutonomyStateMachine(Node):
         self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.rover_state_singleton_callback, 10)
         self.create_subscription(FiducialTransformArray, '/aruco_detect_logi/fiducial_transforms', self.ar_tag_callback, 10)
         self.create_subscription(ObjectsStamped, '/zed/zed_node/obj_det/objects', self.obj_detect_callback, 10)
-
+        self.create_subscription(BBoxStatsArray, '/hazard_stats', self.hazard_stats_callback, 10)
+        
         # Publishers
         self.aruco_pose_pub = self.create_publisher(FiducialData, '/autonomy/aruco_pose', 10)
         self.nav_state_pub = self.create_publisher(NavState, '/nav_state', 10) # Navigation State
@@ -92,6 +94,7 @@ class AutonomyStateMachine(Node):
         self.srv_receive_waypoint = self.create_service(AutonomyWaypoint, '/AU_waypoint_service', self.receive_waypoint)
         self.srv_clear_waypoint = self.create_service(SetBool, '/AU_clear_waypoint_service', self.clear_waypoint)
         self.srv_planned_waypoint = self.create_service(AutonomyWaypoint, 'waypoint/planner', self.plan_path_points)
+        self.srv_enable_hazard_avoidance = self.create_service(SetBool, '/hazard_avoidance/enable', self.enable_hazard_avoidance)
 
         # Clients
         self.object_detect_client = self.create_client(SetBool, '/zed/zed_node/enable_obj_det')
@@ -173,6 +176,12 @@ class AutonomyStateMachine(Node):
         # Object detection dict
         # self.obj_to_label = {"mallet": "Class ID: 0", "bottle": "Class ID: 1"}
         self.obj_to_label = {"Class ID: 0": 0 ,"Class ID: 1": 1}
+
+
+        # Hazard avoidance variables
+        self.hazard_enabled = False
+        self.hazard_threshold = 300
+        self.hazard_info = {}
 
         # Enabling Detections variables
         self.obj_toggle_handler = ServiceCaller(self.object_detect_client, self,'Object', OBJ_ENABLE_MSGS, OBJ_DISABLE_MSGS)
@@ -310,6 +319,113 @@ class AutonomyStateMachine(Node):
         # Planner info
         self.curr_geopose = latLonYaw2Geopose(self.curr_latitude, self.curr_longitude)
 
+    def enable_hazard_avoidance(self, request: SetBool.Request, response: SetBool.Response):
+        self.hazard_enabled = request.data
+        if self.hazard_enabled:
+            response.success = True
+            response.message = "Hazard avoidance enabled"
+        else:
+            response.success = True
+            response.message = "Hazard avoidance disabled"
+        self.get_logger().info(response.message)
+        return response
+
+    def hazard_stats_callback(self, msg: BBoxStatsArray):
+        if not self.hazard_enabled or not self.enabled:
+            return
+
+        # Build a dictionary of region stats for easy access
+        stats_by_region = {box.region: box for box in msg.boxes}
+
+        # Default: assume "straight", "left", "right" are always present
+        straight_stats = stats_by_region.get("straight")
+        left_stats = stats_by_region.get("left")
+        right_stats = stats_by_region.get("right")
+
+        # If straight is clear, prefer it
+        if straight_stats and straight_stats.count < self.hazard_threshold:
+            self.hazard_info = {
+                "direction": "straight",
+                "clear": True,
+                "count": straight_stats.count,
+                "time": time.time()
+            }
+            # self.get_logger().info(f"Straight path is clear, count: {straight_stats.count}")
+            return
+
+        # Decide between left and right
+        if left_stats and right_stats:
+            if right_stats.count < left_stats.count:
+                direction = "right"
+                chosen_stats = right_stats
+            else:
+                direction = "left"
+                chosen_stats = left_stats
+
+            self.hazard_info = {
+                "direction": direction,
+                "clear": chosen_stats.count < self.hazard_threshold,
+                "count": chosen_stats.count,
+                "time": time.time()
+            }
+            self.get_logger().info(f"{direction.capitalize()} side chosen, count: {chosen_stats.count}, clear: {self.hazard_info['clear']}")
+        else:
+            self.get_logger().warn("Missing left or right stats in hazard message!")
+
+
+    def hazard_avoidance(self, curr_heading, path_target):
+        # if (self.spin_start_time is not None) and ((time.time() - self.spin_start_time) > 3.0):
+        #     self.get_logger().info("Stopping spin avoid")
+        #     self.drive_controller.issue_path_cmd(self.path_target_point.lat, self.path_target_point.lon)
+        #     self.spin_start_time = None
+        
+        if not self.hazard_enabled or "direction" not in self.hazard_info:
+            self.hazard_info = {}
+            self.get_logger().info("Hazard avoidance not enabled or no direction info", throttle_duration_sec=5.0)
+            return
+
+        # Check course error before avoiding
+        # Calculate course error
+        # TODO this is gonna keep returning when the rover is spinnig
+        chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, path_target)
+        course_error = wrap(chi_rad - curr_heading, 0)
+        if abs(course_error) > 0.5:
+            self.get_logger().info(f"Course error too large before avoiding hazards: {course_error}", throttle_duration_sec=1.0)
+            self.hazard_info = {}
+            return
+
+        # Only act if in a state where avoidance is appropriate
+        if self.state in AVOIDANCE_STATES:
+            direction = self.hazard_info["direction"]
+            time_since_update = time.time() - self.hazard_info["time"]
+
+
+            if direction == "straight":
+                # Path is clear, proceed as normal
+                # self.get_logger().info("Path Forward is clear, proceeding as normal")
+                pass
+
+            elif self.hazard_info.get("clear", False):
+                self.get_logger().info(f"{direction.capitalize()} side is clear, offsetting waypoint.")
+                
+                if time_since_update < 1.0:
+                    offset_wp = GPSTools.get_offset_waypoint(path_target, chi_rad, direction, offset_distance=4.0)
+                    self.drive_controller.issue_path_cmd(offset_wp.lat, offset_wp.lon)
+                    self.path_target_point = offset_wp
+            else: 
+                self.get_logger().warn(f"No clear path on either side, Need to spin {direction.capitalize()}.")
+            #     # If neither side is open then we need to spin to find a way out
+            #     # TODO this is not the best approach but hopefully it it works.
+            #     self.get_logger().info(f" both sides are blocked, spinning {direction.capitalize()}.")
+            #     # TODO I need to make sure I can get out of this state
+            #     self.spin_start_time = time.time()
+            #     if direction == "left":
+            #         self.drive_controller.issue_drive_cmd(0.0, -self.spin_speed)
+            #     else:
+            #         self.drive_controller.issue_drive_cmd(0.0, self.spin_speed)
+            self.hazard_info = {}
+                
+    
     def obj_detect_callback(self, msg: ObjectsStamped):
         timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
         is_recent = lambda obj_ts: timestamp - obj_ts <= 1.0
@@ -600,10 +716,13 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 # TODO make this distance tolerance larger and then make a precise GPS navigation state
                 
-                # UPDATE DIST TO Final TARGET FOR OBJECT/ARUCO DETECTIONS
+                # This UPDATES DIST TO Final TARGET FOR OBJECT/ARUCO DETECTIONS
                 self.dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
-
-                if GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point) < self.path_waypoint_dist_tolerance:
+                path_dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point)
+                
+                self.hazard_avoidance(self.curr_heading, self.path_target_point)
+                
+                if path_dist_to_target < self.path_waypoint_dist_tolerance:
                     self.state = State.START_POINT_NAVIGATION
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE

@@ -77,6 +77,12 @@ def generate_launch_description():
             respawn=True,
             respawn_delay=5
         ),
+        Node(
+            package='hazard_cpp',
+            executable='pcl_processor',
+            name='pcl_processor',
+            output='screen',
+        ),
 
         # REMOVED from Autonomy launch by BRADEN MEYERS FEB 27. LMK if you need it
         # Node(

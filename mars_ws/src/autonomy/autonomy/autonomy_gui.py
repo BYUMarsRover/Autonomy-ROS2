@@ -173,7 +173,7 @@ class AutonomyGUI(Node, QWidget):
         # Enables the hazard detection node
         self.enable_hazard_detection_client = self.create_client(SetBool, '/hazard_detector/enable')
         # Enables hazard avoidance in the autopilot manager
-        self.enable_hazard_avoidance_client = self.create_client(SetBool, '/mobility/autopilot_manager/enable_hazard_avoidance')
+        self.enable_hazard_avoidance_client = self.create_client(SetBool, '/hazard_avoidance/enable')
 
         #NOTE: depricated until mapviz capability added back
         # self.plan_order_mapviz_client = self.create_client(OrderPath, '/plan_order_mapviz')
