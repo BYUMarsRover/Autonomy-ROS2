@@ -19,6 +19,8 @@ find_package(sensor_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/AutonomyTaskInfo.msg"
   "msg/Battery.msg"
+  "msg/BBoxStats.msg"
+  "msg/BBoxStatsArray.msg"
   "msg/Clicker.msg"
   "msg/Fiducial.msg"
   "msg/FiducialArray.msg"
