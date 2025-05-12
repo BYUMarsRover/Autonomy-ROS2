@@ -113,14 +113,14 @@ USER $NAME
 
 # Install mapviz - Sarah Sanderson, Feb 2025
 # Necessary packages to run the mapviz viewer
-# USER root
-# RUN apt update && apt install -y \
-#     ros-humble-mapviz \
-#     ros-humble-mapviz-plugins \
-#     ros-humble-tile-map \
-#     ros-humble-multires-image \
-#     ros-humble-rosapi
-# USER $NAME
+USER root
+RUN apt update && apt install -y \
+    ros-humble-mapviz \
+    ros-humble-mapviz-plugins \
+    ros-humble-tile-map \
+    ros-humble-multires-image \
+    ros-humble-rosapi
+USER $NAME
 
 # Install domain bridge package - Nelson Durrant, Feb 2025
 # Necessary dependency for running the domain bridge scripts
@@ -144,9 +144,6 @@ USER $NAME
 # Needed for the hazard avoidance node 
 RUN pip3 install open3d
 RUN pip3 install pcl 
-
-# Install astar for path planning
-RUN pip3 install astar rasterio
 
 # Install libboost for ublox read - Braden Meyers, Mar 2025
 # Needed to run UBLOX_read_2
