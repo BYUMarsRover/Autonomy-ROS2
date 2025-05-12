@@ -693,6 +693,7 @@ class AutonomyStateMachine(Node):
                     self.get_logger().info('Successfully navigated to the object!')
                     self.state = State.TASK_COMPLETE
                     self.drive_controller.stop()
+                # TODO: Look into doing something like aruco where we can navigate to the last known position if we lose the object
 
             elif self.state == State.TASK_COMPLETE:
                 self.nav_state.navigation_state = NavState.ARRIVAL_STATE
