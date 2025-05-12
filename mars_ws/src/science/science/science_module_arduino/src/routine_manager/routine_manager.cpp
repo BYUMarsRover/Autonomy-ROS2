@@ -4,10 +4,17 @@
 #include "../actuator_manager/actuator_manager.h"
 #include "../definitions/definitions.h"
 #include "../error/error.h"
+#include "../mem_manager/mem_map.h"
+#include "../mem_manager/mem_manager.h"
 #include <stdint.h>
 
 #define FULL_REVERSE_CONTROL 0x80
 #define FULL_FORWARD_CONTROL 0x7F
+
+#define GROUP_CODE 0xEE
+#define END_OF_ROUTINE 0xFF
+#define POS_ACTION_CODE 0xAA
+#define SPD_ACTION_CODE 0xBB
 
 namespace routine_manager {
 
@@ -19,16 +26,125 @@ namespace routine_manager {
         PAUSED_STEP,
     } routine_manager_state;
 
+    // Data manipulation Methods
+
+    uint8_t get_total_routine_count_eeprom() {
+        // Get the total number of routines
+        return EEPROM.read(EEPROM_ROUTINE_LOOKUP_TABLE_SIZE_ADDR);
+    }
+
+    uint8_t* get_routine_ptr_from_eeprom(uint8_t routine_index) {
+        // Get the ptr to the specified routine
+        // Ensure the routine index is within the valid range of routines stored in the EEPROM
+        if (routine_index >= get_total_routine_count_eeprom()) {
+            return nullptr;
+        }
+        // Get the routine address from the lookup table but return it as a uint8_t*
+        return (uint8_t*)EEPROM_readObject<uint16_t>((uint16_t*)(EEPROM_ROUTINE_LOOKUP_TABLE_ADDR) + routine_index);
+    }
+
+    // Dynamically add an action_group to a routine object
+    void add_action_group_to_routine(routine_t* routine, action_group_t* new_group) {
+        // Reserve memory for a routine one group bigger
+        action_group_t** new_action_group_array = (action_group_t**)malloc((routine->group_cnt + 1));
+
+        // Handle moving prev data
+        if (routine->group_cnt > 0) {
+            // Copy over the old pointers
+            memcpy(new_action_group_array, routine->group_ptrs, routine->group_cnt * sizeof(action_group_t*));
+            // Free the memory for the old array
+            free(routine->group_ptrs);
+        }
+
+        // Add the new group and increment the group cnt
+        new_action_group_array[routine->group_cnt++] = new_group;
+        // Attach the new array to the routine
+        routine->group_ptrs = new_action_group_array;
+    }
+
+    // Dynamically add an position action to an action group
+    void add_pos_action_to_group(action_group_t* group, actuator_position_action_t* new_pos_action) {
+        // Reserve memory for a group one pos action bigger
+        actuator_position_action_t** new_pos_action_array = (actuator_position_action_t**)malloc((group->pos_action_cnt + 1));
+
+        // Handle moving prev data
+        if (group->pos_action_cnt > 0) {
+            // Copy over the old pointers
+            memcpy(new_pos_action_array, group->pos_action_ptrs, group->pos_action_cnt * sizeof(actuator_position_action_t*));
+            // Free the memory for the old array
+            free(group->pos_action_ptrs);
+        }
+
+        // Add the new group and increment the group cnt
+        new_pos_action_array[group->pos_action_cnt++] = new_pos_action;
+        // Attach the new array to the routine
+        group->pos_action_ptrs = new_pos_action_array;
+    }
+
+    // Dynamically add a speed action to an action group
+    void add_speed_action_to_group(action_group_t* group, actuator_speed_action_t* new_speed_action) {
+        // Reserve memory for a group one speed action bigger
+        actuator_speed_action_t** new_speed_action_array = (actuator_speed_action_t**)malloc((group->speed_action_cnt + 1));
+
+        // Handle moving prev data
+        if (group->speed_action_cnt > 0) {
+            // Copy over the old pointers
+            memcpy(new_speed_action_array, group->speed_action_ptrs, group->speed_action_cnt * sizeof(actuator_speed_action_t*));
+            // Free the memory for the old array
+            free(group->speed_action_ptrs);
+        }
+
+        // Add the new action and increment the action count
+        new_speed_action_array[group->speed_action_cnt++] = new_speed_action;
+        // Attach the new array to the group
+        group->speed_action_ptrs = new_speed_action_array;
+    }
+
+    // Free all the memory associated with a routine in RAM
+    void free_routine(routine_t* routine) {
+        if (!routine) return;
+
+        // Free each action group
+        for (uint8_t i = 0; i < routine->group_cnt; i++) {
+            action_group_t* group = routine->group_ptrs[i];
+            if (group) {
+                // Free positional actions
+                for (uint8_t j = 0; j < group->pos_action_cnt; j++) {
+                    free(group->pos_action_ptrs[j]);
+                }
+                free(group->pos_action_ptrs);
+
+                // Free speed actions
+                for (uint8_t j = 0; j < group->speed_action_cnt; j++) {
+                    free(group->speed_action_ptrs[j]);
+                }
+                free(group->speed_action_ptrs);
+
+                // Free the group itself
+                free(group);
+            }
+        }
+
+        // Free the group pointers array
+        free(routine->group_ptrs);
+
+        // Free the routine itself
+        free(routine);
+    }
+
     const routine_t* active_routine;
     const action_group_t* active_group;
     uint8_t current_group_index;
     bool step_flag;
+    bool loaded_from_eeprom;
 
     uint8_t get_requested_actuators(const routine_t* routine);
     uint8_t get_requested_actuators(const action_group_t* group);
     bool all_actuators_available(uint8_t bool_byte);
     void reserve_actuators(uint8_t bool_byte);
     void free_actuators(uint8_t bool_byte);
+    void end_routine();
+    const routine_t* load_routine_from_eeprom(uint8_t routine_index);
 
     void submit_actuator_actions(const action_group_t* group);
     void pause_actuator_actions(const action_group_t* group);
@@ -62,6 +178,12 @@ namespace routine_manager {
 
         // Begin
         routine_manager_state = ADVANCE;
+    }
+
+    void begin_routine_eeprom(uint8_t routine_index) {
+        const routine_t* eeprom_routine = load_routine_from_eeprom(routine_index);
+        loaded_from_eeprom = true;
+        begin_routine(eeprom_routine);
     }
 
     void tick() {
@@ -108,14 +230,7 @@ namespace routine_manager {
                 // Inc the routine group index
                 if (++current_group_index == active_routine->group_cnt) {
                     // Complete the routine
-
-                    // Free Actuators is reserved by the routine
-                    if (active_routine->lockdown_actuators)
-                        free_actuators(get_requested_actuators(active_routine));
-
-                    // End execution
-                    active_routine = nullptr;
-                    routine_manager_state = IDLE;
+                    end_routine();
 
                 } else {
 
@@ -137,10 +252,25 @@ namespace routine_manager {
         }
     }
 
+    void end_routine() {
+        // Free all the actuators if it was a group reservation
+        if (active_routine->lockdown_actuators)
+            free_actuators(get_requested_actuators(active_routine));
+
+        // End execution
+        if (loaded_from_eeprom) {
+            // Free the routine
+            free_routine((routine_t*)active_routine);
+            loaded_from_eeprom = false;
+        }
+        active_routine = nullptr;
+        routine_manager_state = IDLE;
+    }
+
     // Abort the Routine
     void abort() {
         pause();
-        routine_manager_state = IDLE;
+        end_routine();
     }
 
     // Pause the Routine
@@ -300,6 +430,64 @@ namespace routine_manager {
         );
         response_buffer.error_code = ERROR_CODE_SUCCESS;
         response_buffer.message_byte_len = len;
+    }
+
+    // Builds a routine data object from EEPROM
+    const routine_t* load_routine_from_eeprom(uint8_t routine_index) {
+        // Load the routine data into RAM from eeprom
+        uint8_t* eeprom_ptr = get_routine_ptr_from_eeprom(routine_index);
+
+        // Reserve the memory for the routine, set up handles
+        routine_t* routine_ptr = (routine_t*)malloc(sizeof(routine_t));
+        action_group_t* current_group_ptr;
+
+        // Read from EEPROM
+        uint8_t instruction;
+        while (eeprom_ptr <= MAX_EEPROM_ADDR && (instruction = EEPROM.read(eeprom_ptr++))) {
+
+            if (instruction == END_OF_ROUTINE) {
+                // End of routine, clean up data and return ptr to the routine
+                break;
+
+            } else if (instruction == GROUP_CODE) {
+                // Reserve the memory for the new group
+                current_group_ptr = (action_group_t*)malloc(sizeof(action_group_t));
+                // Add this new group to the routine
+                add_action_group_to_routine(routine_ptr, current_group_ptr);
+
+            } else if (instruction == POS_ACTION_CODE) {
+                // Reserve the memory a new position action
+                actuator_position_action_t* pos_request_ptr = (actuator_position_action_t*)malloc(sizeof(actuator_position_action_t));
+                pos_request_ptr->actuator_index = EEPROM.read(eeprom_ptr++); // Read next byte with index
+                pos_request_ptr->speed = 1.0f; // Full Speed
+                pos_request_ptr->position = EEPROM.read(eeprom_ptr++) / 255.0f; // Read next byte with position into a float
+
+                // Add this new position action to the group
+                add_pos_action_to_group(current_group_ptr, pos_request_ptr);
+
+            } else if (instruction == SPD_ACTION_CODE) {
+                // Reserve the memory a new position action
+                actuator_speed_action_t* speed_request_ptr = (actuator_speed_action_t*)malloc(sizeof(actuator_speed_action_t));
+                speed_request_ptr->actuator_index = EEPROM.read(eeprom_ptr++); // Read next byte with index
+                speed_request_ptr->control = EEPROM.read(eeprom_ptr++); // Read next byte with control, cast into unsigned?
+                speed_request_ptr->timeout = EEPROM_readObject<uint32_t>((uint32_t*)eeprom_ptr); // Read next 4 bytes for timeout
+                eeprom_ptr += sizeof(uint32_t);
+
+                // Add this new position action to the group
+                add_speed_action_to_group(current_group_ptr, speed_request_ptr);
+
+            }
+        }
+
+        // Check if routine loading was successful
+        if (instruction != END_OF_ROUTINE) {
+            // Free partially allocated memory in case of an error
+            free_routine(routine_ptr);
+            return nullptr;
+        }
+
+        // Return the new routine
+        return (const routine_t*)routine_ptr;
     }
 
     namespace routines {

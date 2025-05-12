@@ -2,7 +2,7 @@
 /*
  * AUTO-GENERATED FILE
  *
- * This file was automatically generated on 10 May 2025.
+ * This file was automatically generated on 12 May 2025.
  * It directs to the appropriate function call using the command word and function address.
  *
  * DO NOT MODIFY THIS FILE DIRECTLY.
@@ -54,16 +54,18 @@ void executeAction(uint8_t function_addr, uint8_t override) {
         case 10: clear_positional_controller(override); break;
         case 11: clear_speed_controller(override); break;
         case 12: run_routine(override); break;
-        case 13: pause_routine(override); break;
-        case 14: resume_routine(override); break;
-        case 15: step_routine(override); break;
-        case 16: abort_routine(override); break;
-        case 17: reset_spectrograph(override); break;
-        case 18: sample_spectrograph(override); break;
-        case 19: reset_ltr(override); break;
-        case 20: sample_ltr(override); break;
-        case 21: calibrate_uv_sensitivty(override); break;
-        case 22: calibrate_uv_index(override); break;
+        case 13: run_routine_eeprom(override); break;
+        case 14: pause_routine(override); break;
+        case 15: resume_routine(override); break;
+        case 16: step_routine(override); break;
+        case 17: abort_routine(override); break;
+        case 18: reset_spectrograph(override); break;
+        case 19: sample_spectrograph(override); break;
+        case 20: reset_ltr(override); break;
+        case 21: sample_ltr(override); break;
+        case 22: calibrate_uv_sensitivty(override); break;
+        case 23: calibrate_uv_index(override); break;
+        case 24: write_eeprom(override); break;
         default:
             // No command configured
             error::badFunctionAddress(function_addr);

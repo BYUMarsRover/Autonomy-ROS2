@@ -24,8 +24,8 @@ class ScienceModuleFunctionList:
             'science_module_function_map.csv'
         )
     with open(path, 'r') as f:
-            dict_reader = DictReader(f)
-            functions = list(dict_reader)
+        dict_reader = DictReader(f)
+        functions = list(dict_reader)
 
     @staticmethod
     def get_all():

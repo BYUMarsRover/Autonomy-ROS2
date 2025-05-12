@@ -10,7 +10,17 @@
 // UV Sensitivity Value
 // uint16_t - 2 bytes
 #define EEPROM_UV_SENSITIVTY_ADDR 0x0000
-#define EEPROM_NEXT_ADDR EEPROM_UV_SENSITIVTY_ADDR + sizeof(uint16_t)
+
+// Routine Lookup Table Size
+// uint8_t - 1 byte
+#define EEPROM_ROUTINE_LOOKUP_TABLE_SIZE_ADDR 0x0002
+
+// Routine Lookup Table
+// eeprom adresses uint16_t - 2 bytes
+#define EEPROM_ROUTINE_LOOKUP_TABLE_ADDR 0x0003
+
+// This part of eeprom will hold custom routine data
+// approx 0x0003 - 0x03D7
 
 // Only used when compiling for polynomial calibration
     // Information about the size of the coeff arrays
