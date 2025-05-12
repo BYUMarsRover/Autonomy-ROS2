@@ -384,20 +384,23 @@ class AutonomyStateMachine(Node):
             self.get_logger().info("Hazard avoidance not enabled or no direction info", throttle_duration_sec=5.0)
             return
 
-        # Check course error before avoiding
-        # Calculate course error
-        # TODO this is gonna keep returning when the rover is spinnig
-        chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, path_target)
-        course_error = wrap(chi_rad - curr_heading, 0)
-        if abs(course_error) > 0.25:
-            self.get_logger().info(f"Course error too large before avoiding hazards: {course_error}", throttle_duration_sec=1.0)
-            self.hazard_info = {}
-            return
 
         # Only act if in a state where avoidance is appropriate
         if self.state in AVOIDANCE_STATES:
             direction = self.hazard_info["direction"]
+
+            # TODO do we need this since we are clearing the hazard info?
             time_since_update = time.time() - self.hazard_info["time"]
+
+            # Check course error before avoiding
+            # Calculate course error
+            # TODO this is gonna keep returning when the rover is spinnig
+            chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, path_target)
+            course_error = wrap(chi_rad - curr_heading, 0)
+            if abs(course_error) > 0.25:
+                self.get_logger().info(f"Course error too large before avoiding hazards: {course_error}", throttle_duration_sec=1.0)
+                self.hazard_info = {}
+                return
 
 
             if direction == "straight":
@@ -413,7 +416,7 @@ class AutonomyStateMachine(Node):
                 
                 if time_since_update < 1.0:
                     # TODO check and see if anything is new since the last time we offset
-                    offset_wp = GPSTools.get_offset_waypoint(self.current_point, curr_heading, direction, offset_distance=5.0)
+                    offset_wp = GPSTools.generate_side_waypoint(self.current_point, curr_heading, direction, offset_distance=7.0, offset_angle=0.01)
                     self.drive_controller.issue_path_cmd(offset_wp.lat, offset_wp.lon)
                     self.path_target_point = offset_wp
                     self.get_logger().info(f"Offset waypoint to: {offset_wp}, direction: {direction}, heading: {curr_heading}, ")
