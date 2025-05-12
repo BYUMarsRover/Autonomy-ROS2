@@ -161,8 +161,8 @@ if [ "$(uname -m)" = "x86_64" ]; then
 else
   H265_ENCODE="nvvidconv ! nvv4l2h265enc bitrate=$BITRATE preset-level=0"
 fi
-echo "Using $H265_ENCODE"
-exit 0
+# echo "Using $H265_ENCODE"
+# exit 0
 
 gst-launch-1.0 v4l2src device=$DEVICE ! videoconvert \
 ! "video/x-raw, width=$WIDTH, height=$HEIGHT, format=(string)$FORMAT, framerate=(fraction)30/1" $VIDEOCROP_PIPELINE \
