@@ -52,6 +52,7 @@ RESPONSE_ERROR_LEN_BASE_INDEX = 3
 RESPONSE_ERROR_MESSAGE_START_BASE_INDEX = RESPONSE_ERROR_LEN_BASE_INDEX + 1
 RESPONSE_FOOTER_BASE_INDEX = 4
 
+TOTAL_ACTUATORS = 6
 PROBE_ACTUATOR_INDEX = 0
 AUGER_ACTUATOR_INDEX = 1
 PRIMARY_DOOR_ACTUATOR_INDEX = 2
@@ -80,6 +81,7 @@ class ScienceSerialInterface(Node):
         self.create_subscription(ScienceActuatorControl, '/science_serial_drill',                lambda msg: self.actuator_control_callback(msg, DRILL_ACTUATOR_INDEX), 10)
         self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
         self.create_subscription(Empty, '/science_serial_reset', self.establish_serial_connection, 10)
+        self.create_subscription(Empty, '/science_emergency_stop', self.emergency_stop, 10)
 
         # Serial Communication Exchange
         self.sub_science_serial_tx_request = self.create_subscription(ScienceSerialTxPacket, '/science_serial_tx_request', self.perform_tx_request, 10)
@@ -101,7 +103,8 @@ class ScienceSerialInterface(Node):
         if self.arduino is not None:
             self.arduino.close()
         try:
-            self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
+            self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
+            #self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
             self.get_logger().info("Serial port initialized")
         except Exception as e:
             sys.stdout.flush()
@@ -113,10 +116,25 @@ class ScienceSerialInterface(Node):
     # Callbacks for Subscribers
 
     def actuator_control_callback(self, msg: ScienceActuatorControl, sensor_index):
-        self.perform_tx_request(SMFL.get_tx_get_update_actuator_control(sensor_index, msg.control))
+        self.perform_tx_request(SMFL.get_tx_update_actuator_control(sensor_index, msg.control))
 
     def set_override_bit_callback(self, msg: Bool):
         self.override_bit = msg.data
+
+    def emergency_stop(self, msg: Empty):
+        # Emergency stop for all actuators
+        prev_override_bit = self.override_bit
+        self.override_bit = True
+        self.perform_tx_request(SMFL.get_tx_abort_routine())
+        for index in range(0, TOTAL_ACTUATORS):
+            if index != DRILL_ACTUATOR_INDEX:
+                #print(index, type(index))
+                self.perform_tx_request(SMFL.get_tx_clear_positional_controller(index))
+                self.perform_tx_request(SMFL.get_tx_clear_speed_controller(index))
+            self.perform_tx_request(SMFL.get_tx_free_actuator(index))
+            self.perform_tx_request(SMFL.get_tx_update_actuator_control(index, 0))
+        self.override_bit = prev_override_bit
+        self.get_logger().warning("Emergency stop activated, all actuators disabled")
 
     # Publishing for RXTX Monitoring
 
@@ -139,25 +157,21 @@ class ScienceSerialInterface(Node):
             self.write_serial(msg.packet)
         else:
             # If the packet is empty, build from command word and operands
-            self.author_packet([msg.command_word, len(msg.operands)] + list(msg.operands), self.override_bit)
+            self.write_serial(ScienceSerialInterface.author_packet(msg, self.override_bit))
 
     def write_serial(self, packet):
         self.arduino.write(struct.pack('B' * len(packet), *packet))
         self.publish_serial_tx_notification(packet)
 
-    def author_packet(self, byte_array, override):
-         # Configure a payload with the overhead formatting and send to arduino
+    @staticmethod
+    def author_packet(tx: ScienceSerialTxPacket, override=False):
+        byte_array = [tx.command_word, len(tx.operands)] + list(tx.operands)
         if len(byte_array) > MAXIMUM_PACKET_SIZE:
-            # todo proper error message
-            print(f"Provided command packet is of size {len(byte_array)}, maximum is {MAXIMUM_PACKET_SIZE}")
-        elif self.arduino:
-            byte_array[0] |= 0b01000000 if override else 0b00000000  # Set the Override Bit
-            byte_array.insert(0, COMMAND_PACKET_HEADER)
-            byte_array.append(COMMAND_PACKET_FOOTER)
-            self.write_serial(byte_array)
-
-            # hex_array = [ hex(x) for x in byte_array]
-            # print(f"Sending to arduino: {','.join(hex_array)}")
+            raise ValueError(f"Provided command packet is of size {len(byte_array)}, maximum is {MAXIMUM_PACKET_SIZE}")
+        byte_array[0] |= 0b01000000 if override else 0b00000000  # Set the Override Bit
+        byte_array.insert(0, COMMAND_PACKET_HEADER)
+        byte_array.append(COMMAND_PACKET_FOOTER)
+        return byte_array
 
     # Reading in from the Serial Bus
 
@@ -247,9 +261,9 @@ class ScienceSerialInterface(Node):
         # print(f'Received Reponse Packet:\n\tEcho: [{",".join([ hex(x) for x in response_packet])}]\n\tError Code: {error_code}\n\tError Message: [{",".join([ hex(x) for x in error_message])}]')
         # print(f'ASCII: {bytes(error_message).decode()}')
         try:
-            print(f'Received Response Packet:({error_code}) {bytes(error_message).decode()}')
+            self.get_logger().info(f'Received Response Packet [len={len(error_message)}]:({error_code}) {bytes(error_message).decode()}')
         except:
-            print(f'Received Response Packet with invalid ascii:({error_code}) {",".join([ hex(x) for x in error_message])}')
+            self.get_logger().info(f'Received Response Packet with invalid ascii:({error_code}) {",".join([ hex(x) for x in error_message])}')
 
         # Publish packet notification to ROS
         rx_packet = ScienceSerialRxPacket(

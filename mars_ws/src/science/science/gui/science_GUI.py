@@ -92,6 +92,9 @@ class science_GUI(Node):
 
         self.save_interval = 10
 
+        self.analog_sensors_timer = None
+        self.uv_sensor_timer = None
+
         self.fad_calibration_interval = 2
         self.site_number = 1
         self.task_launcher_init()
@@ -135,11 +138,15 @@ class science_GUI(Node):
         self.qt.actionLaunch_Function_Library.triggered.connect(lambda: self.launch_gui("science_debug"))
         self.qt.actionLaunch_RX_TX_Monitor.triggered.connect(lambda: self.launch_gui("science_rxtx"))
         self.qt.actionLaunch_Response_Parse.triggered.connect(lambda: self.launch_gui("science_response"))
+        self.qt.actionLaunch_Actuator_Command.triggered.connect(lambda: self.launch_gui("science_routine"))
 
         # Begin sensor queries
+        self.is_reading_sensors = False
         self.qt.actionToggle_Sensor_Query.triggered.connect(self.toggle_sensor_queries)
         self.qt.actionToggle_Sensor_Query.text = "Begin Sensor Queries"
-        self.is_reading_sensors = False
+
+        # Checkbox to toggle reading calibrated values from the module
+        self.qt.actionRead_Calibrated_from_Module.triggered.connect(self.update_sensor_queries_settings)
         
     def launch_gui(self, executable):
         """
@@ -152,16 +159,40 @@ class science_GUI(Node):
         except Exception as e:
             self.get_logger().error(f"Failed to launch gui: {str(e)}")
 
+    def should_use_module_eeprom_calibration(self):
+        return self.qt.actionRead_Calibrated_from_Module.isChecked()
+
+    def enable_sensor_queries(self):
+        """
+        Enable sensor queries and update the menu item text.
+        """
+        if self.is_reading_sensors:
+            self.stop_sensor_queries() # Stop any existing timers
+        self.analog_sensors_timer = self.create_timer(1, lambda: self.pub_get_analog_sensors.publish(Bool( data=self.should_use_module_eeprom_calibration() ))) # 1 Hz - Get Raw 
+        self.uv_sensor_timer = self.create_timer(0.5, lambda: self.pub_get_uv.publish(Empty())) # 1 Hz - Get Raw 
+        self.qt.actionToggle_Sensor_Query.setText("Stop Sensor Queries")
+        self.is_reading_sensors = True
+
+    def stop_sensor_queries(self):
+        """
+        Disable sensor queries and update the menu item text.
+        """
+        self.is_reading_sensors = False
+        if self.analog_sensors_timer is not None:
+            self.analog_sensors_timer.cancel()
+        if self.uv_sensor_timer is not None:
+            self.uv_sensor_timer.cancel()
+        self.qt.actionToggle_Sensor_Query.setText("Begin Sensor Queries")
+
     def toggle_sensor_queries(self):
         self.is_reading_sensors = not self.is_reading_sensors
+        self.update_sensor_queries_settings()
+    
+    def update_sensor_queries_settings(self):
         if self.is_reading_sensors:
-            self.temperature_timer = self.create_timer(1, lambda: self.pub_get_analog_sensors.publish(Bool( data=False ))) # 1 Hz - Get Raw 
-            self.mositure_timer = self.create_timer(0.5, lambda: self.pub_get_uv.publish(Empty())) # 1 Hz - Get Raw 
-            self.qt.actionToggle_Sensor_Query.setText("Stop Sensor Queries")
+            self.enable_sensor_queries()
         else:
-            self.temperature_timer.cancel()
-            self.mositure_timer.cancel()
-            self.qt.actionToggle_Sensor_Query.setText("Begin Sensor Queries")
+            self.stop_sensor_queries()
 
     def initialize_timers(self):
         self.moisture_timer = self.create_timer(self.save_interval, self.stop_moist_saver)#These are probably redundant in ros2
@@ -184,8 +215,6 @@ class science_GUI(Node):
 
         self.qt.pushButton_spectro.clicked.connect(lambda: self.fetch_spectro_data())
         self.qt.pushButton_uv.clicked.connect(lambda: self.fetch_uv_data())
-        self.qt.pushButton_spectro.clicked.connect(lambda: self.pub_get_spectro.publish(Empty()))
-        self.qt.pushButton_uv.clicked.connect(lambda: self.pub_get_uv.publish(Empty()))
 
         self.qt.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
         self.qt.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
@@ -204,6 +233,10 @@ class science_GUI(Node):
 
         self.pub_get_auger_position = self.create_publisher(Empty, '/science_auger_position', 1)
 
+        # Kill Switch
+        self.pub_kill_switch = self.create_publisher(Empty, "/science_emergency_stop", 10)
+        self.qt.pushButton_kill_switch.clicked.connect(lambda: self.pub_kill_switch.publish(Empty()))
+
         self.signals.sensor_signal.connect(self.update_sensor_values)
         self.signals.auger_position.connect(self.update_current_tool)
         self.signals.sensor_save_signal.connect(self.pub_save_sensor.publish)
@@ -215,8 +248,8 @@ class science_GUI(Node):
         self.science_auger_position = self.create_subscription(Bool, '/science_using_probe', self.signals.auger_position.emit, 10)
         self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
         self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
-        # self.sub_spectro = self.create_subscription(ScienceSpectroData, '/science_spectro_data', self.update_spectro_data, 10)
-        # self.sub_uv = self.create_subscription(ScienceUvData, '/science_uv_data', self.update_uv_values, 10)
+        self.sub_spectro = self.create_subscription(ScienceSpectroData, '/science_spectro_data', self.update_spectro_data, 10)
+        self.sub_uv = self.create_subscription(ScienceUvData, '/science_uv_data', self.update_uv_values, 10)
 
     def fetch_spectro_data(self):
         msg = Empty()
