@@ -513,11 +513,18 @@ class HomeGuiUI(Node, QWidget):
             self.right_ir_label.setText("Right IR: NA")
 
     def update_rover_camera_list(self, camera_devices):
-        selected_device = self.cameraSelector.currentText()
-        self.cameraSelector.clear()
-        for d in camera_devices:
-            self.cameraSelector.addItem(d)
-        self.cameraSelector.setCurrentText(selected_device)
+        current_devices = [self.cameraSelector.itemText(i) for i in range(self.cameraSelector.count())]
+
+        # Only update if the device list actually changed
+        if set(current_devices) != set(camera_devices):
+            selected_device = self.cameraSelector.currentText()
+            self.cameraSelector.blockSignals(True)
+            self.cameraSelector.clear()
+            self.cameraSelector.addItems(camera_devices)
+            if selected_device in camera_devices:
+                self.cameraSelector.setCurrentText(selected_device)
+            self.cameraSelector.blockSignals(False)
+
 
     def refresh_update_label(self, label):
         time_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
