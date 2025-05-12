@@ -416,7 +416,7 @@ class AutonomyStateMachine(Node):
                 
                 if time_since_update < 1.0:
                     # TODO check and see if anything is new since the last time we offset
-                    offset_wp = GPSTools.generate_side_waypoint(self.current_point, curr_heading, direction, offset_distance=7.0, offset_angle=0.01)
+                    offset_wp = GPSTools.generate_side_waypoint(self.current_point, curr_heading, direction, offset_distance=7.0, offset_angle=0.1)
                     self.drive_controller.issue_path_cmd(offset_wp.lat, offset_wp.lon)
                     self.path_target_point = offset_wp
                     self.get_logger().info(f"Offset waypoint to: {offset_wp}, direction: {direction}, heading: {curr_heading}, ")
