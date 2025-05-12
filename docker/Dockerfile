@@ -169,7 +169,12 @@ USER $NAME
 USER root
 RUN apt update && apt install -y \
     libgdal-dev \
-    python3-rasterio
+    python3-rasterio \
+    libpcl-dev \
+    ros-humble-pcl-ros \
+    ros-humble-pcl-conversions \
+    ros-humble-visualization-msgs
+
 USER $NAME
 
 # Install AStar planning package - Nelson Durrant, Apr 2025

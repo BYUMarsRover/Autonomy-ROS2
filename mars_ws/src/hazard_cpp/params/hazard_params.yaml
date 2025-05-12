@@ -13,4 +13,4 @@ pcl_processor:
     bbox_min_y_right: -2.0
 
     # Publishh cropped point cloud and bounding box
-    verbose_publishing: true
+    verbose_publishing: false

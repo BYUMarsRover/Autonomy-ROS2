@@ -94,7 +94,7 @@ public:
         }
       );
 
-      enabled_ = true;  // TODO: changedefault state
+      enabled_ = false;  // default state
 
       enable_service_ = this->create_service<std_srvs::srv::SetBool>(
           "/hazard_detector/enable",
