@@ -118,7 +118,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('aruco_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that aruco deteciton is enabled
         self.declare_parameter('aruco_alpha_lpf', 0.5)
         self.declare_parameter('spin_step_size', 0.6981)
-        self.declare_parameter('spin_delay_time', 10.0)     # Spin delay time is the time for the whole spin 
+        self.declare_parameter('spin_delay_time', 17.0)     # Spin delay time is the time for the whole spin 
         self.declare_parameter('wrong_aruco_backup_distance', 7.0)
         self.declare_parameter('wrong_aruco_backup_spin_speed', 15.0)
         self.declare_parameter('hex_seach_angle_difference', 50.0)
