@@ -35,10 +35,9 @@ namespace routine_manager {
         uint8_t group_cnt;
         bool lockdown_actuators;
     };
-
-    void begin_routine(const routine_t* routine);
-    void begin_routine_eeprom(uint8_t routine_index);
-    uint8_t get_total_routine_count_eeprom();
+    
+    void begin_routine(uint8_t routine_index);
+    uint8_t get_total_routine_count();
     void init();
     void tick();
     void step();
@@ -48,15 +47,6 @@ namespace routine_manager {
     bool is_running();
     bool is_paused();
     void report_to_message_buffer();
-
-    namespace routines {
-        extern const routine_t move_to_zero_routine;
-        extern const routine_t reset_routine;
-        extern const routine_t test_routine;
-        extern const routine_t first_cache_transfer;
-    }
 }
-
-extern const routine_manager::routine_t* ROUTINE_LOOKUP[ROUTINE_COUNT];
 
 #endif /* ROUTINE_MANAGER_H */

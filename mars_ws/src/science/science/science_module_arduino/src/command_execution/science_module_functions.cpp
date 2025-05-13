@@ -1,7 +1,7 @@
 /*
  * SCRIPT MAINTAINED FUNCTION DEFINITIONS
  *
- * Generated on: 12 May 2025
+ * Generated on: 13 May 2025
  *
  * This file is maintained by the 'build_function_implementations.py' script.
  * It ensures that all functions defined in the provided CSV mapping file
@@ -380,7 +380,7 @@ void clear_speed_controller(uint8_t override) {
     speed_controller::resolve(actuator_index);
 }
 
-// Begins the indicated routine
+// Begins the indicated routine from eeprom data
 //    1: routine_index (uint8_t) [0]
 void run_routine(uint8_t override) {
     if (!verifyCommandOperandLength(1)) return;
@@ -396,34 +396,12 @@ void run_routine(uint8_t override) {
         }
     }
 
-    if (routine_index < ROUTINE_COUNT)
-        routine_manager::begin_routine(ROUTINE_LOOKUP[routine_index]);
-    else 
-        error::badRoutineIndex(command_operand_buffer[0]);
-}
-
-// Begins the indicated routine from eeprom data
-//    1: routine_index (uint8_t) [0]
-void run_routine_eeprom(uint8_t override) {
-    if (!verifyCommandOperandLength(1)) return;
-    uint8_t routine_index = command_operand_buffer[0];
-
-    // Check to make sure a routine is not running
-    if (routine_manager::is_running()) {
-        if (override) {
-            error::routineRunning();
-            return;
-        } else {
-            routine_manager::abort();
-        }
-    }
-
     // Ensure the routine index is valid
-    uint8_t total_routine_count = routine_manager::get_total_routine_count_eeprom();
+    uint8_t total_routine_count = routine_manager::get_total_routine_count();
     if (routine_index >= total_routine_count) {
         error::badRoutineIndex(command_operand_buffer[0]);
     } else {
-        routine_manager::begin_routine_eeprom(routine_index);
+        routine_manager::begin_routine(routine_index);
     }
 }
 
@@ -535,7 +513,7 @@ void calibrate_uv_index(uint8_t override) {
 //    1: eeprom_addr (uint16_t) [0-1]
 //    2: data (uint8_t) [2]
 void write_eeprom(uint8_t override) {
-    uint16_t eeprom_addr = command_operand_buffer[0-1];
+    uint16_t eeprom_addr = *((uint16_t*)command_operand_buffer);
     EEPROM_writeArray((uint8_t*)eeprom_addr, &(command_operand_buffer[2]), command_buffer.operand_byte_len - 2);
 }
 

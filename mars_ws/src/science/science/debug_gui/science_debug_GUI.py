@@ -5,7 +5,6 @@ from python_qt_binding.QtCore import QObject, Signal
 import rclpy
 from rover_msgs.msg import ScienceSerialTxPacket
 from rclpy.node import Node
-from science.function_mapping.function_map import ScienceModuleFunctionList as SMFL
 from science.debug_gui.debug_widgits import *
 
 class science_debug_GUI(Node):

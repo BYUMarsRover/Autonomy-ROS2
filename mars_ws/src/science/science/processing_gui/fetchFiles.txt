@@ -30,3 +30,10 @@ spectro_1_sample_no_wait.pk
 take_uv_sample.pk
 2nd_cache_backup_5sec.pk
 set_temp_coeff_6_zeros.pk
+routine_upload.pk
+test_long.pk
+compiled_routine.pk
+run_eeprom_routine_1.pk
+switched_routines.pk
+run_eeprom_routine_0.pk
+config_upload.pk

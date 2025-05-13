@@ -2,7 +2,7 @@
 /*
  * AUTO-GENERATED FILE
  *
- * This file was automatically generated on 12 May 2025.
+ * This file was automatically generated on 13 May 2025.
  * It directs to the appropriate function call using the command word and function address.
  *
  * DO NOT MODIFY THIS FILE DIRECTLY.
@@ -53,8 +53,7 @@ void executeAction(uint8_t function_addr, uint8_t override) {
         case 9: free_actuator(override); break;
         case 10: clear_positional_controller(override); break;
         case 11: clear_speed_controller(override); break;
-        case 12: run_routine(override); break;
-        case 13: run_routine_eeprom(override); break;
+        case 13: run_routine(override); break;
         case 14: pause_routine(override); break;
         case 15: resume_routine(override); break;
         case 16: step_routine(override); break;

@@ -15,6 +15,8 @@
 #define END_OF_ROUTINE 0xFF
 #define POS_ACTION_CODE 0xAA
 #define SPD_ACTION_CODE 0xBB
+#define ACTUATOR_LOCKDOWN_CODE 0xCC
+#define FUNC_CODE 0xDD
 
 namespace routine_manager {
 
@@ -26,137 +28,48 @@ namespace routine_manager {
         PAUSED_STEP,
     } routine_manager_state;
 
-    // Data manipulation Methods
+    // Memory manipulation Methods
+    routine_t* load_routine_from_eeprom(uint8_t routine_index);
+    uint8_t* get_routine_ptr_from_eeprom(uint8_t routine_index);
+    void add_action_group_to_routine(routine_t* routine, action_group_t* new_group);
+    void add_pos_action_to_group(action_group_t* group, actuator_position_action_t* new_pos_action);
+    void add_speed_action_to_group(action_group_t* group, actuator_speed_action_t* new_speed_action);
+    void free_routine(routine_t* routine);
+    void report_routine_structure(routine_t* routine);
 
-    uint8_t get_total_routine_count_eeprom() {
-        // Get the total number of routines
-        return EEPROM.read(EEPROM_ROUTINE_LOOKUP_TABLE_SIZE_ADDR);
-    }
-
-    uint8_t* get_routine_ptr_from_eeprom(uint8_t routine_index) {
-        // Get the ptr to the specified routine
-        // Ensure the routine index is within the valid range of routines stored in the EEPROM
-        if (routine_index >= get_total_routine_count_eeprom()) {
-            return nullptr;
-        }
-        // Get the routine address from the lookup table but return it as a uint8_t*
-        return (uint8_t*)EEPROM_readObject<uint16_t>((uint16_t*)(EEPROM_ROUTINE_LOOKUP_TABLE_ADDR) + routine_index);
-    }
-
-    // Dynamically add an action_group to a routine object
-    void add_action_group_to_routine(routine_t* routine, action_group_t* new_group) {
-        // Reserve memory for a routine one group bigger
-        action_group_t** new_action_group_array = (action_group_t**)malloc((routine->group_cnt + 1));
-
-        // Handle moving prev data
-        if (routine->group_cnt > 0) {
-            // Copy over the old pointers
-            memcpy(new_action_group_array, routine->group_ptrs, routine->group_cnt * sizeof(action_group_t*));
-            // Free the memory for the old array
-            free(routine->group_ptrs);
-        }
-
-        // Add the new group and increment the group cnt
-        new_action_group_array[routine->group_cnt++] = new_group;
-        // Attach the new array to the routine
-        routine->group_ptrs = new_action_group_array;
-    }
-
-    // Dynamically add an position action to an action group
-    void add_pos_action_to_group(action_group_t* group, actuator_position_action_t* new_pos_action) {
-        // Reserve memory for a group one pos action bigger
-        actuator_position_action_t** new_pos_action_array = (actuator_position_action_t**)malloc((group->pos_action_cnt + 1));
-
-        // Handle moving prev data
-        if (group->pos_action_cnt > 0) {
-            // Copy over the old pointers
-            memcpy(new_pos_action_array, group->pos_action_ptrs, group->pos_action_cnt * sizeof(actuator_position_action_t*));
-            // Free the memory for the old array
-            free(group->pos_action_ptrs);
-        }
-
-        // Add the new group and increment the group cnt
-        new_pos_action_array[group->pos_action_cnt++] = new_pos_action;
-        // Attach the new array to the routine
-        group->pos_action_ptrs = new_pos_action_array;
-    }
-
-    // Dynamically add a speed action to an action group
-    void add_speed_action_to_group(action_group_t* group, actuator_speed_action_t* new_speed_action) {
-        // Reserve memory for a group one speed action bigger
-        actuator_speed_action_t** new_speed_action_array = (actuator_speed_action_t**)malloc((group->speed_action_cnt + 1));
-
-        // Handle moving prev data
-        if (group->speed_action_cnt > 0) {
-            // Copy over the old pointers
-            memcpy(new_speed_action_array, group->speed_action_ptrs, group->speed_action_cnt * sizeof(actuator_speed_action_t*));
-            // Free the memory for the old array
-            free(group->speed_action_ptrs);
-        }
-
-        // Add the new action and increment the action count
-        new_speed_action_array[group->speed_action_cnt++] = new_speed_action;
-        // Attach the new array to the group
-        group->speed_action_ptrs = new_speed_action_array;
-    }
-
-    // Free all the memory associated with a routine in RAM
-    void free_routine(routine_t* routine) {
-        if (!routine) return;
-
-        // Free each action group
-        for (uint8_t i = 0; i < routine->group_cnt; i++) {
-            action_group_t* group = routine->group_ptrs[i];
-            if (group) {
-                // Free positional actions
-                for (uint8_t j = 0; j < group->pos_action_cnt; j++) {
-                    free(group->pos_action_ptrs[j]);
-                }
-                free(group->pos_action_ptrs);
-
-                // Free speed actions
-                for (uint8_t j = 0; j < group->speed_action_cnt; j++) {
-                    free(group->speed_action_ptrs[j]);
-                }
-                free(group->speed_action_ptrs);
-
-                // Free the group itself
-                free(group);
-            }
-        }
-
-        // Free the group pointers array
-        free(routine->group_ptrs);
-
-        // Free the routine itself
-        free(routine);
-    }
-
+    // State variables
     const routine_t* active_routine;
     const action_group_t* active_group;
     uint8_t current_group_index;
     bool step_flag;
-    bool loaded_from_eeprom;
 
+    // Actuator Control Methods
     uint8_t get_requested_actuators(const routine_t* routine);
     uint8_t get_requested_actuators(const action_group_t* group);
     bool all_actuators_available(uint8_t bool_byte);
     void reserve_actuators(uint8_t bool_byte);
     void free_actuators(uint8_t bool_byte);
     void end_routine();
-    const routine_t* load_routine_from_eeprom(uint8_t routine_index);
-
     void submit_actuator_actions(const action_group_t* group);
     void pause_actuator_actions(const action_group_t* group);
     void resume_actuator_actions(const action_group_t* group);
     uint8_t unresolved_actions(const action_group_t* group);
+
+    // Callback Functions
+    void zero_all_caches();
+    void zero_all_tools();
+    void (*FUNC_TABLE[])() = {
+        zero_all_caches,
+        zero_all_tools
+    };
 
     void init() {
         step_flag = false;
         routine_manager_state = IDLE;
     }
 
-    void begin_routine(const routine_t* routine) {
+    void begin_routine(routine_t* routine) {
+
         // Get the routine ptr
         active_routine = routine;
 
@@ -176,13 +89,20 @@ namespace routine_manager {
         current_group_index = 0;
         active_group = active_routine->group_ptrs[current_group_index];
 
+
         // Begin
         routine_manager_state = ADVANCE;
     }
 
-    void begin_routine_eeprom(uint8_t routine_index) {
-        const routine_t* eeprom_routine = load_routine_from_eeprom(routine_index);
-        loaded_from_eeprom = true;
+    void begin_routine(uint8_t routine_index) {
+        routine_t* eeprom_routine = load_routine_from_eeprom(routine_index);
+        if (eeprom_routine == nullptr) {
+            error::nullptrError();
+            return;
+        }
+        Serial.println(F("Routine loaded from EEPROM:"));
+        report_routine_structure(eeprom_routine);
+        Serial.println(F("Beginning routine:"));
         begin_routine(eeprom_routine);
     }
 
@@ -223,7 +143,10 @@ namespace routine_manager {
                 if (unresolved_actions(active_group) > 0) break;
 
                 // Execute the func ptr if configured
-                if (active_group->fun_ptr != nullptr) active_group->fun_ptr();
+                if (active_group->fun_ptr != nullptr) {
+                    Serial.println(F("Going to evaluate callback!"));
+                    active_group->fun_ptr();
+                }
 
                 // Free all the actuators if it was a group reservation
 
@@ -233,8 +156,10 @@ namespace routine_manager {
                     end_routine();
 
                 } else {
-
+                    Serial.print(F("moving to next group at "));
                     active_group = active_routine->group_ptrs[current_group_index];
+                    Serial.println((uint16_t)active_group);
+
 
                     // Continue execution
                     if (step_flag) {
@@ -253,16 +178,14 @@ namespace routine_manager {
     }
 
     void end_routine() {
+        Serial.println(F("ending routine!"));
+
         // Free all the actuators if it was a group reservation
         if (active_routine->lockdown_actuators)
             free_actuators(get_requested_actuators(active_routine));
 
         // End execution
-        if (loaded_from_eeprom) {
-            // Free the routine
-            free_routine((routine_t*)active_routine);
-            loaded_from_eeprom = false;
-        }
+        free_routine(active_routine);
         active_routine = nullptr;
         routine_manager_state = IDLE;
     }
@@ -432,49 +355,128 @@ namespace routine_manager {
         response_buffer.message_byte_len = len;
     }
 
+    void report_routine_structure(routine_t* routine) {
+        Serial.print(F("Routine Structure:"));
+        Serial.print(F("Routine at "));
+        Serial.println((uint16_t)routine);
+        Serial.print(F("Routine Group Count: "));
+        Serial.println(routine->group_cnt);
+        for (uint8_t i = 0; i < routine->group_cnt; i++) {
+            Serial.print(F("Group "));
+            Serial.print(i);
+            Serial.print(F(": "));
+            Serial.println((uint16_t)routine->group_ptrs[i]);
+            if (routine->group_ptrs[i]->pos_action_cnt == 0) {
+                Serial.println(F("No Positional Actions"));
+            } else {
+                Serial.print(routine->group_ptrs[i]->pos_action_cnt);
+                Serial.print(F(" Pos Actions configured"));
+                for( uint8_t j = 0; j < routine->group_ptrs[i]->pos_action_cnt; j++) {
+                    Serial.print(F("Actuator "));
+                    Serial.print(routine->group_ptrs[i]->pos_action_ptrs[j]->actuator_index);
+                    Serial.print(F(" to "));
+                    Serial.print(routine->group_ptrs[i]->pos_action_ptrs[j]->position);
+                    Serial.print(F(" at speed "));
+                    Serial.println(routine->group_ptrs[i]->pos_action_ptrs[j]->speed);
+                }
+            }
+            if (routine->group_ptrs[i]->speed_action_cnt == 0) {
+                Serial.println(F("No Speed Actions"));
+            } else {
+                Serial.print(routine->group_ptrs[i]->speed_action_cnt);
+                Serial.print(F(" Speed Actions configured"));
+                for( uint8_t j = 0; j < routine->group_ptrs[i]->speed_action_cnt; j++) {
+                    Serial.print(F("Actuator "));
+                    Serial.print(routine->group_ptrs[i]->speed_action_ptrs[j]->actuator_index);
+                    Serial.print(F(" to "));
+                    Serial.println(routine->group_ptrs[i]->speed_action_ptrs[j]->control);
+                }
+            }
+        }
+    }
+
     // Builds a routine data object from EEPROM
-    const routine_t* load_routine_from_eeprom(uint8_t routine_index) {
+    routine_t* load_routine_from_eeprom(uint8_t routine_index) {
         // Load the routine data into RAM from eeprom
         uint8_t* eeprom_ptr = get_routine_ptr_from_eeprom(routine_index);
 
         // Reserve the memory for the routine, set up handles
         routine_t* routine_ptr = (routine_t*)malloc(sizeof(routine_t));
+        if (routine_ptr == nullptr) { error::mallocError(); return nullptr; }
+
+        // Init the struct members
+        routine_ptr->group_cnt = 0;
+        routine_ptr->lockdown_actuators = nullptr;
         action_group_t* current_group_ptr;
 
         // Read from EEPROM
         uint8_t instruction;
-        while (eeprom_ptr <= MAX_EEPROM_ADDR && (instruction = EEPROM.read(eeprom_ptr++))) {
+        while (eeprom_ptr <= MAX_EEPROM_ADDR) {
+
+            // Read the next byte from EEPROM
+            instruction = EEPROM.read(eeprom_ptr++);
 
             if (instruction == END_OF_ROUTINE) {
                 // End of routine, clean up data and return ptr to the routine
                 break;
 
             } else if (instruction == GROUP_CODE) {
+
                 // Reserve the memory for the new group
                 current_group_ptr = (action_group_t*)malloc(sizeof(action_group_t));
+                if (current_group_ptr == nullptr) { error::mallocError(); return nullptr; }
+
+                // Init the struct members 
+                current_group_ptr->pos_action_cnt = 0;
+                current_group_ptr->speed_action_cnt = 0;
+                current_group_ptr->fun_ptr = nullptr;
+
                 // Add this new group to the routine
                 add_action_group_to_routine(routine_ptr, current_group_ptr);
 
             } else if (instruction == POS_ACTION_CODE) {
+
                 // Reserve the memory a new position action
                 actuator_position_action_t* pos_request_ptr = (actuator_position_action_t*)malloc(sizeof(actuator_position_action_t));
+                if (routine_ptr == nullptr) { error::mallocError(); return nullptr; }
+
+                // Init the struct members 
                 pos_request_ptr->actuator_index = EEPROM.read(eeprom_ptr++); // Read next byte with index
                 pos_request_ptr->speed = 1.0f; // Full Speed
                 pos_request_ptr->position = EEPROM.read(eeprom_ptr++) / 255.0f; // Read next byte with position into a float
+                pos_request_ptr->fun_ptr = nullptr; // No function pointer
 
                 // Add this new position action to the group
                 add_pos_action_to_group(current_group_ptr, pos_request_ptr);
 
             } else if (instruction == SPD_ACTION_CODE) {
+
                 // Reserve the memory a new position action
                 actuator_speed_action_t* speed_request_ptr = (actuator_speed_action_t*)malloc(sizeof(actuator_speed_action_t));
+                if (speed_request_ptr == nullptr) { error::mallocError(); return nullptr; }
+
+                // Init the struct members
                 speed_request_ptr->actuator_index = EEPROM.read(eeprom_ptr++); // Read next byte with index
                 speed_request_ptr->control = EEPROM.read(eeprom_ptr++); // Read next byte with control, cast into unsigned?
                 speed_request_ptr->timeout = EEPROM_readObject<uint32_t>((uint32_t*)eeprom_ptr); // Read next 4 bytes for timeout
                 eeprom_ptr += sizeof(uint32_t);
+                speed_request_ptr->fun_ptr = nullptr; // No function pointer
 
                 // Add this new position action to the group
                 add_speed_action_to_group(current_group_ptr, speed_request_ptr);
+
+            } else if (instruction == ACTUATOR_LOCKDOWN_CODE) {
+
+                // Enable actuator lockdown on this routine,
+                // this means that all actuators are only freed after the whole routine is done
+                // and not after each group
+                routine_ptr->lockdown_actuators = true; 
+
+            } else if (instruction == FUNC_CODE) {
+
+                // Sets the function pointer for this group
+                // to one of the functions in the function table
+                current_group_ptr->fun_ptr = FUNC_TABLE[EEPROM.read(eeprom_ptr++)]; // Read next byte with function pointer
 
             }
         }
@@ -487,220 +489,127 @@ namespace routine_manager {
         }
 
         // Return the new routine
-        return (const routine_t*)routine_ptr;
+        return routine_ptr;
     }
 
-    namespace routines {
-
-        // Move to Zero Routine
-        // Moves all the actuators to zero position
-        
-        const actuator_position_action_t to_zero_auger = {
-            .actuator_index = AUGER_ACTUATOR_INDEX,
-            .position = 0,
-            .speed = 1,
-            .fun_ptr = nullptr
-        };
-
-        const actuator_position_action_t to_zero_probe = {
-            .actuator_index = PROBE_ACTUATOR_INDEX,
-            .position = 0,
-            .speed = 1,
-            .fun_ptr = nullptr
-        };
-
-        const actuator_position_action_t to_zero_primary_door = {
-            .actuator_index = PRIMARY_DOOR_ACTUATOR_INDEX,
-            .position = 0,
-            .speed = 1,
-            .fun_ptr = nullptr
-        };
-
-        const actuator_position_action_t to_zero_secondary_door = {
-            .actuator_index = SECONDARY_DOOR_ACTUATOR_INDEX,
-            .position = 0,
-            .speed = 1,
-            .fun_ptr = nullptr
-        };
-
-        const actuator_position_action_t to_zero_secondary_cache = {
-            .actuator_index = SECONDARY_CACHE_ACTUATOR_INDEX,
-            .position = 0,
-            .speed = 1,
-            .fun_ptr = nullptr
-        };
-
-        const actuator_position_action_t* zero_actions_addr[] = {
-            &to_zero_auger,
-            &to_zero_probe,
-            &to_zero_primary_door,
-            &to_zero_secondary_door,
-            &to_zero_secondary_cache
-        };
-
-        const action_group_t move_to_zero_group = {
-            .pos_action_ptrs = zero_actions_addr,
-            .pos_action_cnt = 5,
-            .speed_action_ptrs = nullptr,
-            .speed_action_cnt = 0,
-            .fun_ptr = nullptr
-        };
-
-        const action_group_t* zero_group_addr[] = {
-            &move_to_zero_group
-        };
-
-        const routine_t move_to_zero_routine = {
-            .group_ptrs = zero_group_addr,
-            .group_cnt = 1,
-            .lockdown_actuators = false
-        };
-
-        // Reset Routine
-        // Retract all actuators long enough for them to be at zero
-
-        const actuator_speed_action_t reset_probe = {
-            .actuator_index = PROBE_ACTUATOR_INDEX,
-            .control = FULL_REVERSE_CONTROL,
-            .timeout = PROBE_RETRACT_TIME * 1e6,
-            .fun_ptr = nullptr
-        };
-
-        const actuator_speed_action_t reset_auger = {
-            .actuator_index = AUGER_ACTUATOR_INDEX,
-            .control = FULL_REVERSE_CONTROL,
-            .timeout = AUGER_RETRACT_TIME * 1e6,
-            .fun_ptr = nullptr
-        };
-
-        const actuator_speed_action_t reset_primary_door = {
-            .actuator_index = PRIMARY_DOOR_ACTUATOR_INDEX,
-            .control = FULL_REVERSE_CONTROL,
-            .timeout = PRIMARY_DOOR_RETRACT_TIME * 1e6,
-            .fun_ptr = nullptr
-        };
-
-        const actuator_speed_action_t reset_secondary_door = {
-            .actuator_index = SECONDARY_DOOR_ACTUATOR_INDEX,
-            .control = FULL_REVERSE_CONTROL,
-            .timeout = SECONDARY_DOOR_RETRACT_TIME * 1e6,
-            .fun_ptr = nullptr
-        };
-
-        const actuator_speed_action_t reset_secondary_cache = {
-            .actuator_index = SECONDARY_CACHE_ACTUATOR_INDEX,
-            .control = FULL_REVERSE_CONTROL,
-            .timeout = SECONDARY_CACHE_RETRACT_TIME * 1e6,
-            .fun_ptr = nullptr
-        };
-
-        const actuator_speed_action_t* close_cache_actions_addr[] = {
-            &reset_primary_door,
-            &reset_secondary_door,
-            &reset_secondary_cache
-        };
-
-        void zero_all_caches() {
-            actuator_manager::set_position(PRIMARY_DOOR_ACTUATOR_INDEX, 0.0);
-            actuator_manager::set_position(SECONDARY_DOOR_ACTUATOR_INDEX, 0.0);
-            actuator_manager::set_position(SECONDARY_CACHE_ACTUATOR_INDEX, 0.0);
-            #ifdef DEBUG
-            Serial.println(F("Callback fired on caches"));
-            #endif
-        }
-
-        const action_group_t close_caches_group = {
-            .pos_action_ptrs = nullptr,
-            .pos_action_cnt = 0,
-            .speed_action_ptrs = close_cache_actions_addr,
-            .speed_action_cnt = 3,
-            .fun_ptr = zero_all_caches
-        };
-
-        const actuator_speed_action_t* retract_tools_addr[] = {
-            &reset_probe,
-            &reset_auger
-        };
-
-        void zero_all_tools() {
-            actuator_manager::set_position(PROBE_ACTUATOR_INDEX, 0.0);
-            actuator_manager::set_position(AUGER_ACTUATOR_INDEX, 0.0);
-            #ifdef DEBUG
-            Serial.println(F("Callback fired on tools"));
-            #endif
-        }
-
-        const action_group_t retract_tools_group = {
-            .pos_action_ptrs = nullptr,
-            .pos_action_cnt = 0,
-            .speed_action_ptrs = retract_tools_addr,
-            .speed_action_cnt = 2,
-            .fun_ptr = zero_all_tools
-        };
-
-        const action_group_t* reset_group_addr[] = {
-            &close_caches_group,
-            &retract_tools_group
-        };
-
-        const routine_t reset_routine = {
-            .group_ptrs = reset_group_addr,
-            .group_cnt = 2,
-            .lockdown_actuators = false
-        };
-
-        // Test Routine
-
-        const routine_t test_routine = {
-            .group_ptrs = reset_group_addr,
-            .group_cnt = 2,
-            .lockdown_actuators = true
-        }; 
-
-        // First Cache Transfer Routine
-
-        const actuator_speed_action_t align_auger_first_cache_transfer = {
-            .actuator_index = AUGER_ACTUATOR_INDEX,
-            .control = FULL_FORWARD_CONTROL,
-            .timeout = 1350,
-            .fun_ptr = nullptr
-        };
-
-        const actuator_speed_action_t align_secondary_first_cache_transfer = {
-            .actuator_index = SECONDARY_CACHE_ACTUATOR_INDEX,
-            .control = FULL_FORWARD_CONTROL,
-            .timeout = 9000,
-            .fun_ptr = nullptr
-        };
-
-        const actuator_speed_action_t* align_first_cache_action_ptrs[] = {
-            &align_auger_first_cache_transfer,
-            &align_secondary_first_cache_transfer
-        };
-
-        const action_group_t align_first_cache_group = {
-            .pos_action_ptrs = nullptr,
-            .pos_action_cnt = 0,
-            .speed_action_ptrs = align_first_cache_action_ptrs,
-            .speed_action_cnt = 2,
-            .fun_ptr = nullptr
-        };
-
-        const action_group_t* align_first_cache_group_addr[] = {
-            &align_first_cache_group
-        };
-
-        const routine_t first_cache_transfer = {
-            .group_ptrs = align_first_cache_group_addr,
-            .group_cnt = 1,
-            .lockdown_actuators = true
-        }; 
+    uint8_t get_total_routine_count() {
+        // Get the total number of routines
+        return EEPROM.read(EEPROM_ROUTINE_LOOKUP_TABLE_SIZE_ADDR);
     }
+
+    uint8_t* get_routine_ptr_from_eeprom(uint8_t routine_index) {
+        // Get the ptr to the specified routine
+        // Ensure the routine index is within the valid range of routines stored in the EEPROM
+        if (routine_index >= get_total_routine_count()) {
+            return nullptr;
+        }
+        // Get the routine address from the lookup table but return it as a uint8_t*
+        return (uint8_t*)EEPROM_readObject<uint16_t>((uint16_t*)(EEPROM_ROUTINE_LOOKUP_TABLE_ADDR) + routine_index);
+    }
+
+    // Dynamically add an action_group to a routine object
+    void add_action_group_to_routine(routine_t* routine, action_group_t* new_group) {
+        // Reserve memory for a routine one group bigger
+        action_group_t** new_action_group_array = (action_group_t**)malloc(sizeof(action_group_t*) * (routine->group_cnt + 1));
+
+        // Handle moving prev data
+        if (routine->group_cnt > 0) {
+            // Copy over the old pointers
+            memcpy(new_action_group_array, routine->group_ptrs, routine->group_cnt * sizeof(action_group_t*));
+            // Free the memory for the old array
+            free(routine->group_ptrs);
+        }
+
+        // Add the new group and increment the group cnt
+        new_action_group_array[routine->group_cnt++] = new_group;
+        // Attach the new array to the routine
+        routine->group_ptrs = new_action_group_array;
+    }
+
+    // Dynamically add an position action to an action group
+    void add_pos_action_to_group(action_group_t* group, actuator_position_action_t* new_pos_action) {
+        // Reserve memory for a group one pos action bigger
+        actuator_position_action_t** new_pos_action_array = (actuator_position_action_t**)malloc(sizeof(actuator_position_action_t*) * (group->pos_action_cnt + 1));
+
+        // Handle moving prev data
+        if (group->pos_action_cnt > 0) {
+            // Copy over the old pointers
+            memcpy(new_pos_action_array, group->pos_action_ptrs, group->pos_action_cnt * sizeof(actuator_position_action_t*));
+            // Free the memory for the old array
+            free(group->pos_action_ptrs);
+        }
+
+        // Add the new group and increment the group cnt
+        new_pos_action_array[group->pos_action_cnt++] = new_pos_action;
+        // Attach the new array to the routine
+        group->pos_action_ptrs = new_pos_action_array;
+    }
+
+    // Dynamically add a speed action to an action group
+    void add_speed_action_to_group(action_group_t* group, actuator_speed_action_t* new_speed_action) {
+        // Reserve memory for a group one speed action bigger
+        actuator_speed_action_t** new_speed_action_array = (actuator_speed_action_t**)malloc(sizeof(actuator_speed_action_t*) * (group->speed_action_cnt + 1));
+
+        // Handle moving prev data
+        if (group->speed_action_cnt > 0) {
+            // Copy over the old pointers
+            memcpy(new_speed_action_array, group->speed_action_ptrs, group->speed_action_cnt * sizeof(actuator_speed_action_t*));
+            // Free the memory for the old array
+            free(group->speed_action_ptrs);
+        }
+
+        // Add the new action and increment the action count
+        new_speed_action_array[group->speed_action_cnt++] = new_speed_action;
+        // Attach the new array to the group
+        group->speed_action_ptrs = new_speed_action_array;
+    }
+
+    // Free all the memory associated with a routine in RAM
+    void free_routine(routine_t* routine) {
+        if (routine == nullptr) return;
+
+        Serial.print(F("Freeing routine at "));
+        Serial.println((uint16_t)routine);
+
+        report_routine_structure(routine);
+
+        // Free each action group
+        for (uint8_t i = 0; i < routine->group_cnt; i++) {
+            action_group_t* group = routine->group_ptrs[i];
+            if (group) {
+                // Free positional actions
+                for (uint8_t j = 0; j < group->pos_action_cnt; j++) {
+                    free(group->pos_action_ptrs[j]);
+                }
+                free(group->pos_action_ptrs);
+
+                // Free speed actions
+                for (uint8_t j = 0; j < group->speed_action_cnt; j++) {
+                    free(group->speed_action_ptrs[j]);
+                }
+                free(group->speed_action_ptrs);
+
+                // Free the group itself
+                free(group);
+            }
+        }
+
+        // Free the group pointers array
+        free(routine->group_ptrs);
+
+        // Free the routine itself
+        free(routine);
+    }
+
+    void zero_all_caches() {
+        actuator_manager::set_position(PRIMARY_DOOR_ACTUATOR_INDEX, 0.0);
+        actuator_manager::set_position(SECONDARY_DOOR_ACTUATOR_INDEX, 0.0);
+        actuator_manager::set_position(SECONDARY_CACHE_ACTUATOR_INDEX, 0.0);
+    }
+
+    void zero_all_tools() {
+        actuator_manager::set_position(PROBE_ACTUATOR_INDEX, 0.0);
+        actuator_manager::set_position(AUGER_ACTUATOR_INDEX, 0.0);
+    }
+
 }
-
-extern const routine_manager::routine_t* ROUTINE_LOOKUP[ROUTINE_COUNT] = {
-    &routine_manager::routines::reset_routine,
-    &routine_manager::routines::move_to_zero_routine,
-    &routine_manager::routines::test_routine,
-    &routine_manager::routines::first_cache_transfer
-};

@@ -1,0 +1,14 @@
+# Reset Routine
+# This script moves all actuators back to starting position
+# by running backwards for a sufficient amount of time
+
+LOCKDOWN_ACTUATORS # No actuator can be controlled until the routine finishes
+GROUP
+SPD_CTRL PRIMARY_DOOR FULL_STEAM_BACKWARD PRIMARY_DOOR_RETRACT_TIME_MS
+SPD_CTRL SECONDARY_DOOR FULL_STEAM_BACKWARD SECONDARY_DOOR_RETRACT_TIME_MS
+SPD_CTRL SECONDARY FULL_STEAM_BACKWARD SECONDARY_RETRACT_TIME_MS
+FUNC ZERO_ALL_CACHES # Set the position for each cache to zero
+GROUP
+SPD_CTRL PROBE FULL_STEAM_BACKWARD PROBE_RETRACT_TIME_MS
+SPD_CTRL AUGER FULL_STEAM_BACKWARD AUGER_RETRACT_TIME_MS
+FUNC ZERO_ALL_TOOLS # Set the position for each tool to zero

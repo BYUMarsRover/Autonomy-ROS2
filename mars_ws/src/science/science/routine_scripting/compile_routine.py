@@ -1,15 +1,16 @@
 """
-Compiles a routine script into a binary file to be upload to the science module EEPROM
+Compiles a routine script into a binary file to be uploaded to the science module EEPROM
 """
 
 import csv
 import os
 import struct
 import math
+import argparse
 from csv import DictReader
 import re
+from science.science.function_mapping.function_map import ScienceModuleFunctionList as SMFL
 
-EEPROM_ROUTINE_START_ADDR = 0x002
 END_OF_ROUTINE_CODE = 0xFF
 
 def build_routine_binary(routine_file, dictionary_file):
@@ -37,6 +38,8 @@ def build_routine_binary(routine_file, dictionary_file):
     # Read the .routine file and substitute tokens
     with open(routine_file, mode='r') as file:
         content = file.read()
+        # Remove Python-style comments
+        content = re.sub(r'#.*', '', content)
         # Remove all new lines and split content into a list of strings
         content = content.replace('\n', ' ').split()
 
@@ -101,34 +104,44 @@ def build_routine_array_binary(routines_folder, dictionary_file, table_start_add
 
     return final_binary
 
-# def packetize_routine(final_binary, start_addr):
-#     '''Breaks up an eeprom request into packets of 255 bytes or less'''
-
-#     [0x53, 0x]
-    
-#     # Example packetization logic (to be defined as per requirements)
-#     packet = bytearray()
-#     packet.extend(routine_name.encode('utf-8'))
-#     packet.extend(routine_binary)
-#     return packet
-
 # Example usage
 if __name__ == "__main__":
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Compile routine scripts into a binary file for the science module EEPROM.")
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        default="routine_upload_packets.bin",
+        help="Name of the output binary file (default: routine_upload_packets.bin)"
+    )
+    args = parser.parse_args()
+
     routine_folder_path = "routine_scripts"
     dictionary_path = "dictionary.csv"
+    mem_map_path = "../science_module_arduino/src/mem_manager/mem_map.h"
 
     # Ensure paths are relative to the script's directory
     base_dir = os.path.dirname(__file__)
     routine_folder_path = os.path.join(base_dir, routine_folder_path)
     dictionary_path = os.path.join(base_dir, dictionary_path)
+    mem_map_path = os.path.join(base_dir, mem_map_path)
+
+    # Get the location of the routine table from the memory map
+    with open(mem_map_path, 'r') as mem_map_file:
+        for line in mem_map_file:
+            if "EEPROM_ROUTINE_LOOKUP_TABLE_SIZE_ADDR" in line:
+                EEPROM_ROUTINE_START_ADDR = int(line.split()[2], 16)
+                break
+        else:
+            raise ValueError("EEPROM_ROUTINE_LOOKUP_TABLE_SIZE_ADDR not found in memory map.")
 
     # Substitute tokens and print the result
-    processed_content = build_routine_array_binary(routine_folder_path, dictionary_path, EEPROM_ROUTINE_START_ADDR)
-    print(processed_content)
+    eeprom_data = build_routine_array_binary(routine_folder_path, dictionary_path, EEPROM_ROUTINE_START_ADDR)
+    packet_stream = SMFL.packetize_eeprom_write(eeprom_data, EEPROM_ROUTINE_START_ADDR, acknowledge=True)
 
     # Save the binary content to a file
-    output_file_path = os.path.join(base_dir, "compiled_routine.bin")
+    output_file_path = os.path.join(base_dir, args.output)
     with open(output_file_path, 'wb') as output_file:
-        output_file.write(processed_content)
+        output_file.write(packet_stream)
     print(f"Compiled routine binary saved to {output_file_path}")
 
