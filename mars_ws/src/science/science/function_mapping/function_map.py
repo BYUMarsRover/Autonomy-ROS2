@@ -305,42 +305,42 @@ try:
         
         @staticmethod
         def get_tx_get_analog_sensor_raw(sensor_index):
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("get_analog_sensor_raw"),
                 operand_blob = [sensor_index]
             )
         
         @staticmethod
         def get_tx_get_analog_sensor_calibrated(sensor_index):
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("get_analog_sensor_calibrated"),
                 operand_blob = [sensor_index]
             )
         
         @staticmethod
         def get_tx_get_actuator_position(actuator_index):
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("get_actuator_position"),
                 operand_blob = [actuator_index]
             )
         
         @staticmethod
         def get_tx_get_actuator_control(actuator_index):
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("get_actuator_control"),
                 operand_blob = [actuator_index]
             )
         
         @staticmethod
         def get_tx_query_is_actuator_reserved(actuator_index):
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("query_is_actuator_reserved"),
                 operand_blob = [actuator_index]
             )
         
         @staticmethod
         def get_tx_update_actuator_control(actuator_index, control, override=False):
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("update_actuator_control"),
                 operand_blob = [actuator_index, control & 0xFF], # Make Control be interpreted as uint8_t
                 flags = [override, False]
@@ -349,26 +349,26 @@ try:
         @staticmethod
         def get_tx_sample_spectrograph(sample_cnt, sample_interval_ms, bulb_on):
             sample_interval_blob = ScienceModuleFunctionList.blob_data(sample_interval_ms, 'uint32_t')
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("sample_spectrograph"),
                 operand_blob = [sample_cnt] + sample_interval_blob + [bulb_on]
             )
         
         @staticmethod
         def get_tx_return_spectrograph_data():
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("return_spectrograph_data")
             )
         
         @staticmethod
         def get_tx_sample_ltr():
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("sample_ltr")
             )
         
         @staticmethod
         def get_tx_return_ltr_data():
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("return_ltr_data")
             )
         
@@ -376,38 +376,38 @@ try:
         
         @staticmethod
         def get_tx_run_routine(routine_index):
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("run_routine"),
                 operand_blob = [routine_index]
             )
         
         @staticmethod
         def get_tx_pause_routine():
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("pause_routine")
             )
         
         @staticmethod
         def get_tx_resume_routine():
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("resume_routine")
             )
         
         @staticmethod
         def get_tx_step_routine():
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("step_routine")
             )
         
         @staticmethod
         def get_tx_abort_routine():
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("abort_routine")
             )
         
         @staticmethod
         def get_tx_query_routine_controller():
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("query_routine_controller")
             )
         
@@ -415,21 +415,21 @@ try:
         
         @staticmethod
         def get_tx_clear_speed_controller(actuator_index):
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("clear_speed_controller"),
                 operand_blob = [actuator_index]
             )
         
         @staticmethod
         def get_tx_clear_positional_controller(actuator_index):
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("clear_positional_controller"),
                 operand_blob = [actuator_index]
             )
         
         @staticmethod
         def get_tx_free_actuator(actuator_index):
-            return ScienceModuleFunctionList.build_tx_packet(
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
                 ScienceModuleFunctionList.get_function_by_function_name("free_actuator"),
                 operand_blob = [actuator_index]
             )
