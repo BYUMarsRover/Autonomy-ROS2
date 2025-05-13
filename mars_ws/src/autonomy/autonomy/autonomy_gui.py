@@ -27,6 +27,7 @@ from std_srvs.srv import SetBool
 from std_msgs.msg import Header, Int8, Bool
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Pose, Point
+from visualization_msgs.msg import Marker, MarkerArray
 from zed_msgs.msg import ObjectsStamped
 from rover_msgs.srv import AutonomyAbort, AutonomyWaypoint, OrderPath, SetFloats, SetFloat32, OrderAutonomyWaypoint, PlanPath
 from rover_msgs.msg import AutonomyTaskInfo, RoverStateSingleton, NavState, RoverState, FiducialData, FiducialTransformArray, ObjectDetections, MobilityAutopilotCommand, MobilityVelocityCommands, MobilityDriveCommand, IWCMotors, HazardArray
@@ -212,11 +213,17 @@ class AutonomyGUI(Node, QWidget):
         self.utm_easting_zero = self.origin[1]
         self.utm_northing_zero = self.origin[0]
 
+        # Marker Publishers
+        self.waypoint_label_publisher = self.create_publisher(MarkerArray, '/waypoint_labels', 10)
+
+        ################ Other Setup #################
+
         # Initialize the current previewed waypoints
         # Stored in lat/lon format
         self.current_previewed_waypoints = Path() #NOTE: used by mapviz
 
-        self.troubleshooting_timer = self.create_timer(5.0, self.troubleshooting_timer_callback)
+        # Timer to check if the ROS side of the gui is still running
+        self.troubleshooting_timer = self.create_timer(8.0, self.troubleshooting_timer_callback)
 
         # Load Waypoints after mapviz location is set
         self.load_waypoints()
@@ -626,7 +633,53 @@ class AutonomyGUI(Node, QWidget):
                         self.utm_northing_zero)
             )
         
+        self.display_waypoint_labels()
+        
         self.ros_signal.emit('logger_label', 'All Waypoints Sent for Preview', 'setText')
+    
+    def display_waypoint_labels(self):
+        # Create a marker array to hold the waypoint labels
+        marker_array = MarkerArray()
+        for i, waypoint in enumerate(self.waypoints):
+            marker = Marker()
+            marker.header.frame_id = "map"
+            marker.header.stamp = self.get_clock().now().to_msg()
+            marker.ns = "waypoint_labels"
+            marker.id = i
+            marker.type = Marker.TEXT_VIEW_FACING
+            marker.action = Marker.ADD
+            x_utm, y_utm = utm.from_latlon(waypoint[2], waypoint[3])[0:2]
+            x = x_utm - self.utm_easting_zero
+            y = y_utm - self.utm_northing_zero
+            marker.pose.position.x = x
+            marker.pose.position.y = y
+            marker.pose.position.z = 0.5
+            marker.scale.z = 5.0
+            marker.color.a = 1.0
+            marker.color.r = 1.0
+            marker.color.g = 1.0
+            marker.color.b = 1.0
+
+            match i:
+                case 0:
+                    marker.text = f"GPS 1"
+                case 1:
+                    marker.text = f"GPS 2"
+                case 2:
+                    marker.text = f"Aruco 1"
+                case 3:
+                    marker.text = f"Aruco 2"
+                case 4:
+                    marker.text = f"Aruco 3"
+                case 5:
+                    marker.text = f"Mallet"
+                case 6:
+                    marker.text = f"Bottle"
+            
+            # marker.text = f"WP{waypoint[0]}: {waypoint[1]}"
+            marker_array.markers.append(marker)
+
+        self.waypoint_label_publisher.publish(marker_array)
 
     # This adds the waypoint to the waypoint list that is held in the autonomy gui
     def add_waypoint(self):
