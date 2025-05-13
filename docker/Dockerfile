@@ -155,6 +155,7 @@ RUN pip3 install pcl
 
 # Install gstreamer - Michael Crandall May 2025
 # Needed for streaming camera feed from the rover
+# BC is also added for preroll on gstreamer
 USER root
 RUN apt-get update && apt-get install -y \
     gstreamer1.0-tools \
@@ -165,3 +166,5 @@ RUN apt-get update && apt-get install -y \
     gstreamer1.0-libav \
     && apt-get clean
 USER $NAME
+
+RUN apt-get install bc
