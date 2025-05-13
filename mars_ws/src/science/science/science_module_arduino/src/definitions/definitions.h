@@ -81,8 +81,13 @@
 struct linear_actuator_pins_t {
     uint8_t const extend;
     uint8_t const retract;
-    float const extend_rate;
-    float const retract_rate;
+};
+
+// Hardware structure for a linear actuator
+// Loaded from EEPROM
+struct linear_actuator_speed_t {
+    float extend_rate_ms;
+    float retract_rate_ms;
 };
 
 // State Estimation data for a linear actuator
@@ -133,5 +138,8 @@ extern uint8_t command_operand_buffer[MAX_OPERAND_ARRAY_SIZE];
 // Allocate memory space to handle responses
 extern struct response_payload response_buffer;
 extern uint8_t response_message_buffer[MAX_OPERAND_ARRAY_SIZE];
+
+// Allocate memory space to hold actuator speed
+extern struct linear_actuator_speed_t actuator_speed_array[LINEAR_ACTUATOR_CNT];
 
 #endif /* DEFINITIONS_H */

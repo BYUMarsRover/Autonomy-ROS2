@@ -4,7 +4,7 @@
 /*
  * AUTO-GENERATED FILE
  *
- * This file was automatically generated on 10 May 2025.
+ * This file was automatically generated on 13 May 2025.
  *
  * DO NOT MODIFY THIS FILE DIRECTLY.
  * To update the contents of this file, please edit the function mapping CSV file
@@ -40,7 +40,7 @@ void reserve_actuator(uint8_t override); // Reserves the provided actuator
 void free_actuator(uint8_t override); // Frees the provided actuator
 void clear_positional_controller(uint8_t override); // Clears any pending actuator positional control
 void clear_speed_controller(uint8_t override); // Clears any pending actuator speed control
-void run_routine(uint8_t override); // Begins the indicated routine
+void run_routine(uint8_t override); // Begins the indicated routine from eeprom data
 void pause_routine(uint8_t override); // Pauses a running routine
 void resume_routine(uint8_t override); // Resumes a paused routine
 void step_routine(uint8_t override); // Moves a paused routine forward by one step
@@ -51,5 +51,6 @@ void reset_ltr(uint8_t override); //
 void sample_ltr(uint8_t override); // 
 void calibrate_uv_sensitivty(uint8_t override); // 
 void calibrate_uv_index(uint8_t override); // 
+void write_eeprom(uint8_t override); // Writes data to the specified location in EEPROM
 
 #endif /* SM_FUNCTIONS_H */

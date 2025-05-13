@@ -7,7 +7,7 @@ from python_qt_binding.QtCore import QObject, Signal
 import rclpy
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
-from science.function_mapping.function_map import ScienceModuleFunctionList as SMFL
+from science.function_mapping.function_map import ScienceModuleFunctionListBuilder as SMFL_Builder
 from science.function_mapping.function_map import ACTUATOR_COUNT, ACTUATOR_INDEX_PROBE, ACTUATOR_INDEX_AUGER, ACTUATOR_INDEX_PRIMARY_CACHE_DOOR, ACTUATOR_INDEX_SECONDARY_CACHE, ACTUATOR_INDEX_SECONDARY_CACHE_DOOR, ACTUATOR_INDEX_DRILL
 from std_msgs.msg import UInt8, Bool, Empty, String
 from rover_msgs.msg import ScienceActuatorState, ScienceActuatorControl, ScienceSerialTxPacket
@@ -130,23 +130,23 @@ class science_routine_GUI(Node):
 
         # Routine Buttons
         self.qt.pause_routine_button.clicked.connect(
-            lambda: self.pub_tx.publish(SMFL.get_tx_pause_routine())
+            lambda: self.pub_tx.publish(SMFL_Builder.get_tx_pause_routine())
         )
         self.qt.resume_routine_button.clicked.connect(
-            lambda: self.pub_tx.publish(SMFL.get_tx_resume_routine())
+            lambda: self.pub_tx.publish(SMFL_Builder.get_tx_resume_routine())
         )
         self.qt.step_routine_button.clicked.connect(
-            lambda: self.pub_tx.publish(SMFL.get_tx_step_routine())
+            lambda: self.pub_tx.publish(SMFL_Builder.get_tx_step_routine())
         )
         self.qt.abort_routine_button.clicked.connect(
-            lambda: self.pub_tx.publish(SMFL.get_tx_abort_routine())
+            lambda: self.pub_tx.publish(SMFL_Builder.get_tx_abort_routine())
         )
 
         # Begin Routine Buttons
         for index, routine in enumerate(self.routines):
             button = QtWidgets.QPushButton(routine)
             button.setObjectName(f"routine_{index}")
-            button.clicked.connect(lambda _, i=index: self.pub_tx.publish(SMFL.get_tx_run_routine(i)))  # Capture index with default argument
+            button.clicked.connect(lambda _, i=index: self.pub_tx.publish(SMFL_Builder.get_tx_run_routine(i)))  # Capture index with default argument
             self.qt.routine_begin_buttons.layout().addWidget(button)
 
         # Query Routine Status Rate
@@ -169,7 +169,7 @@ class science_routine_GUI(Node):
     def update_control_actuator(self, actuator_index, control):
         # Update the actuator control using the tx_packet_builder in SMFL
         override_flag = self.qt.override_check.isChecked()
-        tx_packet = SMFL.get_tx_update_actuator_control(actuator_index, control, override=override_flag)
+        tx_packet = SMFL_Builder.get_tx_update_actuator_control(actuator_index, control, override=override_flag)
         self.pub_tx.publish(tx_packet)
         self.actuator_poll_manager.update_attention(actuator_index, control)
 

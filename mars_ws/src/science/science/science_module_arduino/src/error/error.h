@@ -41,6 +41,8 @@ const char ERROR_DEVICE_RUNNING[] PROGMEM = "is already sampling.";
 const char ERROR_DEVICE_NOT_FOUND[] PROGMEM = "is not connected, check wiring.";
 const char ERROR_NOT_IMPLEMENTED[] PROGMEM = "This function is not yet implemented.";
 const char ERROR_NOT_COMPILED[] PROGMEM = "This function is included in this build.";
+const char ERROR_NULL_PTR[] PROGMEM = "A nullptr was encountered.";
+const char ERROR_MALLOC[] PROGMEM = "Memory was unable to be allocated.";
 
 namespace message {
     void connection_successful();
@@ -67,6 +69,8 @@ namespace error {
     void uvSensorNotFound();
     void notImplemented();
     void notCompiled();
+    void nullptrError();
+    void mallocError();
 }
 
 #endif /* ERROR_H */

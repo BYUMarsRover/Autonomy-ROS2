@@ -2,10 +2,17 @@
 #include "../definitions/definitions.h"
 #include "../hardware/hardware.h"
 #include "../print_func/print_func.h"
+#include "../mem_manager/mem_map.h"
+#include "../mem_manager/mem_manager.h"
 
 #include <stdint.h>
 
 namespace actuator_manager {
+
+    float get_extend_rate(uint8_t actuator_index);
+    float get_retract_rate(uint8_t actuator_index);
+    float get_extend_rate_eeprom(uint8_t actuator_index);
+    float get_retract_rate_eeprom(uint8_t actuator_index);
 
     uint8_t actuator_check_out_byte;
 
@@ -42,14 +49,14 @@ namespace actuator_manager {
         return v;
     }
 
-    void integrate(unsigned long deltaTime) {
-        // deltaTime - Time since last intergration step in microseconds
+    void integrate(unsigned long deltaTime_mu) {
+        // deltaTime_mu - Time since last intergration step in microseconds
         // Integrate the speed into position
         for (uint8_t i = 0; i < LINEAR_ACTUATOR_CNT; i++) {
             linear_actuator_pins_t pins = ACTUATOR_PIN_ARRAY[i];
             linear_actuator_state_t state = actuator_state_array[i];
-            float speed = 1 / ((state.control > 0) ? pins.extend_rate : -pins.retract_rate);
-            float delta = speed * (abs(state.control) / 127.0f) * (deltaTime / 1.0e6f);
+            float speed = 1 / ((state.control > 0) ? get_extend_rate(i) : -get_retract_rate(i));
+            float delta = speed * (abs(state.control) / 127.0f) * (deltaTime_mu / 1.0e6f);
             actuator_state_array[i].position = min(max(state.position + delta, 0.0f), 1.0f);
         }
     }
@@ -73,6 +80,34 @@ namespace actuator_manager {
 
     void set_drill_control(uint8_t control_byte) {
         writeDrill(control_byte);
+    }
+
+    float get_extend_rate(uint8_t actuator_index) {
+        if (actuator_speed_array[actuator_index].extend_rate_ms == 0.0f) {
+            // If the extend rate is not set, read it from EEPROM
+            actuator_speed_array[actuator_index].extend_rate_ms = get_extend_rate_eeprom(actuator_index);
+        }
+        return actuator_speed_array[actuator_index].extend_rate_ms;
+    }
+
+    float get_retract_rate(uint8_t actuator_index) {
+        if (actuator_speed_array[actuator_index].retract_rate_ms == 0.0f) {
+            // If the extend rate is not set, read it from EEPROM
+            actuator_speed_array[actuator_index].retract_rate_ms = get_retract_rate_eeprom(actuator_index);
+        }
+        return actuator_speed_array[actuator_index].retract_rate_ms;
+    }
+
+    float get_extend_rate_eeprom(uint8_t actuator_index) {
+        Serial.print(F("Load extend rate from EEPROM for actuator "));
+        Serial.print(actuator_index);
+        return EEPROM_readObject<float>((float*)(EEPROM_ACTUATOR_EXTEND_RETRACT_TIME_TABLE_ADDR) + (actuator_index * 2));
+    }
+
+    float get_retract_rate_eeprom(uint8_t actuator_index) {
+        Serial.print(F("Load retract rate from EEPROM for actuator "));
+        Serial.print(actuator_index);
+        return EEPROM_readObject<float>((float*)(EEPROM_ACTUATOR_EXTEND_RETRACT_TIME_TABLE_ADDR) + (actuator_index * 2) + 1);
     }
 
 }

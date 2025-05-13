@@ -256,4 +256,22 @@ namespace error {
         response_buffer.error_code = ERROR_CODE_GENERIC_ERROR;
         composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), nullptr);
     }
+
+    void nullptrError() {
+        const char* error_format_strings[] = {
+            HEADER_ERROR,
+            ERROR_NULL_PTR
+        };
+        response_buffer.error_code = ERROR_CODE_GENERIC_ERROR;
+        composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), nullptr);
+    }
+
+    void mallocError() {
+        const char* error_format_strings[] = {
+            HEADER_ERROR,
+            ERROR_MALLOC
+        };
+        response_buffer.error_code = ERROR_CODE_GENERIC_ERROR;
+        composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), nullptr);
+    }
 }

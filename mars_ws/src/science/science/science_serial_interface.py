@@ -34,6 +34,7 @@ import serial
 import struct
 import time
 from science.function_mapping.function_map import ScienceModuleFunctionList as SMFL
+from science.function_mapping.function_map import ScienceModuleFunctionListBuilder as SMFL_Builder
 
 # This module uses the Science Module Serial Communication Protocol
 # as definded in the BYU-Mars-Rover-Wiki
@@ -116,7 +117,7 @@ class ScienceSerialInterface(Node):
     # Callbacks for Subscribers
 
     def actuator_control_callback(self, msg: ScienceActuatorControl, sensor_index):
-        self.perform_tx_request(SMFL.get_tx_update_actuator_control(sensor_index, msg.control))
+        self.perform_tx_request(SMFL_Builder.get_tx_update_actuator_control(sensor_index, msg.control))
 
     def set_override_bit_callback(self, msg: Bool):
         self.override_bit = msg.data
@@ -125,14 +126,14 @@ class ScienceSerialInterface(Node):
         # Emergency stop for all actuators
         prev_override_bit = self.override_bit
         self.override_bit = True
-        self.perform_tx_request(SMFL.get_tx_abort_routine())
+        self.perform_tx_request(SMFL_Builder.get_tx_abort_routine())
         for index in range(0, TOTAL_ACTUATORS):
             if index != DRILL_ACTUATOR_INDEX:
                 #print(index, type(index))
-                self.perform_tx_request(SMFL.get_tx_clear_positional_controller(index))
-                self.perform_tx_request(SMFL.get_tx_clear_speed_controller(index))
-            self.perform_tx_request(SMFL.get_tx_free_actuator(index))
-            self.perform_tx_request(SMFL.get_tx_update_actuator_control(index, 0))
+                self.perform_tx_request(SMFL_Builder.get_tx_clear_positional_controller(index))
+                self.perform_tx_request(SMFL_Builder.get_tx_clear_speed_controller(index))
+            self.perform_tx_request(SMFL_Builder.get_tx_free_actuator(index))
+            self.perform_tx_request(SMFL_Builder.get_tx_update_actuator_control(index, 0))
         self.override_bit = prev_override_bit
         self.get_logger().warning("Emergency stop activated, all actuators disabled")
 

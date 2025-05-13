@@ -1,6 +1,7 @@
 import struct
 from PyQt5 import QtWidgets, uic, QtGui
 from science.function_mapping.function_map import ScienceModuleFunctionList as SMFL
+from science.function_mapping.function_map import ScienceModuleFunctionListBuilder as SMFL_Builder
 from ament_index_python.packages import get_package_share_directory
 from rover_msgs.msg import ScienceSerialTxPacket
 import os
@@ -137,7 +138,7 @@ class ActionWidget(QtWidgets.QWidget):
             return
         
         try:
-            tx_packet = SMFL.build_tx_packet(
+            tx_packet = SMFL_Builder.build_tx_packet(
                 self.func,
                 operand_bytes,
                 self.window.get_flags()

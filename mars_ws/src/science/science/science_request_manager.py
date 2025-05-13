@@ -25,6 +25,7 @@ from rclpy.node import Node
 from rover_msgs.msg import ScienceSerialRxPacket, ScienceSerialTxPacket, ScienceSensorValues, ScienceSpectroData, ScienceUvData, ScienceActuatorState
 from std_msgs.msg import Empty, String, Bool, UInt8
 from science.function_mapping.function_map import ScienceModuleFunctionList as SMFL
+from science.function_mapping.function_map import ScienceModuleFunctionListBuilder as SMFL_Builder
 import struct
 import time
 from science.science_serial_interface import ScienceSerialInterface
@@ -142,11 +143,11 @@ class ScienceRequestManager(Node):
     def do_SMFL_async_call(self, func_name, operand_list, callback, timeout=5):
         # Call the SMFL function and get the return data asynchrously
         func_def = SMFL.get_function_by_function_name(func_name)
-        tx_packet = SMFL.build_tx_packet(func_def, operand_list)
+        tx_packet = SMFL_Builder.build_tx_packet(func_def, operand_list)
         self.do_async_call(
             func_name,
             tx_packet,
-            lambda rx: callback(None if rx is None else SMFL.get_return_data(func_def, rx)),
+            lambda rx: callback(None if rx is None else SMFL_Builder.get_return_data(func_def, rx)),
             timeout
         )
 
@@ -211,7 +212,7 @@ class ScienceRequestManager(Node):
 
     class SpectrographRequest(PolledRequest):
         def __init__(self, request_manager, pub_forward, poll_speed=1, attempts=10, num_samples=1, sample_duration_ms=1000, bulb_on=True):
-            super().__init__(request_manager, pub_forward, SMFL.get_tx_sample_spectrograph(num_samples, sample_duration_ms, bulb_on), "return_spectrograph_data", poll_speed, attempts)
+            super().__init__(request_manager, pub_forward, SMFL_Builder.get_tx_sample_spectrograph(num_samples, sample_duration_ms, bulb_on), "return_spectrograph_data", poll_speed, attempts)
 
         def publish(self, data):
             self.pub_forward.publish(
@@ -222,7 +223,7 @@ class ScienceRequestManager(Node):
 
     class UVSensorRequest(PolledRequest):
         def __init__(self, request_manager, pub_forward, poll_speed=1, attempts=10):
-            super().__init__(request_manager, pub_forward, SMFL.get_tx_sample_ltr(), "return_ltr_data", poll_speed, attempts)
+            super().__init__(request_manager, pub_forward, SMFL_Builder.get_tx_sample_ltr(), "return_ltr_data", poll_speed, attempts)
 
         def publish(self, data):
             self.pub_forward.publish(

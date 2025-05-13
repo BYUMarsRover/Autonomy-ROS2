@@ -6,7 +6,7 @@
 #include "../definitions/definitions.h"
 #include "../error/error.h"
 
-//#define EEPROM_DEBUG
+#define EEPROM_DEBUG
 
 template <typename T>
 void EEPROM_writeObject(T* addr_eeprom, T& object) {
@@ -16,7 +16,7 @@ void EEPROM_writeObject(T* addr_eeprom, T& object) {
     Serial.print(F("Wrote EEPROM object "));
     Serial.print(object);
     Serial.print(F(" to addr "));
-    Serial.println(int(addr_eeprom));
+    Serial.println((size_t)addr_eeprom, HEX);
     #endif
 }
 

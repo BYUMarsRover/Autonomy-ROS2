@@ -51,6 +51,13 @@ namespace positional_controller {
     // Updates a positional request 
     bool submit(uint8_t actuator_index, float position, float speed, bool authorized, void (*callback)(void)) {
 
+        Serial.print(F("Positional Controller Request actuator #"));
+        Serial.print(actuator_index);
+        Serial.print(F(" to position "));
+        Serial.print(position);
+        Serial.print(F(" at speed "));
+        Serial.println(speed);
+
         // Reserve the actuator for control if not authorized
         if (!authorized && !actuator_manager::reserve(actuator_index)) return false;
 

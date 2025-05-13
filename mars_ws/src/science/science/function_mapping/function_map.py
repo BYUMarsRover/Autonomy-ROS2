@@ -1,8 +1,16 @@
 import os
 from csv import DictReader
-from ament_index_python.packages import get_package_share_directory
-from rover_msgs.msg import ScienceSerialTxPacket, ScienceSerialRxPacket
 import struct
+
+try:
+    from ament_index_python.packages import get_package_share_directory
+    from rover_msgs.msg import ScienceSerialTxPacket, ScienceSerialRxPacket
+except ImportError:
+    # Fallback for non-ROS environments
+    def get_package_share_directory(package_name):
+        # Define a fallback directory for the package
+        base_dir = os.path.dirname(__file__)
+        return os.path.abspath(os.path.join(base_dir, "..", "..", package_name))
 
 ACTUATOR_COUNT = 6
 ACTUATOR_INDEX_PROBE = 0
@@ -15,22 +23,23 @@ ACTUATOR_INDEX_DRILL = 5
 ENTIRE_MESSAGE = -1
 
 class ScienceModuleFunctionList:
-
     max_operands = 3
 
+    # Use the fallback or ROS-based path resolution
     path = os.path.join(
-            get_package_share_directory('science'),
-            'function_mapping',
-            'science_module_function_map.csv'
-        )
+        get_package_share_directory('science'),
+        'function_mapping',
+        'science_module_function_map.csv'
+    )
+
     with open(path, 'r') as f:
-            dict_reader = DictReader(f)
-            functions = list(dict_reader)
+        dict_reader = DictReader(f)
+        functions = list(dict_reader)
 
     @staticmethod
     def get_all():
         return ScienceModuleFunctionList.functions
-    
+
     @staticmethod
     def filter(args):
         """Filter the function list based on the provided arguments."""
@@ -44,28 +53,6 @@ class ScienceModuleFunctionList:
             if not skip:
                 filtered_list.append(func)
         return filtered_list
-    
-    @staticmethod
-    def build_tx_packet(func, operand_blob=[], flags=[False, False]):
-        """
-        Build a ScienceSerialTxPacket from a function entry.
-        """
-        # Setup the command word based on the function entry
-        command_word = int(func['function_addr'])
-        if func['command_type'] == 'action':
-            command_word |= 0b10000000  # Set the command bit for command type functions
-        for i in range(len(flags)):
-            if flags[i]:
-                command_word |= 0b00000001 << (6 - i)  # Set the override, and acknowledge bits
-
-        # Verify the operand blob
-        ScienceModuleFunctionList.verify_operands(func, operand_blob)
-
-        # Build the packet and add the operands
-        tx_packet = ScienceSerialTxPacket()
-        tx_packet.command_word = ScienceModuleFunctionList.get_command_word(func, flags)
-        tx_packet.operands = operand_blob
-        return tx_packet   
     
     @staticmethod
     def verify_operands(func, operand_blob):
@@ -186,9 +173,6 @@ class ScienceModuleFunctionList:
     
     @staticmethod
     def get_command_word(func, flags=[False, False]):
-        """
-        Build a ScienceSerialTxPacket from a function entry.
-        """
         # Setup the command word based on the function entry
         command_word = int(func['function_addr'])
         if func['command_type'] == 'action':
@@ -223,25 +207,6 @@ class ScienceModuleFunctionList:
             return None
         else:
             return results[0]
-        
-    @staticmethod
-    def get_return_data(func_def, msg: ScienceSerialRxPacket):
-        output = msg.message
-        data_type = func_def['return_type']
-        conversion_func = ScienceModuleFunctionList.conversion_function(data_type)
-        size = ScienceModuleFunctionList.length_of_datatype(data_type)
-        if size is ENTIRE_MESSAGE:
-            size = len(msg.message) # Use entire message in function
-        if func_def['return_cnt'] == 'variable':
-            # Determine the size at runtime
-            cnt = int(len(msg.message) / size)
-        else:
-            # Pre determined size
-            cnt = int(func_def['return_cnt'])
-        out = []
-        for i in range(cnt):
-            out.append(conversion_func(output, i*size))
-        return out[0] if cnt == 1 else out
 
     @staticmethod
     def conversion_function(datatype):
@@ -265,136 +230,210 @@ class ScienceModuleFunctionList:
             case _:
                 raise Exception(f"Unknown data_type: {datatype}")
         return result
-    # Mapping Functions
     
     @staticmethod
-    def get_tx_get_analog_sensor_raw(sensor_index):
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("get_analog_sensor_raw"),
-            operand_blob = [sensor_index]
-        )
+    def __split_into_packets(data, max_packet_size):
+        packets = []
+        for i in range(0, len(data), max_packet_size):
+            packets.append(data[i:i + max_packet_size])
+        return packets
     
     @staticmethod
-    def get_tx_get_analog_sensor_calibrated(sensor_index):
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("get_analog_sensor_calibrated"),
-            operand_blob = [sensor_index]
-        )
-    
-    @staticmethod
-    def get_tx_get_actuator_position(actuator_index):
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("get_actuator_position"),
-            operand_blob = [actuator_index]
-        )
-    
-    @staticmethod
-    def get_tx_get_actuator_control(actuator_index):
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("get_actuator_control"),
-            operand_blob = [actuator_index]
-        )
-    
-    @staticmethod
-    def get_tx_query_is_actuator_reserved(actuator_index):
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("query_is_actuator_reserved"),
-            operand_blob = [actuator_index]
-        )
-    
-    @staticmethod
-    def get_tx_update_actuator_control(actuator_index, control, override=False):
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("update_actuator_control"),
-            operand_blob = [actuator_index, control & 0xFF], # Make Control be interpreted as uint8_t
-            flags = [override, False]
-        )
-    
-    @staticmethod
-    def get_tx_sample_spectrograph(sample_cnt, sample_interval_ms, bulb_on):
-        sample_interval_blob = ScienceModuleFunctionList.blob_data(sample_interval_ms, 'uint32_t')
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("sample_spectrograph"),
-            operand_blob = [sample_cnt] + sample_interval_blob + [bulb_on]
-        )
-    
-    @staticmethod
-    def get_tx_return_spectrograph_data():
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("return_spectrograph_data")
-        )
-    
-    @staticmethod
-    def get_tx_sample_ltr():
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("sample_ltr")
-        )
-    
-    @staticmethod
-    def get_tx_return_ltr_data():
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("return_ltr_data")
-        )
-    
-    # Routine Methods
-    
-    @staticmethod
-    def get_tx_run_routine(routine_index):
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("run_routine"),
-            operand_blob = [routine_index]
-        )
-    
-    @staticmethod
-    def get_tx_pause_routine():
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("pause_routine")
-        )
-    
-    @staticmethod
-    def get_tx_resume_routine():
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("resume_routine")
-        )
-    
-    @staticmethod
-    def get_tx_step_routine():
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("step_routine")
-        )
-    
-    @staticmethod
-    def get_tx_abort_routine():
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("abort_routine")
-        )
-    
-    @staticmethod
-    def get_tx_query_routine_controller():
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("query_routine_controller")
-        )
-    
-    # Controllers
-    
-    @staticmethod
-    def get_tx_clear_speed_controller(actuator_index):
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("clear_speed_controller"),
-            operand_blob = [actuator_index]
-        )
-    
-    @staticmethod
-    def get_tx_clear_positional_controller(actuator_index):
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("clear_positional_controller"),
-            operand_blob = [actuator_index]
-        )
-    
-    @staticmethod
-    def get_tx_free_actuator(actuator_index):
-        return ScienceModuleFunctionList.build_tx_packet(
-            ScienceModuleFunctionList.get_function_by_function_name("free_actuator"),
-            operand_blob = [actuator_index]
-        )
+    def packetize_eeprom_write(final_binary, start_addr, acknowledge=False):
+        '''Creats a final binary with science module packets'''
+
+        HEADER = 0x53
+        COMMAND = ScienceModuleFunctionList.get_command_word(ScienceModuleFunctionList.get_function_by_function_name('write_eeprom'), [False, acknowledge])
+        FOOTER = 0x4D
+        packet_stream = bytearray()
+        payloads = ScienceModuleFunctionList.__split_into_packets(final_binary, 0xFF - 2)  # Split into maximum 255 bytes, minus two for eeprom location
+        for payload in payloads:
+            packet = bytearray()
+            packet.append(HEADER)
+            packet.append(COMMAND)
+            packet.append(len(payload) + 2)
+            packet.extend(start_addr.to_bytes(2, byteorder='little', signed=False))
+            start_addr += len(payload)  # Increment the start address for the next packet
+            packet.extend(payload)
+            packet.append(FOOTER)
+            packet_stream.extend(packet)
+        return packet_stream
+
+try:
+    class ScienceModuleFunctionListBuilder:
         
+        @staticmethod
+        def build_tx_packet(func, operand_blob=[], flags=[False, False]):
+            """
+            Build a ScienceSerialTxPacket from a function entry.
+            """
+            # Setup the command word based on the function entry
+            command_word = int(func['function_addr'])
+            if func['command_type'] == 'action':
+                command_word |= 0b10000000  # Set the command bit for command type functions
+            for i in range(len(flags)):
+                if flags[i]:
+                    command_word |= 0b00000001 << (6 - i)  # Set the override, and acknowledge bits
+
+            # Verify the operand blob
+            ScienceModuleFunctionList.verify_operands(func, operand_blob)
+
+            # Build the packet and add the operands
+            tx_packet = ScienceSerialTxPacket()
+            tx_packet.command_word = ScienceModuleFunctionList.get_command_word(func, flags)
+            tx_packet.operands = operand_blob
+            return tx_packet   
+            
+        @staticmethod
+        def get_return_data(func_def, msg: ScienceSerialRxPacket):
+            output = msg.message
+            data_type = func_def['return_type']
+            conversion_func = ScienceModuleFunctionList.conversion_function(data_type)
+            size = ScienceModuleFunctionList.length_of_datatype(data_type)
+            if size is ENTIRE_MESSAGE:
+                size = len(msg.message) # Use entire message in function
+            if func_def['return_cnt'] == 'variable':
+                # Determine the size at runtime
+                cnt = int(len(msg.message) / size)
+            else:
+                # Pre determined size
+                cnt = int(func_def['return_cnt'])
+            out = []
+            for i in range(cnt):
+                out.append(conversion_func(output, i*size))
+            return out[0] if cnt == 1 else out
+        
+        @staticmethod
+        def get_tx_get_analog_sensor_raw(sensor_index):
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("get_analog_sensor_raw"),
+                operand_blob = [sensor_index]
+            )
+        
+        @staticmethod
+        def get_tx_get_analog_sensor_calibrated(sensor_index):
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("get_analog_sensor_calibrated"),
+                operand_blob = [sensor_index]
+            )
+        
+        @staticmethod
+        def get_tx_get_actuator_position(actuator_index):
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("get_actuator_position"),
+                operand_blob = [actuator_index]
+            )
+        
+        @staticmethod
+        def get_tx_get_actuator_control(actuator_index):
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("get_actuator_control"),
+                operand_blob = [actuator_index]
+            )
+        
+        @staticmethod
+        def get_tx_query_is_actuator_reserved(actuator_index):
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("query_is_actuator_reserved"),
+                operand_blob = [actuator_index]
+            )
+        
+        @staticmethod
+        def get_tx_update_actuator_control(actuator_index, control, override=False):
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("update_actuator_control"),
+                operand_blob = [actuator_index, control & 0xFF], # Make Control be interpreted as uint8_t
+                flags = [override, False]
+            )
+        
+        @staticmethod
+        def get_tx_sample_spectrograph(sample_cnt, sample_interval_ms, bulb_on):
+            sample_interval_blob = ScienceModuleFunctionList.blob_data(sample_interval_ms, 'uint32_t')
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("sample_spectrograph"),
+                operand_blob = [sample_cnt] + sample_interval_blob + [bulb_on]
+            )
+        
+        @staticmethod
+        def get_tx_return_spectrograph_data():
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("return_spectrograph_data")
+            )
+        
+        @staticmethod
+        def get_tx_sample_ltr():
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("sample_ltr")
+            )
+        
+        @staticmethod
+        def get_tx_return_ltr_data():
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("return_ltr_data")
+            )
+        
+        # Routine Methods
+        
+        @staticmethod
+        def get_tx_run_routine(routine_index):
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("run_routine"),
+                operand_blob = [routine_index]
+            )
+        
+        @staticmethod
+        def get_tx_pause_routine():
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("pause_routine")
+            )
+        
+        @staticmethod
+        def get_tx_resume_routine():
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("resume_routine")
+            )
+        
+        @staticmethod
+        def get_tx_step_routine():
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("step_routine")
+            )
+        
+        @staticmethod
+        def get_tx_abort_routine():
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("abort_routine")
+            )
+        
+        @staticmethod
+        def get_tx_query_routine_controller():
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("query_routine_controller")
+            )
+        
+        # Controllers
+        
+        @staticmethod
+        def get_tx_clear_speed_controller(actuator_index):
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("clear_speed_controller"),
+                operand_blob = [actuator_index]
+            )
+        
+        @staticmethod
+        def get_tx_clear_positional_controller(actuator_index):
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("clear_positional_controller"),
+                operand_blob = [actuator_index]
+            )
+        
+        @staticmethod
+        def get_tx_free_actuator(actuator_index):
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("free_actuator"),
+                operand_blob = [actuator_index]
+            )
+except NameError:
+    # Fallback for non-ROS environments
+    class ScienceModuleFunctionListBuilder:
+        pass
