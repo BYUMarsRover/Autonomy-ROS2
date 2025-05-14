@@ -2,12 +2,12 @@
 #include "../definitions/definitions.h"
 #include "../error/error.h"
 
-#define DRILL_INDEX LINEAR_ACTUATOR_CNT
+#define DEBUG_SPEED_CONTROLLER
 
 namespace speed_controller {
     
     // +1 to also hold the drill
-    speed_request_t speed_req_buffer[LINEAR_ACTUATOR_CNT + 1];
+    speed_request_t speed_req_buffer[TOTAL_ACTUATOR_CNT];
 
     // Clears all speed requests
     void init() {
@@ -38,14 +38,13 @@ namespace speed_controller {
         }
     }
 
-    void configureDataAndStartControl(uint8_t actuator_index, int8_t control, int32_t timeout, bool authorized, const void (*callback)(void)) {
+    void configureDataAndStartControl(uint8_t actuator_index, int8_t control, int32_t timeout, bool authorized) {
         // Configure Data
         speed_request_t* request = &(speed_req_buffer[actuator_index]);
         request->control = control;
         request->timeout = timeout;
         request->resolved = false;
         request->authorized = authorized;
-        request->callback = callback;
 
         // Start send the control
         if (actuator_index == DRILL_INDEX) {
@@ -54,18 +53,31 @@ namespace speed_controller {
     }
 
     // Updates a speed request 
-    bool submit(uint8_t actuator_index, int8_t control, int32_t timeout, bool authorized, const void (*callback)(void)) {
+    bool submit(uint8_t actuator_index, int8_t control, int32_t timeout, bool authorized) {
+
+        #ifdef DEBUG_SPEED_CONTROLLER
+        Serial.print(F("Speed Controller Request actuator #"));
+        Serial.print(actuator_index);
+        Serial.print(F(" to control "));
+        Serial.print(control);
+        Serial.print(F(" with timeout "));
+        Serial.println(timeout);
+        #endif
+
+        // Check if the actuator index is valid
+        if (!verify::actuator_index(actuator_index)) return false;
+
         // Reserve the actuator for control if not authorized
         if (!authorized && !actuator_manager::reserve(actuator_index)) return false;
 
         // If sucessful 
-        configureDataAndStartControl(actuator_index, control, timeout, authorized, callback);
+        configureDataAndStartControl(actuator_index, control, timeout, authorized);
         return true;
     }
 
-    // Updates a speed requests, defaults to no auth or a callback
+    // Updates a speed requests, defaults to no auth
     bool submit(uint8_t actuator_index, int8_t control, int32_t timeout) {
-        return submit(actuator_index, control, timeout, false, nullptr);
+        return submit(actuator_index, control, timeout, false);
     }
 
     bool is_resolved(uint8_t actuator_index) {
@@ -81,14 +93,7 @@ namespace speed_controller {
     };
 
     void resolve(uint8_t index, int8_t default_control) {
-        #ifdef DEBUG
-        Serial.print(F("Speed Controller Resolved actuator #"));
-        Serial.println(index);
-        #endif
         speed_req_buffer[index].resolved = true;
-
-        // Execute callback on resolution
-        if (speed_req_buffer[index].callback != nullptr) speed_req_buffer[index].callback();
 
         // Stop the control
         if (index == DRILL_INDEX) {

@@ -19,6 +19,8 @@ const char HEADER_WARNING[] PROGMEM = "WARN: ";
 const char HEADER_MESS[] PROGMEM = "MESS: ";
 const char NAME_SPECTROGRAPH[] PROGMEM = "Spectral Traid ";
 const char NAME_UV_SENSOR[] PROGMEM = "LTR390 ";
+const char NAME_ROUTINE[] PROGMEM = "Routine ";
+const char NAME_ACTUATOR[] PROGMEM = "Actuator ";
 const char MESS_SUCESSFUL_CONNECTION[] PROGMEM = "Connection Sucessful";
 const char MESS_DEVICE_CONNECTED[] PROGMEM = "found and connected.";
 const char ERROR_2ND_CACHE_EXTENED_CANNOT_MOVE_AUGER[] PROGMEM = "Secondary Cache is Extended. Cannot extend Auger.";
@@ -31,7 +33,7 @@ const char ERROR_NO_ROUTINE_RUNNING[] PROGMEM = "No routine is running.";
 const char ERROR_ALREADY_PAUSED[] PROGMEM = "Routine is already paused.";
 const char ERROR_NOTHING_PAUSED[] PROGMEM = "No paused routine to resume.";
 const char WARN_ADVANCE_INSTRUCTIONS[] PROGMEM = "Set the override bit if you wish to continue.";
-const char ERROR_ROUTINE_INDEX_NOT_RECOGNIZED[] PROGMEM = "Routine Index % was not recognized.";
+const char ERROR_INDEX_NOT_RECOGNIZED[] PROGMEM = "Index % was not recognized.";
 const char MESS_RECEIVED_X_BYTES_OPERAND_PACKET[] PROGMEM = "Received % bytes in operand packet ";
 const char ERROR_BAD_OPERAND_PACKET_SIZE[] PROGMEM = "but expected %.";
 const char ERROR_BAD_OPERAND_PACKET_VAR[] PROGMEM = "but expected n * %.";
@@ -43,6 +45,8 @@ const char ERROR_NOT_IMPLEMENTED[] PROGMEM = "This function is not yet implement
 const char ERROR_NOT_COMPILED[] PROGMEM = "This function is included in this build.";
 const char ERROR_NULL_PTR[] PROGMEM = "A nullptr was encountered.";
 const char ERROR_MALLOC[] PROGMEM = "Memory was unable to be allocated.";
+const char ERROR_OUT_OF_BOUNDS[] PROGMEM = "Out of bounds access, received index % in an array of length %.";
+const char ERROR_COULD_NOT_RUN_ROUTINE[] PROGMEM = "Could not run routine.";
 
 namespace message {
     void connection_successful();
@@ -56,7 +60,6 @@ namespace error {
     void actuatorReserved(uint8_t actuator_index);
     void warnFreeActuator();
     void badFunctionAddress(uint8_t addr);
-    void badRoutineIndex(uint8_t addr);
     void routineRunning();
     void noRoutinePaused();
     void noRoutineRunning();
@@ -71,6 +74,15 @@ namespace error {
     void notCompiled();
     void nullptrError();
     void mallocError();
+    void outOfBoundsError(uint8_t index, uint8_t array_size);
+    void badIndex(const char* name, uint8_t index, uint8_t max_index);
+    void notReadyForRoutine(uint8_t index);
+}
+
+namespace verify {
+    bool routine_index(uint8_t index);
+    bool actuator_index(uint8_t index);
+    bool linear_actuator_index(uint8_t index);
 }
 
 #endif /* ERROR_H */

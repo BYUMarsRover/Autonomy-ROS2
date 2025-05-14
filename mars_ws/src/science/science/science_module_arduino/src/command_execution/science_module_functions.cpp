@@ -397,12 +397,8 @@ void run_routine(uint8_t override) {
     }
 
     // Ensure the routine index is valid
-    uint8_t total_routine_count = routine_manager::get_total_routine_count();
-    if (routine_index >= total_routine_count) {
-        error::badRoutineIndex(command_operand_buffer[0]);
-    } else {
+    if (verify::routine_index(routine_index))
         routine_manager::begin_routine(routine_index);
-    }
 }
 
 // Pauses a running routine

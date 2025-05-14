@@ -11,14 +11,12 @@ namespace routine_manager {
         uint8_t actuator_index;
         float position;
         float speed;
-        void (*fun_ptr)(void);
     };
 
     struct actuator_speed_action_t {
         uint8_t actuator_index;
         int8_t control;
         int32_t timeout;
-        void (*fun_ptr)(void);
     };
 
     struct action_group_t {
@@ -26,7 +24,7 @@ namespace routine_manager {
         uint8_t pos_action_cnt;
         actuator_speed_action_t** speed_action_ptrs;
         uint8_t speed_action_cnt;
-        void (*fun_ptr)(void);
+        uint8_t func_index;
     };
 
     // Array of Action Groups

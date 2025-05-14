@@ -5,6 +5,8 @@
 #define MIN_SPEED 40
 #define POS_FLOAT_TOL 1e-5
 
+#define DEBUG_POS_CONTROLLER
+
 namespace positional_controller {
     
     linear_position_request_t pos_req_buffer[LINEAR_ACTUATOR_CNT];
@@ -37,38 +39,42 @@ namespace positional_controller {
         }
     }
 
-    void configureDataAndStartControl(uint8_t actuator_index, float position, float speed, bool authorized, void (*callback)(void)) {
+    void configureDataAndStartControl(uint8_t actuator_index, float position, float speed, bool authorized) {
         // Configure data
         linear_position_request_t* request = &(pos_req_buffer[actuator_index]);
         request->position = position;
         request->speed = speed;
         request->authorized = authorized;
-        request->callback = callback;
         request->paused = false;
         request->resolved = false;
     }
 
     // Updates a positional request 
-    bool submit(uint8_t actuator_index, float position, float speed, bool authorized, void (*callback)(void)) {
+    bool submit(uint8_t actuator_index, float position, float speed, bool authorized) {
 
+        #ifdef DEBUG_POS_CONTROLLER
         Serial.print(F("Positional Controller Request actuator #"));
         Serial.print(actuator_index);
         Serial.print(F(" to position "));
         Serial.print(position);
         Serial.print(F(" at speed "));
         Serial.println(speed);
+        #endif
+
+        // Check if the actuator index is valid
+        if (!verify::linear_actuator_index(actuator_index)) return false;
 
         // Reserve the actuator for control if not authorized
         if (!authorized && !actuator_manager::reserve(actuator_index)) return false;
 
         // If sucessful 
-        configureDataAndStartControl(actuator_index, position, speed, authorized, callback);
+        configureDataAndStartControl(actuator_index, position, speed, authorized);
         return true;
     }
 
-    // Updates a positional request, defaults to no auth or a callback
+    // Updates a positional request, defaults to no auth
     bool submit(uint8_t actuator_index, float position, float speed) {
-        return submit(actuator_index, position, speed, false, nullptr);
+        return submit(actuator_index, position, speed, false);
     }
 
     bool is_resolved(uint8_t actuator_index) {
@@ -80,11 +86,6 @@ namespace positional_controller {
     }
 
     void resolve(uint8_t index) {
-        #ifdef DEBUG
-        Serial.print(F("Positional Controller Resolved actuator #"));
-        Serial.println(index);
-        #endif
-
         pos_req_buffer[index].resolved = true;
         actuator_manager::set_control(index, 0); // stop
 
