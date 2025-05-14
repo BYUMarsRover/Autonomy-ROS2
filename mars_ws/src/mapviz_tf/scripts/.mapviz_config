@@ -110,7 +110,7 @@ displays:
     config:
       visible: true
       collapsed: false
-      topic: /mapviz_markers
+      topic: /waypoint_labels
   - type: mapviz_plugins/float
     name: Pitch Display
     config:
