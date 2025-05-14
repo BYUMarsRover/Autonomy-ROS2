@@ -644,7 +644,7 @@ class AutonomyGUI(Node, QWidget):
             marker = Marker()
             marker.header.frame_id = "map"
             marker.header.stamp = self.get_clock().now().to_msg()
-            marker.ns = "waypoint_labels"
+            marker.ns = "/waypoint_labels"
             marker.id = i
             marker.type = Marker.TEXT_VIEW_FACING
             marker.action = Marker.ADD
@@ -654,29 +654,26 @@ class AutonomyGUI(Node, QWidget):
             marker.pose.position.x = x
             marker.pose.position.y = y
             marker.pose.position.z = 0.5
-            marker.scale.z = 5.0
+            marker.scale.z = 1.0
             marker.color.a = 1.0
             marker.color.r = 1.0
             marker.color.g = 1.0
             marker.color.b = 1.0
 
-            match i:
-                case 0:
-                    marker.text = f"GPS 1"
-                case 1:
-                    marker.text = f"GPS 2"
-                case 2:
+            match waypoint[1]:
+                case 'GPS_only':
+                    marker.text = f"GPS {waypoint[0]}"
+                case '1':
                     marker.text = f"Aruco 1"
-                case 3:
+                case '2':
                     marker.text = f"Aruco 2"
-                case 4:
+                case '3':
                     marker.text = f"Aruco 3"
-                case 5:
+                case 'mallet':
                     marker.text = f"Mallet"
-                case 6:
+                case 'bottle':
                     marker.text = f"Bottle"
-            
-            # marker.text = f"WP{waypoint[0]}: {waypoint[1]}"
+    
             marker_array.markers.append(marker)
 
         self.waypoint_label_publisher.publish(marker_array)
