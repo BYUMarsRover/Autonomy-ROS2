@@ -343,6 +343,7 @@ class AutonomyStateMachine(Node):
         right_stats = stats_by_region.get("right")
 
         # If straight is clear, prefer it
+        # TODO if straight stats is none then dont do anything
         if straight_stats and straight_stats.count < self.hazard_threshold:
             self.hazard_info = {
                 "direction": "straight",
