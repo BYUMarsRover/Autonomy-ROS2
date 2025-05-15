@@ -23,6 +23,7 @@ const char NAME_ROUTINE[] PROGMEM = "Routine ";
 const char NAME_ACTUATOR[] PROGMEM = "Actuator ";
 const char MESS_SUCESSFUL_CONNECTION[] PROGMEM = "Connection Sucessful";
 const char MESS_DEVICE_CONNECTED[] PROGMEM = "found and connected.";
+const char MESS_UV_SENS_CALIBRATE[] PROGMEM = "UV Sensitivity calibrated to %.";
 const char ERROR_2ND_CACHE_EXTENED_CANNOT_MOVE_AUGER[] PROGMEM = "Secondary Cache is Extended. Cannot extend Auger.";
 const char ERROR_AUGER_EXTENED_CANNOT_MOVE_2ND_CACHE[] PROGMEM = "Auger is Extended. Cannot extend secondary cache.";
 const char WARN_FREE_ACTUATOR[] PROGMEM = "Freeing a Actuator could cause program conflicts.";
@@ -53,6 +54,7 @@ namespace message {
     void connection_successful();
     void spectrograph_found();
     void uv_sensor_found();
+    void uv_sensitivity_calibrate(uint16_t value);
 }
 
 namespace error {

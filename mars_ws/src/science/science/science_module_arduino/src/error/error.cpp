@@ -73,6 +73,18 @@ namespace message {
         response_buffer.error_code = ERROR_CODE_SUCCESS;
         composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), nullptr);
     }
+
+    void uv_sensitivity_calibrate(uint16_t value) {
+        const char* error_format_strings[] = {
+            HEADER_MESS,
+            MESS_UV_SENS_CALIBRATE
+        };
+        uint16_t args[] = {
+            value
+        };
+        response_buffer.error_code = ERROR_CODE_SUCCESS;
+        composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), args);
+    }
 }
 
 namespace error {
