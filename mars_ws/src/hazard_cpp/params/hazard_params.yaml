@@ -7,7 +7,7 @@ pcl_processor:
     bbox_max_x:  2.5
     bbox_min_y: -0.45
     bbox_max_y:  0.45
-    bbox_min_z: -0.35
+    bbox_min_z: -0.0
     bbox_max_z:  1.6
     bbox_max_y_left: 2.0
     bbox_min_y_right: -2.0

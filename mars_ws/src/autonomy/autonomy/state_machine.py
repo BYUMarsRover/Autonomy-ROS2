@@ -398,7 +398,7 @@ class AutonomyStateMachine(Node):
             # TODO this is gonna keep returning when the rover is spinnig
             chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, path_target)
             course_error = wrap(chi_rad - curr_heading, 0)
-            if abs(course_error) > 0.25:
+            if abs(course_error) > 0.2:
                 self.get_logger().info(f"Course error too large before avoiding hazards: {course_error}", throttle_duration_sec=1.0)
                 self.hazard_info = {}
                 return
@@ -417,7 +417,7 @@ class AutonomyStateMachine(Node):
                 
                 if time_since_update < 1.0:
                     # TODO check and see if anything is new since the last time we offset
-                    offset_wp = GPSTools.generate_side_waypoint(self.current_point, curr_heading, direction, offset_distance=7.0, offset_angle=0.1)
+                    offset_wp = GPSTools.generate_side_waypoint(self.current_point, curr_heading, direction, offset_distance=5.0, offset_angle=0.8)
                     self.drive_controller.issue_path_cmd(offset_wp.lat, offset_wp.lon)
                     self.path_target_point = offset_wp
                     self.get_logger().info(f"Offset waypoint to: {offset_wp}, direction: {direction}, heading: {curr_heading}, ")
