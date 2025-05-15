@@ -257,6 +257,9 @@ class science_response_GUI(Node):
         self.clear_detail_view()
 
     def update_return_table(self, func_def, message):
+        if func_def is None:
+            self.hide_return_table()
+            return
         datatype = func_def['return_type']
         conversion_func = SMFL.conversion_function(func_def['return_type'])
         if datatype != 'void' and conversion_func is not None:

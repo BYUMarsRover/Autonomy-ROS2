@@ -86,7 +86,7 @@ struct linear_actuator_speed_t {
 // State Estimation data for a linear actuator
 struct linear_actuator_state_t {
     float position; // 0.0 Retracted -- 1.0 Extended
-    int8_t control;  // -127 Retract -- 127 Extend
+    int8_t control;  // -128 Retract -- 127 Extend
 };
 
 // pin def structure for a drill motor

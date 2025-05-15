@@ -17,7 +17,7 @@ import sys
 import subprocess
 
 FULL_STEAM_FORWARD = 127
-FULL_STEAM_BACKWARD = -127
+FULL_STEAM_BACKWARD = -128
 FULL_STEAM_STOP = 0
 
 class Signals(QObject):
@@ -168,7 +168,7 @@ class science_routine_GUI(Node):
         self.qt.actionUpdate_Routines_from_File.triggered.connect(lambda: self.send_file("Select Routine File", "Binary Files", ".bin"))
         self.qt.actionUpdate_Module_Config_from_File.triggered.connect(lambda: self.send_file("Select Module Config File", "Binary Files", ".bin"))
 
-    def send_file(self, prompt, file_type, file_desc):
+    def send_file(self, prompt, file_desc, file_type):
         # Open a file selection dialog to allow the user to select a file
         file_dialog = QtWidgets.QFileDialog()
         file_dialog.setWindowTitle(prompt)
