@@ -452,6 +452,11 @@ namespace routine_manager {
             // Read the next byte from EEPROM
             instruction = EEPROM.read(eeprom_ptr++);
 
+            #ifdef DEBUG_ROUTINES
+            Serial.print(F("Instruction: "));
+            Serial.println((uint8_t)instruction, HEX);
+            #endif
+
             if (instruction == END_OF_ROUTINE) {
                 // End of routine, clean up data and return ptr to the routine
                 break;
