@@ -14,9 +14,10 @@ from rover_msgs.msg import ScienceActuatorState, ScienceActuatorControl, Science
 
 import os
 import sys
+import subprocess
 
 FULL_STEAM_FORWARD = 127
-FULL_STEAM_BACKWARD = -127
+FULL_STEAM_BACKWARD = -128
 FULL_STEAM_STOP = 0
 
 class Signals(QObject):
@@ -32,7 +33,7 @@ class science_routine_GUI(Node):
     def __init__(self):
         
         super().__init__('science_routine_GUI')
-        self.qt = QtWidgets.QWidget()
+        self.qt = QtWidgets.QMainWindow()
 
         ui_file_path = os.path.join(
             get_package_share_directory('science'),
@@ -50,7 +51,7 @@ class science_routine_GUI(Node):
         self.routine_status_query_rate_ms = 5000
 
         # Available Routines
-        self.routines = ["reset_routine", "move_to_zero_routine", "test_routine", "first_cache_transfer"]
+        self.routines = ["Reset All Actuators", "Move to Zero", "Align First Cache Transfer", "Align Second Cache Transfer"]
 
         uic.loadUi(ui_file_path, self.qt)
         self.init_publishers()
@@ -58,6 +59,7 @@ class science_routine_GUI(Node):
         self.init_timer_tasks()
         self.task_launcher_init()
         self.init_actuator_state_queries()
+        self.setup_menu_bar()
         self.qt.show() # Show the GUI
 
     def init_actuator_state_queries(self):
@@ -65,11 +67,11 @@ class science_routine_GUI(Node):
         # Initialize the polling manager for actuator states
         self.actuator_poll_manager = ActuatorStatePollManager(
             [
-                ActuatorStatePoll(self, self.pub_get_actuator_state, ACTUATOR_INDEX_PROBE),
-                ActuatorStatePoll(self, self.pub_get_actuator_state, ACTUATOR_INDEX_AUGER),
-                ActuatorStatePoll(self, self.pub_get_actuator_state, ACTUATOR_INDEX_PRIMARY_CACHE_DOOR),
-                ActuatorStatePoll(self, self.pub_get_actuator_state, ACTUATOR_INDEX_SECONDARY_CACHE),
-                ActuatorStatePoll(self, self.pub_get_actuator_state, ACTUATOR_INDEX_DRILL)
+                ActuatorStatePoll(self, self.pub_get_actuator_state, ACTUATOR_INDEX_PROBE, verify_func=self.actuator_updates_enabled),
+                ActuatorStatePoll(self, self.pub_get_actuator_state, ACTUATOR_INDEX_AUGER, verify_func=self.actuator_updates_enabled),
+                ActuatorStatePoll(self, self.pub_get_actuator_state, ACTUATOR_INDEX_PRIMARY_CACHE_DOOR, verify_func=self.actuator_updates_enabled),
+                ActuatorStatePoll(self, self.pub_get_actuator_state, ACTUATOR_INDEX_SECONDARY_CACHE, verify_func=self.actuator_updates_enabled),
+                ActuatorStatePoll(self, self.pub_get_actuator_state, ACTUATOR_INDEX_DRILL, verify_func=self.actuator_updates_enabled)
             ],
             passive_rate_ms=1000,
             active_rate_ms=100
@@ -162,6 +164,32 @@ class science_routine_GUI(Node):
         # Do one query to start
         self.perform_routine_status_query()
 
+    def setup_menu_bar(self):
+        self.qt.actionUpdate_Routines_from_File.triggered.connect(lambda: self.send_file("Select Routine File", "Binary Files", ".bin"))
+        self.qt.actionUpdate_Module_Config_from_File.triggered.connect(lambda: self.send_file("Select Module Config File", "Binary Files", ".bin"))
+
+    def send_file(self, prompt, file_desc, file_type):
+        # Open a file selection dialog to allow the user to select a file
+        file_dialog = QtWidgets.QFileDialog()
+        file_dialog.setWindowTitle(prompt)
+        file_dialog.setNameFilter(f"{file_desc} (*{file_type});;All Files (*)")
+        file_dialog.setFileMode(QtWidgets.QFileDialog.ExistingFile)
+
+        if file_dialog.exec_():
+            selected_file = file_dialog.selectedFiles()[0]  # Get the selected file path
+            self.get_logger().info(f"Selected file: {selected_file}")
+
+            # Show a popup window to indicate the selected file
+            msg_box = QtWidgets.QMessageBox()
+            msg_box.setIcon(QtWidgets.QMessageBox.Information)
+            msg_box.setWindowTitle("File Selected")
+            msg_box.setText(f"Selected file: {selected_file}")
+            msg_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msg_box.exec_()
+
+            # Call the function to update the routines with the selected file
+            self.pub_file_contents.publish(String(data=selected_file))
+
     def perform_routine_status_query(self):
         # Perform a routine status query
         self.pub_get_routine_state.publish(Empty())
@@ -222,6 +250,9 @@ class science_routine_GUI(Node):
 
         # Generic tx requests
         self.pub_tx = self.create_publisher(ScienceSerialTxPacket, '/science_serial_tx_request', 10)
+
+        # File Submission
+        self.pub_file_contents = self.create_publisher(String, '/science_send_file', 10)
 
     def init_subscriptions(self):
         # Initialize subscriptions here
@@ -321,18 +352,22 @@ class science_routine_GUI(Node):
         """
         self.qt.routine_status_window.setText(msg.data)
 
+    def actuator_updates_enabled(self):
+        return not self.qt.disable_query_checkBox.isChecked();
+
 class PollingTimer:
-    def __init__(self, node, period_ms, func):
+    def __init__(self, node, period_ms, func, verify_func=None):
         self.node = node
         self.period_ms = period_ms
         self.timer = None
         self.func = func
+        self.verify_func = verify_func
         self.build()
 
     def build(self):
         if self.timer is not None:
             self.timer.destroy()
-        self.timer = self.node.create_timer(self.period_ms / 1000, self.func)
+        self.timer = self.node.create_timer((self.period_ms / 1000.0), self.run_callback)
         # self.node.get_logger().info(f"Timer created with period: {self.period_ms} ms")
 
     def change_rate(self, new_period_ms):
@@ -340,9 +375,16 @@ class PollingTimer:
             self.period_ms = new_period_ms
             self.build()
 
+    def run_callback(self):
+        if self.verify_func is not None:
+            if self.verify_func():
+                self.func()
+        else:
+            self.func()
+
 class ActuatorStatePoll(PollingTimer):
-    def __init__(self, node, publisher, actuator_index, passive_rate_ms=1000, active_rate_ms=100):
-        super().__init__(node, passive_rate_ms, lambda: publisher.publish(UInt8(data=actuator_index)))
+    def __init__(self, node, publisher, actuator_index, passive_rate_ms=1000, active_rate_ms=100, verify_func=None):
+        super().__init__(node, passive_rate_ms, lambda: publisher.publish(UInt8(data=actuator_index)), verify_func)
         self.actuator_index = actuator_index
         self.passive_rate_ms = passive_rate_ms
         self.active_rate_ms = active_rate_ms

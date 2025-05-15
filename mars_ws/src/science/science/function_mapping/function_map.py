@@ -58,6 +58,8 @@ class ScienceModuleFunctionList:
     def verify_operands(func, operand_blob):
         tracer = 0
 
+        print('')
+
         for i in range(1, ScienceModuleFunctionList.max_operands + 1):
             # Get the next operand in this function definition
             data_type = func[f'operand_type_{i}']
@@ -433,6 +435,14 @@ try:
                 ScienceModuleFunctionList.get_function_by_function_name("free_actuator"),
                 operand_blob = [actuator_index]
             )
+        
+        @staticmethod
+        def get_tx_calibrate_uv_index(uv_index):
+            return ScienceModuleFunctionListBuilder.build_tx_packet(
+                ScienceModuleFunctionList.get_function_by_function_name("calibrate_uv_index"),
+                operand_blob = ScienceModuleFunctionList.blob_data(uv_index, 'float')
+            )
+        
 except NameError:
     # Fallback for non-ROS environments
     class ScienceModuleFunctionListBuilder:

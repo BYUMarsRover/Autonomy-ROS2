@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets, uic, QtGui
 from python_qt_binding.QtCore import QObject, Signal
 import rclpy
 from rover_msgs.msg import ScienceSerialTxPacket
-from std_msgs.msg import UInt8MultiArray
+from std_msgs.msg import UInt8MultiArray, String
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.pyplot as plt
@@ -39,6 +39,9 @@ class science_rxtx_GUI(Node):
         # Create Publisher
         self.science_serial_tx_request_pub = self.create_publisher(ScienceSerialTxPacket, '/science_serial_tx_request', 10)
 
+        # File Submission
+        self.pub_file_contents = self.create_publisher(String, '/science_send_file', 10)
+
         # Create Subscriptions
         self.science_serial_tx_sub = self.create_subscription(UInt8MultiArray, '/science_serial_tx_notification', self.receive_tx_notification, 10)
         self.science_serial_rx_sub = self.create_subscription(UInt8MultiArray, '/science_serial_rx_notification', self.receive_rx_notification, 10)
@@ -62,40 +65,9 @@ class science_rxtx_GUI(Node):
         self.qt.pushButton_hex_manual.clicked.connect(self.submit_manual_hexdecimal_form)
         self.qt.pushButton_ascii_manual.clicked.connect(self.submit_manual_ascii_form)
 
-        # self.qt.pushButton_fad.clicked.connect(self.fad_detector_get_point)
-        # self.qt.pushButton_fad_calibration.clicked.connect(self.save_fad)
-
-        # self.qt.pushButton_moisture.clicked.connect(lambda: self.graph_sensor_values(0))
-        # self.qt.pushButton_temperature.clicked.connect(lambda: self.graph_sensor_values(1))
-        # self.qt.pushButton_fad_graph.clicked.connect(lambda: self.graph_sensor_values(2))
-
-        # self.qt.pushButton_moisture_2.clicked.connect(lambda: self.estimate_reading(0))
-        # self.qt.pushButton_temperature_2.clicked.connect(lambda: self.estimate_reading(1))
-        # self.qt.pushButton_fad_estimate.clicked.connect(lambda: self.estimate_reading(2))
-
-        # self.qt.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
-        # self.qt.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
-        # self.qt.fad_radio.toggled.connect(lambda: self.toggle_sensor_save(2))  # fad
-
-        # self.qt.lcd_site_num.display(self.site_number)
-        # self.qt.pushButton_change_site.clicked.connect(self.increment_site_number)
-
-        # self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1) #figure this out
-        # self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
-        # self.pub_save_fad = self.create_publisher(ScienceSaveFAD, '/science_save_fad', 1)
-
-        # self.signals.sensor_signal.connect(self.update_sensor_values)
-        # # self.signals.auger_position.connect(self.update_auger_position)
-        # self.signals.sensor_save_signal.connect(self.pub_save_sensor.publish)
-        # self.signals.FAD_save_signal.connect(self.pub_save_fad.publish)
-        # self.signals.notes_save_signal.connect(self.pub_save_notes.publish)
-        # self.signals.fad_intensity_signal.connect(self.update_fad_intensity_value)
-
-        # self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.signals.sensor_signal.emit, 10)
-        # # self.science_auger_position = self.create_subscription(ScienceToolPosition, '/science_auger_position', self.signals.auger_position.emit, 10)
-        # self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
-        # self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
-
+        # Submit File Button
+        self.qt.file_select_button.clicked.connect(self.send_file_to_module)
+        
     def append_text_to_label(self, label, text):
         label.setText(label.text() + text)
 
@@ -186,6 +158,27 @@ class science_rxtx_GUI(Node):
 
     def receive_rx_notification(self, msg: UInt8MultiArray):
         self.update_rx(msg.data)
+
+    def send_file_to_module(self):
+        # Open a file selection dialog to allow the user to select a file
+        file_dialog = QtWidgets.QFileDialog()
+        file_dialog.setWindowTitle("Select File")
+        file_dialog.setFileMode(QtWidgets.QFileDialog.ExistingFile)
+
+        if file_dialog.exec_():
+            selected_file = file_dialog.selectedFiles()[0]  # Get the selected file path
+            self.get_logger().info(f"Selected file: {selected_file}")
+
+            # Show a popup window to indicate the selected file
+            msg_box = QtWidgets.QMessageBox()
+            msg_box.setIcon(QtWidgets.QMessageBox.Information)
+            msg_box.setWindowTitle("File Selected")
+            msg_box.setText(f"Selected file: {selected_file}")
+            msg_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msg_box.exec_()
+
+            # Call the function to update the routines with the selected file
+            self.pub_file_contents.publish(String(data=selected_file))
     
     
 def main(args=None):

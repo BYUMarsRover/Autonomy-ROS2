@@ -137,7 +137,7 @@ void writeDrill(int8_t drill_speed) {
             delay(MIN_MOTOR_SWITCH_TIME_MS);
         }
         digitalWrite(DRILL_MOTOR_PINS.direction, HIGH);
-        analogWrite(DRILL_MOTOR_PINS.enable, map(drill_speed, 0, -127, 0, 255));
+        analogWrite(DRILL_MOTOR_PINS.enable, map(drill_speed, 0, -128, 0, 255));
     } else {
         // drill stop
         stopDrill();

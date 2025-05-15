@@ -18,7 +18,7 @@
 #define RESPONSE_PACKET_FOOTER 0x46 //'F'
 
 #define FULL_FORWARD_CONTROL 0x7F
-#define FULL_REVERSE_CONTROL 0x80
+#define FULL_REVERSE_CONTROL 0x80 //  0x81 for the drill instead , not sure why
 
 // min time between switching motor directions
 // (for shoot-through protection on H-bridges)
@@ -36,6 +36,9 @@
 #define CACHE_ACTUATOR_COUNT 3
 #define MAX_OPERAND_ARRAY_SIZE 0xFF
 
+#define DRILL_INDEX LINEAR_ACTUATOR_CNT
+#define TOTAL_ACTUATOR_CNT LINEAR_ACTUATOR_CNT + 1 // Allow room for drill
+
 /* HARDWARE CONSTANTS */
 
 // Note: Feb 2025 -
@@ -47,28 +50,18 @@
 
 #define PROBE_EXTEND_PIN    4
 #define PROBE_RETRACT_PIN   5
-#define PROBE_EXTEND_TIME   15.48f
-#define PROBE_RETRACT_TIME  15.99f
 
 #define AUGER_EXTEND_PIN    7
 #define AUGER_RETRACT_PIN   6
-#define AUGER_EXTEND_TIME   5.6f
-#define AUGER_RETRACT_TIME  5.8f
 
 #define PRIMARY_DOOR_EXTEND_PIN    12
 #define PRIMARY_DOOR_RETRACT_PIN   10
-#define PRIMARY_DOOR_EXTEND_TIME   2.03f
-#define PRIMARY_DOOR_RETRACT_TIME  2.03f
 
 #define SECONDARY_DOOR_EXTEND_PIN    8
 #define SECONDARY_DOOR_RETRACT_PIN   9
-#define SECONDARY_DOOR_EXTEND_TIME   2.00f
-#define SECONDARY_DOOR_RETRACT_TIME  1.77f
 
 #define SECONDARY_CACHE_EXTEND_PIN    2
 #define SECONDARY_CACHE_RETRACT_PIN   3
-#define SECONDARY_CACHE_EXTEND_TIME   6.54f
-#define SECONDARY_CACHE_RETRACT_TIME  6.43f
 
 /* OTHER CONSTANTS */
 
@@ -93,7 +86,7 @@ struct linear_actuator_speed_t {
 // State Estimation data for a linear actuator
 struct linear_actuator_state_t {
     float position; // 0.0 Retracted -- 1.0 Extended
-    int8_t control;  // -127 Retract -- 127 Extend
+    int8_t control;  // -128 Retract -- 127 Extend
 };
 
 // pin def structure for a drill motor

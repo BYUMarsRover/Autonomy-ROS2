@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 
+//#define DEBUG_RESERVATION
+
 namespace actuator_manager {
 
     float get_extend_rate(uint8_t actuator_index);
@@ -16,7 +18,8 @@ namespace actuator_manager {
 
     uint8_t actuator_check_out_byte;
 
-    bool reserve(uint8_t actuator_index) {
+    bool reserve(uint8_t actuator_index) { 
+        if (actuator_index >= TOTAL_ACTUATOR_CNT) return false;
         if (is_reserved(actuator_index))
             // Fail if already checked out
             return false;
@@ -24,7 +27,7 @@ namespace actuator_manager {
         // Set the bit at the actuator_index
         actuator_check_out_byte = actuator_check_out_byte | (0b00000001 << actuator_index);
 
-        #ifdef DEBUG
+        #ifdef DEBUG_RESERVATION
         Serial.print(F("Reserve("));
         Serial.print(actuator_index);
         Serial.println(F(")"));
@@ -34,10 +37,11 @@ namespace actuator_manager {
     }
 
     void free(uint8_t actuator_index) {
+        if (actuator_index >= TOTAL_ACTUATOR_CNT) return;
         // Reset the bit at the actuator_index
         actuator_check_out_byte = actuator_check_out_byte & ~(0b00000001 << actuator_index);
 
-        #ifdef DEBUG
+        #ifdef DEBUG_RESERVATION
         Serial.print(F("Free("));
         Serial.print(actuator_index);
         Serial.println(F(")"));
@@ -45,6 +49,7 @@ namespace actuator_manager {
     }
 
     bool is_reserved(uint8_t actuator_index) {
+        if (actuator_index >= TOTAL_ACTUATOR_CNT) return false;
         bool v = (actuator_check_out_byte & (0b00000001 << actuator_index)) > 0;
         return v;
     }
@@ -99,14 +104,14 @@ namespace actuator_manager {
     }
 
     float get_extend_rate_eeprom(uint8_t actuator_index) {
-        Serial.print(F("Load extend rate from EEPROM for actuator "));
-        Serial.print(actuator_index);
+        // Serial.print(F("Load extend rate from EEPROM for actuator "));
+        // Serial.print(actuator_index);
         return EEPROM_readObject<float>((float*)(EEPROM_ACTUATOR_EXTEND_RETRACT_TIME_TABLE_ADDR) + (actuator_index * 2));
     }
 
     float get_retract_rate_eeprom(uint8_t actuator_index) {
-        Serial.print(F("Load retract rate from EEPROM for actuator "));
-        Serial.print(actuator_index);
+        // Serial.print(F("Load retract rate from EEPROM for actuator "));
+        // Serial.print(actuator_index);
         return EEPROM_readObject<float>((float*)(EEPROM_ACTUATOR_EXTEND_RETRACT_TIME_TABLE_ADDR) + (actuator_index * 2) + 1);
     }
 

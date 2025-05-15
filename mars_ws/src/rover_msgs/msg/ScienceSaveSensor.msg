@@ -1,4 +1,4 @@
 int8 site
-int8 position
+float64 timestamp
+string measurement
 float32 observed_value
-bool save

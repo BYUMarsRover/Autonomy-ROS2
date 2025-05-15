@@ -23,7 +23,7 @@ FUNCTIONALITY:
 import rclpy
 from rclpy.node import Node
 from rover_msgs.msg import ScienceSerialRxPacket, ScienceSerialTxPacket, ScienceSensorValues, ScienceSpectroData, ScienceUvData, ScienceActuatorState
-from std_msgs.msg import Empty, String, Bool, UInt8
+from std_msgs.msg import Empty, String, Bool, UInt8, Float32
 from science.function_mapping.function_map import ScienceModuleFunctionList as SMFL
 from science.function_mapping.function_map import ScienceModuleFunctionListBuilder as SMFL_Builder
 import struct
@@ -320,8 +320,8 @@ class ScienceRequestManager(Node):
             if self.temperature is not None and self.humidity is not None:
                 self.pub_forward.publish(
                     ScienceSensorValues(
-                        temperature = int(self.temperature),
-                        moisture = int(self.humidity)
+                        temperature = float(self.temperature),
+                        moisture = float(self.humidity)
                     )
                 )
 

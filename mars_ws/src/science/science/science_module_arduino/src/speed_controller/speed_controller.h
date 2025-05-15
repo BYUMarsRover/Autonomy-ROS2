@@ -12,12 +12,11 @@ namespace speed_controller {
         bool paused;
         bool resolved;
         bool authorized; // Normally false, set true to ignore reservation system
-        const void (*callback)(void);
     };
 
     void init();
     void tick(unsigned long tick_period);
-    bool submit(uint8_t actuator_index, int8_t control, int32_t timeout, bool authorized, const void (*callback)(void));
+    bool submit(uint8_t actuator_index, int8_t control, int32_t timeout, bool authorized);
     bool submit(uint8_t actuator_index, int8_t control, int32_t timeout);
     bool is_resolved(uint8_t actuator_index);
     void set_paused(uint8_t actuator_index, bool paused);
