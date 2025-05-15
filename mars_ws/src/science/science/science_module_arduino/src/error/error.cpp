@@ -292,6 +292,16 @@ namespace error {
         composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), args);
     }
 
+    void notReadyForCacheAlignment() {
+        const char* error_format_strings[] = {
+            HEADER_ERROR,
+            ERROR_COULD_NOT_RUN_ROUTINE,
+            ERROR_AUGER_SECONDAY_NON_ZERO
+        };
+        response_buffer.error_code = ERROR_CODE_ACTUATOR_RESERVED;
+        composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), nullptr);
+    }
+
     void badIndex(const char* name, uint8_t index, uint8_t max_index) {
         const char* error_format_strings[] = {
             HEADER_ERROR,

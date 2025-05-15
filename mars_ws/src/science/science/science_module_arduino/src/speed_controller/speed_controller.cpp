@@ -2,7 +2,7 @@
 #include "../definitions/definitions.h"
 #include "../error/error.h"
 
-#define DEBUG_SPEED_CONTROLLER
+// #define DEBUG_SPEED_CONTROLLER
 
 namespace speed_controller {
     
@@ -30,12 +30,18 @@ namespace speed_controller {
                 // if the time is negative, it was meant to stay on
                 resolve(i, (request->timeout == 0) ? 0 : request->control);
 
-            // Else count time
-            } else {
+            // Else count time if not paused
+            } else if (!request->paused) {
                 request->timeout = request->timeout - (tick_period / 1e3);
                 if (request->timeout < 0) request->timeout = 0;
             }
         }
+    }
+
+    void send_control(uint8_t actuator_index, int8_t control) {
+        if (actuator_index == DRILL_INDEX) {
+            actuator_manager::set_drill_control(control);
+        } else actuator_manager::set_control(actuator_index, control);
     }
 
     void configureDataAndStartControl(uint8_t actuator_index, int8_t control, int32_t timeout, bool authorized) {
@@ -47,9 +53,7 @@ namespace speed_controller {
         request->authorized = authorized;
 
         // Start send the control
-        if (actuator_index == DRILL_INDEX) {
-            actuator_manager::set_drill_control(control);
-        } else actuator_manager::set_control(actuator_index, control);
+        send_control(actuator_index, control);
     }
 
     // Updates a speed request 
@@ -86,6 +90,12 @@ namespace speed_controller {
 
     void set_paused(uint8_t actuator_index, bool paused) {
         speed_req_buffer[actuator_index].paused = paused;
+        speed_request_t req = speed_req_buffer[actuator_index];
+        if (!req.resolved) {
+            // Toggle control on pause
+            if (paused) send_control(actuator_index, 0);
+            else send_control(actuator_index, req.control);
+        }
     }
 
     void resolve(uint8_t actuator_index) {

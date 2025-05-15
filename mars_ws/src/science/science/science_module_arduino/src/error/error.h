@@ -47,6 +47,7 @@ const char ERROR_NULL_PTR[] PROGMEM = "A nullptr was encountered.";
 const char ERROR_MALLOC[] PROGMEM = "Memory was unable to be allocated.";
 const char ERROR_OUT_OF_BOUNDS[] PROGMEM = "Out of bounds access, received index % in an array of length %.";
 const char ERROR_COULD_NOT_RUN_ROUTINE[] PROGMEM = "Could not run routine.";
+const char ERROR_AUGER_SECONDAY_NON_ZERO[] PROGMEM = "The auger or secondary cache has not been reset.";
 
 namespace message {
     void connection_successful();
@@ -77,6 +78,7 @@ namespace error {
     void outOfBoundsError(uint8_t index, uint8_t array_size);
     void badIndex(const char* name, uint8_t index, uint8_t max_index);
     void notReadyForRoutine(uint8_t index);
+    void notReadyForCacheAlignment();
 }
 
 namespace verify {

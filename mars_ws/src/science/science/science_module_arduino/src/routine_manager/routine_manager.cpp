@@ -17,11 +17,13 @@
 #define SPD_ACTION_CODE 0xBB
 #define ACTUATOR_LOCKDOWN_CODE 0xCC
 #define FUNC_CODE 0xDD
-#define FUNC_TABLE_SIZE 2
+#define FUNC_TABLE_SIZE 3
 #define ALL_ACTUATORS_AVAILABLE 0xFF
 #define NO_FUNC 0xFF
 
-#define DEBUG_ROUTINES
+#define ZERO_TOL 0.01
+
+// #define DEBUG_ROUTINES
 
 namespace routine_manager {
 
@@ -61,9 +63,11 @@ namespace routine_manager {
     // Callback Functions
     void zero_all_caches();
     void zero_all_tools();
+    void abort_if_non_zero();
     void (*FUNC_TABLE[])() = {
         zero_all_caches,
-        zero_all_tools
+        zero_all_tools,
+        abort_if_non_zero
     };
 
     template <typename T>
@@ -172,6 +176,7 @@ namespace routine_manager {
                     Serial.println(active_group->func_index);
                     #endif
                     FUNC_TABLE[active_group->func_index]();
+                    if (routine_manager_state != AWAITING_ACTUATORS) break; // In case of abort in callback
                 }
 
                 // Free all the actuators if it was a group reservation
@@ -632,6 +637,15 @@ namespace routine_manager {
     void zero_all_tools() {
         actuator_manager::set_position(PROBE_ACTUATOR_INDEX, 0.0);
         actuator_manager::set_position(AUGER_ACTUATOR_INDEX, 0.0);
+    }
+
+    void abort_if_non_zero() {
+        if (actuator_manager::get_position(AUGER_ACTUATOR_INDEX) > ZERO_TOL || 
+            actuator_manager::get_position(SECONDARY_CACHE_ACTUATOR_INDEX) > ZERO_TOL)
+            {
+                routine_manager::abort();
+                error::notReadyForCacheAlignment();
+            }
     }
 
 }
