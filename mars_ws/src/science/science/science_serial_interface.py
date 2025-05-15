@@ -104,8 +104,8 @@ class ScienceSerialInterface(Node):
         if self.arduino is not None:
             self.arduino.close()
         try:
-            self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
-            #self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
+            # self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
+            self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
             self.get_logger().info("Serial port initialized")
         except Exception as e:
             sys.stdout.flush()
