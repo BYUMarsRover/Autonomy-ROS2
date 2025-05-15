@@ -29,7 +29,7 @@ import rclpy
 import sys
 from rclpy.node import Node
 from rover_msgs.msg import ScienceActuatorControl, ScienceSerialTxPacket, ScienceSerialRxPacket
-from std_msgs.msg import Bool, UInt8MultiArray, Empty, String
+from std_msgs.msg import Bool, UInt8MultiArray, Empty, String, Float32
 import serial
 import struct
 import time
@@ -84,6 +84,7 @@ class ScienceSerialInterface(Node):
         self.create_subscription(Empty, '/science_serial_reset', self.establish_serial_connection, 10)
         self.create_subscription(Empty, '/science_emergency_stop', self.emergency_stop, 10)
         self.create_subscription(String, '/science_send_file', lambda msg: self.send_file_contents(msg.data), 10)
+        self.create_subscription(Float32, '/science_calibrate_uv', lambda msg: self.uvsensor_calibrate(msg.data), 10)
 
         # Serial Communication Exchange
         self.sub_science_serial_tx_request = self.create_subscription(ScienceSerialTxPacket, '/science_serial_tx_request', self.perform_tx_request, 10)
@@ -145,6 +146,10 @@ class ScienceSerialInterface(Node):
             self.perform_tx_request(SMFL_Builder.get_tx_update_actuator_control(index, 0))
         self.override_bit = prev_override_bit
         self.get_logger().warning("Emergency stop activated, all actuators disabled")
+
+    def uvsensor_calibrate(self, uvindex: float):
+        self.get_logger().warn(f"Calibrating UV sensor with index {uvindex}")
+        self.perform_tx_request(SMFL_Builder.get_tx_calibrate_uv_index(uvindex))
 
     def send_file_contents(self, file_path):
         # Read the raw bytes of the file

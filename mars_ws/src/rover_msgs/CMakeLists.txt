@@ -53,6 +53,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ScienceSaveNotes.msg"
   "msg/ScienceSaveSecondaryCache.msg"
   "msg/ScienceSaveSensor.msg"
+  "msg/ScienceSaveSpectro.msg"
   "msg/ScienceSensorValues.msg"
   "msg/ScienceSpectroData.msg"
   "msg/ScienceUvData.msg"

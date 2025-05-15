@@ -5,17 +5,21 @@ from PyQt5.QtCore import QObject, pyqtSignal, QTimer, Qt, QAbstractTableModel
 from PyQt5.QtWidgets import QApplication, QTableView
 from python_qt_binding.QtCore import QObject, Signal
 import rclpy
-from std_msgs.msg import Empty, Bool
+from std_msgs.msg import Empty, Bool, Float32
 from rover_msgs.srv import CameraControl
-from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton, ScienceSerialTxPacket, ScienceSpectroData, ScienceUvData
+from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceFADIntensity, Camera, RoverStateSingleton, ScienceSpectroData, ScienceUvData, ScienceSaveSpectro
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 import matplotlib.pyplot as plt
 import numpy as np
 import subprocess
+import time
 
 import os
 import sys
+
+ANALOG_SENSOR_QUERY_RATE_MS = 1000
+LTR_390_QUERY_RATE_MS = 5000
 
 class Signals(QObject):
     sensor_signal = Signal(ScienceSensorValues)
@@ -79,28 +83,30 @@ class science_GUI(Node):
         self.cli = self.create_client(CameraControl, 'camera_control')
         
         # Set up the spectrometer data table
-        wavelengths = [400 + 20 * i for i in range(18)]
+        wavelengths = [410, 435, 460, 485, 510, 535, 560, 585, 610, 645, 680, 705, 730, 760, 810, 860, 900, 940]
+        if len(wavelengths) != 18:
+            raise ValueError("Wavelengths list must contain 18 elements.")
         values = [0 for i in range(18)]
 
         # Set Model to QTableView
         self.spectro_table = WavelengthTableModel(wavelengths, values)
         self.qt.tableView.setModel(self.spectro_table)
 
-        self.temperature = 1
-        self.moisture = 0
-        self.fad = 2
+        # Notes Data
+        self.site_notes = {}
 
-        self.save_interval = 10
+        # Custom data to handle sensor requests
+        self.measurement_temperature = TemperatureMS(self, period_ms=ANALOG_SENSOR_QUERY_RATE_MS, enabled=False, saving=False)
+        self.measurement_moisture = MoistureMS(self, period_ms=ANALOG_SENSOR_QUERY_RATE_MS, enabled=False, saving=False)
+        self.measurement_uv = UVIndexMS(self, period_ms=LTR_390_QUERY_RATE_MS, enabled=False, saving=False)
+        self.measurement_ambient = AmbientLightIndexMS(self, period_ms=LTR_390_QUERY_RATE_MS, enabled=False, saving=False)
 
-        self.analog_sensors_timer = None
-        self.uv_sensor_timer = None
-
-        self.fad_calibration_interval = 2
         self.site_number = 1
-        self.task_launcher_init()
-        self.initialize_timers()
+        self.init_publishers()
+        self.create_signals()
+        self.init_subscriptions()
+        self.connect_ui_elements()
         self.setup_menu_bar()
-        self.sensor_saving = [False] * 3  # temp, moisture, fad
         self.temperature_coefficients = [[],[],[],[],[],[]]
         self.moisture_coefficients = [[],[],[],[],[],[]]
 
@@ -139,14 +145,6 @@ class science_GUI(Node):
         self.qt.actionLaunch_RX_TX_Monitor.triggered.connect(lambda: self.launch_gui("science_rxtx"))
         self.qt.actionLaunch_Response_Parse.triggered.connect(lambda: self.launch_gui("science_response"))
         self.qt.actionLaunch_Actuator_Command.triggered.connect(lambda: self.launch_gui("science_routine"))
-
-        # Begin sensor queries
-        self.is_reading_sensors = False
-        self.qt.actionToggle_Sensor_Query.triggered.connect(self.toggle_sensor_queries)
-        self.qt.actionToggle_Sensor_Query.text = "Begin Sensor Queries"
-
-        # Checkbox to toggle reading calibrated values from the module
-        self.qt.actionRead_Calibrated_from_Module.triggered.connect(self.update_sensor_queries_settings)
         
     def launch_gui(self, executable):
         """
@@ -161,49 +159,47 @@ class science_GUI(Node):
 
     def should_use_module_eeprom_calibration(self):
         return self.qt.actionRead_Calibrated_from_Module.isChecked()
-
-    def enable_sensor_queries(self):
-        """
-        Enable sensor queries and update the menu item text.
-        """
-        if self.is_reading_sensors:
-            self.stop_sensor_queries() # Stop any existing timers
-        self.analog_sensors_timer = self.create_timer(1, lambda: self.pub_get_analog_sensors.publish(Bool( data=self.should_use_module_eeprom_calibration() ))) # 1 Hz - Get Raw 
-        self.uv_sensor_timer = self.create_timer(0.5, lambda: self.pub_get_uv.publish(Empty())) # 1 Hz - Get Raw 
-        self.qt.actionToggle_Sensor_Query.setText("Stop Sensor Queries")
-        self.is_reading_sensors = True
-
-    def stop_sensor_queries(self):
-        """
-        Disable sensor queries and update the menu item text.
-        """
-        self.is_reading_sensors = False
-        if self.analog_sensors_timer is not None:
-            self.analog_sensors_timer.cancel()
-        if self.uv_sensor_timer is not None:
-            self.uv_sensor_timer.cancel()
-        self.qt.actionToggle_Sensor_Query.setText("Begin Sensor Queries")
-
-    def toggle_sensor_queries(self):
-        self.is_reading_sensors = not self.is_reading_sensors
-        self.update_sensor_queries_settings()
     
-    def update_sensor_queries_settings(self):
-        if self.is_reading_sensors:
-            self.enable_sensor_queries()
-        else:
-            self.stop_sensor_queries()
+    def init_publishers(self):
+        self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1) #figure this out
+        self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
+        self.pub_save_fad = self.create_publisher(ScienceSaveFAD, '/science_save_fad', 1)
+        self.pub_save_spectro = self.create_publisher(ScienceSaveSpectro, '/science_save_spectro', 1) #figure this out
+        
+        self.pub_get_spectro = self.create_publisher(Empty, '/science_spectro_request', 1)
+        self.pub_get_uv = self.create_publisher(Empty, '/science_uv_request', 1)
+        self.pub_get_analog_sensors = self.create_publisher(Bool, '/science_sensor_request', 1)
 
-    def initialize_timers(self):
-        self.moisture_timer = self.create_timer(self.save_interval, self.stop_moist_saver)#These are probably redundant in ros2
-        self.temp_timer = self.create_timer(self.save_interval, self.stop_temp_saver)
+        self.pub_get_auger_position = self.create_publisher(Empty, '/science_auger_position', 1)
 
-    def task_launcher_init(self):
+        # Kill Switch
+        self.pub_kill_switch = self.create_publisher(Empty, "/science_emergency_stop", 10)
+
+        # Calibrate UV
+        self.pub_calibrate_uv = self.create_publisher(Float32, "/science_calibrate_uv", 10)
+
+    def init_subscriptions(self):
+        self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.update_analog_sensor_values, 10)
+        self.science_auger_position = self.create_subscription(Bool, '/science_using_probe', self.signals.auger_position.emit, 10)
+        self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
+        self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
+        self.sub_spectro = self.create_subscription(ScienceSpectroData, '/science_spectro_data', self.update_spectro_data, 10)
+        self.sub_uv = self.create_subscription(ScienceUvData, '/science_uv_data', self.update_ltr_sensor_values, 10)
+
+    def create_signals(self):
         self.signals = Signals()
+
+        self.signals.auger_position.connect(self.update_current_tool)
+        self.signals.sensor_save_signal.connect(self.pub_save_sensor.publish)
+        self.signals.FAD_save_signal.connect(self.pub_save_fad.publish)
+        self.signals.notes_save_signal.connect(self.pub_save_notes.publish)
+        self.signals.fad_intensity_signal.connect(self.update_fad_intensity_value)
+
+    def connect_ui_elements(self):
 
         self.qt.pushButton_save_notes.clicked.connect(self.save_notes)
         self.qt.pushButton_fad.clicked.connect(self.fad_detector_get_point)
-        self.qt.pushButton_fad_calibration.clicked.connect(self.save_fad)
+        # self.qt.pushButton_fad_calibration.clicked.connect(self.save_fad)
 
         self.qt.pushButton_moisture.clicked.connect(lambda: self.graph_sensor_values(0))
         self.qt.pushButton_temperature.clicked.connect(lambda: self.graph_sensor_values(1))
@@ -214,73 +210,119 @@ class science_GUI(Node):
         self.qt.pushButton_fad_estimate.clicked.connect(lambda: self.estimate_reading(2))
 
         self.qt.pushButton_spectro.clicked.connect(lambda: self.fetch_spectro_data())
+        self.qt.pushButton_spectro_save.clicked.connect(lambda: self.save_spectro_values())
         self.qt.pushButton_uv.clicked.connect(lambda: self.fetch_uv_data())
 
-        self.qt.moist_radio.toggled.connect(lambda: self.toggle_sensor_save(0))  # moist
-        self.qt.temp_radio.toggled.connect(lambda: self.toggle_sensor_save(1))  # temp
-        self.qt.fad_radio.toggled.connect(lambda: self.toggle_sensor_save(2))  # fad
+        # Saving toggles
+        self.qt.saving_temp_checkBox.stateChanged.connect(lambda state: self.measurement_temperature.set_saving(state == Qt.Checked))
+        self.qt.saving_moist_checkBox.stateChanged.connect(lambda state: self.measurement_moisture.set_saving(state == Qt.Checked))
+        self.qt.saving_uv_checkBox.stateChanged.connect(lambda state: self.measurement_uv.set_saving(state == Qt.Checked))
+        self.qt.saving_als_checkBox.stateChanged.connect(lambda state: self.measurement_ambient.set_saving(state == Qt.Checked))
 
         self.qt.lcd_site_num.display(self.site_number)
-        self.qt.pushButton_change_site.clicked.connect(self.increment_site_number)
+        self.qt.pushButton_change_site_inc.clicked.connect(self.increment_site_number)
+        self.qt.pushButton_change_site_dec.clicked.connect(self.decrement_site_number)
 
-        self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1) #figure this out
-        self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
-        self.pub_save_fad = self.create_publisher(ScienceSaveFAD, '/science_save_fad', 1)
-        
-        self.pub_get_spectro = self.create_publisher(Empty, '/science_spectro_request', 1)
-        self.pub_get_uv = self.create_publisher(Empty, '/science_uv_request', 1)
-        self.pub_get_analog_sensors = self.create_publisher(Bool, '/science_sensor_request', 1)
+        # Notes
+        self.qt.textEdit_notes.textChanged.connect(lambda: self.temp_save_notes(self.site_number, self.qt.textEdit_notes.toPlainText()))
+        self.qt.textEdit_notes.clear() # Ensure it is empty at the start
 
-        self.pub_get_auger_position = self.create_publisher(Empty, '/science_auger_position', 1)
+        # Calibrate UV
+        self.qt.uv_calibrate_button.clicked.connect(self.do_calibrate_uv)
 
         # Kill Switch
-        self.pub_kill_switch = self.create_publisher(Empty, "/science_emergency_stop", 10)
         self.qt.pushButton_kill_switch.clicked.connect(lambda: self.pub_kill_switch.publish(Empty()))
 
-        self.signals.sensor_signal.connect(self.update_sensor_values)
-        self.signals.auger_position.connect(self.update_current_tool)
-        self.signals.sensor_save_signal.connect(self.pub_save_sensor.publish)
-        self.signals.FAD_save_signal.connect(self.pub_save_fad.publish)
-        self.signals.notes_save_signal.connect(self.pub_save_notes.publish)
-        self.signals.fad_intensity_signal.connect(self.update_fad_intensity_value)
+        # Only connecting to temperature service since moisture requests the same route
+        self.qt.query_analog_checkBox.stateChanged.connect(lambda state: self.measurement_temperature.set_enabled(state == Qt.Checked))
+        self.qt.query_analog_rateMs_lineEdit.editingFinished.connect(
+            lambda: self.measurement_temperature.change_rate(self.qt.query_analog_rateMs_lineEdit.text())
+        )
+        self.qt.query_analog_rateMs_lineEdit.setText(str(self.measurement_temperature.timer.period_ms))  # Set initial value
 
-        self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.signals.sensor_signal.emit, 10)
-        self.science_auger_position = self.create_subscription(Bool, '/science_using_probe', self.signals.auger_position.emit, 10)
-        self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
-        self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
-        self.sub_spectro = self.create_subscription(ScienceSpectroData, '/science_spectro_data', self.update_spectro_data, 10)
-        self.sub_uv = self.create_subscription(ScienceUvData, '/science_uv_data', self.update_uv_values, 10)
+        # Only connecting to uv_index service since ambient requests the same route
+        self.qt.query_ltr_checkBox.stateChanged.connect(lambda state: self.measurement_uv.set_enabled(state == Qt.Checked))
+        self.qt.query_ltr_rateMs_lineEdit.editingFinished.connect(
+            lambda: self.measurement_uv.change_rate(self.qt.query_ltr_rateMs_lineEdit.text())
+        )
+        self.qt.query_ltr_rateMs_lineEdit.setText(str(self.measurement_uv.timer.period_ms))  # Set initial value
+
+    def do_calibrate_uv(self):
+        uv_index, ok = QtWidgets.QInputDialog.getDouble(
+            self.qt, 
+            "UV Index Calibration", 
+            "Enter the current UV Index:", 
+            decimals=2, 
+            min=0.0, 
+            max=15.0
+        )
+        if ok:
+            self.pub_calibrate_uv.publish(Float32(data=uv_index))
+
+    def temp_save_notes(self, site_number, text):
+        """
+        Saves the current notes under the given site.
+        """
+        self.site_notes[site_number] = {
+            'text' : text,
+            'saved' : False
+        }
+
+    def load_notes(self, site_number):
+        if site_number in self.site_notes:
+            self.qt.textEdit_notes.setPlainText(self.site_notes[site_number]['text'])
+        else:
+            self.qt.textEdit_notes.clear()
 
     def fetch_spectro_data(self):
         msg = Empty()
         self.pub_get_spectro.publish(msg)
 
     def fetch_uv_data(self):
-        msg = Empty()
-        self.pub_get_uv.publish(msg)
+        self.pub_get_uv.publish(Empty())
+
+    def fetch_analog_sensors_data(self):
+        self.pub_get_analog_sensors.publish(Bool( data=self.should_use_module_eeprom_calibration() ))
+
+    def update_analog_sensor_values(self, msg: ScienceSensorValues):
+        self.measurement_moisture.receive(msg.moisture)
+        self.measurement_temperature.receive(msg.temperature)
+
+    def update_ltr_sensor_values(self, msg: ScienceUvData):
+        self.measurement_uv.receive(msg.uv)
+        self.measurement_ambient.receive(msg.als)
 
     def update_spectro_data(self, msg):
         vals = msg.values
         self.spectro_table.updateData(vals)
 
-    def update_uv_values(self, msg):
-        uv = msg.uv
-        als = msg.als
-        self.qt.lcd_uv.display(uv)
-        self.qt.lcd_ambient.display(als)
-    
-    def toggle_sensor_save(self, p):
+    def save_spectro_values(self):
+        """
+        Saves the spectro data to a file.
+        """
+        
+        # Publish the spectro data as a ScienceSaveSpectro message
+        spectro_msg = ScienceSaveSpectro()
+        spectro_msg.site = self.site_number
+        spectro_msg.channels = [float(value) for value in self.spectro_table.values]
+        self.pub_save_spectro.publish(spectro_msg)
+
+    def toggle_sensor_save(self, measurement):
         """
         Called when any sensor radio button is called (moist, temp, fad)
         Tells science data saver to start saving values or to finish saving values.
-        p: sensor number, [0: moist, 1: temp, 2: fad]
         """
 
-        print('Toggling Saving Sensor', p)
-        self.sensor_saving[p] = not self.sensor_saving[p]
-        if (p == 0): # Moisture radio button
-            sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_moisture.text()), save=self.sensor_saving[p])
-        elif (p == 1): # Temp radio button
+        print('Toggling Saving Sensor', measurement)
+        self.sensor_saving[measurement] = not self.sensor_saving[measurement]
+        if (measurement == 'moisture'): # Moisture radio button
+            sensor_message = ScienceSaveSensor(
+                site=self.site_number,
+                measurement=measurement,
+                observed_value=float(self.qt.lineEdit_moisture.text()),
+                save=self.sensor_saving[p]
+            )
+        elif (measurement == 'temperature'): # Temp radio button
             sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_temperature.text()), save=self.sensor_saving[p])
         else:  # fad radio button, probably going to end up being useless.
             if self.qt.fad_radio.isChecked():
@@ -289,29 +331,9 @@ class science_GUI(Node):
             if (self.qt.lineEdit_fad.text() != ''):
                 sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=float(self.qt.lineEdit_fad.text()), save=self.sensor_saving[p])
             else:
-                #Find how do get logger
                 sensor_message = ScienceSaveSensor(site=self.site_number, position=p, observed_value=3.141592, save=self.sensor_saving[p])
 
         self.signals.sensor_save_signal.emit(sensor_message)
-
-    def save_fad(self):
-        self.sensor_saving[2] = True #2 is the FAD value, consider changing this to a const
-        sensor_message = ScienceSaveFAD(site=self.site_number, intensity=int(self.qt.le_fad.text()), observed=float(self.qt.lineEdit_fad.text()))
-        self.signals.FAD_save_signal.emit(sensor_message)
-
-    def stop_temp_saver(self):
-        self.temp_timer.cancel()
-        self.qt.temp_radio.setChecked(False)
-
-    def stop_moist_saver(self):
-        self.moisture_timer.cancel()
-        self.qt.moist_radio.setChecked(False)
-
-    def stop_fad_saver(self):
-        # self.fad_timer.cancel()
-        print("Attempting to uncheck the FAD")
-        self.fad_timer = None
-        self.qt.fad_radio.setChecked(False)
 
     def increment_site_number(self):
         """
@@ -319,23 +341,30 @@ class science_GUI(Node):
         """
         self.site_number += 1
         self.qt.lcd_site_num.display(self.site_number)
+        self.load_notes(self.site_number)
+
+    def decrement_site_number(self):
+        """
+        Deccrements the site number
+        """
+        self.site_number -= 1
+        self.site_number = max(1, self.site_number)  # Ensure site number doesn't go below 1
+        self.qt.lcd_site_num.display(self.site_number)
+        self.load_notes(self.site_number)
 
     def save_notes(self):
         """
         Saves the current notes under the given site.
         """
-        print('Saving notes.')
-        self.save_notes_msg = ScienceSaveNotes()
-        self.signals.notes_save_signal.emit(self.save_notes_msg)
-        print('Notes sent.')
-
-    def update_sensor_values(self, msg):
-        # print("updating LCD displays")
-        temperature = msg.temperature
-        moisture = msg.moisture
-
-        self.qt.lcd_moist.display(moisture)
-        self.qt.lcd_temp.display(temperature)
+        for site in self.site_notes.keys():
+            if self.site_notes[site]['saved'] == False:
+                self.site_notes[site]['saved'] = True
+                self.save_notes_msg = ScienceSaveNotes(
+                    site = site,
+                    notes = self.site_notes[site]['text']
+                )
+                self.signals.notes_save_signal.emit(self.save_notes_msg)
+        self.get_logger().info('Saved notes.')
 
     def graph_sensor_values(self, position):
         manual_points = []
@@ -511,6 +540,122 @@ class science_GUI(Node):
         if ip is None:
             ip = "192.168.1.65"
         return ip
+
+class MeasurementService:
+    def __init__(self, node, measurement_name, period_ms, enabled, saving, request_func, save_func):
+        self.node = node
+        self.measurement_name = measurement_name
+        self.saving = saving
+        self.timer = Timer(node, period_ms, enabled, request_func)
+        self.save_func = save_func
+
+    def change_rate(self, new_rate):
+        try:
+            new_rate = int(new_rate)
+            if new_rate > 0:
+                self.timer.change_rate(new_rate)
+                self.node.get_logger().info(f"Query rate for {self.measurement_name} updated to {new_rate} ms.")
+            else:
+                self.node.get_logger().warning("Query rate must be a positive integer.")
+        except ValueError:
+            self.node.get_logger().warning("Invalid input for query rate. Please enter a valid integer.")
+
+    def set_enabled(self, enabled):
+        self.timer.enable() if enabled else self.timer.disable()
+
+    def set_saving(self, saving):
+        self.saving = saving
+
+    def enable(self):
+        self.timer.enable()
+
+    def disable(self):
+        self.timer.enable()
+
+    def receive(self, data):
+        # Should be call by children classes
+        if self.saving:
+            self.save_func(data)
+
+class SensorMeasurementService(MeasurementService):
+    def __init__(self, node, measurement_name, period_ms, enabled, saving, request_func, lcd_display=None):
+        super().__init__(node, measurement_name, period_ms, enabled, saving, request_func,
+            lambda data: node.pub_save_sensor.publish(
+                ScienceSaveSensor(
+                    site=node.site_number,
+                    timestamp=time.time(),
+                    measurement=measurement_name,
+                    observed_value=float(data)
+                )
+            )
+        )
+        self.lcd_display = lcd_display
+
+    def receive(self, data):
+        self.lcd_display.display(data)
+        super().receive(data)
+
+class TemperatureMS(SensorMeasurementService):
+    def __init__(self, node, period_ms, enabled, saving):
+        super().__init__(node, "temperature", period_ms, enabled, saving,
+            lambda: node.fetch_analog_sensors_data(),
+            node.qt.lcd_temp
+        )
+
+class MoistureMS(SensorMeasurementService):
+    def __init__(self, node, period_ms, enabled, saving):
+        super().__init__(node, "moisture", period_ms, enabled, saving,
+            lambda: node.fetch_analog_sensors_data(),
+            node.qt.lcd_moist
+        )
+
+class UVIndexMS(SensorMeasurementService):
+    def __init__(self, node, period_ms, enabled, saving):
+        super().__init__(node, "uv_index", period_ms, enabled, saving,
+            lambda: node.fetch_uv_data(),
+            node.qt.lcd_uv
+        )
+
+class AmbientLightIndexMS(SensorMeasurementService):
+    def __init__(self, node, period_ms, enabled, saving):
+        super().__init__(node, "ambient_light", period_ms, enabled, saving,
+            lambda: node.fetch_uv_data(),
+            node.qt.lcd_ambient
+        )
+
+    
+class Timer:
+    def __init__(self, node, period_ms, enabled, func):
+        self.node = node
+        self.period_ms = period_ms
+        self.timer = None
+        self.func = func
+        self.enabled = enabled
+        if self.enabled:
+            self.build()
+
+    def end_timer(self):
+        if self.timer is not None:
+            self.timer.destroy()
+
+    def build(self):
+        self.end_timer()
+        self.timer = self.node.create_timer((self.period_ms / 1000.0), self.func)
+        # self.node.get_logger().info(f"Timer created with period: {self.period_ms} ms")
+
+    def change_rate(self, new_period):
+        if new_period != self.period_ms:
+            self.period_ms = new_period
+        if self.enabled:
+            self.build() # Update the timer
+
+    def enable(self):
+        self.enabled = True
+        self.build()
+
+    def disable(self):
+        self.enabled = False
+        self.end_timer()
     
 def main(args=None):
     rclpy.init(args=args)

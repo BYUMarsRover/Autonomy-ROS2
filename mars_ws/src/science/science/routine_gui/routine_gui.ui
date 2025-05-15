@@ -365,8 +365,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>424</width>
-                  <height>207</height>
+                  <width>275</width>
+                  <height>71</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -455,8 +455,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>138</width>
-                    <height>205</height>
+                    <width>98</width>
+                    <height>28</height>
                    </rect>
                   </property>
                   <layout class="QVBoxLayout" name="verticalLayout_9"/>
@@ -681,13 +681,6 @@ background-color: rgb(249, 240, 107);</string>
               <widget class="QCheckBox" name="override_check">
                <property name="text">
                 <string>Override</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="checkBox">
-               <property name="text">
-                <string>Disable Science XBOX Controller - In development</string>
                </property>
               </widget>
              </item>
