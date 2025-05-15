@@ -157,36 +157,44 @@ void process_and_publish()
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cropped_right(new pcl::PointCloud<pcl::PointXYZRGB>);
     crop_box_right.filter(*cropped_right);
 
-    // Publish
-    sensor_msgs::msg::PointCloud2 left_msg, right_msg;
-    pcl::toROSMsg(*cropped_left, left_msg);
-    pcl::toROSMsg(*cropped_right, right_msg);
-    left_msg.header.frame_id = right_msg.header.frame_id = "zed_camera_link";
-    left_msg.header.stamp = right_msg.header.stamp = this->now();
-
-    cropped_left_pub_->publish(left_msg);
-    cropped_right_pub_->publish(right_msg);
-
+    
     // Crop the point cloud
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cropped_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     crop_box_.setInputCloud(latest_cloud_);
     crop_box_.filter(*cropped_cloud);
-
+    
     // Publish cropped cloud
-    sensor_msgs::msg::PointCloud2 output_msg;
-    pcl::toROSMsg(*cropped_cloud, output_msg);
-    output_msg.header = std_msgs::msg::Header();
-    output_msg.header.frame_id = "zed_camera_link"; // Update with your frame
-    output_msg.header.stamp = now();
-    cropped_pub_->publish(output_msg);
+    if (verbose_publishing_) {
+      // Publish
+      sensor_msgs::msg::PointCloud2 left_msg, right_msg;
+      pcl::toROSMsg(*cropped_left, left_msg);
+      pcl::toROSMsg(*cropped_right, right_msg);
+      left_msg.header.frame_id = right_msg.header.frame_id = "zed_camera_link";
+      left_msg.header.stamp = right_msg.header.stamp = this->now();
+  
+      cropped_left_pub_->publish(left_msg);
+      cropped_right_pub_->publish(right_msg);
 
-    // Create and publish bounding box marker
-    auto marker_straight = create_bbox_marker(bbox_min_x_, bbox_max_x_, bbox_min_y_, bbox_max_y_, bbox_min_z_, bbox_max_z_, 0, 1.0, 0.0, 0.0);
-    auto marker_left = create_bbox_marker(bbox_min_x_, bbox_max_x_, bbox_max_y_, bbox_max_y_left_, bbox_min_z_, bbox_max_z_, 1, 0.0, 1.0, 0.0);
-    auto marker_right = create_bbox_marker(bbox_min_x_, bbox_max_x_, bbox_min_y_right_, bbox_min_y_, bbox_min_z_, bbox_max_z_, 2, 0.0, 0.0, 1.0);
-    bbox_pub_->publish(marker_straight);
-    bbox_pub_->publish(marker_left);
-    bbox_pub_->publish(marker_right);
+      
+      RCLCPP_INFO(this->get_logger(), "Publishing cropped cloud");
+      sensor_msgs::msg::PointCloud2 output_msg;
+      pcl::toROSMsg(*cropped_cloud, output_msg);
+      output_msg.header = std_msgs::msg::Header();
+      output_msg.header.frame_id = "zed_camera_link"; // Update with your frame
+      output_msg.header.stamp = now();
+      cropped_pub_->publish(output_msg);
+      
+      
+      // Create and publish bounding box marker
+      auto marker_straight = create_bbox_marker(bbox_min_x_, bbox_max_x_, bbox_min_y_, bbox_max_y_, bbox_min_z_, bbox_max_z_, 0, 1.0, 0.0, 0.0);
+      auto marker_left = create_bbox_marker(bbox_min_x_, bbox_max_x_, bbox_max_y_, bbox_max_y_left_, bbox_min_z_, bbox_max_z_, 1, 0.0, 1.0, 0.0);
+      auto marker_right = create_bbox_marker(bbox_min_x_, bbox_max_x_, bbox_min_y_right_, bbox_min_y_, bbox_min_z_, bbox_max_z_, 2, 0.0, 0.0, 1.0);
+      bbox_pub_->publish(marker_straight);
+      bbox_pub_->publish(marker_left);
+      bbox_pub_->publish(marker_right);
+    }
+
+    
 
     rover_msgs::msg::BBoxStatsArray stats_array;
     // IMPORTANT FOR NOW MAKE THE STRAIGHT BOX THE FIRST, RIGHT THE SECOND AND LEFT THE LAST
