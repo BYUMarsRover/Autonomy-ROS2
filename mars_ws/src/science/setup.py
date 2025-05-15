@@ -31,6 +31,11 @@ setup(
         (os.path.join('share', package_name, 'routine_gui'), glob(os.path.join('science', 'routine_gui', '*.ui'))),
 
         (os.path.join('share', package_name, 'function_mapping'), glob(os.path.join('science', 'function_mapping', '*.csv'))),
+
+        (os.path.join('share', package_name, 'routine_scripting'), glob(os.path.join('science', 'routine_scripting', '*.csv'))),
+        (os.path.join('share', package_name, 'routine_scripting'), glob(os.path.join('science', 'routine_scripting', '*.py'))),
+        (os.path.join('share', package_name, 'routine_scripting'), glob(os.path.join('science', 'routine_scripting', '*.sh')))
+
         #Might want to be more particular in the future but this is a quick fix to get everything
         # (os.path.join('share', package_name), glob(os.path.join('science', '*.py'))),
     ],
