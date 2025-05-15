@@ -228,6 +228,9 @@ class AutonomyGUI(Node, QWidget):
         # Load Waypoints after mapviz location is set
         self.load_waypoints()
 
+        # Debugging
+        self.get_logger().info(f"GUI ORIGIN LAT/LON: {self.origin_latlon[0]}, {self.origin_latlon[1]}")
+
     def troubleshooting_timer_callback(self):
         self.get_logger().info('ROS Side is still running')
         return
