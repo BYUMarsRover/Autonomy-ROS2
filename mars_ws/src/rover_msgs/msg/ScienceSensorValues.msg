@@ -1,2 +1,2 @@
-int32 temperature
-int32 moisture
+float32 temperature
+float32 moisture

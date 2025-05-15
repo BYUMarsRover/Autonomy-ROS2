@@ -1,0 +1,12 @@
+# Move to Zero routine
+# This script moves all actuators back to position zero
+# Note, without encoders motors may not reach true zero
+# especially after moving back and forth several times
+
+LOCKDOWN_ACTUATORS # No actuator can be controlled until the routine finishes
+GROUP
+POS_CTRL PRIMARY_DOOR P_ZERO
+POS_CTRL SECONDARY P_ZERO
+GROUP
+POS_CTRL PROBE P_ZERO
+POS_CTRL AUGER P_ZERO

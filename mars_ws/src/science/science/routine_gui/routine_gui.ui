@@ -1,0 +1,877 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>668</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout_4">
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QGroupBox" name="graphics_widget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>300</width>
+          <height>600</height>
+         </size>
+        </property>
+        <property name="title">
+         <string>Actuator State Estimation</string>
+        </property>
+        <widget class="QFrame" name="probe_frame">
+         <property name="geometry">
+          <rect>
+           <x>200</x>
+           <y>40</y>
+           <width>81</width>
+           <height>491</height>
+          </rect>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <widget class="QLabel" name="actuator_body_probe">
+          <property name="geometry">
+           <rect>
+            <x>2</x>
+            <y>0</y>
+            <width>71</width>
+            <height>211</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">image: url(:/images/linear_actuator_body.svg);</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+         <widget class="QFrame" name="probe_arm_group">
+          <property name="geometry">
+           <rect>
+            <x>1</x>
+            <y>10</y>
+            <width>51</width>
+            <height>291</height>
+           </rect>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <widget class="QLabel" name="probe_arm">
+           <property name="geometry">
+            <rect>
+             <x>16</x>
+             <y>0</y>
+             <width>16</width>
+             <height>211</height>
+            </rect>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">image: url(:/images/linear_actuator_arm.svg);</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+          <widget class="QLabel" name="probe_head">
+           <property name="geometry">
+            <rect>
+             <x>-1</x>
+             <y>209</y>
+             <width>51</width>
+             <height>71</height>
+            </rect>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">image: url(:/images/probe_head.svg);</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </widget>
+         <zorder>probe_arm_group</zorder>
+         <zorder>actuator_body_probe</zorder>
+        </widget>
+        <widget class="QFrame" name="drill_frame">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>40</y>
+           <width>111</width>
+           <height>561</height>
+          </rect>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <widget class="QLabel" name="actuator_body_drill">
+          <property name="geometry">
+           <rect>
+            <x>2</x>
+            <y>0</y>
+            <width>71</width>
+            <height>211</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">image: url(:/images/linear_actuator_body.svg);</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+         <widget class="QFrame" name="drill_arm_group">
+          <property name="geometry">
+           <rect>
+            <x>1</x>
+            <y>10</y>
+            <width>101</width>
+            <height>551</height>
+           </rect>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <widget class="QLabel" name="drill_arm">
+           <property name="geometry">
+            <rect>
+             <x>16</x>
+             <y>0</y>
+             <width>16</width>
+             <height>211</height>
+            </rect>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">image: url(:/images/linear_actuator_arm.svg);</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+          <widget class="QLabel" name="drill_body">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>200</y>
+             <width>51</width>
+             <height>71</height>
+            </rect>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">image: url(:/images/drill_body.svg);</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+          <widget class="QLabel" name="drill_head">
+           <property name="geometry">
+            <rect>
+             <x>5</x>
+             <y>244</y>
+             <width>41</width>
+             <height>71</height>
+            </rect>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">image: url(:/images/drill_head_1.svg);</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+          <widget class="QLabel" name="drill_bit">
+           <property name="geometry">
+            <rect>
+             <x>15</x>
+             <y>292</y>
+             <width>20</width>
+             <height>211</height>
+            </rect>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">image: url(:/images/drill_bit.svg);</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+          <widget class="QFrame" name="primary_cache_frame">
+           <property name="geometry">
+            <rect>
+             <x>30</x>
+             <y>330</y>
+             <width>71</width>
+             <height>51</height>
+            </rect>
+           </property>
+           <widget class="QLabel" name="primary_door">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>26</y>
+              <width>31</width>
+              <height>20</height>
+             </rect>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">image: url(:/images/cache_door.svg);</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+           <widget class="QLabel" name="primary_body">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>30</width>
+              <height>41</height>
+             </rect>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">image: url(:/images/cache_body.svg);</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </widget>
+          <zorder>drill_bit</zorder>
+          <zorder>drill_arm</zorder>
+          <zorder>drill_body</zorder>
+          <zorder>drill_head</zorder>
+          <zorder>primary_cache_frame</zorder>
+         </widget>
+         <zorder>drill_arm_group</zorder>
+         <zorder>actuator_body_drill</zorder>
+        </widget>
+        <widget class="Line" name="line">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>420</y>
+           <width>141</width>
+           <height>20</height>
+          </rect>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Plain</enum>
+         </property>
+         <property name="lineWidth">
+          <number>5</number>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+        <widget class="QFrame" name="secondary_frame">
+         <property name="geometry">
+          <rect>
+           <x>100</x>
+           <y>421</y>
+           <width>71</width>
+           <height>51</height>
+          </rect>
+         </property>
+         <widget class="QLabel" name="secondary_body_1">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>31</width>
+            <height>41</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">image: url(:/images/cache_body.svg);</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+         <widget class="QLabel" name="secondary_body_2">
+          <property name="geometry">
+           <rect>
+            <x>30</x>
+            <y>0</y>
+            <width>31</width>
+            <height>41</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">image: url(:/images/cache_body.svg);</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </widget>
+        <zorder>line</zorder>
+        <zorder>probe_frame</zorder>
+        <zorder>drill_frame</zorder>
+        <zorder>secondary_frame</zorder>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_4">
+      <item>
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
+        <widget class="QWidget" name="tab">
+         <attribute name="title">
+          <string>Routine</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="QGroupBox" name="groupBox_5">
+            <property name="title">
+             <string>Routine Status</string>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+              <widget class="QScrollArea" name="scrollArea_query">
+               <property name="widgetResizable">
+                <bool>true</bool>
+               </property>
+               <widget class="QWidget" name="scrollAreaContents">
+                <property name="geometry">
+                 <rect>
+                  <x>0</x>
+                  <y>0</y>
+                  <width>275</width>
+                  <height>71</height>
+                 </rect>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_6">
+                 <item>
+                  <widget class="QLabel" name="routine_status_window">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                     <horstretch>10</horstretch>
+                     <verstretch>50</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">background-color: rgb(255, 255, 255);</string>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+                   </property>
+                   <property name="wordWrap">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_6">
+                   <item>
+                    <widget class="QLabel" name="label_8">
+                     <property name="text">
+                      <string>Query Rate (ms)</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLineEdit" name="routine_status_query_rate_lineEdit">
+                     <property name="text">
+                      <string>5000</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item>
+                    <widget class="QPushButton" name="routine_status_refresh_button">
+                     <property name="text">
+                      <string>Manual Query</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <widget class="QGroupBox" name="groupBox">
+              <property name="title">
+               <string>Select Routine</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_8">
+               <item>
+                <widget class="QScrollArea" name="scrollArea">
+                 <property name="widgetResizable">
+                  <bool>true</bool>
+                 </property>
+                 <widget class="QWidget" name="routine_begin_buttons">
+                  <property name="geometry">
+                   <rect>
+                    <x>0</x>
+                    <y>0</y>
+                    <width>98</width>
+                    <height>28</height>
+                   </rect>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_9"/>
+                 </widget>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBox_6">
+              <property name="title">
+               <string>Control Routine</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_10">
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout">
+                 <item>
+                  <widget class="QPushButton" name="pause_routine_button">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">background-color: rgb(255, 190, 111);
+background-color: rgb(249, 240, 107);</string>
+                   </property>
+                   <property name="text">
+                    <string>PAUSE</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="resume_routine_button">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">background-color: rgb(143, 240, 164);</string>
+                   </property>
+                   <property name="text">
+                    <string>RESUME</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="step_routine_button">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">background-color: rgb(255, 190, 111);</string>
+                   </property>
+                   <property name="text">
+                    <string>STEP</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QPushButton" name="abort_routine_button">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(237, 51, 59);</string>
+                 </property>
+                 <property name="text">
+                  <string>ABORT</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_2">
+         <attribute name="title">
+          <string>Manual</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="0" column="0">
+           <widget class="QGroupBox" name="groupBox_3">
+            <property name="title">
+             <string>Manual Controls</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_3">
+             <item>
+              <layout class="QGridLayout" name="gridLayout_2">
+               <item row="0" column="1">
+                <widget class="QPushButton" name="probe_forward">
+                 <property name="text">
+                  <string>ADVANCE</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="2">
+                <widget class="QPushButton" name="probe_backward">
+                 <property name="text">
+                  <string>RETRACT</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QPushButton" name="auger_forward">
+                 <property name="text">
+                  <string>ADVANCE</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_2">
+                 <property name="text">
+                  <string>AUGER</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_3">
+                 <property name="text">
+                  <string>PRIMARY CACHE</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="0">
+                <widget class="QLabel" name="label">
+                 <property name="text">
+                  <string>PROBE</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="label_4">
+                 <property name="text">
+                  <string>SECONDARY CACHE</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="2">
+                <widget class="QPushButton" name="auger_backward">
+                 <property name="text">
+                  <string>RETRACT</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="0">
+                <widget class="QLabel" name="label_5">
+                 <property name="text">
+                  <string>DRILL</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QPushButton" name="primary_forward">
+                 <property name="text">
+                  <string>OPEN</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1">
+                <widget class="QPushButton" name="secondary_forward">
+                 <property name="text">
+                  <string>ADVANCE</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="1">
+                <widget class="QPushButton" name="drill_forward">
+                 <property name="text">
+                  <string>FORWARD</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="2">
+                <widget class="QPushButton" name="primary_backward">
+                 <property name="text">
+                  <string>CLOSE</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="2">
+                <widget class="QPushButton" name="secondary_backward">
+                 <property name="text">
+                  <string>RETRACT</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="2">
+                <widget class="QPushButton" name="drill_backward">
+                 <property name="text">
+                  <string>REVERSE</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QGroupBox" name="groupBox_4">
+            <property name="title">
+             <string>Options</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_7">
+             <item>
+              <widget class="QCheckBox" name="override_check">
+               <property name="text">
+                <string>Override</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_3">
+         <attribute name="title">
+          <string>Data</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="QTableWidget" name="actuator_state_table">
+            <attribute name="horizontalHeaderCascadingSectionResizes">
+             <bool>true</bool>
+            </attribute>
+            <attribute name="horizontalHeaderDefaultSectionSize">
+             <number>150</number>
+            </attribute>
+            <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
+             <bool>false</bool>
+            </attribute>
+            <attribute name="horizontalHeaderStretchLastSection">
+             <bool>true</bool>
+            </attribute>
+            <attribute name="verticalHeaderVisible">
+             <bool>true</bool>
+            </attribute>
+            <attribute name="verticalHeaderCascadingSectionResizes">
+             <bool>false</bool>
+            </attribute>
+            <attribute name="verticalHeaderStretchLastSection">
+             <bool>false</bool>
+            </attribute>
+            <row>
+             <property name="text">
+              <string>Probe</string>
+             </property>
+            </row>
+            <row>
+             <property name="text">
+              <string>Auger</string>
+             </property>
+            </row>
+            <row>
+             <property name="text">
+              <string>Primary Cache Door</string>
+             </property>
+            </row>
+            <row>
+             <property name="text">
+              <string>Secondary Cache</string>
+             </property>
+            </row>
+            <row>
+             <property name="text">
+              <string>Secondary Cache Door</string>
+             </property>
+            </row>
+            <row>
+             <property name="text">
+              <string>Drill</string>
+             </property>
+            </row>
+            <column>
+             <property name="text">
+              <string>Estimated Position</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Control</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Reserved</string>
+             </property>
+            </column>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="groupBox_7">
+            <property name="title">
+             <string>Options</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_3">
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_7">
+               <property name="text">
+                <string>Active Poll Rate (ms)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_6">
+               <property name="text">
+                <string>Passive Poll Rate (ms)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="passive_rate_lineEdit">
+               <property name="text">
+                <string>1000</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="active_rate_lineEdit">
+               <property name="text">
+                <string>100</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QCheckBox" name="disable_query_checkBox">
+               <property name="text">
+                <string>Disable Queries</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="stop_all_button">
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(224, 27, 36);
+color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>STOP ALL</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuUpdate_Routines_From_File">
+    <property name="title">
+     <string>Config</string>
+    </property>
+    <addaction name="actionUpdate_Routines_from_File"/>
+    <addaction name="actionUpdate_Module_Config_from_File"/>
+   </widget>
+   <addaction name="menuUpdate_Routines_From_File"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionUpdate_Routines_from_File">
+   <property name="text">
+    <string>Update Routines from File</string>
+   </property>
+  </action>
+  <action name="actionUpdate_Module_Config_from_File">
+   <property name="text">
+    <string>Update Module Config from File</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

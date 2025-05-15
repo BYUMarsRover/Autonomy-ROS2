@@ -1,0 +1,18 @@
+# Align Second Cache Transfer Routine
+#
+# Written by Ammon Wolfert - May 14 2025
+#
+# Aligns the auger with the secondary cache for transferring
+# a sample into the second container
+
+# This script assumes all the actuators are at zero
+# Do not run without ensuring that
+# A positional system would be better
+# but without encoders it is not very reliant
+
+GROUP
+FUNC ABORT_IF_NOT_ZERO
+GROUP
+SPD_CTRL AUGER FULL_STEAM_FORWARD CACHE_ALIGN_MS_AUGER
+GROUP
+SPD_CTRL SECONDARY FULL_STEAM_FORWARD CACHE_ALIGN_MS_SECONDARY_2

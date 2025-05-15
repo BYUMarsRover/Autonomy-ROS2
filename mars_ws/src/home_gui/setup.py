@@ -25,6 +25,7 @@ setup(
             'base_home_gui = home_gui.base_home_gui:main',
             'rover_camera_control = home_gui.rover_camera_control:main',
             'rover_dev_update = home_gui.rover_dev_update:main',
+            'camera_handler = home_gui.camera_handler:main',
         ],
     },
 )

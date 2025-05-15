@@ -7,6 +7,9 @@ from std_msgs.msg import Bool
 from rover_msgs.msg import IWCMotors, Elevator
 from mobility.controllers.teleop_controllers import TankController, ArcadeController
 
+# Ammon Test Changes
+from joysticks.joysticks.publish_on_update import ElevatorPublisher
+
 # TODO: put these inside a yaml
 # Button and axis mappings
 A, B, X, Y, LB, RB = 0, 1, 2, 3, 4, 5
@@ -51,11 +54,12 @@ class XBOX(Node):
             '/mobility/teleop_drive_cmds',
             10
         )
-        self.elevator_pub = self.create_publisher(
-            Elevator,
-            '/elevator',
-            10
-        )
+        # self.elevator_pub = self.create_publisher(
+        #     Elevator,
+        #     '/elevator',
+        #     10
+        # )
+        self.elevator_pub =  ElevatorPublisher(self.create_publisher(Elevator, "/elevator", 10))
 
         self.drive_enabled = False
         self.drive_speed_multiplier_idx = 0
@@ -89,8 +93,9 @@ class XBOX(Node):
 
             self.teleop_drive_cmds_pub.publish(IWC_cmd_msg)
 
-            elevator_msg = self.elevator_commands(msg)
-            self.elevator_pub.publish(elevator_msg)
+            # Call to update elevator commands
+            self.elevator_commands()
+            self.elevator_pub.publish()
 
 
     def elevator_commands(self, msg: Joy):
@@ -98,16 +103,14 @@ class XBOX(Node):
         elevator_input = msg.axes[DPAD_VERTICAL]
         elevator_speed_input = msg.axes[DPAD_HORIZONTAL]
 
-        elevator_msg = Elevator()
-
-        elevator_msg.elevator_speed = int(self.elevator_speed_multiplier * 255)
+        self.elevator_pub.set_speed(int(self.elevator_speed_multiplier * 255))
 
         if elevator_input == 1.0:
-            elevator_msg.elevator_direction = ELEVATOR_DIR_UP
+            self.elevator_pub.set_dir(ELEVATOR_DIR_UP)
         elif elevator_input == -1.0:
-            elevator_msg.elevator_direction = ELEVATOR_DIR_DOWN
+            self.elevator_pub.set_dir(ELEVATOR_DIR_DOWN)
         else: 
-            elevator_msg.elevator_speed = 0
+            self.elevator_pub.set_speed(0)
         
         if elevator_speed_input == 1:
             left_dpad = True

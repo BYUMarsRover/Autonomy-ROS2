@@ -7,24 +7,14 @@ def generate_launch_description():
             package="science",
             executable="science_serial_interface",
             name="science_serial_interface",
+            emulate_tty=True, # Allow prints for debug
             output="screen"
         ),
-        # Node(
-        #     package="science",
-        #     executable="science_control",
-        #     name="science_control",
-        #     output="screen"
-        # )
-        # Node(
-        #     package="science",
-        #     executable="science_GUI",
-        #     name="science_GUI",
-        #     output="screen"
-        # ),
-        # Node(
-        #     package="science",
-        #     executable="science_data_saver",
-        #     name="science_data_saver",
-        #     output="screen"
-        # )
+        Node(
+            package="science",
+            executable="science_request_manager",
+            name="science_request_manager",
+            emulate_tty=True, # Allow prints for debug
+            output="screen"
+        )
     ])
