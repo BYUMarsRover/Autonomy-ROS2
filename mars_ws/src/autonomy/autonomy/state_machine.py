@@ -115,7 +115,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('hex_search_radius', 17.0)
         self.declare_parameter('navigate_speed', 10.0)
         self.declare_parameter('aruco_speed', 0.3)
-        self.declare_parameter('search_speed', 5.0)
+        self.declare_parameter('search_speed', 8.5)
         self.declare_parameter('spin_speed', 30.0)
         self.declare_parameter('object_alpha_lpf', 0.5)
         self.declare_parameter('obj_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that object deteciton is enabled
