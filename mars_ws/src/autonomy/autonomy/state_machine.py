@@ -472,7 +472,9 @@ class AutonomyStateMachine(Node):
 
         if self.tag_id == TagID.BOTTLE:
             correct_label = 1
+            confidence_threshold = 0.8
         elif self.tag_id == TagID.MALLET:
+            confidence_threshold = 0.65
             correct_label = 0
         else:
             return
@@ -484,6 +486,8 @@ class AutonomyStateMachine(Node):
             debug_msg = String()
             debug_msg.data = f"Object: {label}, {obj.confidence}"
             self.debug_pub.publish(debug_msg)
+            if obj.confidence < confidence_threshold:
+                continue
 
             #If wrong label, or if x or y position values are None, skip
             if label != correct_label or obj.position[0] is None or obj.position[1] is None or obj.position[0] == 0.0:
