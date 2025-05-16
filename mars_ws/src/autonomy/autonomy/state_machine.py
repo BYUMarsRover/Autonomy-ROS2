@@ -10,6 +10,7 @@ from zed_msgs.msg import ObjectsStamped
 from autonomy.drive_controller_api import DriveControllerAPI
 from autonomy.service_client_handler import ServiceCaller
 from autonomy.GPSTools import GPSTools, GPSCoordinate, wrap
+from geographic_msgs.msg import GeoPose
 from enum import Enum
 import numpy as np
 import time
@@ -431,9 +432,23 @@ class AutonomyStateMachine(Node):
                     self.get_logger().warn(f"No clear path on either side, Need to spin {direction.capitalize()}.")
                 
                 # TODO check and see if anything is new since the last time we offset
-                offset_wp = GPSTools.generate_side_waypoint(self.current_point, curr_heading, direction, offset_distance=5.5, offset_angle=0.8)
+                # TODO if we dont have 
+                # if distance to wp is > 7.0 
+                if GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point) > 7.0: # TODO parameterize
+                    prev_wp = self.path_target_point
+                    geopose = GeoPose()
+                    geopose.position.latitude = prev_wp.lat
+                    geopose.position.longitude = prev_wp.lon
+                    self.path.appendleft(geopose)
+                    # then save the last waypoint 
+                    # Add it back into the deque self.path which is a dqueue of geopose
+                    # lat = geopose.position.latitude
+                    # lon = geopose.position.longitude
+
+                offset_wp = GPSTools.generate_side_waypoint(self.current_point, curr_heading, direction, offset_distance=6.5, offset_angle=0.8)
                 self.drive_controller.issue_path_cmd(offset_wp.lat, offset_wp.lon)
                 self.path_target_point = offset_wp
+                # TODO: 
                 self.get_logger().info(f"Offset waypoint to: {offset_wp}, direction: {direction}, heading: {curr_heading}, ")
             # else: 
             #     # If neither side is open then we need to spin to find a way out
