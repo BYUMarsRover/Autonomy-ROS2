@@ -410,8 +410,8 @@ class AutonomyStateMachine(Node):
             # TODO this is gonna keep returning when the rover is spinnig
             chi_rad, chi_deg = GPSTools.heading_between_lat_lon(self.current_point, path_target)
             course_error = wrap(chi_rad - curr_heading, 0)
-            if abs(course_error) > 0.2:
-                self.get_logger().info(f"Course error too large before avoiding hazards: {course_error}", throttle_duration_sec=2.0)
+            if abs(course_error) > 0.35:
+                self.get_logger().info(f"Course error too large before avoiding hazards: {course_error}", throttle_duration_sec=1.0)
                 self.hazard_info = {}
                 return
 
@@ -424,7 +424,7 @@ class AutonomyStateMachine(Node):
             else:
                 # TODO could check to make sure we dont set right and then left
                 # TODO: Set the speed to the search speed as temporary fix to slow down to avoid hazards
-                self.set_speed(self.aruco_speed)
+                self.set_speed(1.2)
                 if self.hazard_info.get("clear", False):
                     self.get_logger().info(f"{direction.capitalize()} side is clear, offsetting waypoint.")
                 else:
