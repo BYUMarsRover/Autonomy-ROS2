@@ -4,7 +4,7 @@
     path_waypoint_distance_tolerance: 4.0
     distance_tolerance: 1.0
     obj_distance_tolerance: 1.5 #TODO: Tune
-    abort_distance_tolerance: 5.0
+    abort_distance_tolerance: 7.0
     aruco_distance_tolerance: 2.0
     hex_search_radius: 10.0
     navigate_speed: 10.0

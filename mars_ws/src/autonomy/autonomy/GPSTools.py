@@ -42,9 +42,9 @@ class GPSTools:
             GPSCoordinate offset in the chosen direction
         """
         if direction == "left":
-            new_angle = heading_rad + offset_angle
-        elif direction == "right":
             new_angle = heading_rad - offset_angle
+        elif direction == "right":
+            new_angle = heading_rad + offset_angle
         else:
             raise ValueError("Direction must be 'left' or 'right'")
 
