@@ -115,7 +115,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('hex_search_radius', 17.0)
         self.declare_parameter('navigate_speed', 10.0)
         self.declare_parameter('aruco_speed', 0.3)
-        self.declare_parameter('search_speed', 0.35)
+        self.declare_parameter('search_speed', 5.0)
         self.declare_parameter('spin_speed', 30.0)
         self.declare_parameter('object_alpha_lpf', 0.5)
         self.declare_parameter('obj_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that object deteciton is enabled
@@ -424,7 +424,7 @@ class AutonomyStateMachine(Node):
             else:
                 # TODO could check to make sure we dont set right and then left
                 # TODO: Set the speed to the search speed as temporary fix to slow down to avoid hazards
-                self.set_speed(self.search_speed)
+                self.set_speed(self.aruco_speed)
                 if self.hazard_info.get("clear", False):
                     self.get_logger().info(f"{direction.capitalize()} side is clear, offsetting waypoint.")
                 else:
