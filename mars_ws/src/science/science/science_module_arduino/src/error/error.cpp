@@ -1,5 +1,6 @@
 #include "error.h"
 #include "../definitions/definitions.h"
+#include "../routine_manager/routine_manager.h"
 
 // Helper Function
 void composeErrorMessage(const char** error_format_strings, uint8_t error_string_cnt,
@@ -72,6 +73,18 @@ namespace message {
         response_buffer.error_code = ERROR_CODE_SUCCESS;
         composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), nullptr);
     }
+
+    void uv_sensitivity_calibrate(uint16_t value) {
+        const char* error_format_strings[] = {
+            HEADER_MESS,
+            MESS_UV_SENS_CALIBRATE
+        };
+        uint16_t args[] = {
+            value
+        };
+        response_buffer.error_code = ERROR_CODE_SUCCESS;
+        composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), args);
+    }
 }
 
 namespace error {
@@ -130,16 +143,6 @@ namespace error {
             ERROR_UNRECOGNIZED_FUNCTION_ADDR
         };
         uint16_t args[] = { addr };
-        response_buffer.error_code = ERROR_CODE_GENERIC_ERROR;
-        composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), args);
-    }
- 
-    void badRoutineIndex(uint8_t index) {
-        const char* error_format_strings[] = {
-            HEADER_ERROR,
-            ERROR_ROUTINE_INDEX_NOT_RECOGNIZED
-        };
-        uint16_t args[] = { index };
         response_buffer.error_code = ERROR_CODE_GENERIC_ERROR;
         composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), args);
     }
@@ -274,4 +277,80 @@ namespace error {
         response_buffer.error_code = ERROR_CODE_GENERIC_ERROR;
         composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), nullptr);
     }
+
+    void outOfBoundsError(uint8_t index, uint8_t array_size) {
+        const char* error_format_strings[] = {
+            HEADER_ERROR,
+            ERROR_OUT_OF_BOUNDS
+        };
+        uint16_t args[] = {
+            index,
+            array_size
+        };
+        response_buffer.error_code = ERROR_CODE_GENERIC_ERROR;
+        composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), args);
+    }
+
+    void notReadyForRoutine(uint8_t index) {
+        const char* error_format_strings[] = {
+            HEADER_ERROR,
+            ERROR_COULD_NOT_RUN_ROUTINE,
+            ERROR_ACTUATOR_RESERVED
+        };
+        uint16_t args[] = {
+            index
+        };
+        response_buffer.error_code = ERROR_CODE_ACTUATOR_RESERVED;
+        composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), args);
+    }
+
+    void notReadyForCacheAlignment() {
+        const char* error_format_strings[] = {
+            HEADER_ERROR,
+            ERROR_COULD_NOT_RUN_ROUTINE,
+            ERROR_AUGER_SECONDAY_NON_ZERO
+        };
+        response_buffer.error_code = ERROR_CODE_ACTUATOR_RESERVED;
+        composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), nullptr);
+    }
+
+    void badIndex(const char* name, uint8_t index, uint8_t max_index) {
+        const char* error_format_strings[] = {
+            HEADER_ERROR,
+            name,
+            ERROR_INDEX_NOT_RECOGNIZED,
+            ERROR_OUT_OF_BOUNDS
+        };
+        uint16_t args[] = {
+            index,
+            index,
+            max_index
+        };
+        response_buffer.error_code = ERROR_CODE_GENERIC_ERROR;
+        composeErrorMessage(error_format_strings, sizeof(error_format_strings) / sizeof(const char*), args);
+    }
+}
+
+namespace verify {
+
+    bool verify(const char* name, uint8_t index, uint8_t max) {
+        if (index >= max) {
+            error::badIndex(name, index, max);
+            return false;
+        } else return true;
+    }
+
+    bool routine_index(uint8_t routine_index) {
+        uint8_t total_routine_count = routine_manager::get_total_routine_count();
+        return verify(NAME_ROUTINE, routine_index, total_routine_count);
+    }
+
+    bool actuator_index(uint8_t actuator_index) {
+        return verify(NAME_ACTUATOR, actuator_index, TOTAL_ACTUATOR_CNT);
+    }
+
+    bool linear_actuator_index(uint8_t linear_actuator_index) {
+        return verify(NAME_ACTUATOR, linear_actuator_index, LINEAR_ACTUATOR_CNT);
+    }
+
 }

@@ -12,13 +12,12 @@ namespace positional_controller {
         bool paused;
         bool authorized; // Normally false, set true to ignore reservation system
         bool resolved;
-        void (*callback)(void);
     };
 
     void init();
     void tick();
     bool submit(uint8_t actuator_index, float position, float speed);
-    bool submit(uint8_t actuator_index, float position, float speed, bool authorized, void (*callback)(void));
+    bool submit(uint8_t actuator_index, float position, float speed, bool authorized);
     bool is_resolved(uint8_t actuator_index);
     void set_paused(uint8_t actuator_index, bool paused);
     void resolve(uint8_t index);

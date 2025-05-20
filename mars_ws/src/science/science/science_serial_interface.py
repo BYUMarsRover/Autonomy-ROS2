@@ -28,8 +28,8 @@ FUNCTIONALITY:
 import rclpy
 import sys
 from rclpy.node import Node
-from rover_msgs.msg import ScienceActuatorControl, ScienceSensorValues, ScienceSerialTxPacket, ScienceSerialRxPacket
-from std_msgs.msg import Bool, UInt8MultiArray, Empty, UInt16, Float32
+from rover_msgs.msg import ScienceActuatorControl, ScienceSerialTxPacket, ScienceSerialRxPacket
+from std_msgs.msg import Bool, UInt8MultiArray, Empty, String, Float32
 import serial
 import struct
 import time
@@ -83,6 +83,8 @@ class ScienceSerialInterface(Node):
         self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
         self.create_subscription(Empty, '/science_serial_reset', self.establish_serial_connection, 10)
         self.create_subscription(Empty, '/science_emergency_stop', self.emergency_stop, 10)
+        self.create_subscription(String, '/science_send_file', lambda msg: self.send_file_contents(msg.data), 10)
+        self.create_subscription(Float32, '/science_calibrate_uv', lambda msg: self.uvsensor_calibrate(msg.data), 10)
 
         # Serial Communication Exchange
         self.sub_science_serial_tx_request = self.create_subscription(ScienceSerialTxPacket, '/science_serial_tx_request', self.perform_tx_request, 10)
@@ -100,19 +102,27 @@ class ScienceSerialInterface(Node):
         self.override_bit = False
 
     def establish_serial_connection(self, msg: Empty = None):
+        for path in ["/dev/rover/scienceArduinoNano", "/dev/ttyUSB0"]:
+            try:
+                self.connect_serial(path)
+                self.get_logger().info(f"Connected to {path}")
+                return
+            except Exception as e:
+                self.get_logger().error(f"Error: Could not connect to {path}")
+                self.get_logger().error(str(e))
+        # Abort if no connection is made
+        if serial.arduino is None:
+            self.get_logger().error("Error: No serial connection established")
+            self.get_logger().error("Exiting...")
+            rclpy.shutdown()
+            exit(0)
+
+    def connect_serial(self, device_path):
         self.get_logger().info("Resetting serial connection...")
         if self.arduino is not None:
             self.arduino.close()
-        try:
-            # self.arduino = serial.Serial("/dev/ttyUSB0", BAUD_RATE)
-            self.arduino = serial.Serial("/dev/rover/scienceArduinoNano", BAUD_RATE)
-            self.get_logger().info("Serial port initialized")
-        except Exception as e:
-            sys.stdout.flush()
-            self.get_logger().error("Error: Could not connect to scienceArduinoNano")
-            self.get_logger().error(str(e))
-            rclpy.shutdown()
-            exit(0)
+        self.arduino = serial.Serial(device_path, BAUD_RATE)
+        self.get_logger().info("Serial port initialized")
 
     # Callbacks for Subscribers
 
@@ -136,6 +146,23 @@ class ScienceSerialInterface(Node):
             self.perform_tx_request(SMFL_Builder.get_tx_update_actuator_control(index, 0))
         self.override_bit = prev_override_bit
         self.get_logger().warning("Emergency stop activated, all actuators disabled")
+
+    def uvsensor_calibrate(self, uvindex: float):
+        self.get_logger().warn(f"Calibrating UV sensor with index {uvindex}")
+        self.perform_tx_request(SMFL_Builder.get_tx_calibrate_uv_index(uvindex))
+
+    def send_file_contents(self, file_path):
+        # Read the raw bytes of the file
+        with open(file_path, 'rb') as file:
+            contents = file.read()
+
+        # Send the raw bytes to the Arduino
+        self.write_serial(contents)
+
+        # Publish the raw bytes to the ROS topic
+        msg = UInt8MultiArray()
+        msg.data = list(contents)
+        self.pub_science_serial_tx_notification.publish(msg)
 
     # Publishing for RXTX Monitoring
 

@@ -6,7 +6,7 @@
 #include "../definitions/definitions.h"
 #include "../error/error.h"
 
-#define EEPROM_DEBUG
+// #define EEPROM_DEBUG
 
 template <typename T>
 void EEPROM_writeObject(T* addr_eeprom, T& object) {

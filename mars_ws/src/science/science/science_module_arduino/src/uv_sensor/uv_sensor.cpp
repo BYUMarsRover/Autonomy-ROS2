@@ -104,8 +104,10 @@ namespace uv_sensor {
         // Begin taking a reading from the sensor
         //Serial.println("Move to ALS State");
         // Serial.println(F("Taking Reading"));
-        uv_sensor_state = UV;
-        enterUVmode();
+        if (!is_running()) {
+            uv_sensor_state = UV;
+            enterUVmode();
+        }
     }
 
     void tick() {
@@ -138,6 +140,8 @@ namespace uv_sensor {
 
             case UV_CALIBRATION: {
 
+                // Serial.println(F("Calibrating..."));
+
                 // Perform a calibration sample
                 if (!ltr.newDataAvailable()) break;
                 uv_data += get_uvs_raw();
@@ -150,6 +154,7 @@ namespace uv_sensor {
                     direct_calibrate(uv_sensitivty);
                     uv_sensor_state = IDLE;
                 }
+                break;
             }
 
             default: {
@@ -175,12 +180,17 @@ namespace uv_sensor {
         uv_data = 0;
         calibrating_cnt = max(CALIBRATION_SAMPLES, 0);
 
+        // Serial.print(F("Calibrating UV Index to "));
+        // Serial.println(index);
+
         // Start calibration
         uv_sensor_state = UV_CALIBRATION;
     }
 
     // Sets the UV sensitivty value in EEPROM
     void direct_calibrate(uint16_t value) {
+        if (value == 0) value = 1; // Avoid divide by zero
+        message::uv_sensitivity_calibrate(value);
         EEPROM_writeObject((uint16_t*)EEPROM_UV_SENSITIVTY_ADDR, value);
     }
 }

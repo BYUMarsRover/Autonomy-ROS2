@@ -328,20 +328,10 @@
        <string>From File</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_5">
-       <item>
-        <widget class="QLabel" name="label_10">
-         <property name="font">
-          <font>
-           <family>Bitstream Charter</family>
-           <pointsize>30</pointsize>
-           <italic>true</italic>
-          </font>
-         </property>
+       <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+        <widget class="QPushButton" name="file_select_button">
          <property name="text">
-          <string>In Development</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <string>Select File</string>
          </property>
         </widget>
        </item>
