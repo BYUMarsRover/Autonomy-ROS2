@@ -75,7 +75,7 @@ class AutopilotManager(Node):
         self.scaling_factor = 0.0
         self.critical_distance = 1.0
         self.target_distance_tolerance = 2.0
-        self.time_step = 3.0  # Example time step in seconds
+        self.time_step = 6.0  # Example time step in seconds
         self.last_callback_time = self.get_clock().now()  # Store last callback time
         self.timer = None  # Timer starts as None
         self.no_obstacle_alpha = 0.9
