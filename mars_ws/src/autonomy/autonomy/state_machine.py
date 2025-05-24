@@ -425,7 +425,7 @@ class AutonomyStateMachine(Node):
             else:
                 # TODO could check to make sure we dont set right and then left
                 # TODO: Set the speed to the search speed as temporary fix to slow down to avoid hazards
-                self.set_speed(3.0)
+                self.set_speed(6.0)
                 if self.hazard_info.get("clear", False):
                     self.get_logger().info(f"{direction.capitalize()} side is clear, offsetting waypoint.")
                 else:
