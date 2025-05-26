@@ -18,6 +18,7 @@ import sys
 import os
 import numpy as np
 import time
+import math
 
 # Used by Mapviz and others
 import yaml
@@ -174,7 +175,7 @@ class AutonomyGUI(Node, QWidget):
         # Enables the hazard detection node
         self.enable_hazard_detection_client = self.create_client(SetBool, '/hazard_detector/enable')
         # Enables hazard avoidance in the autopilot manager
-        self.enable_hazard_avoidance_client = self.create_client(SetBool, '/mobility/autopilot_manager/enable_hazard_avoidance')
+        self.enable_hazard_avoidance_client = self.create_client(SetBool, '/hazard_avoidance/enable')
 
         #NOTE: depricated until mapviz capability added back
         # self.plan_order_mapviz_client = self.create_client(OrderPath, '/plan_order_mapviz')
@@ -227,6 +228,9 @@ class AutonomyGUI(Node, QWidget):
 
         # Load Waypoints after mapviz location is set
         self.load_waypoints()
+
+        # Debugging
+        self.get_logger().info(f"GUI ORIGIN LAT/LON: {self.origin_latlon[0]}, {self.origin_latlon[1]}")
 
     def troubleshooting_timer_callback(self):
         self.get_logger().info('ROS Side is still running')
@@ -378,6 +382,9 @@ class AutonomyGUI(Node, QWidget):
             # TODO: should we have a low pass filter for the this on the gui??
             obj_x = obj.position[0]
             obj_y = obj.position[1]
+            
+            if math.isnan(obj_x) or math.isnan(obj_y):
+                continue
 
             obj_dist = np.sqrt((obj_y) ** 2 + (obj_x) ** 2)
             obj_ang = -np.arctan(obj_y / obj_x)
@@ -393,6 +400,8 @@ class AutonomyGUI(Node, QWidget):
             obj_angle = round(np.rad2deg(self.obj_angle), 2)
 
             objects_string = objects_string + f'{obj_name}: conf: {obj.confidence}, dist: {obj_distance} m @ {obj_angle} deg \n'
+
+            self.get_logger().info(f'X:{obj_x}, Y:{obj_y}, Dist_raw:{obj_dist}, Ang:{obj_ang}')
 
         self.ros_signal.emit('ObjStatus', objects_string, 'setText')
         return

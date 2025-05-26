@@ -11,7 +11,8 @@ def generate_launch_description():
     aurco_config_file = os.path.join(get_package_share_directory('aruco_detect'),'config', 'DetectorParams.yaml' )
     # cam_config_path = os.path.join(get_package_share_directory('start'), 'config', 'cam_config', 'head_cam_params.yaml')
     autonomy_params_file = os.path.join(get_package_share_directory('autonomy'), 'params', 'autonomy_params.yaml')
-    hazard_detection_params_dir = os.path.join(get_package_share_directory('hazard_detection', 'params'))
+    # hazard_detection_params_dir = os.path.join(get_package_share_directory('hazard_detection', 'params'))
+    hazard_detection_params_file = os.path.join(get_package_share_directory('hazard_cpp'), 'params', 'hazard_params.yaml')
 
 
     # USED WITH USB CAM NODE
@@ -76,6 +77,13 @@ def generate_launch_description():
             #WHAT IS THIS?? 
             respawn=True,
             respawn_delay=5
+        ),
+        Node(
+            package='hazard_cpp',
+            executable='pcl_processor',
+            name='pcl_processor',
+            output='screen',
+            parameters=[hazard_detection_params_file],
         ),
 
         # REMOVED from Autonomy launch by BRADEN MEYERS FEB 27. LMK if you need it

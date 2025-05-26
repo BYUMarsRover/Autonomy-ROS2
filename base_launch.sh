@@ -41,6 +41,7 @@ case "$1" in
             tmux new-session -d -s base_launch; \
             tmux set-option -g default-terminal "screen-256color"; \
             tmux set -g mouse on; \
+            tmux send-keys -t base_launch:0.0 'source ~/scripts/base_cli.sh' Enter; \
             tmux send-keys -t base_launch:0.0 'export ROS_DISCOVERY_SERVER=192.168.1.120:11811' Enter; \
             tmux send-keys -t base_launch:0.0 'source ~/mars_ws/install/setup.bash' Enter; \
             tmux send-keys -t base_launch:0.0 'export DISPLAY=localhost:10.0' Enter; \

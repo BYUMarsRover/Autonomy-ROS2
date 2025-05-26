@@ -2,6 +2,14 @@
 import numpy as np
 from math import degrees, radians, sin, cos, atan2, sqrt, pi, asin
 
+def wrap(chi_1, chi_2):
+    while chi_1 - chi_2 > np.pi:
+        chi_1 = chi_1 - 2.0 * np.pi
+    while chi_1 - chi_2 < -np.pi:
+        chi_1 = chi_1 + 2.0 * np.pi
+    return chi_1
+
+
 class GPSCoordinate:
     def __init__(self, lat, lon, alt = 0):
         self.lat = round(lat, 7)
@@ -17,6 +25,77 @@ class GPSCoordinate:
 class GPSTools:
     R = 6369345.0 #Radius of the Earth
 
+    @staticmethod
+    def generate_side_waypoint(curr_pose, heading_rad, direction, offset_distance=5.0, offset_angle=0.35):
+        """
+        Returns a new GPSCoordinate offset slightly to the left or right of current heading,
+        using NED heading (0 = North, +pi/2 = East).
+        
+        Parameters:
+            curr_pose: GPSCoordinate object with .lat and .lon
+            heading_rad: current heading in radians
+            direction: "left" or "right"
+            offset_distance: distance in meters
+            offset_angle: angle in radians to deviate from current heading (e.g., 0.35 rad ~ 20 deg)
+
+        Returns:
+            GPSCoordinate offset in the chosen direction
+        """
+        if direction == "left":
+            new_angle = heading_rad - offset_angle
+        elif direction == "right":
+            new_angle = heading_rad + offset_angle
+        else:
+            raise ValueError("Direction must be 'left' or 'right'")
+
+        # Normalize angle to [-pi, pi]
+        new_angle = wrap(new_angle, 0.0)
+
+        # Offset in local NED frame (North, East)
+        dy = offset_distance * np.cos(new_angle)  # North
+        dx = offset_distance * np.sin(new_angle)  # East
+
+        # Convert offset to latitude and longitude
+        dlat = (dy / GPSTools.R) * (180.0 / np.pi)
+        dlon = (dx / (GPSTools.R * np.cos(np.deg2rad(curr_pose.lat)))) * (180.0 / np.pi)
+
+        offset_lat = curr_pose.lat + dlat
+        offset_lon = curr_pose.lon + dlon
+
+        return GPSCoordinate(offset_lat, offset_lon, 0)
+    
+    @staticmethod
+    def get_offset_waypoint(waypoint, initial_heading_rad, direction, offset_distance=4.0):
+        """
+        Returns a new GPSCoordinate offset to the left or right of the given waypoint,
+        using NED heading (0 = North, +pi/2 = East, -pi/2 = West).
+        - waypoint: GPSCoordinate (with .lat, .lon)
+        - initial_heading_rad: heading from current position to waypoint, in radians [-pi, pi]
+        - direction: "left" or "right"
+        - offset_distance: meters to offset
+        """
+
+        # TODO make this a parmeter how far to offset
+        if direction == "left":
+            offset_angle = wrap(initial_heading_rad + 0.35, 0.0)
+        elif direction == "right":
+            offset_angle = wrap(initial_heading_rad - 0.35, 0.0)
+        else:
+            raise ValueError("Direction must be 'left' or 'right'")
+
+        # Offset in meters (local tangent plane)
+        dx = offset_distance * np.cos(offset_angle)
+        dy = offset_distance * np.sin(offset_angle)
+
+        # Convert meters to degrees
+        dlat = (dy / GPSTools.R) * (180.0 / np.pi)
+        dlon = (dx / (GPSTools.R * np.cos(np.deg2rad(waypoint.lat)))) * (180.0 / np.pi)
+
+        offset_lat = waypoint.lat + dlat
+        offset_lon = waypoint.lon + dlon
+
+        return GPSCoordinate(offset_lat, offset_lon, 0)
+    
     @staticmethod
     def heading_between_lat_lon(point1, point2):
         """
