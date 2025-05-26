@@ -14,6 +14,7 @@ from geographic_msgs.msg import GeoPose
 from enum import Enum
 import numpy as np
 import time
+import math
 from collections import deque
 from autonomy.utils.planner import Planner
 from autonomy.utils.gps_utils import (
@@ -507,6 +508,10 @@ class AutonomyStateMachine(Node):
                 # For the ZED X is forward, Y is left, Z is up. Positive angle is counterclockwise from x-axis. All in meters.
                 obj_x = obj.position[0]
                 obj_y = obj.position[1]
+
+                if math.isnan(obj_x) or math.isnan(obj_y):
+                    continue
+
                 obj_dist = np.sqrt((obj_y) ** 2 + (obj_x) ** 2)
                 obj_ang = -np.arctan(obj_y / obj_x)
                 if self.obj_distance is None:
