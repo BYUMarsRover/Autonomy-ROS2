@@ -119,7 +119,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('aruco_speed', 0.3)
         self.declare_parameter('search_speed', 8.5)
         self.declare_parameter('spin_speed', 30.0)
-        self.declare_parameter('object_alpha_lpf', 0.5)
+        self.declare_parameter('object_alpha_lpf', 0.2)
         self.declare_parameter('obj_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that object deteciton is enabled
         self.declare_parameter('aruco_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that aruco deteciton is enabled
         self.declare_parameter('aruco_alpha_lpf', 0.5)
