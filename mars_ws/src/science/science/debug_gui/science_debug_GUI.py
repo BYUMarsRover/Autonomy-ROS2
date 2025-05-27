@@ -12,7 +12,7 @@ class science_debug_GUI(Node):
         super().__init__('science_debug_GUI')
 
         # Create Publisher
-        self.science_serial_packet_pub = self.create_publisher(ScienceSerialTxPacket, '/science_serial_tx_request', 10)
+        self.science_serial_packet_pub = self.create_publisher(ScienceSerialTxPacket, '/science/serial/tx_request', 10)
 
         # Build Debug Window
         self.qt = DebugWindowWidget(self)  # Create an instance of the DebugWindow class

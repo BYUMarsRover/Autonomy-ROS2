@@ -56,7 +56,7 @@ class science_response_GUI(Node):
         self.dialog_box_packets = []
 
         # Create Subscriptions
-        self.science_serial_rx_sub = self.create_subscription(ScienceSerialRxPacket, '/science_serial_rx_packet', self.receive_response_packet, 10)
+        self.science_serial_rx_sub = self.create_subscription(ScienceSerialRxPacket, '/science/serial/rx_packet', self.receive_response_packet, 10)
 
         self.return_table = None
 

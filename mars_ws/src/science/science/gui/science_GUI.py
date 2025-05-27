@@ -19,7 +19,7 @@ import os
 import sys
 
 ANALOG_SENSOR_QUERY_RATE_MS = 1000
-LTR_390_QUERY_RATE_MS = 5000
+LTR_390_QUERY_RATE_MS = 1000
 
 class Signals(QObject):
     sensor_signal = Signal(ScienceSensorValues)
@@ -161,30 +161,30 @@ class science_GUI(Node):
         return self.qt.actionRead_Calibrated_from_Module.isChecked()
     
     def init_publishers(self):
-        self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science_save_sensor', 1) #figure this out
-        self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science_save_notes', 1)
-        self.pub_save_fad = self.create_publisher(ScienceSaveFAD, '/science_save_fad', 1)
-        self.pub_save_spectro = self.create_publisher(ScienceSaveSpectro, '/science_save_spectro', 1) #figure this out
+        self.pub_save_sensor = self.create_publisher(ScienceSaveSensor, '/science/save_sensor', 1) #figure this out
+        self.pub_save_notes = self.create_publisher(ScienceSaveNotes, '/science/save_notes', 1)
+        self.pub_save_fad = self.create_publisher(ScienceSaveFAD, '/science/save_fad', 1)
+        self.pub_save_spectro = self.create_publisher(ScienceSaveSpectro, '/science/save_spectro', 1) #figure this out
         
-        self.pub_get_spectro = self.create_publisher(Empty, '/science_spectro_request', 1)
-        self.pub_get_uv = self.create_publisher(Empty, '/science_uv_request', 1)
-        self.pub_get_analog_sensors = self.create_publisher(Bool, '/science_sensor_request', 1)
+        self.pub_get_spectro = self.create_publisher(Empty, '/science/spectro_request', 1)
+        self.pub_get_uv = self.create_publisher(Empty, '/science/uv_request', 1)
+        self.pub_get_analog_sensors = self.create_publisher(Bool, '/science/sensor_request', 1)
 
-        self.pub_get_auger_position = self.create_publisher(Empty, '/science_auger_position', 1)
+        self.pub_get_auger_position = self.create_publisher(Empty, '/science/auger_position', 1)
 
         # Kill Switch
-        self.pub_kill_switch = self.create_publisher(Empty, "/science_emergency_stop", 10)
+        self.pub_kill_switch = self.create_publisher(Empty, "/science/emergency_stop", 10)
 
         # Calibrate UV
-        self.pub_calibrate_uv = self.create_publisher(Float32, "/science_calibrate_uv", 10)
+        self.pub_calibrate_uv = self.create_publisher(Float32, "/science/calibrate_uv", 10)
 
     def init_subscriptions(self):
-        self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.update_analog_sensor_values, 10)
-        self.science_auger_position = self.create_subscription(Bool, '/science_using_probe', self.signals.auger_position.emit, 10)
-        self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science_fad_calibration', self.signals.fad_intensity_signal.emit, 10)
+        self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science/sensor_values', self.update_analog_sensor_values, 10)
+        self.science_auger_position = self.create_subscription(Bool, '/science/using_probe', self.signals.auger_position.emit, 10)
+        self.science_fad_calibration = self.create_subscription(ScienceFADIntensity, '/science/fad_calibration', self.signals.fad_intensity_signal.emit, 10)
         self.rover_state_singleton = self.create_subscription(RoverStateSingleton, '/odometry/rover_state_singleton', self.update_pos_vel_time, 10)
-        self.sub_spectro = self.create_subscription(ScienceSpectroData, '/science_spectro_data', self.update_spectro_data, 10)
-        self.sub_uv = self.create_subscription(ScienceUvData, '/science_uv_data', self.update_ltr_sensor_values, 10)
+        self.sub_spectro = self.create_subscription(ScienceSpectroData, '/science/spectro_data', self.update_spectro_data, 10)
+        self.sub_uv = self.create_subscription(ScienceUvData, '/science/uv_data', self.update_ltr_sensor_values, 10)
 
     def create_signals(self):
         self.signals = Signals()
@@ -212,6 +212,7 @@ class science_GUI(Node):
         self.qt.pushButton_spectro.clicked.connect(lambda: self.fetch_spectro_data())
         self.qt.pushButton_spectro_save.clicked.connect(lambda: self.save_spectro_values())
         self.qt.pushButton_uv.clicked.connect(lambda: self.fetch_uv_data())
+        self.qt.pushButton_analog.clicked.connect(lambda: self.fetch_analog_sensors_data())
 
         # Saving toggles
         self.qt.saving_temp_checkBox.stateChanged.connect(lambda state: self.measurement_temperature.set_saving(state == Qt.Checked))
@@ -246,6 +247,21 @@ class science_GUI(Node):
             lambda: self.measurement_uv.change_rate(self.qt.query_ltr_rateMs_lineEdit.text())
         )
         self.qt.query_ltr_rateMs_lineEdit.setText(str(self.measurement_uv.timer.period_ms))  # Set initial value
+
+        # Save to notes buttons
+        self.qt.copy_attitude_pushButton.clicked.connect(self.copy_attitude_to_notes)
+        self.qt.copy_notes_temp_pushButton.clicked.connect(
+            lambda: self.copy_measurement_service_to_notes(
+                self.measurement_temperature, units='°C', decimals=2))
+        self.qt.copy_notes_moisture_pushButton.clicked.connect(
+            lambda: self.copy_measurement_service_to_notes(
+                self.measurement_moisture, units=' μS/cm', decimals=3))
+        self.qt.copy_notes_uv_pushButton.clicked.connect(
+            lambda: self.copy_measurement_service_to_notes(
+                self.measurement_uv, title='UV Index', decimals=1))
+        self.qt.copy_notes_ambient_pushButton.clicked.connect(
+            lambda: self.copy_measurement_service_to_notes(
+                self.measurement_ambient, units=' lux', decimals=1))
 
     def do_calibrate_uv(self):
         uv_index, ok = QtWidgets.QInputDialog.getDouble(
@@ -496,8 +512,7 @@ class science_GUI(Node):
         altitude = f'{msg.gps.altitude} ft'
         heading = f'{msg.map_yaw}'
         coordinates = f'{msg.gps.latitude}, {msg.gps.longitude}'
-
-        print(f'(lat, long, altitude, heading): ({coordinates}, {altitude}, {heading})')
+        # print(f'(lat, long, altitude, heading): ({coordinates}, {altitude}, {heading})')
 
         self.qt.lbl_altitude.setText(altitude)
         self.qt.lbl_heading.setText(heading)
@@ -540,6 +555,45 @@ class science_GUI(Node):
         if ip is None:
             ip = "192.168.1.65"
         return ip
+    
+    def append_to_notes(self, text):
+        """
+        Appends the given text to the current notes.
+        """
+        current_notes = self.qt.textEdit_notes.toPlainText()
+        if current_notes == "":
+            updated_notes = text
+        elif current_notes[-1] == '\n':
+            updated_notes = current_notes + text
+        else:
+            updated_notes = current_notes + "\n" + text
+        
+        # Push the new text to the text edit widget
+        self.qt.textEdit_notes.setPlainText(updated_notes)
+
+        # Save the updated notes temporarily
+        self.temp_save_notes(self.site_number, updated_notes)
+
+    def copy_attitude_to_notes(self):
+        """
+        Appends the current altitude, heading, and coordinates to the site notes.
+        """
+        altitude = self.qt.lbl_altitude.text()
+        heading = self.qt.lbl_heading.text()
+        coordinates = self.qt.lbl_coordinates.text()
+        note_entry = f"Rover Attitude:\n Altitude: {altitude}\n Heading: {heading}\n Coordinates: {coordinates}\n"
+        self.append_to_notes(note_entry)
+
+    def copy_measurement_service_to_notes(self, meas_service, title="", units="", decimals=None):
+        """
+        Appends the current altitude, heading, and coordinates to the site notes.
+        """
+        recall = meas_service.recall()
+        data = 0.0 if recall is None else recall
+        value = f"{data:.{decimals}f}" if decimals is not None else str(data)
+        title = ' '.join(word.capitalize() for word in meas_service.measurement_name.split('_')) if title == "" else title
+        note_entry = f"{title}: {value}{units}\n"
+        self.append_to_notes(note_entry)
 
 class MeasurementService:
     def __init__(self, node, measurement_name, period_ms, enabled, saving, request_func, save_func):
@@ -548,6 +602,7 @@ class MeasurementService:
         self.saving = saving
         self.timer = Timer(node, period_ms, enabled, request_func)
         self.save_func = save_func
+        self.data = None
 
     def change_rate(self, new_rate):
         try:
@@ -574,8 +629,12 @@ class MeasurementService:
 
     def receive(self, data):
         # Should be call by children classes
+        self.data = data
         if self.saving:
             self.save_func(data)
+
+    def recall(self):
+        return self.data
 
 class SensorMeasurementService(MeasurementService):
     def __init__(self, node, measurement_name, period_ms, enabled, saving, request_func, lcd_display=None):

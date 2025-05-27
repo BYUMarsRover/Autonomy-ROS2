@@ -3,11 +3,11 @@ PURPOSE: Acts as an abstraction layer between requests for data from the science
 
 SUBSCRIBED TO:
 - /science_sensor_request (std_msgs/Empty): Requests for analog sensor data.
-- /science_serial_rx_packet (rover_msgs/ScienceSerialRxPacket): Responses from the science module.
+- /science/serial/rx_packet (rover_msgs/ScienceSerialRxPacket): Responses from the science module.
 
 PUBLISHES TO:
-- /science_sensor_values (rover_msgs/ScienceSensorValues): Publishes processed sensor data.
-- /science_serial_tx_request (rover_msgs/ScienceSerialTxPacket): Sends requests to the science module.
+- /science/sensor_values (rover_msgs/ScienceSensorValues): Publishes processed sensor data.
+- /science/serial/tx_request (rover_msgs/ScienceSerialTxPacket): Sends requests to the science module.
 
 FUNCTIONALITY:
 - Handles requests for raw and calibrated analog sensor data.
@@ -40,23 +40,23 @@ class ScienceRequestManager(Node):
         super().__init__('science_request_manager')
 
         # Subscriptions to various request channels
-        self.sub_get_uv = self.create_subscription(Empty, '/science_uv_request', self.uvsensor_request, 10)
-        self.sub_get_analog_sensors = self.create_subscription(Bool, '/science_sensor_request', self.sensor_request, 10)
-        self.sub_get_spectrograph_data = self.create_subscription(Empty, '/science_spectro_request', self.spectrograph_request, 10)
-        self.sub_get_actuator_state = self.create_subscription(UInt8, '/science_get_actuator_state', self.actuator_state_request, 10)
-        self.sub_get_routine_status = self.create_subscription(Empty, '/science_get_routine_status', self.routine_status_request, 10)
+        self.sub_get_uv = self.create_subscription(Empty, '/science/uv_request', self.uvsensor_request, 10)
+        self.sub_get_analog_sensors = self.create_subscription(Bool, '/science/sensor_request', self.sensor_request, 10)
+        self.sub_get_spectrograph_data = self.create_subscription(Empty, '/science/spectro_request', self.spectrograph_request, 10)
+        self.sub_get_actuator_state = self.create_subscription(UInt8, '/science/get_actuator_state', self.actuator_state_request, 10)
+        self.sub_get_routine_status = self.create_subscription(Empty, '/science/get_routine_status', self.routine_status_request, 10)
 
         # Publisher to various response channels
-        self.pub_analog_sensors = self.create_publisher(ScienceSensorValues, '/science_sensor_values', 10)
-        self.pub_spectrograph = self.create_publisher(ScienceSpectroData, '/science_spectro_data', 10)
-        self.pub_uv_sensor = self.create_publisher(ScienceUvData, '/science_uv_data', 10)
-        self.pub_actuator_state = self.create_publisher(ScienceActuatorState, '/science_actuator_state_update', 10)
-        self.pub_routine_status = self.create_publisher(String, '/science_routine_status_update', 10)
+        self.pub_analog_sensors = self.create_publisher(ScienceSensorValues, '/science/sensor_values', 10)
+        self.pub_spectrograph = self.create_publisher(ScienceSpectroData, '/science/spectro_data', 10)
+        self.pub_uv_sensor = self.create_publisher(ScienceUvData, '/science/uv_data', 10)
+        self.pub_actuator_state = self.create_publisher(ScienceActuatorState, '/science/actuator_state_update', 10)
+        self.pub_routine_status = self.create_publisher(String, '/science/routine_status_update', 10)
 
         # Publisher to the request TX Channel
-        self.pub_tx = self.create_publisher(ScienceSerialTxPacket, '/science_serial_tx_request', 10)
+        self.pub_tx = self.create_publisher(ScienceSerialTxPacket, '/science/serial/tx_request', 10)
         # Subscriber to the response RX Channel
-        self.sub_rx = self.create_subscription(ScienceSerialRxPacket, '/science_serial_rx_packet', self.parse_rx, 10)
+        self.sub_rx = self.create_subscription(ScienceSerialRxPacket, '/science/serial/rx_packet', self.parse_rx, 10)
 
         # Complex Observer Types
         self.observers = []

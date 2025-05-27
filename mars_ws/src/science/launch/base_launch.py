@@ -19,5 +19,12 @@ def generate_launch_description():
             executable="science_data_saver",
             name="science_data_saver",
             output="screen"
+        ),
+        # Convert the GPS data to the RoverStateSingleton Type for the science GUI
+        Node(
+            package="odometry",
+            executable="rover_state_singleton_creator_new",
+            name="rover_state_singleton_creator_new",
+            output="screen"
         )
     ])

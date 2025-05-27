@@ -240,26 +240,26 @@ class science_routine_GUI(Node):
         # Initialize publishers here
 
         # Actuator state requests
-        self.pub_get_actuator_state = self.create_publisher(UInt8, '/science_get_actuator_state', 10)
+        self.pub_get_actuator_state = self.create_publisher(UInt8, '/science/get_actuator_state', 10)
 
         # Routine State requests
-        self.pub_get_routine_state = self.create_publisher(Empty, '/science_get_routine_status', 10)
+        self.pub_get_routine_state = self.create_publisher(Empty, '/science/get_routine_status', 10)
 
         # Actuator controls
-        self.kill_switch_pub = self.create_publisher(Empty, "/science_emergency_stop", 10)
+        self.kill_switch_pub = self.create_publisher(Empty, "/science/emergency_stop", 10)
 
         # Generic tx requests
-        self.pub_tx = self.create_publisher(ScienceSerialTxPacket, '/science_serial_tx_request', 10)
+        self.pub_tx = self.create_publisher(ScienceSerialTxPacket, '/science/serial/tx_request', 10)
 
         # File Submission
-        self.pub_file_contents = self.create_publisher(String, '/science_send_file', 10)
+        self.pub_file_contents = self.create_publisher(String, '/science/send_file', 10)
 
     def init_subscriptions(self):
         # Initialize subscriptions here
-        self.sub_actuator_updates = self.create_subscription(ScienceActuatorState, '/science_actuator_state_update', self.update_actuator_state, 10)
+        self.sub_actuator_updates = self.create_subscription(ScienceActuatorState, '/science/actuator_state_update', self.update_actuator_state, 10)
 
         # Subscribe to the /science_routine_status_update topic
-        self.sub_routine_status = self.create_subscription(String, '/science_routine_status_update', self.update_routine_status_window, 10 )
+        self.sub_routine_status = self.create_subscription(String, '/science/routine_status_update', self.update_routine_status_window, 10 )
 
     def init_timer_tasks(self):
         # Initialize the routine status query timer

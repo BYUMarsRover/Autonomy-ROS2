@@ -11,10 +11,10 @@ class ScienceDataSaver(Node):
     def __init__(self):
         super().__init__('data_saver')
 
-        self.science_save_fad = self.create_subscription(ScienceSaveFAD, '/science_save_fad', self.save_fad, 10)
-        self.science_save_sensor = self.create_subscription(ScienceSaveSensor, '/science_save_sensor', self.save_sensor_callback, 10)
-        self.science_save_notes = self.create_subscription(ScienceSaveNotes, '/science_save_notes', self.save_notes, 10)
-        self.science_save_spectro = self.create_subscription(ScienceSaveSpectro, '/science_save_spectro', self.save_spectro, 10)
+        self.science_save_fad = self.create_subscription(ScienceSaveFAD, '/science/save_fad', self.save_fad, 10)
+        self.science_save_sensor = self.create_subscription(ScienceSaveSensor, '/science/save_sensor', self.save_sensor_callback, 10)
+        self.science_save_notes = self.create_subscription(ScienceSaveNotes, '/science/save_notes', self.save_notes, 10)
+        self.science_save_spectro = self.create_subscription(ScienceSaveSpectro, '/science/save_spectro', self.save_spectro, 10)
 
         self.sensor_map = ['moisture', 'temperature', 'fad', 'uv', 'als']
         self.sensor_values = [[] for _ in self.sensor_map]
