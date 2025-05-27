@@ -512,6 +512,9 @@ class AutonomyStateMachine(Node):
                     debug_msg = String()
                     debug_msg.data = f"Num Detections: {len(self.known_objects[label])}"
                     self.debug_pub.publish(debug_msg)
+
+                    self.get_logger().warn(f'Object {label} seen {len(self.known_objects[label])} times')
+
                     continue
 
                 # Low-pass filter the distance and heading information
@@ -524,6 +527,10 @@ class AutonomyStateMachine(Node):
                     # Low pass filter the distance and heading information
                     self.obj_distance = self.obj_distance * self.obj_alpha_lpf + obj_dist * (1 - self.obj_alpha_lpf)
                     self.obj_angle = self.obj_angle * self.obj_alpha_lpf + obj_ang * (1 - self.obj_alpha_lpf)
+
+                if not self.correct_obj_found:
+                    self.get_logger().warn('Setting "self.correct_obj_found" to True')
+
                 self.correct_obj_found = True
                 if found:
                     self.get_logger().info("Found a duplicate object, taking last one")
@@ -875,6 +882,9 @@ class AutonomyStateMachine(Node):
 
                 if self.obj_navigate_delay_start_time is None:
                     self.obj_navigate_delay_start_time = time.time()
+                    
+                    self.get_logger().warn('Just entered START_OBJECT_NAVIGATE state')
+
                 if (time.time() - self.obj_navigate_delay_start_time) > self.obj_navigate_delay_time:
                     self.obj_navigate_delay_start_time = None
                     self.state = State.OBJECT_NAVIGATE
