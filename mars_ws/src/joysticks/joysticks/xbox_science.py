@@ -57,16 +57,16 @@ class XBOX(Node):
             Joy, "/joy_science_input", self.joy_callback, 10
         )
         self.sub_auger = self.create_subscription(
-            Empty, "/science_auger_position", self.auger_control_callback, 10
+            Empty, "/science/auger_position", self.auger_control_callback, 10
         )
 
         # Publishers
         self.setup_update_publishers()
         self.pub_using_probe = self.create_publisher(
-            Bool, "/science_using_probe", 10
+            Bool, "/science/using_probe", 10
         )
         self.pub_reset_science_module = self.create_publisher(
-            Empty, '/science_serial_reset', 10
+            Empty, '/science/serial/reset', 10
         )
 
 
@@ -164,7 +164,7 @@ class XBOX(Node):
         # Drill Publisher
         self.drill_control = self.update_publisher.add_publisher(
             pubup.ScienceActuatorPublisher(
-                self.create_publisher(ScienceActuatorControl, '/science_serial_drill', 10),
+                self.create_publisher(ScienceActuatorControl, '/science/serial/drill', 10),
                 format_func=pubup.ScienceActuatorPublisher.convert_axis_to_unsigned_integer
                 )
             )
@@ -172,7 +172,7 @@ class XBOX(Node):
         # Probe Publisher
         self.probe_control = self.update_publisher.add_publisher(
             pubup.ScienceActuatorPublisher(
-                self.create_publisher(ScienceActuatorControl, "/science_serial_probe", 10),
+                self.create_publisher(ScienceActuatorControl, "/science/serial/probe", 10),
                 format_func=pubup.ScienceActuatorPublisher.convert_axis_to_unsigned_integer
                 )
             )
@@ -180,7 +180,7 @@ class XBOX(Node):
         # Auger Publisher
         self.auger_control = self.update_publisher.add_publisher(
             pubup.ScienceActuatorPublisher(
-                self.create_publisher(ScienceActuatorControl, "/science_serial_auger", 10),
+                self.create_publisher(ScienceActuatorControl, "/science/serial/auger", 10),
                 format_func=pubup.ScienceActuatorPublisher.convert_axis_to_unsigned_integer
                 )
             )
@@ -188,14 +188,14 @@ class XBOX(Node):
         # Primary Cache Publisher
         self.primary_cache_door_control = self.update_publisher.add_publisher(
             pubup.ScienceActuatorPublisher(
-                self.create_publisher(ScienceActuatorControl, "/science_serial_primary_cache_door", 10)
+                self.create_publisher(ScienceActuatorControl, "/science/serial/primary_cache_door", 10)
                 )
             )
         
         # Secondary Cache Publisher
         self.secondary_cache_control = self.update_publisher.add_publisher(
             pubup.ScienceActuatorPublisher(
-                self.create_publisher(ScienceActuatorControl, "/science_serial_secondary_cache", 10),
+                self.create_publisher(ScienceActuatorControl, "/science/serial/secondary_cache", 10),
                 format_func=pubup.ScienceActuatorPublisher.convert_axis_to_unsigned_integer
                 )
             )
@@ -203,7 +203,7 @@ class XBOX(Node):
         # Override Publisher
         self.override_control = self.update_publisher.add_publisher(
             pubup.UpdatePublisher(
-                self.create_publisher(Bool, "/science_serial_override", 10),
+                self.create_publisher(Bool, "/science/serial/override", 10),
                 "std_msgs.msg.Bool"
                 )
             )

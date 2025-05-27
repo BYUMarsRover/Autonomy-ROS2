@@ -3,19 +3,19 @@
 PURPOSE: Receive ROS commands and send commands to the science Arduino via serial USB.
 
 SUBSCRIBED TO:
-/science_serial_probe
-/science_serial_auger
-/science_serial_primary_cache_door
-/science_serial_secondary_cache_door
-/science_serial_secondary_cache
-/science_serial_drill
-/science_serial_override
-/science_serial_tx_request
+/science/serial/probe
+/science/serial/auger
+/science/serial/primary_cache_door
+/science/serial/secondary_cache_door
+/science/serial/secondary_cache
+/science/serial/drill
+/science/serial/override
+/science/serial/tx_request
 
 PUBLISHED TO:
-/science_serial_tx_notification
-/science_serial_rx_notification
-/science_serial_rx_packet
+/science/serial/tx_notification
+/science/serial/rx_notification
+/science/serial/rx_packet
 
 FUNCTIONALITY:
 - Initializes a serial connection with the science Arduino.
@@ -74,23 +74,23 @@ class ScienceSerialInterface(Node):
         self.arduino = None
         self.establish_serial_connection()
 
-        self.create_subscription(ScienceActuatorControl, '/science_serial_probe',                lambda msg: self.actuator_control_callback(msg, PROBE_ACTUATOR_INDEX), 10)
-        self.create_subscription(ScienceActuatorControl, '/science_serial_auger',                lambda msg: self.actuator_control_callback(msg, AUGER_ACTUATOR_INDEX), 10)
-        self.create_subscription(ScienceActuatorControl, '/science_serial_primary_cache_door',   lambda msg: self.actuator_control_callback(msg, PRIMARY_DOOR_ACTUATOR_INDEX), 10)
-        self.create_subscription(ScienceActuatorControl, '/science_serial_secondary_cache_door', lambda msg: self.actuator_control_callback(msg, SECONDARY_DOOR_ACTUATOR_INDEX), 10)
-        self.create_subscription(ScienceActuatorControl, '/science_serial_secondary_cache',      lambda msg: self.actuator_control_callback(msg, SECONDARY_CACHE_ACTUATOR_INDEX), 10)
-        self.create_subscription(ScienceActuatorControl, '/science_serial_drill',                lambda msg: self.actuator_control_callback(msg, DRILL_ACTUATOR_INDEX), 10)
-        self.create_subscription(Bool, '/science_serial_override', self.set_override_bit_callback, 10)
-        self.create_subscription(Empty, '/science_serial_reset', self.establish_serial_connection, 10)
-        self.create_subscription(Empty, '/science_emergency_stop', self.emergency_stop, 10)
-        self.create_subscription(String, '/science_send_file', lambda msg: self.send_file_contents(msg.data), 10)
-        self.create_subscription(Float32, '/science_calibrate_uv', lambda msg: self.uvsensor_calibrate(msg.data), 10)
+        self.create_subscription(ScienceActuatorControl, '/science/serial/probe',                lambda msg: self.actuator_control_callback(msg, PROBE_ACTUATOR_INDEX), 10)
+        self.create_subscription(ScienceActuatorControl, '/science/serial/auger',                lambda msg: self.actuator_control_callback(msg, AUGER_ACTUATOR_INDEX), 10)
+        self.create_subscription(ScienceActuatorControl, '/science/serial/primary_cache_door',   lambda msg: self.actuator_control_callback(msg, PRIMARY_DOOR_ACTUATOR_INDEX), 10)
+        self.create_subscription(ScienceActuatorControl, '/science/serial/secondary_cache_door', lambda msg: self.actuator_control_callback(msg, SECONDARY_DOOR_ACTUATOR_INDEX), 10)
+        self.create_subscription(ScienceActuatorControl, '/science/serial/secondary_cache',      lambda msg: self.actuator_control_callback(msg, SECONDARY_CACHE_ACTUATOR_INDEX), 10)
+        self.create_subscription(ScienceActuatorControl, '/science/serial/drill',                lambda msg: self.actuator_control_callback(msg, DRILL_ACTUATOR_INDEX), 10)
+        self.create_subscription(Bool, '/science/serial/override', self.set_override_bit_callback, 10)
+        self.create_subscription(Empty, '/science/serial/reset', self.establish_serial_connection, 10)
+        self.create_subscription(Empty, '/science/emergency_stop', self.emergency_stop, 10)
+        self.create_subscription(String, '/science/send_file', lambda msg: self.send_file_contents(msg.data), 10)
+        self.create_subscription(Float32, '/science/calibrate_uv', lambda msg: self.uvsensor_calibrate(msg.data), 10)
 
         # Serial Communication Exchange
-        self.sub_science_serial_tx_request = self.create_subscription(ScienceSerialTxPacket, '/science_serial_tx_request', self.perform_tx_request, 10)
-        self.pub_science_serial_tx_notification = self.create_publisher(UInt8MultiArray, '/science_serial_tx_notification', 10)
-        self.pub_science_serial_rx_notification = self.create_publisher(UInt8MultiArray, '/science_serial_rx_notification', 10)
-        self.pub_science_serial_rx_packet = self.create_publisher(ScienceSerialRxPacket, '/science_serial_rx_packet', 10)
+        self.sub_science_serial_tx_request = self.create_subscription(ScienceSerialTxPacket, '/science/serial/tx_request', self.perform_tx_request, 10)
+        self.pub_science_serial_tx_notification = self.create_publisher(UInt8MultiArray, '/science/serial/tx_notification', 10)
+        self.pub_science_serial_rx_notification = self.create_publisher(UInt8MultiArray, '/science/serial/rx_notification', 10)
+        self.pub_science_serial_rx_packet = self.create_publisher(ScienceSerialRxPacket, '/science/serial/rx_packet', 10)
 
         # Timer to read the serial input
         self.create_timer(100e-3, self.read_serial) # 10 Hz

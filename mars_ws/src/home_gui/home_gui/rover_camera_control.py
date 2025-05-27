@@ -30,7 +30,7 @@ class RoverCameraControl(Node):
         self.camera_scripts_init()
 
         # Publishers
-        self.pub_fad_calibration = self.create_publisher(ScienceFADIntensity, '/science_fad_calibration', 1)
+        self.pub_fad_calibration = self.create_publisher(ScienceFADIntensity, '/science/fad_calibration', 1)
         self.get_logger().info("Node initialized")
 
     def camera_scripts_init(self):

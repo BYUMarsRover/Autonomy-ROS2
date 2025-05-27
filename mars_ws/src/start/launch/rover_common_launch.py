@@ -53,6 +53,7 @@ def generate_launch_description():
                 ])
             )
         ],
+        # Only runs if running locally
         condition=IfCondition(
             PythonExpression(["'", LaunchConfiguration('ROVER_ADDRESS'), "' == '127.0.0.1'"])
         )

@@ -23,7 +23,7 @@ def generate_launch_description():
         ])
     )
 
-    # Launch UKF (Unscented Kalman Filter) so that GPS data will work on the science GUI TODO - may need to update to reflect autonomy changes.
+    # Launch UKF (Unscented Kalman Filter) for improved GPS quality, not working great right now
     odometry_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             FindPackageShare("odometry"), "/launch/estimation_launch.py"
@@ -33,5 +33,5 @@ def generate_launch_description():
     return LaunchDescription([
         common_launch,
         science_launch
-        #odometry_launch - Determine if odometry is needed for the science task
+        #odometry_launch
     ])

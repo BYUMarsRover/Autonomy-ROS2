@@ -38,7 +38,7 @@ rover:
       base_port: 16140
       base_host: '192.168.1.111'
       local_port: 16140
-      local_host: '192.168.1.120'
+      local_host: 'localhost' # Hot fix for science, was '192.168.1.120'
       serial_port: '/dev/rover/rtk'
       rover_quantity: 0
 

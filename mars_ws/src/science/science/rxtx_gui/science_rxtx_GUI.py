@@ -37,14 +37,14 @@ class science_rxtx_GUI(Node):
         self.task_launcher_init()
 
         # Create Publisher
-        self.science_serial_tx_request_pub = self.create_publisher(ScienceSerialTxPacket, '/science_serial_tx_request', 10)
+        self.science_serial_tx_request_pub = self.create_publisher(ScienceSerialTxPacket, '/science/serial/tx_request', 10)
 
         # File Submission
-        self.pub_file_contents = self.create_publisher(String, '/science_send_file', 10)
+        self.pub_file_contents = self.create_publisher(String, '/science/send_file', 10)
 
         # Create Subscriptions
-        self.science_serial_tx_sub = self.create_subscription(UInt8MultiArray, '/science_serial_tx_notification', self.receive_tx_notification, 10)
-        self.science_serial_rx_sub = self.create_subscription(UInt8MultiArray, '/science_serial_rx_notification', self.receive_rx_notification, 10)
+        self.science_serial_tx_sub = self.create_subscription(UInt8MultiArray, '/science/serial/tx_notification', self.receive_tx_notification, 10)
+        self.science_serial_rx_sub = self.create_subscription(UInt8MultiArray, '/science/serial/rx_notification', self.receive_rx_notification, 10)
 
         # Ensure empty
         self.clear_rxtx_windows()
