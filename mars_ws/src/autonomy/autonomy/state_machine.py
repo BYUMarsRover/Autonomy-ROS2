@@ -35,6 +35,7 @@ class State(Enum):
     HEX_SEARCH = "HEX_SEARCH"
     START_OBJECT_HEX_SEARCH = "START_OBJECT_HEX_SEARCH"
     ARUCO_NAVIGATE = "ARUCO_NAVIGATE"
+    START_OBJECT_NAVIGATE = "START_OBJECT_NAVIGATE"
     OBJECT_NAVIGATE = "OBJECT_NAVIGATE"
     ARUCO_GATE_NAVIGATION = "ARUCO_GATE_NAVIGATION"
     ARUCO_GATE_ORIENTATION = "ARUCO_GATE_ORIENTATION"
@@ -44,7 +45,7 @@ class State(Enum):
     START_ABORT_STATE = "START_ABORT_STATE"
     ABORT_STATE = "ABORT_STATE"
 
-NAVIGATION_STATES = [State.START_POINT_NAVIGATION, State.WAYPOINT_NAVIGATION, State.POINT_NAVIGATION, State.START_SPIN_SEARCH, State.SPIN_SEARCH, State.START_HEX_SEARCH ,State.HEX_SEARCH, State.START_OBJECT_HEX_SEARCH, State.ARUCO_NAVIGATE, State.OBJECT_NAVIGATE, State.ARUCO_GATE_NAVIGATION, State.ARUCO_GATE_ORIENTATION, State.ARUCO_GATE_APPROACH, State.ARUCO_GATE_PAST]
+NAVIGATION_STATES = [State.START_POINT_NAVIGATION, State.WAYPOINT_NAVIGATION, State.POINT_NAVIGATION, State.START_SPIN_SEARCH, State.SPIN_SEARCH, State.START_HEX_SEARCH ,State.HEX_SEARCH, State.START_OBJECT_HEX_SEARCH, State.ARUCO_NAVIGATE, State.START_OBJECT_NAVIGATE, State.OBJECT_NAVIGATE, State.ARUCO_GATE_NAVIGATION, State.ARUCO_GATE_ORIENTATION, State.ARUCO_GATE_APPROACH, State.ARUCO_GATE_PAST]
 AVOIDANCE_STATES = [State.WAYPOINT_NAVIGATION]
 
 class TagID(Enum):
@@ -121,6 +122,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('spin_speed', 30.0)
         self.declare_parameter('object_alpha_lpf', 0.2)
         self.declare_parameter('obj_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that object deteciton is enabled
+        self.declare_parameter('obj_navigate_delay_time', 2.0) # See description below
         self.declare_parameter('aruco_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that aruco deteciton is enabled
         self.declare_parameter('aruco_alpha_lpf', 0.5)
         self.declare_parameter('spin_step_size', 0.6981)
@@ -145,6 +147,7 @@ class AutonomyStateMachine(Node):
         self.spin_speed = self.get_parameter('spin_speed').get_parameter_value().double_value #angular speed during spin search
         self.obj_alpha_lpf = self.get_parameter('object_alpha_lpf').get_parameter_value().double_value #alpha value for the low pass filter for the angle and distance to an object after the rover starts seeing the object
         self.obj_enable_distance = self.get_parameter('obj_enable_distance').get_parameter_value().double_value # object detection gets enabled only when within a certain distance of the coordinate to conserve computational resources
+        self.obj_navigate_delay_time = self.get_parameter('obj_navigate_delay_time').get_parameter_value().double_value # This is the amount of time in seconds the rover waits after seeing a correct object and before navigating to it to take accurate measurements of the object position
         self.aruco_alpha_lpf = self.get_parameter('aruco_alpha_lpf').get_parameter_value().double_value #alpha value for the low pass filter for the angle and distance to an aruco tag after the rover starts seeing the aruco tag
         self.spin_step_size = self.get_parameter('spin_step_size').get_parameter_value().double_value # angle in radians that the rover turns in spin search, after which the rover stops, looks for a tag/object, and then continues spinning
         self.spin_delay_time = self.get_parameter('spin_delay_time').get_parameter_value().double_value # time that the rover waits after spinning in spin search looking for tags/objects
@@ -165,6 +168,7 @@ class AutonomyStateMachine(Node):
         self.obj_distance = None
         self.obj_angle = None
         self.correct_obj_found = False
+        self.obj_navigate_delay_start_time = None # Used in START_OBJECT_NAVIGATE state to stop the rover and take accurate measurements of the object position before starting object navigation
         self.ar_callback_see_time = 0
         self.known_objects = {}
         self.target_latitude = 0
@@ -782,7 +786,7 @@ class AutonomyStateMachine(Node):
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE
                 elif self.correct_obj_found:
-                    self.state = State.OBJECT_NAVIGATE
+                    self.state = State.START_OBJECT_NAVIGATE
 
 
             elif self.state == State.POINT_NAVIGATION:
@@ -809,7 +813,7 @@ class AutonomyStateMachine(Node):
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE
                 elif self.correct_obj_found:
-                    self.state = State.OBJECT_NAVIGATE
+                    self.state = State.START_OBJECT_NAVIGATE
 
             elif self.state == State.START_SPIN_SEARCH:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
@@ -828,7 +832,7 @@ class AutonomyStateMachine(Node):
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE
                 elif self.correct_obj_found:
-                    self.state = State.OBJECT_NAVIGATE
+                    self.state = State.START_OBJECT_NAVIGATE
 
 
             elif self.state == State.START_HEX_SEARCH:
@@ -851,7 +855,7 @@ class AutonomyStateMachine(Node):
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE
                 elif self.correct_obj_found:
-                    self.state = State.OBJECT_NAVIGATE
+                    self.state = State.START_OBJECT_NAVIGATE
 
             elif self.state == State.ARUCO_NAVIGATE:
                 self.set_speed(self.aruco_speed)
@@ -864,6 +868,17 @@ class AutonomyStateMachine(Node):
                     self.get_logger().info('Successfully navigated to the aruco tag!')
                     self.state = State.TASK_COMPLETE
                     self.drive_controller.stop()
+            
+            # This state exists to stop the rover and allow for accurate measurements of the object position before starting to navigate to it.
+            elif self.state == State.START_OBJECT_NAVIGATE:
+                self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.drive_controller.issue_drive_cmd(0, 0)
+
+                if self.obj_navigate_delay_start_time is None:
+                    self.obj_navigate_delay_start_time = time.time()
+                if (time.time() - self.obj_navigate_delay_start_time) > self.obj_navigate_delay_time:
+                    self.obj_navigate_delay_start_time = None
+                    self.state = State.OBJECT_NAVIGATE
 
             elif self.state == State.OBJECT_NAVIGATE:
                 self.set_speed(self.object_speed)
