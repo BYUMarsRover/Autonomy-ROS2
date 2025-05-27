@@ -120,7 +120,7 @@ class AutonomyStateMachine(Node):
         self.declare_parameter('aruco_speed', 0.3)
         self.declare_parameter('search_speed', 8.5)
         self.declare_parameter('spin_speed', 30.0)
-        self.declare_parameter('object_alpha_lpf', 0.2)
+        self.declare_parameter('object_alpha_lpf', 0.3)
         self.declare_parameter('obj_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that object deteciton is enabled
         self.declare_parameter('obj_navigate_delay_time', 2.0) # See description below
         self.declare_parameter('aruco_enable_distance', 30.0) #TODO: tune distance from GNSS coordinate that aruco deteciton is enabled
@@ -470,7 +470,7 @@ class AutonomyStateMachine(Node):
     
     def obj_detect_callback(self, msg: ObjectsStamped):
         timestamp = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9
-        is_recent = lambda obj_ts: timestamp - obj_ts <= 1.0
+        is_recent = lambda obj_ts: timestamp - obj_ts <= 1.5
 
         # Remove objects that haven't been seen in the last second
         self.known_objects = {k: v for k, v in self.known_objects.items() if is_recent(v[-1])}
@@ -494,8 +494,14 @@ class AutonomyStateMachine(Node):
             if obj.confidence < confidence_threshold:
                 continue
 
+            # For the ZED X is forward, Y is left, Z is up. Positive angle is counterclockwise from x-axis. All in meters.
+            obj_x = obj.position[0]
+            obj_y = obj.position[1]
             #If wrong label, or if x or y position values are None, skip
             if label != correct_label or obj.position[0] is None or obj.position[1] is None or obj.position[0] == 0.0:
+                continue
+
+            if math.isnan(obj_x) or math.isnan(obj_y):
                 continue
 
             if label in self.known_objects:
@@ -509,13 +515,6 @@ class AutonomyStateMachine(Node):
                     continue
 
                 # Low-pass filter the distance and heading information
-                # For the ZED X is forward, Y is left, Z is up. Positive angle is counterclockwise from x-axis. All in meters.
-                obj_x = obj.position[0]
-                obj_y = obj.position[1]
-
-                if math.isnan(obj_x) or math.isnan(obj_y):
-                    continue
-
                 obj_dist = np.sqrt((obj_y) ** 2 + (obj_x) ** 2)
                 obj_ang = -np.arctan(obj_y / obj_x)
                 if self.obj_distance is None:
@@ -529,7 +528,7 @@ class AutonomyStateMachine(Node):
                 if found:
                     self.get_logger().info("Found a duplicate object, taking last one")
                 else:
-                    self.get_logger().info(f"Found object for 15 frames: {obj.label}")
+                    self.get_logger().info(f"Found object for 5 frames: {obj.label}")
                     found = True
             else:
                 self.known_objects[label] = [timestamp]
