@@ -5,7 +5,7 @@
 #define MIN_SPEED 40
 #define POS_FLOAT_TOL 1e-5
 
-#define DEBUG_POS_CONTROLLER
+// #define DEBUG_POS_CONTROLLER
 
 namespace positional_controller {
     
