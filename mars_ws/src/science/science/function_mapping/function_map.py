@@ -152,26 +152,24 @@ class ScienceModuleFunctionList:
     
     @staticmethod
     def length_of_datatype(datatype):
-        match datatype:
-            case 'uint8_t':
-                result = 1
-            case 'int8_t':
-                result = 1
-            case 'bool':
-                result = 1
-            case 'uint16_t':
-                result = 2
-            case 'uint32_t':
-                result = 4
-            case 'float':
-                result = 4
-            case 'char_array':
-                result = ENTIRE_MESSAGE
-            case 'void':
-                result = 0
-            case _:
-                result = None
-        return result
+        if datatype == 'uint8_t':
+            return 1
+        elif datatype == 'int8_t':
+            return 1
+        elif datatype == 'bool':
+            return 1
+        elif datatype == 'uint16_t':
+            return 2
+        elif datatype == 'uint32_t':
+            return 4
+        elif datatype == 'float':
+            return 4
+        elif datatype == 'char_array':
+            return ENTIRE_MESSAGE
+        elif datatype == 'void':
+            return 0
+        else:
+            return None
     
     @staticmethod
     def get_command_word(func, flags=[False, False]):
@@ -212,26 +210,24 @@ class ScienceModuleFunctionList:
 
     @staticmethod
     def conversion_function(datatype):
-        match datatype:
-            case 'uint8_t':
-                result = lambda data, index=0: struct.unpack('<B', bytes(data[index:index+1]))[0]
-            case 'int8_t':
-                result = lambda data, index=0: struct.unpack('<b', bytes(data[index:index+1]))[0]
-            case 'uint16_t':
-                result = lambda data, index=0: struct.unpack('<H', bytes(data[index:index+2]))[0]
-            case 'uint32_t':
-                result = lambda data, index=0: struct.unpack('<I', bytes(data[index:index+4]))[0]
-            case 'float':
-                result = lambda data, index=0: struct.unpack('<f', bytes(data[index:index+4]))[0]
-            case 'bool':
-                result = lambda data, index=0: bool(struct.unpack('<B', bytes(data[index:index+1]))[0])
-            case 'char_array':
-                result = lambda data, index=0: ''.join(chr(b) for b in data[index:])
-            case 'void':
-                result = lambda data, index=0: None
-            case _:
-                raise Exception(f"Unknown data_type: {datatype}")
-        return result
+        if datatype == 'uint8_t':
+            return lambda data, index=0: struct.unpack('<B', bytes(data[index:index+1]))[0]
+        elif datatype == 'int8_t':
+            return lambda data, index=0: struct.unpack('<b', bytes(data[index:index+1]))[0]
+        elif datatype == 'uint16_t':
+            return lambda data, index=0: struct.unpack('<H', bytes(data[index:index+2]))[0]
+        elif datatype == 'uint32_t':
+            return lambda data, index=0: struct.unpack('<I', bytes(data[index:index+4]))[0]
+        elif datatype == 'float':
+            return lambda data, index=0: struct.unpack('<f', bytes(data[index:index+4]))[0]
+        elif datatype == 'bool':
+            return lambda data, index=0: bool(struct.unpack('<B', bytes(data[index:index+1]))[0])
+        elif datatype == 'char_array':
+            return lambda data, index=0: ''.join(chr(b) for b in data[index:])
+        elif datatype == 'void':
+            return lambda data, index=0: None
+        else:
+            raise Exception(f"Unknown data_type: {datatype}")
     
     @staticmethod
     def __split_into_packets(data, max_packet_size):

@@ -186,7 +186,7 @@ class science_rxtx_GUI(Node):
             with open(selected_file, 'rb') as file:
                 self.science_serial_tx_request_pub.publish(
                     ScienceSerialTxPacket(
-                        packet = file.encode('utf-8')
+                        packet = list(file.read())
                     )
                 )
     
