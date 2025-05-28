@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import subprocess
 import time
+import numpy as np
+from math import degrees, radians, sin, cos, atan2, sqrt, pi, asin
 
 import os
 import sys
@@ -262,6 +264,9 @@ class science_GUI(Node):
         self.qt.copy_notes_ambient_pushButton.clicked.connect(
             lambda: self.copy_measurement_service_to_notes(
                 self.measurement_ambient, units=' lux', decimals=1))
+        
+        # Setup the heading button
+        self.setup_heading_button(in_process=False)
 
     def do_calibrate_uv(self):
         uv_index, ok = QtWidgets.QInputDialog.getDouble(
@@ -511,12 +516,81 @@ class science_GUI(Node):
     def update_pos_vel_time(self, msg):
         altitude = f'{msg.gps.altitude} ft'
         heading = f'{msg.map_yaw}'
-        coordinates = f'{msg.gps.latitude}, {msg.gps.longitude}'
+        latitude = f"{abs(msg.gps.latitude):.6f}° {'N' if msg.gps.latitude >= 0 else 'S'}"
+        longitude = f"{abs(msg.gps.longitude):.6f}° {'E' if msg.gps.longitude >= 0 else 'W'}"
+        coordinates = f"{latitude}, {longitude}"
         # print(f'(lat, long, altitude, heading): ({coordinates}, {altitude}, {heading})')
 
+        # Update the last received GPS value
+        self.last_gps_value = msg.gps
+
         self.qt.lbl_altitude.setText(altitude)
-        self.qt.lbl_heading.setText(heading)
+        # self.qt.lbl_heading.setText(heading) # Should be tied into mapviz later, hot fix for now
         self.qt.lbl_coordinates.setText(coordinates)
+
+    def begin_heading_estimate(self):
+        self.start_heading_gps = self.last_gps_value
+
+        # Set the text of the button
+        self.setup_heading_button(in_process=True)  # Reset the button to begin state
+
+    def end_heading_estimate(self):
+        end_heading_gps = self.last_gps_value
+        heading_degrees = self.heading_between_lat_lon(self.start_heading_gps, end_heading_gps)[1]
+
+        cardinal_directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", 
+                       "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+        index = round(heading_degrees / 22.5) % 16
+        formatted_heading = f"{int(heading_degrees)}° {cardinal_directions[index]}"
+        self.qt.lbl_heading.setText(formatted_heading)
+
+        # Set the text of the button
+        self.setup_heading_button(in_process=False)  # Reset the button to begin state
+
+    def setup_heading_button(self, in_process=False):
+        """
+        Sets up the heading button to either begin or end the heading estimate process.
+        :param in_process: If True, sets the button to end the heading estimate; otherwise, to begin it.
+        """
+
+        try:
+            self.qt.heading_pushButton.clicked.disconnect()  # Disconnect the current click handler
+        except TypeError:
+            pass  # No signal was connected, so nothing to disconnect
+        
+        if in_process:
+            # Set the text of the button
+            self.qt.heading_pushButton.setText("Finish Heading Estimate")  
+            self.qt.heading_pushButton.clicked.connect(self.end_heading_estimate)  # Connect to the new handler
+        else:
+            # Set the text of the button
+            self.qt.heading_pushButton.setText("Begin Heading Estimate") 
+            self.qt.heading_pushButton.clicked.connect(self.begin_heading_estimate)  # Connect to the new handler
+
+    def heading_between_lat_lon(self, point1, point2):
+        """
+        Returns the heading in radians and degrees between two GPS Coordinates
+        :param point1: The origin GPS Coordinate in standard format
+        :param point2: The end GPS Coordinate in standard format
+        :return: The heading between the GPS Coordinates in radians and degrees
+        """
+        lat1 = radians(point1.latitude)
+        lon1 = radians(point1.longitude)
+        lat2 = radians(point2.latitude)
+        lon2 = radians(point2.longitude)
+
+        d_lon = lon2 - lon1
+        x = sin(d_lon) * cos(lat2)
+        y = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(d_lon)
+
+        heading_radians = atan2(x, y)
+        heading_degrees = degrees(heading_radians)
+        if heading_degrees < 0:
+            heading_degrees += 360
+
+        return heading_radians, heading_degrees
+
+
 
     def update_current_tool(self, msg):
         if msg.data == True: # Using Probe
