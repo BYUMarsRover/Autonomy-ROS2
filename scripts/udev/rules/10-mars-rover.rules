@@ -80,3 +80,6 @@ SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}==
 
 ## Second Science Nano ##
 SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{serial}=="A5069RR4", SYMLINK+="rover/scienceArduinoNano"
+
+## Third Science Nano ##
+SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{serial}=="FTB6SPL3", SYMLINK+="rover/scienceArduinoNano"
