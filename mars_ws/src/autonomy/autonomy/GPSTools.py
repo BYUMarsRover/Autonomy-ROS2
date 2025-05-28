@@ -11,10 +11,14 @@ def wrap(chi_1, chi_2):
 
 
 class GPSCoordinate:
-    def __init__(self, lat, lon, alt = 0):
+    def __init__(self, lat, lon, alt = 0, timestamp=None):
         self.lat = round(lat, 7)
         self.lon = round(lon, 7)
         self.alt = round(alt, 7)
+
+        # TODO Check this code
+        if timestamp is not None:
+            self.timestamp = timestamp
 
     def __eq__(self, obj):
         return isinstance(obj, GPSCoordinate) and obj.lat == self.lat and obj.lon == self.lon and obj.alt == self.alt
@@ -24,6 +28,22 @@ class GPSCoordinate:
 
 class GPSTools:
     R = 6369345.0 #Radius of the Earth
+    
+    @staticmethod
+    def average_GPS_coords(coords):
+        """
+        Returns the average GPSCoordinate from a list of GPSCoordinates.
+        :param coords: List of GPSCoordinate objects
+        :return: Average GPSCoordinate
+        """
+        if not coords:
+            return None
+        
+        avg_lat = sum(coord.lat for coord in coords) / len(coords)
+        avg_lon = sum(coord.lon for coord in coords) / len(coords)
+        avg_alt = sum(coord.alt for coord in coords) / len(coords)
+
+        return GPSCoordinate(avg_lat, avg_lon, avg_alt)
 
     @staticmethod
     def generate_side_waypoint(curr_pose, heading_rad, direction, offset_distance=5.0, offset_angle=0.35):
