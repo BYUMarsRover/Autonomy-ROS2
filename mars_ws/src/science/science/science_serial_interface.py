@@ -153,16 +153,19 @@ class ScienceSerialInterface(Node):
 
     def send_file_contents(self, file_path):
         # Read the raw bytes of the file
-        with open(file_path, 'rb') as file:
-            contents = file.read()
+        try:
+            with open(file_path, 'rb') as file:
+                contents = file.read()
 
-        # Send the raw bytes to the Arduino
-        self.write_serial(contents)
+            # Send the raw bytes to the Arduino
+            self.write_serial(contents)
 
-        # Publish the raw bytes to the ROS topic
-        msg = UInt8MultiArray()
-        msg.data = list(contents)
-        self.pub_science_serial_tx_notification.publish(msg)
+            # Publish the raw bytes to the ROS topic
+            msg = UInt8MultiArray()
+            msg.data = list(contents)
+            self.pub_science_serial_tx_notification.publish(msg)
+        except:
+            self.get_logger().error(f"Failed to read file {file_path}. Please ensure the file exists and is accessible to the science_serial_interface node.")
 
     # Publishing for RXTX Monitoring
 

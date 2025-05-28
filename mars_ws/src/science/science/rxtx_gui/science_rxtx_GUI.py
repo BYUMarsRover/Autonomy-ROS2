@@ -178,7 +178,17 @@ class science_rxtx_GUI(Node):
             msg_box.exec_()
 
             # Call the function to update the routines with the selected file
-            self.pub_file_contents.publish(String(data=selected_file))
+
+            # This method won't work if the file is not also on the rover
+            # self.pub_file_contents.publish(String(data=selected_file))
+
+            # Just send the file contents
+            with open(selected_file, 'rb') as file:
+                self.science_serial_tx_request_pub.publish(
+                    ScienceSerialTxPacket(
+                        packet = file.encode('utf-8')
+                    )
+                )
     
     
 def main(args=None):
