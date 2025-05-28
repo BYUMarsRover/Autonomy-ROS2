@@ -875,6 +875,8 @@ class AutonomyStateMachine(Node):
 
                 if self.obj_navigate_delay_start_time is None:
                     self.obj_navigate_delay_start_time = time.time()
+
+                self.get_logger().info(f'Waiting in start object navigate; time: {time.time() - self.obj_navigate_delay_start_time}')
                 if (time.time() - self.obj_navigate_delay_start_time) > self.obj_navigate_delay_time:
                     self.obj_navigate_delay_start_time = None
                     self.state = State.OBJECT_NAVIGATE
