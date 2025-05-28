@@ -477,8 +477,12 @@ class AutonomyStateMachine(Node):
         # Remove objects that haven't been seen in the last second
         self.known_objects = {k: v for k, v in self.known_objects.items() if is_recent(v[-1])}
 
+        # This assumes object detection publishes an empty list to keep running this logic. So object detection must be enabled
+        if len(self.known_objects) == 0:
+            self.correct_obj_found = False
+
         # If we are not in object navigate or start object navigate then clear old points:
-        if (self.state != State.START_OBJECT_NAVIGATE) or (self.state != State.OBJECT_NAVIGATE):
+        if (self.state != State.START_OBJECT_NAVIGATE) and (self.state != State.OBJECT_NAVIGATE):
             self.current_object_points = [coord for coord in self.current_object_points if is_recent(coord.timestamp)]
 
         if self.tag_id == TagID.BOTTLE:
@@ -907,9 +911,9 @@ class AutonomyStateMachine(Node):
                 if self.correct_obj_found:
                     self.drive_controller.issue_aruco_autopilot_cmd(self.obj_angle, self.obj_distance)
                 else: #if we have not seen the correct object in the last second, navigate to the last known position
+                    self.get_logger().warn('Navigating to last known object position')
                     object_gps_point = GPSTools.average_GPS_coords(self.current_object_points)
                     self.drive_controller.issue_path_cmd(object_gps_point.lat, object_gps_point.lon)
-                    self.get_logger().warn('Navigating to last known object position')
                 if self.obj_distance < self.obj_dist_tolerance:
                     self.get_logger().info('Successfully navigated to the object!')
                     self.state = State.TASK_COMPLETE
