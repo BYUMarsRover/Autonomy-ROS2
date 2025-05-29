@@ -13,6 +13,11 @@
   longitude: -110.791932
   altitude: 1375.0
   heading: 0.0
+- name: hanksville_camp
+  latitude: 38.3753792
+  longitude: -110.7087849
+  altitude: 1375.0
+  heading: 0.0
 - name: gravel_pit
   latitude: 40.322243
   longitude: -111.644278
