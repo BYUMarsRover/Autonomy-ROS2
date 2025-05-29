@@ -37,3 +37,7 @@ run_eeprom_routine_1.pk
 switched_routines.pk
 run_eeprom_routine_0.pk
 config_upload.pk
+eeprom_urc2025.bin
+eeprom_upload.bin
+config_upload_packets.bin
+calibration_upload_packets.bin

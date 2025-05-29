@@ -8,7 +8,7 @@ color tabBackground = color(200);
 color moduleResponseBackground = color(100);
 
 Serial myPort;
-int baud_rate = 115200;
+int baud_rate = 9600;
 
 ConsoleWindow serialTx, serialRx;
 ModuleResponse moduleResponse;

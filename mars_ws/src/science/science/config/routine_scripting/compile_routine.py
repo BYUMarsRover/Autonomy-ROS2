@@ -79,6 +79,7 @@ def build_routine_array_binary(routines_folder, dictionary_file, table_start_add
     # Iterate through all .routine files in the folder
     for filename in sorted(os.listdir(routines_folder)):
         if filename.endswith(".routine"):
+            print(f'Processing script {filename}...')
             routine_file = os.path.join(routines_folder, filename)
             routine_binary = build_routine_binary(routine_file, dictionary_file)
             routine_binary_streams.append(routine_binary)
@@ -118,22 +119,18 @@ if __name__ == "__main__":
 
     routine_folder_path = "routine_scripts"
     dictionary_path = "dictionary.csv"
-    mem_map_path = "../science_module_arduino/src/mem_manager/mem_map.h"
 
     # Ensure paths are relative to the script's directory
     base_dir = os.path.dirname(__file__)
     routine_folder_path = os.path.join(base_dir, routine_folder_path)
     dictionary_path = os.path.join(base_dir, dictionary_path)
-    mem_map_path = os.path.join(base_dir, mem_map_path)
 
-    # Get the location of the routine table from the memory map
-    with open(mem_map_path, 'r') as mem_map_file:
-        for line in mem_map_file:
-            if "EEPROM_ROUTINE_LOOKUP_TABLE_SIZE_ADDR" in line:
-                EEPROM_ROUTINE_START_ADDR = int(line.split()[2], 16)
-                break
-        else:
-            raise ValueError("EEPROM_ROUTINE_LOOKUP_TABLE_SIZE_ADDR not found in memory map.")
+    # Read from memory map
+    try:
+        import science.science.config.mem_map_eval.just as just
+        EEPROM_ROUTINE_START_ADDR = just.EEPROM_ROUTINE_LOOKUP_TABLE_SIZE_ADDR
+    except:
+        raise ValueError("EEPROM_ROUTINE_LOOKUP_TABLE_SIZE_ADDR not found in memory map.")
 
     # Substitute tokens and print the result
     eeprom_data = build_routine_array_binary(routine_folder_path, dictionary_path, EEPROM_ROUTINE_START_ADDR)

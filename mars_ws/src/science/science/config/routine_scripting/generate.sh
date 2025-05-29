@@ -9,19 +9,26 @@ if [[ ! -f "$SCRIPT_DIR/compile_routine.py" ]]; then
     exit 1
 fi
 
-# Define the root of the Autonomy-ROS2 repository
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../../../" && pwd)"
+# Find the path to 'mars_ws/src' by searching upwards from SCRIPT_DIR
+SEARCH_DIR="$SCRIPT_DIR"
+while [[ "$SEARCH_DIR" != "/" && ! -d "$SEARCH_DIR/mars_ws/src" ]]; do
+    SEARCH_DIR="$(dirname "$SEARCH_DIR")"
+done
+
+if [[ ! -d "$SEARCH_DIR/mars_ws/src" ]]; then
+    echo "Error: Could not find 'mars_ws/src' in any parent directory of $SCRIPT_DIR."
+    exit 1
+fi
 
 # Define the directory to add to PYTHONPATH
-TARGET_PATH="$REPO_ROOT/src"
+TARGET_PATH="$SEARCH_DIR/mars_ws/src"
 
 # Check if the directory is already in PYTHONPATH
-if [[ ":$PYTHONPATH:" != *":$TARGET_PATH:"* ]]; then
+if [[ -z "$PYTHONPATH" ]]; then
+    export PYTHONPATH="$TARGET_PATH"
+elif [[ ":$PYTHONPATH:" != *":$TARGET_PATH:"* ]]; then
     # Append the directory to PYTHONPATH
     export PYTHONPATH="$TARGET_PATH:$PYTHONPATH"
-    echo "Added $TARGET_PATH to PYTHONPATH."
-else
-    echo "$TARGET_PATH is already in PYTHONPATH."
 fi
 
 # Run the Python script with remaining command-line arguments

@@ -62,7 +62,7 @@ SECONDARY_CACHE_ACTUATOR_INDEX = 4
 DRILL_ACTUATOR_INDEX = 5
 
 SENSOR_ERR_CODE = -1
-BAUD_RATE = 115200
+BAUD_RATE = 9600
 
 class ScienceSerialInterface(Node):
     """Bridge ROS messaging and science arduino"""

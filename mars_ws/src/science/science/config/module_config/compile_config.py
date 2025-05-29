@@ -65,25 +65,21 @@ if __name__ == "__main__":
 
     config_file_path = "module.config"
     field_file_path = "fields.csv"
-    mem_map_path = "../science_module_arduino/src/mem_manager/mem_map.h"
 
     # Ensure paths are relative to the script's directory
     base_dir = os.path.dirname(__file__)
     config_file_path = os.path.join(base_dir, config_file_path)
     dictionary_path = os.path.join(base_dir, field_file_path)
-    mem_map_path = os.path.join(base_dir, mem_map_path)
 
-    # Get the location of the config table from the memory map
-    with open(mem_map_path, 'r') as mem_map_file:
-        for line in mem_map_file:
-            if "EEPROM_CONFIG_START_ADDR" in line:
-                EEPROM_CONFIG_START_ADDR = int(line.split()[2], 16)
-                break
-        else:
-            raise ValueError("EEPROM_CONFIG_START_ADDR not found in memory map.")
+    # Read from memory map
+    try:
+        import science.science.config.mem_map_eval.just as just
+        EEPROM_CONFIG_START_ADDR = just.EEPROM_CONFIG_START_ADDR
+    except:
+        raise ValueError("EEPROM_CONFIG_START_ADDR not found in memory map.")
 
     # Substitute tokens and print the result
-    eeprom_data = build_config_binary(config_file_path, field_file_path)
+    eeprom_data = build_config_binary(config_file_path, dictionary_path)
     packet_stream = SMFL.packetize_eeprom_write(eeprom_data, EEPROM_CONFIG_START_ADDR, acknowledge=True)
 
     # Save the binary content to a file
