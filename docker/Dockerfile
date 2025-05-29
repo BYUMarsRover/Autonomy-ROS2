@@ -163,10 +163,16 @@ USER $NAME
 
 # Install tools for terrain maps - Nelson Durrant, Apr 2025
 # Used for loading in and parsing GeoTIFF elevation maps
+# PCL used for hazard avoidance in cpp - Braden Meyers May 2025
 USER root
 RUN apt update && apt install -y \
     libgdal-dev \
-    python3-rasterio
+    python3-rasterio \
+    libpcl-dev \
+    ros-humble-pcl-ros \
+    ros-humble-pcl-conversions \
+    ros-humble-visualization-msgs
+
 USER $NAME
 
 # Install AStar planning package - Nelson Durrant, Apr 2025

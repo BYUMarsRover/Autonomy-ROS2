@@ -4,15 +4,16 @@
     path_waypoint_distance_tolerance: 4.0
     distance_tolerance: 1.0
     obj_distance_tolerance: 1.5 #TODO: Tune
-    abort_distance_tolerance: 5.0
+    abort_distance_tolerance: 7.0
     aruco_distance_tolerance: 2.0
     hex_search_radius: 10.0
     navigate_speed: 10.0
     object_speed: 3.0
     aruco_speed: 3.0
     spin_speed: 0.5
-    object_alpha_lpf: 0.5
+    object_alpha_lpf: 0.3
     obj_enable_distance: 30.0
+    obj_navigate_delay_time: 2.0
     aruco_enable_distance: 30.0
     aruco_alpha_lpf: 0.5
     spin_step_size: 0.6981
@@ -22,7 +23,7 @@
     hex_seach_angle_difference: 50.0
 
     waypoint_distance: 10.0
-    elevation_cost: 100.0 # How much elevation affects the cost of the computed AStar path
+    elevation_cost: 200.0 # How much elevation affects the cost of the computed AStar path
     # The below distance in meters creates angle with an 1 meter AStar step on the xy plane
     # For example, if you set the distance to 0.7, the maximum traversable angle is tan^-1(0.7/1.0) = 35 degrees
     elevation_limit: 0.35 # The maximum allowable elevation difference in the AStar planner to be considered traversable
