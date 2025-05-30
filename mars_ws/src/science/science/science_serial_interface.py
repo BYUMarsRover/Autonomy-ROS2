@@ -111,7 +111,7 @@ class ScienceSerialInterface(Node):
                 self.get_logger().error(f"Error: Could not connect to {path}")
                 self.get_logger().error(str(e))
         # Abort if no connection is made
-        if serial.arduino is None:
+        if self.arduino is None:
             self.get_logger().error("Error: No serial connection established")
 
     def connect_serial(self, device_path):
