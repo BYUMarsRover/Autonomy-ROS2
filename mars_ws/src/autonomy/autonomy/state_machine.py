@@ -438,7 +438,6 @@ class AutonomyStateMachine(Node):
                     self.get_logger().warn(f"No clear path on either side, Need to spin {direction.capitalize()}.")
                 
                 # TODO check and see if anything is new since the last time we offset
-                # TODO if we dont have 
                 # if distance to wp is > 7.0 
 
                 if GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point) < 7.0:
@@ -839,6 +838,7 @@ class AutonomyStateMachine(Node):
 
             elif self.state == State.START_SPIN_SEARCH:
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
+                self.set_speed(10.0)
                 self.drive_controller.issue_drive_cmd(0.0, self.spin_speed)
                 self.spin_stop_time = time.time()
                 self.state = State.SPIN_SEARCH
