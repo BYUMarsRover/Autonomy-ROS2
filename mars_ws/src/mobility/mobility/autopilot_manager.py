@@ -117,13 +117,13 @@ class AutopilotManager(Node):
             # Update the time since we got a unique distance to target
             self.distance_to_target_timepoint = time.time()
 
-        if time.time() - self.distance_to_target_timepoint > self.max_time_between_gps_messages:
-            self.rover_vel_cmd.u_cmd = 0.0
-            self.rover_vel_cmd.omega_cmd = 0.0
-            self.rover_vel_cmd.course_heading_error = 0.0
-            self.publish_rover_vel_cmd()
-            self.get_logger().error('Oh no, we lost GPS, sending 0.0 linear and angular velocity commands!', throttle_duration_sec=1.0)
-            return
+        # if time.time() - self.distance_to_target_timepoint > self.max_time_between_gps_messages:
+        #     self.rover_vel_cmd.u_cmd = 0.0
+        #     self.rover_vel_cmd.omega_cmd = 0.0
+        #     self.rover_vel_cmd.course_heading_error = 0.0
+        #     self.publish_rover_vel_cmd()
+        #     self.get_logger().error('Oh no, we lost GPS, sending 0.0 linear and angular velocity commands!', throttle_duration_sec=1.0)
+        #     return
 
         # self.des_heading = wrap(msg.course_angle + self.heading_plus, 0)
         if self.obstacle_found:
