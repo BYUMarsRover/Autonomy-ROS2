@@ -171,6 +171,8 @@ class AutonomyStateMachine(Node):
         self.obj_navigate_delay_start_time = None # Used in START_OBJECT_NAVIGATE state to stop the rover and take accurate measurements of the object position before starting object navigation
         self.ar_callback_see_time = 0
         self.known_objects = {}
+        # TODO: Make sure we clear this
+        self.current_object_points = [] # list of GPS coordinates of the object points seen by the rover
         self.target_latitude = 0
         self.target_longitude = 0
         self.target_point = GPSCoordinate(self.target_latitude, self.target_longitude, 0)
@@ -475,6 +477,14 @@ class AutonomyStateMachine(Node):
         # Remove objects that haven't been seen in the last second
         self.known_objects = {k: v for k, v in self.known_objects.items() if is_recent(v[-1])}
 
+        # This assumes object detection publishes an empty list to keep running this logic. So object detection must be enabled
+        if len(self.known_objects) == 0:
+            self.correct_obj_found = False
+
+        # If we are not in object navigate or start object navigate then clear old points:
+        if (self.state != State.START_OBJECT_NAVIGATE) and (self.state != State.OBJECT_NAVIGATE):
+            self.current_object_points = [coord for coord in self.current_object_points if is_recent(coord.timestamp)]
+
         if self.tag_id == TagID.BOTTLE:
             correct_label = 1
             confidence_threshold = 0.8
@@ -504,22 +514,29 @@ class AutonomyStateMachine(Node):
             if math.isnan(obj_x) or math.isnan(obj_y):
                 continue
 
+            obj_dist = np.sqrt((obj_y) ** 2 + (obj_x) ** 2)
+            obj_ang = -np.arctan(obj_y / obj_x)
+
             if label in self.known_objects:
                 if is_recent(self.known_objects[label][-1]):
                     self.known_objects[label].append(timestamp)
+
+                    current_object_point = GPSTools.heading_distance_to_lat_lon(
+                        self.current_point, 
+                        np.rad2deg(self.curr_heading + obj_ang), 
+                        obj_dist
+                    )
+                    current_object_point.timestamp = timestamp
+
+                    self.current_object_points.append(current_object_point)
 
                 if len(self.known_objects[label]) < 5:
                     debug_msg = String()
                     debug_msg.data = f"Num Detections: {len(self.known_objects[label])}"
                     self.debug_pub.publish(debug_msg)
-
-                    self.get_logger().warn(f'Object {label} seen {len(self.known_objects[label])} times')
-
                     continue
 
                 # Low-pass filter the distance and heading information
-                obj_dist = np.sqrt((obj_y) ** 2 + (obj_x) ** 2)
-                obj_ang = -np.arctan(obj_y / obj_x)
                 if self.obj_distance is None:
                     self.obj_distance = obj_dist
                     self.obj_angle = obj_ang
@@ -703,6 +720,7 @@ class AutonomyStateMachine(Node):
         
         self.clear_path_variables()
         self.known_objects = {}
+        self.current_object_points = [] # list of GPS coordinates of the object points seen by the rover
         self.spiral_searching = False
 
     def state_loop(self):
@@ -882,11 +900,7 @@ class AutonomyStateMachine(Node):
 
                 if self.obj_navigate_delay_start_time is None:
                     self.obj_navigate_delay_start_time = time.time()
-                    
-                    self.get_logger().warn('Just entered START_OBJECT_NAVIGATE state')
 
-
-                self.get_logger().info(f'Waiting in start object navigate; time: {time.time() - self.obj_navigate_delay_start_time}')
                 if (time.time() - self.obj_navigate_delay_start_time) > self.obj_navigate_delay_time:
                     self.obj_navigate_delay_start_time = None
                     self.state = State.OBJECT_NAVIGATE
@@ -896,6 +910,10 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 if self.correct_obj_found:
                     self.drive_controller.issue_aruco_autopilot_cmd(self.obj_angle, self.obj_distance)
+                else: #if we have not seen the correct object in the last second, navigate to the last known position
+                    self.get_logger().warn('Navigating to last known object position')
+                    object_gps_point = GPSTools.average_GPS_coords(self.current_object_points)
+                    self.drive_controller.issue_path_cmd(object_gps_point.lat, object_gps_point.lon)
                 if self.obj_distance < self.obj_dist_tolerance:
                     self.get_logger().info('Successfully navigated to the object!')
                     self.state = State.TASK_COMPLETE
