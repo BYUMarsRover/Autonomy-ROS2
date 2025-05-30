@@ -126,7 +126,7 @@ class ScienceRequestManager(Node):
     
         def forward(self, message):
             # Call the sucess callback
-            print(f"Observer for {self.func_name} calling back...")
+            # print(f"Observer for {self.func_name} calling back...")
             self.callback(message)
 
         def timeout(self):

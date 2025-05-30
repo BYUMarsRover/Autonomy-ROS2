@@ -188,7 +188,11 @@ class ScienceSerialInterface(Node):
             self.write_serial(ScienceSerialInterface.author_packet(msg, self.override_bit))
 
     def write_serial(self, packet):
-        self.arduino.write(struct.pack('B' * len(packet), *packet))
+        try:
+            self.arduino.write(struct.pack('B' * len(packet), *packet))
+        except Exception as e:
+            self.get_logger().error(f"Error writing to serial: {e}")
+            self.establish_serial_connection()
         self.publish_serial_tx_notification(packet)
 
     @staticmethod
@@ -235,47 +239,50 @@ class ScienceSerialInterface(Node):
 
     def read_serial(self):
         # reads data off the buffer and trys to identify response packets
+        try:
+            if self.arduino.in_waiting > 0:
+                # Attempt a read if there is something in the buffer
+                # print(f"Arduino Buffer contains {self.arduino.in_waiting} bytes")
 
-        if self.arduino.in_waiting > 0:
-            # Attempt a read if there is something in the buffer
-            # print(f"Arduino Buffer contains {self.arduino.in_waiting} bytes")
-
-            buffer_contents = self.arduino.read_all()
-            self.publish_serial_rx_notification(buffer_contents)
-            for byte in buffer_contents:
-                # Load all bytes into the queue
-                if len(self.read_queue) == 0:
-                    # Nothing is in the queue, look for the header
-                    if byte == RESPONSE_PACKET_HEADER:
-                        # Found it, put it in the queue
-                        self.read_queue.append(byte)
+                buffer_contents = self.arduino.read_all()
+                self.publish_serial_rx_notification(buffer_contents)
+                for byte in buffer_contents:
+                    # Load all bytes into the queue
+                    if len(self.read_queue) == 0:
+                        # Nothing is in the queue, look for the header
+                        if byte == RESPONSE_PACKET_HEADER:
+                            # Found it, put it in the queue
+                            self.read_queue.append(byte)
+                        else:
+                            # Not the header, move on to the next byte
+                            continue
                     else:
-                        # Not the header, move on to the next byte
-                        continue
-                else:
-                    # The queue is already considering a possible packet, add this byte to the queue
-                    self.read_queue.append(byte)
+                        # The queue is already considering a possible packet, add this byte to the queue
+                        self.read_queue.append(byte)
 
-            # Begin searching the queue for packets
-            packet_formatting = (0,0)
-            while not None in (packet_formatting := self.contains_possible_packet(self.read_queue)):
-                # The queue has a possible packet to investigate
+                # Begin searching the queue for packets
+                packet_formatting = (0,0)
+                while not None in (packet_formatting := self.contains_possible_packet(self.read_queue)):
+                    # The queue has a possible packet to investigate
 
-                echo_length = packet_formatting[0]
-                error_length = packet_formatting[1]
+                    echo_length = packet_formatting[0]
+                    error_length = packet_formatting[1]
 
-                if self.read_queue[RESPONSE_FOOTER_BASE_INDEX + echo_length + error_length] == RESPONSE_PACKET_FOOTER:
-                    # This is a valid packet
-                    self.process_packet(self.read_queue[0:(RESPONSE_FOOTER_BASE_INDEX + echo_length + error_length) + 1], packet_formatting)
-                    self.read_queue = self.read_queue[(RESPONSE_FOOTER_BASE_INDEX + echo_length + error_length) + 1:]
+                    if self.read_queue[RESPONSE_FOOTER_BASE_INDEX + echo_length + error_length] == RESPONSE_PACKET_FOOTER:
+                        # This is a valid packet
+                        self.process_packet(self.read_queue[0:(RESPONSE_FOOTER_BASE_INDEX + echo_length + error_length) + 1], packet_formatting)
+                        self.read_queue = self.read_queue[(RESPONSE_FOOTER_BASE_INDEX + echo_length + error_length) + 1:]
 
-                else:
-                    # Bad packet, pop bytes until a new header byte is reached
-                    # print("Bad packet")
-                    while True:
-                        self.read_queue = self.read_queue[1:]
-                        if len(self.read_queue) == 0 or self.read_queue[0] == RESPONSE_PACKET_HEADER:
-                            break
+                    else:
+                        # Bad packet, pop bytes until a new header byte is reached
+                        # print("Bad packet")
+                        while True:
+                            self.read_queue = self.read_queue[1:]
+                            if len(self.read_queue) == 0 or self.read_queue[0] == RESPONSE_PACKET_HEADER:
+                                break
+        except Exception as e:
+            self.get_logger().error(f"Error reading from serial: {e}")
+            self.establish_serial_connection()
 
     def process_packet(self, response_packet, formatting_data):
         # Process a valid response packet
