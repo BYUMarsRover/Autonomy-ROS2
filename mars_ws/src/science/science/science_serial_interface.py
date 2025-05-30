@@ -282,7 +282,6 @@ class ScienceSerialInterface(Node):
                                 break
         except Exception as e:
             self.get_logger().error(f"Error reading from serial: {e}")
-            self.establish_serial_connection()
 
     def process_packet(self, response_packet, formatting_data):
         # Process a valid response packet
