@@ -102,7 +102,7 @@ class ScienceSerialInterface(Node):
         self.override_bit = False
 
     def establish_serial_connection(self, msg: Empty = None):
-        for path in ["/dev/rover/scienceArduinoNano", "/dev/ttyUSB0"]:
+        for path in ["/dev/rover/scienceArduinoNano"]:
             try:
                 self.connect_serial(path)
                 self.get_logger().info(f"Connected to {path}")
@@ -113,15 +113,12 @@ class ScienceSerialInterface(Node):
         # Abort if no connection is made
         if serial.arduino is None:
             self.get_logger().error("Error: No serial connection established")
-            self.get_logger().error("Exiting...")
-            rclpy.shutdown()
-            exit(0)
 
     def connect_serial(self, device_path):
         self.get_logger().info("Resetting serial connection...")
         if self.arduino is not None:
             self.arduino.close()
-        self.arduino = serial.Serial(device_path, BAUD_RATE)
+        self.arduino = serial.Serial(device_path, BAUD_RATE, dsrdtr=True)
         self.get_logger().info("Serial port initialized")
 
     # Callbacks for Subscribers
