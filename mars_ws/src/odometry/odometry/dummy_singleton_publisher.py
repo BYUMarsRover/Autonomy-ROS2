@@ -19,8 +19,8 @@ HANK_LONG=-110.791932
 HANK_AUT_2024_COMP_LAT=38.423216
 HANK_AUT_2024_COMP_LONG=-110.786483
 
-HANK_AUT_2025_COMP_LAT=38.406441
-HANK_AUT_2025_COMP_LONG=-110.791932
+HANK_AUT_2025_COMP_LAT=38.420347
+HANK_AUT_2025_COMP_LONG=-110.782790
 
 GRAVEL_LAT=40.322415
 GRAVEL_LONG=-111.64317
@@ -138,8 +138,8 @@ class DummySingletonPublisher(Node):
         elif self.map_yaw > 180:
             self.map_yaw -=360
 
-        self.gps.latitude = self.latitude + (np.random.rand() - 1)*0.000005
-        self.gps.longitude = self.longitude + (np.random.rand() - 1)*0.000005
+        self.gps.latitude = self.latitude + (np.random.rand() - 1)*0.0000005
+        self.gps.longitude = self.longitude + (np.random.rand() - 1)*0.0000005
         self.filter_gps.latitude = self.latitude
         self.filter_gps.longitude = self.longitude
 
@@ -163,7 +163,7 @@ class DummySingletonPublisher(Node):
         if msg.left_front_dir == 0:
             lv = -lv
 
-        C_vel = 0.3
+        C_vel = 0.1
         v = (lv + rv)**2*C_vel
 
         dlat, dlon = self.compute_delta_lat_lon(self.latitude, self.longitude, v, self.map_yaw)
