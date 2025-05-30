@@ -401,6 +401,7 @@ class AutonomyStateMachine(Node):
         #     self.drive_controller.issue_path_cmd(self.path_target_point.lat, self.path_target_point.lon)
         #     self.spin_start_time = None
         
+        # If hazard avoidance not enabled or there is no direction info to use then don't avoid anything
         if not self.hazard_enabled or "direction" not in self.hazard_info:
             self.hazard_info = {}
             self.get_logger().info("Hazard avoidance not enabled or no direction info", throttle_duration_sec=5.0)
@@ -439,21 +440,30 @@ class AutonomyStateMachine(Node):
                 # TODO check and see if anything is new since the last time we offset
                 # TODO if we dont have 
                 # if distance to wp is > 7.0 
-                if GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point) > 7.0: # TODO parameterize
-                    prev_wp = self.path_target_point
-                    geopose = GeoPose()
-                    geopose.position.latitude = prev_wp.lat
-                    geopose.position.longitude = prev_wp.lon
-                    self.path.appendleft(geopose)
+
+                if GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point) < 7.0:
+                    self.path.popleft()
+                    
+            
+
+
+                # if GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point) > 7.0: # TODO parameterize
+                #     prev_wp = self.path_target_point
+                #     geopose = GeoPose()
+                #     geopose.position.latitude = prev_wp.lat
+                #     geopose.position.longitude = prev_wp.lon
+                #     self.path.appendleft(geopose)
                     # then save the last waypoint 
-                    # Add it back into the deque self.path which is a dqueue of geopose
-                    # lat = geopose.position.latitude
-                    # lon = geopose.position.longitude
+                    # Add it back into the deque self.path which is a deque of geopose
 
                 offset_wp = GPSTools.generate_side_waypoint(self.current_point, curr_heading, direction, offset_distance=6.5, offset_angle=0.8)
                 self.drive_controller.issue_path_cmd(offset_wp.lat, offset_wp.lon)
                 self.path_target_point = offset_wp
-                # TODO: 
+                geopose = latLonYaw2Geopose(offset_wp.lat, offset_wp.lon)
+                # TODO create a geopose
+                self.path.appendleft(geopose)
+
+                # TODO: this could send the state to Start Point navigation if we want but we haven't figured out speed
                 self.get_logger().info(f"Offset waypoint to: {offset_wp}, direction: {direction}, heading: {curr_heading}, ")
             # else: 
             #     # If neither side is open then we need to spin to find a way out
@@ -465,7 +475,9 @@ class AutonomyStateMachine(Node):
             #         self.drive_controller.issue_drive_cmd(0.0, -self.spin_speed)
             #     else:
             #         self.drive_controller.issue_drive_cmd(0.0, self.spin_speed)
-            self.hazard_info = {}
+        
+        # Clearing the hazard info after processing it. 
+        self.hazard_info = {}
                 
     
     def obj_detect_callback(self, msg: ObjectsStamped):
@@ -765,7 +777,9 @@ class AutonomyStateMachine(Node):
                 self.target_point = GPSCoordinate(self.target_latitude, self.target_longitude, 0)
             
                 if self.planner.use_planned_path and self.path:
-                    geopose = self.path.popleft()
+                    # geopose = self.path.popleft()
+
+                    geopose = self.path[0]
                     lat = geopose.position.latitude
                     lon = geopose.position.longitude
                     self.path_target_point = GPSCoordinate(lat, lon, 0)
@@ -781,13 +795,15 @@ class AutonomyStateMachine(Node):
                 self.nav_state.navigation_state = NavState.AUTONOMOUS_STATE
                 # TODO make this distance tolerance larger and then make a precise GPS navigation state
                 
+                self.hazard_avoidance(self.curr_heading, self.path_target_point)
+
                 # This UPDATES DIST TO Final TARGET FOR OBJECT/ARUCO DETECTIONS
                 self.dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.target_point)
                 path_dist_to_target = GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point)
                 
-                self.hazard_avoidance(self.curr_heading, self.path_target_point)
                 
                 if path_dist_to_target < self.path_waypoint_dist_tolerance:
+                    self.path.popleft()
                     self.state = State.START_POINT_NAVIGATION
                 if self.correct_aruco_tag_found:
                     self.state = State.ARUCO_NAVIGATE
