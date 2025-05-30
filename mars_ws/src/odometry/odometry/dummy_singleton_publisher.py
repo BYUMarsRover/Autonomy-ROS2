@@ -19,6 +19,9 @@ HANK_LONG=-110.791932
 HANK_AUT_2024_COMP_LAT=38.423216
 HANK_AUT_2024_COMP_LONG=-110.786483
 
+HANK_AUT_2025_COMP_LAT=38.406441
+HANK_AUT_2025_COMP_LONG=-110.791932
+
 GRAVEL_LAT=40.322415
 GRAVEL_LONG=-111.64317
 
@@ -31,11 +34,14 @@ ROCK_LONG=-111.632455
 # LAT_INIT=HANK_LAT
 # LONG_INIT=HANK_LONG
 
-LAT_INIT=GRAVEL_LAT
-LONG_INIT=GRAVEL_LONG
+# LAT_INIT=GRAVEL_LAT
+# LONG_INIT=GRAVEL_LONG
 
 # LAT_INIT= HANK_AUT_2024_COMP_LAT
 # LONG_INIT= HANK_AUT_2024_COMP_LONG
+
+LAT_INIT= HANK_AUT_2025_COMP_LAT
+LONG_INIT= HANK_AUT_2025_COMP_LONG
 
 # LAT_INIT=BYU_LAT
 # LONG_INIT=BYU_LONG
@@ -164,7 +170,7 @@ class DummySingletonPublisher(Node):
         self.latitude += dlat
         self.longitude += dlon
 
-        C_yaw = 2.0
+        C_yaw = 1.0
         dyaw = (lv - rv) * C_yaw
         self.map_yaw += dyaw
 
@@ -190,7 +196,7 @@ class DummySingletonPublisher(Node):
 
         return new_lat, new_lon
     
-    def compute_delta_lat_lon(self, lat, lon, velocity, angle, time_step=1):
+    def compute_delta_lat_lon(self, lat, lon, velocity, angle, time_step=0.5):
         """
         Compute the change in latitude and longitude given an initial GPS location,
         velocity (m/s), and heading angle (degrees from north).
