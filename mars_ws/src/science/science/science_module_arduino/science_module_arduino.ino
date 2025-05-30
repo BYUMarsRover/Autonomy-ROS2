@@ -30,6 +30,7 @@ void setup() {
 
     // Init Serial Communication
     Serial.begin(BAUD_RATE);
+    while (!Serial) {}; // Spin until serial is open
     message::connection_successful();
     sendResponsePacket();
 
