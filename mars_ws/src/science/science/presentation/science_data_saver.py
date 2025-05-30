@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import rclpy
-from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceFADIntensity, ScienceSaveFAD
+from rover_msgs.msg import ScienceSensorValues, ScienceSaveSensor, ScienceSaveNotes, ScienceSaveFAD, ScienceSaveSpectro
 from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory
 
@@ -11,86 +11,80 @@ class ScienceDataSaver(Node):
     def __init__(self):
         super().__init__('data_saver')
 
-        self.science_sensor_values = self.create_subscription(ScienceSensorValues, '/science_sensor_values', self.sensor_values_callback, 10)
-        self.science_save_fad = self.create_subscription(ScienceSaveFAD, '/science_save_fad', self.fad_value_callback, 10)
-        self.science_save_sensor = self.create_subscription(ScienceSaveSensor, '/science_save_sensor', self.save_sensor_callback, 10)
-        self.science_save_notes = self.create_subscription(ScienceSaveNotes, '/science_save_notes', self.save_notes, 10)
-        
+        self.science_save_fad = self.create_subscription(ScienceSaveFAD, '/science/save_fad', self.save_fad, 10)
+        self.science_save_sensor = self.create_subscription(ScienceSaveSensor, '/science/save_sensor', self.save_sensor_callback, 10)
+        self.science_save_notes = self.create_subscription(ScienceSaveNotes, '/science/save_notes', self.save_notes, 10)
+        self.science_save_spectro = self.create_subscription(ScienceSaveSpectro, '/science/save_spectro', self.save_spectro, 10)
 
-        self.sensor_values = [[], [], []]
-        self.saving_sensor_values = [False, False, False]
+        self.sensor_map = ['moisture', 'temperature', 'fad', 'uv', 'als']
+        self.sensor_values = [[] for _ in self.sensor_map]
+        self.saving_sensor_values = [False for _ in self.sensor_map]
         self.sensor_count = 0
         self.fad_count = 0
-        self.DIR = os.path.expanduser("~/science_data") #This is due to the install files usually not being writable. 
-        os.makedirs(self.DIR, exist_ok=True)
+        self.basedir = os.path.expanduser("~/science_data") #This is due to the install files usually not being writable. 
+        os.makedirs(self.basedir, exist_ok=True)
         self.file_num = 1
         self.curr_site_num = 0
-        self.sensor_map = ['moisture', 'temperature', 'fad']
 
-        print('Science Data Save Started.')
+        self.get_logger().info('Science Data Save Started.')
 
-    def sensor_values_callback(self, msg: ScienceSensorValues):
-        # Prevents the sensor data from getting saved constantly, only saved every 5 calls - maybe implement in the GUI
-        self.sensor_count = (self.sensor_count + 1) % 5
-        # self.sensor_count = 0 #For testing purposes, go back to the mod 60 for actual stuff
-        print(self.saving_sensor_values, self.sensor_count, self.sensor_values)
-        if self.saving_sensor_values[0] and self.sensor_count == 0:
-            self.sensor_values[0].append(msg.moisture)
-        
-        if self.saving_sensor_values[1] and self.sensor_count == 0:
-            self.sensor_values[1].append(msg.temperature)
-
-    def fad_value_callback(self, msg: ScienceSaveFAD):#temporarily set to just use site 1, we've not done anything with other sites anyways.
-        file_name =  f'site-1/' + f'{self.sensor_map[2]}-plot-{self.file_num}.txt'
-        file_path = os.path.join(self.DIR, file_name)
-
-        print(f'Saving FAD Values.')
-        print(msg.intensity, msg.observed)
-        print(file_path)
-        with open(file_path, "a") as f:
+    # I dont know much about the FAD data, this should be revisited by whomever is calibrating the FAD
+    def save_fad(self, msg: ScienceSaveFAD):
+        fname = f'site-{msg.site}-fad-list.csv'
+        path = os.path.join(self.get_site_directory(msg.site), fname)
+        if not os.path.exists(path):
+            with open(path, "w") as f:
+                f.write("Intensity,Observed Value\n")
+        with open(path, "a") as f:
             f.write(str(msg.intensity) + " " + str(msg.observed))
-        print("Sensor Values Saved.")
-        # self.sensor_values[2].append(msg.intensity)
+        # self.get_logger().info(f"FAD saved at: {path}")
 
     def save_sensor_callback(self, msg: ScienceSaveSensor):
-        print('Recieved ScienceSaveSensor message.')
-        self.saving_sensor_values[msg.position] = msg.save
-
-        if msg.site != self.curr_site_num:
-            self.change_site_directory(msg.site)
-        
-        if msg.save: # here put in the actual value as the first value
-            self.sensor_values[msg.position] = [float(msg.observed_value)]
-        else: #Change this f string so that it gets this going in the correct directory
-
-            file_name = f'{self.sensor_map[msg.position]}-plot-{self.file_num}.txt'
-            print(file_name)
-            file_path = os.path.join(self.DIR, file_name)
-            self.save_sensor_values(msg.position, file_path)
-
-    def change_site_directory(self, site_num):
-        self.curr_site_num = site_num
-        directory_name = f'site-{self.curr_site_num}'
-        self.DIR = os.path.join(self.DIR, directory_name) #THIS COULD CAUSE PROBLEMS!
-        try:
-            os.mkdir(self.DIR)
-        except FileExistsError:
-            print("This directory already exists")
-    
-    def save_sensor_values(self, p: int, file_path):
-        print(f'Saving Sensor {p} Values.')
-        print(self.sensor_values)
-        with open(file_path, "a") as f:
-            f.write(" ".join(map(str, self.sensor_values[p])) + "\n")
-        print("Sensor Values Saved.")
+        fname = f'site-{msg.site}-{msg.measurement}-plot.csv'
+        path = os.path.join(self.get_site_directory(msg.site), fname)
+        if not os.path.exists(path):
+            with open(path, "w") as f:
+                f.write("Timestamp,Observed Value\n")
+        with open(path, "a") as f:
+            f.write(" ".join([str(x) for x in [msg.timestamp, msg.observed_value]]) + "\n")
+        # self.get_logger().info(f"Sensor saved at: {path}")
 
     def save_notes(self, msg):
         print("Received notes", msg.notes)
-        notes = str(msg.notes)
-        fname = f'{msg.site}-notes-{self.file_num}.txt'
-        with open(os.path.join(self.DIR, fname), "w") as f:
-            f.write(notes)
-        print('Notes Saved.')
+        fname = f'site-{msg.site}-notes.txt'
+        path = os.path.join(self.get_site_directory(msg.site), fname)
+        with open(path, "w") as f:
+            f.write(str(msg.notes))
+        # Log a confirmation message with the path where the notes were saved
+        self.get_logger().info(f"Notes saved at: {path}")
+
+    def save_spectro(self, msg: ScienceSaveSpectro):
+        wavelengths = [410, 435, 460, 485, 510, 535, 560, 585, 610, 645, 680, 705, 730, 760, 810, 860, 900, 940]
+        path = self.get_indexed_file_name(f'site-{msg.site}-spectro', 'csv', self.get_site_directory(msg.site))
+        with open(path, "w") as f:
+            f.write("Wavelength,Channel Value\n")
+            for wavelength, channel in zip(wavelengths, msg.channels):
+                f.write(f"{wavelength},{channel}\n")
+        self.get_logger().info(f"Spectrograph saved at: {path}")
+
+    def get_indexed_file_name(self, prefix, extension, basedir):
+        """
+        Generates a unique file name by appending an index to the prefix.
+        """
+        index = 1
+        while os.path.exists(os.path.join(basedir, f"{prefix}-{index}.{extension}")):
+            index += 1
+        return os.path.join(basedir, f"{prefix}-{index}.{extension}")
+    
+    def get_site_directory(self, site_num):
+        directory_name = f'site-{site_num}'
+        path = os.path.join(self.basedir, directory_name) #THIS COULD CAUSE PROBLEMS!
+        try:
+            os.mkdir(path)
+        except FileExistsError:
+            print("This directory already exists")
+        return path
+
 
 def main(args=None):
     rclpy.init(args=args)

@@ -12,12 +12,13 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import UInt16MultiArray
+from std_msgs.msg import UInt16MultiArray, String
 from rover_msgs.msg import DeviceList, Camera
 from rover_msgs.srv import CameraControl
 from subprocess import Popen, PIPE
 from .html_templates import *
 from .dev_name_map import BASE_DEV_NAME_MAP, ROVER_DEV_NAME_MAP
+# from start.config.cam_config.camera_config import CameraConfig
 
 import sys
 import atexit
@@ -66,12 +67,15 @@ class HomeGuiUI(Node, QWidget):
         print("Multithreading with maximum %d threads" %
               self.threadpool.maxThreadCount())
 
-        base_devlist_updater = DeviceListUpdater(
-            self.emit_base_dev_list_trigger)
+        base_devlist_updater = DeviceListUpdater(self.base_dev_list_trigger.emit)
 
         self.base_dev_list_trigger.connect(self.update_base_dev_list)
 
         self.threadpool.start(base_devlist_updater)
+        #PUT THE CAMERA HANDLER IN A THREAD LIKE THE BASE DEVLIST UPDATER
+
+        self.cam_publisher = self.create_publisher(String, '/launch_single_camera', 1)
+        self.close_single_publisher = self.create_publisher(String, '/close_single_camera', 1)
 
         self.dev_subscriber = self.create_subscription(
             DeviceList, '/connected_devices_list', self.update_rover_dev_list, 1)
@@ -82,20 +86,20 @@ class HomeGuiUI(Node, QWidget):
         self.ir_alpha = 0.95
         self.gripper_length = 14
 
-        self.cameraCloseAllButton.clicked.connect(self.close_all_cameras)
+        self.cameraCloseAllButton.clicked.connect(self.close_all_cameras)#TODO UPDATE
 
         self.cameraLaunchSingleButton.clicked.connect(
-            self.launch_single_camera)
-        self.cameraCloseSingleButton.clicked.connect(self.close_single_camera)
+            self.launch_single_camera)#TODO UPDATE
+        self.cameraCloseSingleButton.clicked.connect(self.close_single_camera)#TODO UPDATE
 
         self.cameraScreenshotButton.clicked.connect(
-            self.take_screenshot)
+            self.take_screenshot)#TODO UPDATE
 
-        self.cameraLaunchViewButton.clicked.connect(self.launch_view)
+        self.cameraLaunchViewButton.clicked.connect(self.launch_view)#TODO UPDATE
         # self.clickerButton.clicked.connect(self.activate_clicker)
 
-        self.brightnessSlider.valueChanged.connect(self.update_brightness)
-        self.contrastSlider.valueChanged.connect(self.update_contrast)
+        self.brightnessSlider.valueChanged.connect(self.update_brightness) #TODO UPDATE
+        self.contrastSlider.valueChanged.connect(self.update_contrast) #TODO UPDATE
 
         self.brightness = 100
         self.contrast = 100
@@ -150,7 +154,7 @@ class HomeGuiUI(Node, QWidget):
 
     def camera_scripts_init(self):
         cam_scripts_path = os.path.expanduser(
-            '~') + '/BYU-Mars-Rover/scripts/camera/'
+            '~') + '/scripts/camera/'
 
         self.launch_camera_script = cam_scripts_path + "base-launch-camera-window.sh -c {} -b {} -o {}"
 
@@ -179,41 +183,48 @@ class HomeGuiUI(Node, QWidget):
         self.contrastLabel.setText("{}%".format(self.contrast))
 
     def launch_single_camera(self):
-        channel = self.get_available_channel()
-        if channel is None:
-            print("ERROR: No available channels")
-            return
+        msg = String()
+        msg.data = self.cameraSelector.currentText()  # Assign the string from the currentText() of the camera selector
+        self.cam_publisher.publish(msg)
+        # camera_config = CameraConfig(name="microscopeCam", param_path='mars_ws/src/start/config/cam_config/params_1.yaml')
 
-        camera_name = self.cameraSelector.currentText()
-        if self.is_camera_busy(camera_name):
-            print("ERROR: Camera \"{}\" is busy".format(camera_name))
-            return
+        # channel = self.get_available_channel()
+        # self.get_logger().info(f"Got to launch_single_camera on channel {channel}")
+        # if channel is None:
+        #     print("ERROR: No available channels")
+        #     return
 
-        single_camera = Camera()
-        single_camera.client_address = self.base_ip
-        single_camera.camera_name = camera_name
-        single_camera.channel = channel
+        # camera_name = self.cameraSelector.currentText()
+        # if self.is_camera_busy(camera_name):
+        #     print("ERROR: Camera \"{}\" is busy".format(camera_name))
+        #     return
 
-        self.single_cameras.append(
-            single_camera
-        )
+        # single_camera = Camera()
+        # # single_camera.client_address = self.base_ip
+        # single_camera.client_address = "10.0.0.4"
+        # single_camera.camera_name = camera_name
+        # single_camera.channel = channel
 
-        single_camera_process = None
-        single_camera_process = self.launch_camera(
-            single_camera, single_camera_process, None, 
-        )
+        # self.single_cameras.append(
+        #     single_camera
+        # )
 
-        if single_camera_process:
-            self.single_camera_dict[camera_name] = (single_camera, single_camera_process)
+        # single_camera_process = None
+        # single_camera_process = self.launch_camera(
+        #     single_camera, single_camera_process, None, 
+        # )
+
+        # if single_camera_process:
+        #     self.single_camera_dict[camera_name] = (single_camera, single_camera_process)
         return
 
     def launch_camera(self, camera, process, script):
-        print("INFO: Launching \"{}\" . . .".format(camera.camera_name))
+        self.get_logger().info("INFO: Launching \"{}\" . . .".format(camera.camera_name))
         try:
             self.rover_launch_camera(camera)
         except Exception as e: #TODO
-            print(e)
-            print(
+            # self.get_logger().info(e)
+            self.get_logger().info(
                 "HINT: Rover camera control node did not respond. Is the rover connected?")
             return process
         return self.base_launch_camera(camera, process, script)
@@ -223,8 +234,8 @@ class HomeGuiUI(Node, QWidget):
         if not process or process.poll():
             process = Popen(script, shell=True, preexec_fn=os.setsid,
                             stderr=PIPE)
-            self.start_cam_proc_listener_thread(
-                self.close_camera, camera, process)
+            # self.start_cam_proc_listener_thread(
+            #     self.close_camera, camera, process)
             print("INFO: Base camera process for \"{}\" launched!".format(camera.camera_name))
         else:
             print("ERROR: Base camera process is already running")
@@ -253,8 +264,50 @@ class HomeGuiUI(Node, QWidget):
         return thread
 
     def rover_launch_camera(self, camera):
-        print("INFO: Signal rover to launch \"{}\" . . .".format(camera.camera_name))
-        self.camera_control(camera=camera)
+
+        print(camera)
+        # print("INFO: Signal rover to launch \"{}\" . . .".format(camera.camera_name))
+        # # self.camera_control(camera=camera) #Next line is an attempt to call the service with already passed stuff for debugging.
+        # future = self.camera_control.call_async(camera=camera, sitename="site-1", kill=False, screenshot=True, cleanup=False, calibrate=False)
+        # future.add_done_callback(self.camera_control_response_callback)
+        # print("Should be done...")
+        # Create a request object
+        req = CameraControl.Request()
+        print("Created camera control object")
+        
+        # Call the service asynchronously
+        try:
+            req.camera = camera
+            print("Set camera attribute")
+            req.site_name = "site-1"
+            print("Set sitename attribute")
+            req.kill = False
+            print("Set kill attribute")
+            req.screenshot = False
+            print("Set screenshot attribute")
+            req.cleanup = False
+            print("Set cleanup attribute")
+            req.calibrate = False            
+            print("finish camera control object")
+            print("Set calibrate attribute")
+            print("Making the future call")
+            future = self.camera_control.call(req)
+            # future.add_done_callback(self.camera_control_response_callback)
+            print("Service call made, waiting for response...")
+        except Exception as e:
+            print("Error bois")
+            self.get_logger().error(f"Service call failed: {e}")
+
+    # def camera_control_response_callback(self, future):
+    #     try:
+    #         response = future.result()
+    #         if response.error:
+    #             self.get_logger().error(f"Camera control error: {response.message}")
+    #         else:
+    #             self.get_logger().info(f"Camera control succeeded: {response.message}")
+    #     except Exception as e:
+    #         self.get_logger().error(f"Service call failed: {e}")
+
 
     def take_screenshot(self):
         camera_name = self.cameraSelector.currentText()
@@ -285,8 +338,21 @@ class HomeGuiUI(Node, QWidget):
         camera = Camera()
         camera.client_address = "{}@{}".format(os.getlogin(), self.base_ip)
         camera.camera_name = camera_name
-        # In ROS 1 services are synchronous so this will block until the service finishes
-        self.camera_control(camera=camera, site_name=site_name, screenshot=True)
+
+        # Create a request object
+        req = CameraControl.Request()
+        req.camera = camera
+        req.kill = False
+        req.screenshot = True
+        req.cleanup = False
+        req.calibrate = False
+
+        # Call the service asynchronously
+        try:
+            future = self.camera_control.call(req)
+            # future.add_done_callback(self.camera_control_response_callback)
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {e}")
 
     def launch_view(self):
         channel = self.get_available_channel()
@@ -330,12 +396,16 @@ class HomeGuiUI(Node, QWidget):
 
     def close_single_camera(self):
         camera_name = self.cameraSelector.currentText()
-        try:
-            cam_proc_tuple = self.single_camera_dict[camera_name]
-        except KeyError:
-            print("ERROR: Camera already not running")
-            return
-        self.close_camera(cam_proc_tuple[0], cam_proc_tuple[1])
+        msg = String()
+        msg.data = camera_name
+        self.close_single_publisher.publish(msg)
+
+        # try:
+        #     cam_proc_tuple = self.single_camera_dict[camera_name]
+        # except KeyError:
+        #     print("ERROR: Camera already not running")
+        #     return
+        # self.close_camera(cam_proc_tuple[0], cam_proc_tuple[1])
 
     def close_camera(self, camera, camera_process):
         print("INFO: Closing \"{}\" . . .".format(camera.camera_name))
@@ -365,7 +435,20 @@ class HomeGuiUI(Node, QWidget):
 
     def rover_close_camera(self, camera):
         print("INFO: Signal rover to close \"{}\" . . .".format(camera.camera_name))
-        self.camera_control(camera=camera, kill=True)
+        # Create a request object
+        req = CameraControl.Request()
+        req.camera = camera
+        req.kill = True
+        req.screenshot = False
+        req.cleanup = False
+        req.calibrate = False
+
+        # Call the service asynchronously
+        try:
+            future = self.camera_control.call(req)
+            # future.add_done_callback(self.camera_control_response_callback)
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {e}")
 
     def emit_rover_dev_list_trigger(self):
         self.rover_dev_list_trigger.emit()
@@ -373,15 +456,15 @@ class HomeGuiUI(Node, QWidget):
     def emit_base_dev_list_trigger(self):
         self.base_dev_list_trigger.emit()
 
-    def update_base_dev_list(self):
-        path = "/dev/rover/"
+    def update_base_dev_list(self): #Changed all rover/ to video* to check cameras, check if that actually worked
+        path = "/dev/video*"
 
         paths = [f for f in glob.glob(path + "**/*", recursive=True)]
         devices = list(dev for dev in paths if os.path.islink(dev))
         html = ""
 
         for d_path, d_name in BASE_DEV_NAME_MAP.items():
-            if "/dev/rover/" + d_path in devices:
+            if "/dev/video*" + d_path in devices:
                 is_connected = True
             else:
                 is_connected = False
@@ -391,6 +474,7 @@ class HomeGuiUI(Node, QWidget):
         self.refresh_update_label(self.baseLastUpdate)
 
     def update_rover_dev_list(self, ros_message):
+        # self.get_logger().info(f"Receiving: {ros_message.devices}")
         devices = ros_message.devices
         camera_devices = ros_message.camera_devices
         html = ""
@@ -429,11 +513,18 @@ class HomeGuiUI(Node, QWidget):
             self.right_ir_label.setText("Right IR: NA")
 
     def update_rover_camera_list(self, camera_devices):
-        selected_device = self.cameraSelector.currentText()
-        self.cameraSelector.clear()
-        for d in camera_devices:
-            self.cameraSelector.addItem(d)
-        self.cameraSelector.setCurrentText(selected_device)
+        current_devices = [self.cameraSelector.itemText(i) for i in range(self.cameraSelector.count())]
+
+        # Only update if the device list actually changed
+        if set(current_devices) != set(camera_devices):
+            selected_device = self.cameraSelector.currentText()
+            self.cameraSelector.blockSignals(True)
+            self.cameraSelector.clear()
+            self.cameraSelector.addItems(camera_devices)
+            if selected_device in camera_devices:
+                self.cameraSelector.setCurrentText(selected_device)
+            self.cameraSelector.blockSignals(False)
+
 
     def refresh_update_label(self, label):
         time_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")

@@ -1,0 +1,12 @@
+term,datatype
+uv_sensitivity,uint16_t
+probe_extend_time,float
+probe_retract_time,float
+auger_extend_time,float
+auger_retract_time,float
+primary_door_extend_time,float
+primary_door_retract_time,float
+secondary_door_extend_time,float
+secondary_door_retract_time,float
+secondary_cache_extend_time,float
+secondary_cache_retract_time,float

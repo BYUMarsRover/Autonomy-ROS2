@@ -1,4 +1,3 @@
-
 # ===================================
 # ==== Rover Autonomy Task Launch====
 # ===================================
@@ -6,7 +5,7 @@
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from ament_index_python.packages import get_package_share_directory
+from launch_ros.substitutions import FindPackageShare
 from launch.substitutions import LaunchConfiguration
 import os
 
@@ -19,13 +18,11 @@ def generate_launch_description():
     rover_address_arg = DeclareLaunchArgument('ROVER_ADDRESS', default_value=rover_address)
 
     # Start all common launch files on the rover
-    include_rover_common = IncludeLaunchDescription(
+    rover_common_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory('start'),
-                'launch',
-                'rover_common_launch.py'
-            )
+            PythonLaunchDescriptionSource([
+                FindPackageShare("start"), "/launch/rover_common_launch.py"
+            ])
         ),
         launch_arguments={
             'ROVER_ADDRESS': LaunchConfiguration('ROVER_ADDRESS')
@@ -33,13 +30,10 @@ def generate_launch_description():
     )
 
     # Start launch files specific to the Autonomy Task on the rover
-    include_autonomy = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(
-                get_package_share_directory('autonomy'),
-                'launch',
-                'autonomy_launch.py'
-            )
-        ),
+    autonomy_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+                FindPackageShare("autonomy"), "/launch/base_launch.py"
+            ]),
         launch_arguments={
             'location': LaunchConfiguration('MAPVIZ_LOCATION')
         }.items()
@@ -47,24 +41,18 @@ def generate_launch_description():
 
     # TODO: Add when converted to ROS2
     # Start Mobility low level nodes
-    include_autopilot_drive = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory('mobility'),
-                'launch',
-                'autopilot_drive_launch.py'
-            )
-        )
+    autopilot_drive_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+                FindPackageShare("mobility"), "/launch/autopilot_drive_launch.py"
+            ])
     )
 
     # Start localization in odometry
-    include_estimation = IncludeLaunchDescription(
+    estimation_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory('odometry'),
-                'launch',
-                'estimation_launch.py'
-            )
+            PythonLaunchDescriptionSource([
+                FindPackageShare("odometry"), "/launch/estimation_launch.py"
+            ])
         ),
         launch_arguments={
             'ROVER_ADDRESS': LaunchConfiguration('ROVER_ADDRESS')
@@ -74,9 +62,8 @@ def generate_launch_description():
     return LaunchDescription([
         mapviz_location_arg,
         rover_address_arg,
-        include_rover_common,
-        include_autonomy,
-        include_autopilot_drive,
-        include_estimation
-        
+        rover_common_launch,
+        autonomy_launch,
+        autopilot_drive_launch,
+        estimation_launch
     ])

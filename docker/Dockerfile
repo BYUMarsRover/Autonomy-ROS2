@@ -130,8 +130,9 @@ USER $NAME
 
 # Install the joy package - Alyssa Fielding, Feb 2025
 # Needed for the joystick control on the base station
+# TODO make sure we can delete the joy package and just migrate to JOY LINUX
 USER root
-RUN apt update && apt install -y ros-humble-joy
+RUN apt update && apt install -y ros-humble-joy ros-humble-joy-linux
 USER $NAME 
 
 # Install gpsd-client - Braden Meyers, Feb 2025
@@ -151,3 +152,19 @@ USER $NAME
 # Needed for the hazard avoidance node
 RUN pip3 install open3d
 RUN pip3 install pcl
+
+# Install gstreamer - Michael Crandall May 2025
+# Needed for streaming camera feed from the rover
+# BC is also added for preroll on gstreamer
+USER root
+RUN apt-get update && apt-get install -y \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    && apt-get clean
+USER $NAME
+
+RUN apt-get install bc
