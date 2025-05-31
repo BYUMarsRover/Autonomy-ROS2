@@ -45,7 +45,7 @@ case "$1" in
             tmux send-keys -t base_launch:0.0 'export ROS_DISCOVERY_SERVER=192.168.1.120:11811' Enter; \
             tmux send-keys -t base_launch:0.0 'source ~/mars_ws/install/setup.bash' Enter; \
             tmux send-keys -t base_launch:0.0 'export DISPLAY=localhost:10.0' Enter; \
-            tmux send-keys -t base_launch:0.0 'ros2 launch start base_task_autonomy_launch.py MAPVIZ_LOCATION:='price''; \
+            tmux send-keys -t base_launch:0.0 'ros2 launch start base_task_autonomy_launch.py MAPVIZ_LOCATION:='hanksville''; \
             tmux split-window -h -t base_launch:0.0; \
             tmux select-pane -t base_launch:0.1; \
             tmux send-keys -t base_launch:0.1 'export ROS_DISCOVERY_SERVER=192.168.1.120:11811' Enter; \
