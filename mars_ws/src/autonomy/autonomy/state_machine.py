@@ -441,11 +441,18 @@ class AutonomyStateMachine(Node):
                 
                 # TODO check and see if anything is new since the last time we offset
                 # if distance to wp is > 7.0 
-
-                if GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point) < 7.0:
-                    self.path.popleft()
+                offset_wp = GPSTools.generate_side_waypoint(self.current_point, curr_heading, direction, offset_distance=6.5, offset_angle=0.8)
+                if self.spiral_searching:
+                    if GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point) < 7.0:
+                        self.path.popleft()
                     
-            
+                else:
+                    # TODO TRY EXCEPT ON GETTING THE GEOPOSE BECAUSE if the current position has not come in
+                    
+                    offset_wp_geopose = latLonYaw2Geopose(offset_wp.lat, offset_wp.lon)
+                    target_point_geopose = latLonYaw2Geopose(self.target_point.lat, self.target_point.lon)
+                    self.planner.navigate_helper(offset_wp_geopose, target_point_geopose)
+                    self.path = self.planner.path.copy()
 
 
                 # if GPSTools.distance_between_lat_lon(self.current_point, self.path_target_point) > 7.0: # TODO parameterize
@@ -457,7 +464,6 @@ class AutonomyStateMachine(Node):
                     # then save the last waypoint 
                     # Add it back into the deque self.path which is a deque of geopose
 
-                offset_wp = GPSTools.generate_side_waypoint(self.current_point, curr_heading, direction, offset_distance=6.5, offset_angle=0.8)
                 self.drive_controller.issue_path_cmd(offset_wp.lat, offset_wp.lon)
                 self.path_target_point = offset_wp
                 geopose = latLonYaw2Geopose(offset_wp.lat, offset_wp.lon)
