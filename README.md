@@ -6,6 +6,10 @@
 
 --
 
+> **TO THE 2026 MARS ROVER TEAM:** This software stack was used for the Autonomy task at the 2025 competition. It's based mostly on the same code structure as the 2024 team's ROS 1 repository. Another simulation-centered software stack was developed in parallel by the 2025 team (but ultimately dropped due to CPU constraints), and can be found [here](https://github.com/BYUMarsRover/marsrover_2.0).
+
+--
+
 ### Get Started:
 
 > **NOTE:** Newer Macs that use ARM64 architecture (M1, M2, etc) have not been extensively tested.
