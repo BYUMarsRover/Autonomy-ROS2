@@ -17,11 +17,11 @@
 // Constructor implementation
 FiducialsNode::FiducialsNode()
     : Node("fiducials_node"),
+      node_handle_(std::shared_ptr<FiducialsNode>(this, [](auto *) {})),
+      image_transport_(node_handle_),
       enable_detections_(false),
       frame_num_(0),
-      have_cam_info_(false),
-      node_handle_(std::shared_ptr<FiducialsNode>(this, [](auto *) {})),
-      image_transport_(node_handle_) {
+      have_cam_info_(false) {
 
     // Declare and get parameters
     this->declare_parameter<bool>("publish_images", false);
@@ -46,6 +46,9 @@ FiducialsNode::FiducialsNode()
     image_sub_ = image_transport_.subscribe(
         "head_camera/image_raw", 10, std::bind(&FiducialsNode::imageCallback, this, std::placeholders::_1));
 
+    // Initialize aruco_status publisher (serves to both ensure fiducial callback is called and image raw from the webcam is published)
+    aruco_status_pub_ = this->create_publisher<std_msgs::msg::Bool>("aruco_status", 10);
+
     // Initialize publishers (not dependent on image_transport_)
     pose_pub_ = this->create_publisher<rover_msgs::msg::FiducialTransformArray>("fiducial_transforms", 10);
 
@@ -63,9 +66,21 @@ FiducialsNode::FiducialsNode()
     // Initialize parameter callback
     parameter_callback_handle_ = this->add_on_set_parameters_callback(
         std::bind(&FiducialsNode::parameterCallback, this, std::placeholders::_1));
-
+ 
+    
     // Initialize ArUco detector parameters
     detector_params_ = cv::aruco::DetectorParameters::create();
+    recieved_image_raw = false;
+
+    // Initialzie timer to publish aruco status 
+    auto timer_callback = [this]() {
+        std_msgs::msg::Bool msg;
+        msg.data = recieved_image_raw;
+        aruco_status_pub_->publish(msg);
+        recieved_image_raw = false;
+    };
+    fiducial_status_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(1000), timer_callback);   // Publish every second
 
     // Set up the ArUco dictionary
     std::string dictionary_name;
@@ -86,22 +101,15 @@ FiducialsNode::FiducialsNode()
 
 }
 
-
-void FiducialsNode::initialize() {
-    // Initialize image_transport_ with shared_from_this()
-    //image_transport_ = image_transport::create_image_transport(node);
-
-    
-}
-
 // Image callback
 void FiducialsNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg) {
+    recieved_image_raw = true;
+    
     if (!enable_detections_) {
         return;
     }
 
     frame_num_++;
-
     cv_bridge::CvImagePtr cv_ptr;
 
     auto fta = rover_msgs::msg::FiducialTransformArray();

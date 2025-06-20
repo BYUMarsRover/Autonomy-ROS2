@@ -27,19 +27,38 @@ displays:
           type: wmts
       bing_api_key: ""
       source: Google Maps Rover
-  - type: mapviz_plugins/gps
+ 
+ 
+  - type: mapviz_plugins/navsat
     name: Base GPS
     config:
       visible: true
       collapsed: true
-      topic: /GPSFix_base
+      topic: /base/fix
       color: "#204a87"
       draw_style: points
       position_tolerance: 0
       buffer_size: 1
-      show_laps: false
-      static_arrow_sizes: false
-      arrow_size: 260
+  - type: mapviz_plugins/navsat
+    name: Next Path Point
+    config:
+      visible: true
+      collapsed: true
+      topic: /autonomy/current_path_point
+      color: "#ff55ff"
+      draw_style: points
+      position_tolerance: 0
+      buffer_size: 1
+  - type: mapviz_plugins/navsat
+    name: Rover GPS
+    config:
+      visible: true
+      collapsed: true
+      topic: /ins/lla
+      color: "#aa0000"
+      draw_style: points
+      position_tolerance: 0
+      buffer_size: 5
   # - type: mapviz_plugins/gps
   #   name: GPS Waypoint
   #   config:
@@ -60,18 +79,73 @@ displays:
       collapsed: true
       frame: rover
       image: /home/marsrover/mars_ws/src/mapviz_tf/image/Rover.png
-      width: 30
-      height: 30
+      width: 4
+      height: 4
       offset_x: 0
       offset_y: 0
       ratio: original
   - type: mapviz_plugins/path
+    name: Order Planning
+    config:
+      visible: true
+      collapsed: true
+      topic: /mapviz/path
+      color: "#00ff00"
+  - type: mapviz_plugins/path
     name: Path Planning
     config:
       visible: true
+      collapsed: true
+      topic: /autonomy/waypoint/path
+      color: "#430aff"
+  - type: mapviz_plugins/path
+    name: Search Path Planning
+    config:
+      visible: true
+      collapsed: true
+      topic: /autonomy/path/search
+      color: "#ff0000"
+  - type: mapviz_plugins/marker
+    name: Markers
+    config:
+      visible: true
       collapsed: false
-      topic: /mapviz/path
-      color: "#00ff00"
+      topic: /waypoint_labels
+  - type: mapviz_plugins/float
+    name: Pitch Display
+    config:
+      visible: true
+      collapsed: true
+      font: Sans Serif,28,-1,5,50,0,0,0,0,0
+      color: "#ff0000"
+      topic: /pitch_float
+      anchor: top right
+      units: percent
+      offset_x: 8
+      offset_y: 0
+      postfix_text: " Deg Pitch"
+      qos_depth: 10
+      qos_history: 1
+      qos_reliability: 1
+      qos_durability: 2
+  - type: mapviz_plugins/float
+    name: Roll Display
+    config:
+      visible: true
+      collapsed: true
+      font: Sans Serif,28,-1,5,50,0,0,0,0,0
+      color: "#ff0000"
+      topic: /roll_float
+      field: data
+      anchor: top right
+      units: percent
+      offset_x: 8
+      offset_y: 10
+      postfix_text: " Deg Roll"
+      qos_depth: 10
+      qos_history: 1
+      qos_reliability: 1
+      qos_durability: 2
   # - type: mapviz_plugins/point_click_publisher
   #   name: new display
   #   config:

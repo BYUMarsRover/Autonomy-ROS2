@@ -28,6 +28,14 @@
 
 - Install Docker Engine on your Linux machine by following the instructions [here](https://docs.docker.com/engine/install/ubuntu/).
 
+**Linux:**
+
+- Install Docker Engine on your Linux machine by following the instructions [here](https://docs.docker.com/engine/install/ubuntu/).
+
+- Open a terminal and clone the Autonomy-ROS2 repo into your Linux environment using `git clone https://github.com/BYUMarsRover/Autonomy-ROS2.git`.
+
+- Run `bash compose.sh` to pull and launch the latest Docker image from DockerHub.
+=======
 - Open a terminal and clone the Autonomy-ROS2 repo into your Linux environment using `git clone https://github.com/BYUMarsRover/Autonomy-ROS2.git`.
 
 - Run `cd Autonomy-ROS2 && bash compose.sh` to pull and launch the latest Docker image from DockerHub.

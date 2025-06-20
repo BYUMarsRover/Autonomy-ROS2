@@ -1,0 +1,21 @@
+- tag_id: 'GPS_only'
+  latitude: 40.2226422
+  longitude: -111.6273765
+- tag_id: 'GPS_only'
+  latitude: 40.2222592
+  longitude: -111.6275361
+- tag_id: '1'
+  latitude: 40.2235302
+  longitude: -111.6273470
+- tag_id: '2'
+  latitude: 40.2226394
+  longitude: -111.6269061
+# - tag_id: '3'
+#   latitude: 40.2460437
+#   longitude: -111.6469265
+- tag_id: 'mallet'
+  latitude: 40.2228186
+  longitude: -111.6268421
+- tag_id: 'bottle'
+  latitude: 40.2234230
+  longitude: -111.6271143

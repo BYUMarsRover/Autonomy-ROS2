@@ -1,5 +1,4 @@
 #!/bin/bash
-# Created by Nelson Durrant, Feb 2025
 #
 # Launches tasks on the base station over SSH using the 'base_launch' tmux session
 
@@ -40,10 +39,19 @@ case "$1" in
 
         ssh marsrover@$LOOPBACK_IP_ADDRESS -p $DOCKER_SSH_PORT "\
             tmux new-session -d -s base_launch; \
+            tmux set-option -g default-terminal "screen-256color"; \
+            tmux set -g mouse on; \
+            tmux send-keys -t base_launch:0.0 'source ~/scripts/base_cli.sh' Enter; \
             tmux send-keys -t base_launch:0.0 'export ROS_DISCOVERY_SERVER=192.168.1.120:11811' Enter; \
             tmux send-keys -t base_launch:0.0 'source ~/mars_ws/install/setup.bash' Enter; \
             tmux send-keys -t base_launch:0.0 'export DISPLAY=localhost:10.0' Enter; \
-            tmux send-keys -t base_launch:0.0 'ros2 launch start base_task_autonomy_launch.py'" # NO ENTER 
+            tmux send-keys -t base_launch:0.0 'ros2 launch start base_task_autonomy_launch.py MAPVIZ_LOCATION:='hanksville''; \
+            tmux split-window -h -t base_launch:0.0; \
+            tmux select-pane -t base_launch:0.1; \
+            tmux send-keys -t base_launch:0.1 'export ROS_DISCOVERY_SERVER=192.168.1.120:11811' Enter; \
+            tmux send-keys -t base_launch:0.1 'source ~/mars_ws/install/setup.bash' Enter; \
+            tmux send-keys -t base_launch:0.1 'export DISPLAY=localhost:10.0' Enter; \
+            tmux send-keys -t base_launch:0.1 'ros2 launch odometry base_launch.py'"
         ;;
     "servicing")
         printWarning "Not implemented yet"

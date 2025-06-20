@@ -30,10 +30,11 @@ def generate_launch_description():
 
         # NOTE: Comment not pushed because it is a temporary fix
         # Peripherals
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join( 
-                peripherals_dir, 'launch', 'peripherals.launch.py'))
-        ),
+        # Moved to USB devices launch file
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join( 
+        #         peripherals_dir, 'launch', 'peripherals.launch.py'))
+        # ),
 
         # Heartbeat
         # IncludeLaunchDescription(
@@ -53,11 +54,11 @@ def generate_launch_description():
         #         mobility_dir, 'launch', 'rover_drive_launch.py'))
         # ),
 
-        # GPS
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(
-                odometry_dir, 'launch', 'rover_launch.py'))
-        ),
+        # GPS # LAUNCHED SEPERATELY for MOCK in PRICE
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join(
+        #         odometry_dir, 'launch', 'rover_launch.py'))
+        # ),
 
         # # Dummy publisher for rover state data when running locally
         GroupAction(

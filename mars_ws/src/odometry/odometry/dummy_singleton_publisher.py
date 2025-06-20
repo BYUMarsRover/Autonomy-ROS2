@@ -6,7 +6,7 @@ import rclpy
 from rclpy.node import Node
 import os
 
-from rover_msgs.msg import RoverStateSingleton
+from rover_msgs.msg import RoverStateSingleton, IWCMotors
 from sensor_msgs.msg import NavSatFix
 
 
@@ -19,6 +19,9 @@ HANK_LONG=-110.791932
 HANK_AUT_2024_COMP_LAT=38.423216
 HANK_AUT_2024_COMP_LONG=-110.786483
 
+HANK_AUT_2025_COMP_LAT=38.406441
+HANK_AUT_2025_COMP_LONG=-110.791932
+
 GRAVEL_LAT=40.322415
 GRAVEL_LONG=-111.64317
 
@@ -28,14 +31,20 @@ BYU_LONG=-111.649276
 ROCK_LAT=40.267147
 ROCK_LONG=-111.632455
 
-LAT_INIT=HANK_LAT
-LONG_INIT=HANK_LONG
+# LAT_INIT=HANK_LAT
+# LONG_INIT=HANK_LONG
 
 # LAT_INIT=GRAVEL_LAT
 # LONG_INIT=GRAVEL_LONG
 
 # LAT_INIT= HANK_AUT_2024_COMP_LAT
-# LONG_INIT= HANK_AUT_2024_COMP_LONG
+# LAT_INIT= HANK_AUT_2024_COMP_LAT
+
+LONG_INIT= HANK_AUT_2025_COMP_LONG
+LONG_INIT= HANK_AUT_2025_COMP_LONG
+
+# LAT_INIT=BYU_LAT
+# LONG_INIT=BYU_LONG
 
 LL_PRECISION=100
 HEADING_PRECISION=LL_PRECISION
@@ -51,12 +60,14 @@ class DummySingletonPublisher(Node):
     def __init__(self):
         super().__init__('dummy_singleton_publisher')
 
+        # Publishers
         self.singleton_publisher = self.create_publisher(RoverStateSingleton, '/odometry/rover_state_singleton', 10)  # Publishes the singleton message
-        
         self.timer = self.create_timer(1.0 / ROS_RATE, self.publish_singleton_data) # Publish at 15Hz
 
-        self.ll_x = np.linspace(0, 2*np.pi, num=LL_PRECISION)
-        self.deg = np.linspace(0, 360, num=HEADING_PRECISION) # heading
+        # Subscribers
+        # NOTE: Uncomment this to simulate the rover moving according to the motor commands
+        self.create_subscription(IWCMotors, '/mobility/auto_drive_cmds', self.motor_cmd_callback, 10)
+
         self.latitude = LAT_INIT
         self.longitude = LONG_INIT
         print("LAT_INIT: ", LAT_INIT)
@@ -64,9 +75,6 @@ class DummySingletonPublisher(Node):
 
         self.latitude_unfilt = LAT_INIT
         self.longitude_unfilt = LONG_INIT
-
-        self.ll_counter = Counter(LL_PRECISION)
-        self.heading_counter = Counter(HEADING_PRECISION)
 
 
         self.map_roll = 0
@@ -105,24 +113,24 @@ class DummySingletonPublisher(Node):
         self.filter_gps = NavSatFix()
 
     def publish_singleton_data(self):
-        # self._inc_counters()
 
-        # self.filter_gps.latitude, self.filter_gps.longitude = self._generate_lat_long(
-        #     self.ll_counter)
-        # self.gps.latitude, self.gps.longitude = self._generate_unfiltered_lat_long(
-        #     self.ll_counter)
-        # self.map_yaw = self._generate_heading(self.heading_counter)
+        # Simulate Driving
+
 
         # Make the rover move in a circle around the init location
-        if not hasattr(self, 'angle'):
-            self.angle = 0 # North East Down (measured from North cw is positive)
-        self.angle += 1.0
-        if self.angle >= 360:
-            self.angle = 0
-        self.latitude, self.longitude = self.rotate()
+        # if not hasattr(self, 'angle'):
+        #     self.angle = 0 # North East Down (measured from North cw is positive)
+        # self.angle += 1.0
+        # if self.angle >= 360:
+        #     self.angle = 0
+        # self.latitude, self.longitude = self.rotate()
 
         # Make the rover spin in place
-        # self.map_yaw -= 0.3 # -0.1 * ROS_RATE degrees per second
+        # self.map_yaw += 0.3 # -0.1 * ROS_RATE degrees per second
+
+        # Loop for testing
+        # if self.map_yaw > 90.0:
+        #     self.map_yaw = 0.0
 
         # Wrap
         if self.map_yaw < -180:
@@ -130,8 +138,8 @@ class DummySingletonPublisher(Node):
         elif self.map_yaw > 180:
             self.map_yaw -=360
 
-        self.gps.latitude = self.latitude + (np.random.rand() - 1)*0.00002
-        self.gps.longitude = self.longitude + (np.random.rand() - 1)*0.00002
+        self.gps.latitude = self.latitude + (np.random.rand() - 1)*0.0000005
+        self.gps.longitude = self.longitude + (np.random.rand() - 1)*0.0000005
         self.filter_gps.latitude = self.latitude
         self.filter_gps.longitude = self.longitude
 
@@ -144,6 +152,30 @@ class DummySingletonPublisher(Node):
             filter_gps=self.filter_gps,
         )
         self.singleton_publisher.publish(msg)
+
+    def motor_cmd_callback(self, msg):
+        # update the rover yaw and gps based on the motor commands
+        rv = msg.right_front_speed/255.0
+        if msg.right_front_dir == 0:
+            rv = -rv
+
+        lv = msg.left_front_speed/255.0
+        if msg.left_front_dir == 0:
+            lv = -lv
+
+        C_vel = 0.1
+        v = (lv + rv)**2*C_vel
+
+        dlat, dlon = self.compute_delta_lat_lon(self.latitude, self.longitude, v, self.map_yaw)
+        self.latitude += dlat
+        self.longitude += dlon
+
+        C_yaw = 1.0
+        dyaw = (lv - rv) * C_yaw
+        self.map_yaw += dyaw
+
+        return
+
 
     def rotate(self):
         R = 6378137  # Earth's radius in meters
@@ -163,54 +195,41 @@ class DummySingletonPublisher(Node):
         # self.get_logger().info(f'lat: {new_lat}, lon: {new_lon}')
 
         return new_lat, new_lon
+    
+    def compute_delta_lat_lon(self, lat, lon, velocity, angle, time_step=0.5):
+        """
+        Compute the change in latitude and longitude given an initial GPS location,
+        velocity (m/s), and heading angle (degrees from north).
 
-    def _inc_counters(self):
-        self.ll_counter = self._inc_counter(self.ll_counter)
-        self.heading_counter = self._inc_counter(self.heading_counter)
+        :param lat: Initial latitude in degrees
+        :param lon: Initial longitude in degrees
+        :param velocity: Velocity in meters per second
+        :param angle: Heading angle in degrees from north (0° = North, 90° = East)
+        :param time_step: Time duration in seconds (default is 1s)
+        :return: (delta_lat, delta_lon) in degrees
+        """
+        # Convert latitude and longitude to radians
+        lat_rad = np.deg2rad(lat)
+        lon_rad = np.deg2rad(lon)
 
-    def _inc_counter(self, counter):
-        counter.count += 1
-        if counter.count == counter.max:
-            counter.count = 0
-        return counter
+        # Convert angle to radians
+        angle_rad = np.deg2rad(angle)
 
-    def _generate_lat_long(self, ll_counter):
-        i = ll_counter.count
+        # Earth's radius in meters
+        R = 6378137  # WGS-84 approximation
 
-        # very small difference from true lat/long. This shows how cool and precise
-        # RTK GPS can be.
-        rtk_precison = 0.01 / METERS_PER_DEGREE # 0.01 meters in degrees
+        # Compute distance traveled in the given time step
+        distance = velocity * time_step
 
-        # not sure if this math is right, but it looks pretty good on a map
-        self.latitude = self.latitude + \
-            ((np.sin(self.ll_x[i] + np.pi/2) * CIRCLE_RADIUS) / (METERS_PER_DEGREE * (2*np.pi))) + \
-                random.uniform(-rtk_precison, rtk_precison)
+        # Compute delta latitude in degrees
+        delta_lat = (distance * np.cos(angle_rad)) / R
+        delta_lat_deg = np.rad2deg(delta_lat)
 
-        self.longitude = self.longitude + \
-            ((np.sin(self.ll_x[i]) * CIRCLE_RADIUS) / (METERS_PER_DEGREE * (2*np.pi))) + \
-                random.uniform(-rtk_precison, rtk_precison)
+        # Compute delta longitude in degrees (adjusted for latitude)
+        delta_lon = (distance * np.sin(angle_rad)) / (R * np.cos(lat_rad))
+        delta_lon_deg = np.rad2deg(delta_lon)
 
-        return self.latitude, self.longitude
-
-    def _generate_unfiltered_lat_long(self, ll_counter):
-        i = ll_counter.count
-
-        random_offset = 5 / METERS_PER_DEGREE
-
-        self.latitude_unfilt = self.latitude + \
-            ((np.sin(self.ll_x[i] + np.pi/2) * CIRCLE_RADIUS) / (METERS_PER_DEGREE * (2*np.pi))) + \
-                random.uniform(-random_offset, random_offset)
-
-        self.longitude_unfilt = self.longitude + \
-            ((np.sin(self.ll_x[i]) * CIRCLE_RADIUS) / (METERS_PER_DEGREE * (2*np.pi))) + \
-                random.uniform(-random_offset, random_offset)
-
-        return self.latitude_unfilt, self.longitude_unfilt
-
-    def _generate_heading(self, heading_counter):
-        i = heading_counter.count
-
-        return self.deg[i]
+        return delta_lat_deg, delta_lon_deg
     
 def main():
     rclpy.init()

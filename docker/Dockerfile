@@ -91,7 +91,7 @@ RUN pip3 install pydantic==1.10.9
 RUN pip3 install pyserial
 
 # Install rviz - Gabe Slade, Feb 2025
-# Needed in order to display various system GUIs
+# Needed in order to display various system GUIs (including rover orientation + hazards)
 USER root
 RUN apt update && apt install -y ros-humble-rviz-common
 RUN apt update && apt install -y ros-humble-rviz2
@@ -113,14 +113,14 @@ USER $NAME
 
 # Install mapviz - Sarah Sanderson, Feb 2025
 # Necessary packages to run the mapviz viewer
-# USER root
-# RUN apt update && apt install -y \
-#     ros-humble-mapviz \
-#     ros-humble-mapviz-plugins \
-#     ros-humble-tile-map \
-#     ros-humble-multires-image \
-#     ros-humble-rosapi
-# USER $NAME
+USER root
+RUN apt update && apt install -y \
+    ros-humble-mapviz \
+    ros-humble-mapviz-plugins \
+    ros-humble-tile-map \
+    ros-humble-multires-image \
+    ros-humble-rosapi
+USER $NAME
 
 # Install domain bridge package - Nelson Durrant, Feb 2025
 # Necessary dependency for running the domain bridge scripts
@@ -140,6 +140,10 @@ USER root
 RUN apt update && apt install -y gpsd-clients
 USER $NAME
 
+# Install pcl and open3D - Gabe Slader Mar 2025
+# Needed for the hazard avoidance node 
+RUN pip3 install open3d
+RUN pip3 install pcl 
 
 # Install libboost for ublox read - Braden Meyers, Mar 2025
 # Needed to run UBLOX_read_2
@@ -147,7 +151,30 @@ USER root
 RUN apt update && apt install -y libboost-all-dev
 USER $NAME
 
-# Install pcl and open3d - Gabe Slade Mar 2025
-# Needed for the hazard avoidance node
-RUN pip3 install open3d
-RUN pip3 install pcl
+# Install urdf launch - Braden Meyers, Apr 2025
+# Needed to publish the urdf model of the rover
+# ZED messages for the the object detections
+USER root
+RUN apt update && apt install -y \
+    ros-humble-urdf-launch \
+    ros-humble-zed-msgs    
+USER $NAME
+
+
+# Install tools for terrain maps - Nelson Durrant, Apr 2025
+# Used for loading in and parsing GeoTIFF elevation maps
+# PCL used for hazard avoidance in cpp - Braden Meyers May 2025
+USER root
+RUN apt update && apt install -y \
+    libgdal-dev \
+    python3-rasterio \
+    libpcl-dev \
+    ros-humble-pcl-ros \
+    ros-humble-pcl-conversions \
+    ros-humble-visualization-msgs
+
+USER $NAME
+
+# Install AStar planning package - Nelson Durrant, Apr 2025
+# Simple A* path planning algorithm implementation for 2D maps
+RUN pip3 install astar

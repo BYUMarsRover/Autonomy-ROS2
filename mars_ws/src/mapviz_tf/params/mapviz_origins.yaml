@@ -9,8 +9,13 @@
   altitude: 0.0
   heading: 0.0
 - name: hanksville
-  latitude: 38.406441
-  longitude: -110.791932
+  latitude: 38.420347
+  longitude: -110.782790
+  altitude: 1375.0
+  heading: 0.0
+- name: hanksville_camp
+  latitude: 38.3753792
+  longitude: -110.7087849
   altitude: 1375.0
   heading: 0.0
 - name: gravel_pit
@@ -23,7 +28,7 @@
   longitude: -112.012014
   altitude: 1500.0
   heading: 0.0
-- name: materials_handling_area
+- name: mha
   latitude: 40.267390
   longitude: -111.658580
   altitude: 1387.0
@@ -32,5 +37,15 @@
   latitude: 40.256136
   longitude: -111.655376
   altitude: 1387.0
+  heading: 0.0
+- name: price
+  latitude: 38.877476
+  longitude: -110.352047
+  altitude: 1292.0
+  heading: 0.0
+- name: slate
+  latitude: 40.2229
+  longitude: -111.62762
+  altitude: 1376.0
   heading: 0.0
 
