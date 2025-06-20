@@ -6,9 +6,13 @@
 
 --
 
-### Get Started
+> **TO THE 2026 MARS ROVER TEAM:** This software stack was used for the Autonomy task at the 2025 competition. It's based mostly on the same code structure as the 2024 team's ROS 1 repository. Another simulation-centered software stack was developed in parallel by the 2025 team (but ultimately dropped due to CPU constraints), and can be found [here](https://github.com/BYUMarsRover/marsrover_2.0).
 
-> **NOTE:** Newer Macs that use ARM64 architecture (M1, M2, etc) are not able to run some code due to missing package support, and have not been extensively tested.
+--
+
+### Get Started:
+
+> **NOTE:** Newer Macs that use ARM64 architecture (M1, M2, etc) have not been extensively tested.
 
 **Windows:**
 
@@ -18,7 +22,11 @@
 
 - Open a WSL terminal and clone the Autonomy-ROS2 repo into your WSL environment using `git clone https://github.com/BYUMarsRover/Autonomy-ROS2.git`.
 
-- Run `bash compose.sh` to pull and launch the latest Docker image from DockerHub.
+- Run `cd Autonomy-ROS2 && bash compose.sh` to pull and launch the latest Docker image from DockerHub.
+
+**Linux:**
+
+- Install Docker Engine on your Linux machine by following the instructions [here](https://docs.docker.com/engine/install/ubuntu/).
 
 **Linux:**
 
@@ -27,6 +35,10 @@
 - Open a terminal and clone the Autonomy-ROS2 repo into your Linux environment using `git clone https://github.com/BYUMarsRover/Autonomy-ROS2.git`.
 
 - Run `bash compose.sh` to pull and launch the latest Docker image from DockerHub.
+=======
+- Open a terminal and clone the Autonomy-ROS2 repo into your Linux environment using `git clone https://github.com/BYUMarsRover/Autonomy-ROS2.git`.
+
+- Run `cd Autonomy-ROS2 && bash compose.sh` to pull and launch the latest Docker image from DockerHub.
 
 --
 
@@ -40,21 +52,21 @@
 
 [Docker Concepts and Tutorials](https://docs.docker.com/get-started/introduction/whats-next/)
 
-[ROS2 Concepts](https://docs.ros.org/en/humble/Concepts/Basic.html)
+[ROS 2 Concepts](https://docs.ros.org/en/humble/Concepts/Basic.html)
 
-[ROS2 CLI Tutorials](https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools.html)*
+[ROS 2 CLI Tutorials](https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools.html)
 
-[ROS2 Code Tutorials](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries.html)*
+[ROS 2 Code Tutorials](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries.html)
 
-[ROS2 Discovery Server Tutorial](https://docs.ros.org/en/humble/Tutorials/Advanced/Discovery-Server/Discovery-Server.html)*
+[ROS 2 Discovery Server Tutorial](https://docs.ros.org/en/humble/Tutorials/Advanced/Discovery-Server/Discovery-Server.html)
 
-[Robotics in ROS2 Tutorial](https://github.com/henki-robotics/robotics_essentials_ros2/tree/main)
+[Robotics in ROS 2 Tutorial](https://github.com/henki-robotics/robotics_essentials_ros2/tree/main)
 
 --
 
 ### Contributing
 
-- **Create a new branch.** Our main code branches are protected, so you'll need to create a new branch. Name your branch with a combination of your name and the feature you are working on (i.e. nelson/repo-docs).
+- **Create a new branch.** This repository's main branch is protected, so you'll need to create a new branch. Name your branch with a combination of your name and the feature you are working on (e.g. nelson/repo-docs).
 
 - **Make your changes.** Develop and debug your new feature or bug fix.
 
